@@ -5,6 +5,6 @@ Schemas:
 - `schemas/workout-plan.schema.json`
 - `schemas/reference-maxes.schema.json`
 
-Example source workout plan:
+Example workout plan:
 
-- `examples/workout-plan.example.md`
+- `schemas/examples/workout-plan.example.json`
