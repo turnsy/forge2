@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge2.app/schemas/workout-plan.schema.json",
+  "title": "Workout Plan",
+  "description": "Athlete-facing workout plan schema with week/day structure and one entry per planned set.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "name",
+    "weeks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "2.0.0"
+    },
+    "id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "name": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "discipline": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "description": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "weeks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/week"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repsValue": {
+      "description": "Supports simple reps (5) and combined reps (3+1).",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\+[0-9]+)*$"
+        }
+      ]
+    },
+    "week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "days"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "days": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/day"
+          }
+        }
+      }
+    },
+    "day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "code",
+        "exercises"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^w[0-9]+d[0-9]+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "exercises": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/exercise"
+          }
+        }
+      }
+    },
+    "exercise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sets"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "sets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/set"
+          }
+        }
+      }
+    },
+    "set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "planned",
+        "actual",
+        "status",
+        "locked"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "planned": {
+          "$ref": "#/$defs/plannedSet"
+        },
+        "actual": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/actualSet"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "planned",
+            "completed",
+            "skipped"
+          ]
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "plannedSet": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/exactPlannedSet"
+        },
+        {
+          "$ref": "#/$defs/targetPlannedSet"
+        }
+      ]
+    },
+    "exactPlannedSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "reps",
+        "load"
+      ],
+      "properties": {
+        "type": {
+          "const": "exact"
+        },
+        "reps": {
+          "$ref": "#/$defs/repsValue"
+        },
+        "load": {
+          "$ref": "#/$defs/load"
+        },
+        "tempo": {
+          "type": "string"
+        },
+        "restSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "targetPlannedSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "instruction"
+      ],
+      "properties": {
+        "type": {
+          "const": "target"
+        },
+        "instruction": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reps": {
+          "$ref": "#/$defs/repsValue"
+        },
+        "load": {
+          "$ref": "#/$defs/load"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "actualSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reps"
+      ],
+      "properties": {
+        "reps": {
+          "$ref": "#/$defs/repsValue"
+        },
+        "load": {
+          "$ref": "#/$defs/load"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "load": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/absoluteLoad"
+        },
+        {
+          "$ref": "#/$defs/percentageLoad"
+        }
+      ]
+    },
+    "absoluteLoad": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "type": {
+          "const": "absolute"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "kg",
+            "lb",
+            "g"
+          ]
+        }
+      }
+    },
+    "percentageLoad": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "unit",
+        "basis",
+        "operator"
+      ],
+      "properties": {
+        "type": {
+          "const": "percentage"
+        },
+        "unit": {
+          "const": "%"
+        },
+        "basis": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "range",
+            "at-least",
+            "at-most"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "minValue": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxValue": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "operator": {
+                  "const": "exact"
+                }
+              },
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "properties": {
+                "operator": {
+                  "const": "at-least"
+                }
+              },
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "properties": {
+                "operator": {
+                  "const": "at-most"
+                }
+              },
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "properties": {
+                "operator": {
+                  "const": "range"
+                }
+              },
+              "required": [
+                "minValue",
+                "maxValue"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
