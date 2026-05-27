@@ -1,13 +1,10 @@
 # forge2
 
-Initial workout-plan schema work lives in:
+Schemas:
 
 - `schemas/workout-plan.schema.json`
-- `examples/workout-plan.example.json`
+- `schemas/reference-maxes.schema.json`
 
-The schema is week/day based (`w1d1`, `w1d2`, etc.) and supports:
+Example source workout plan:
 
-- set/rep prescriptions
-- percentage-based loads tied to a reference max
-- absolute loads with `value` + `unit`
-- target-style instructions such as "work up to 3x5" or "3RM"
+- `examples/workout-plan.example.md`
