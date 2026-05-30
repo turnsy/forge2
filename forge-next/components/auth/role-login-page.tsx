@@ -2,12 +2,8 @@ import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
 import { AuthRoleTitle } from "@/components/auth/auth-role-title";
+import { resolveLoginBanner } from "@/lib/auth/login-banner";
 import type { UserRole } from "@/lib/auth/types";
-
-const LOGIN_MESSAGES: Record<string, string> = {
-  "check-email": "Check your email to confirm your account, then sign in.",
-  "reset-email-sent": "If that email exists, a reset link is on its way.",
-};
 
 export async function RoleLoginPage({
   role,
@@ -17,8 +13,7 @@ export async function RoleLoginPage({
   searchParams: Promise<{ message?: string; error?: string }>;
 }>) {
   const query = await searchParams;
-  const banner =
-    (query.message && LOGIN_MESSAGES[query.message]) || query.error || null;
+  const banner = resolveLoginBanner(query);
   const roleLabel = role === "coach" ? "Coach" : "Athlete";
 
   return (

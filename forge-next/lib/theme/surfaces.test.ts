@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buttonVariantClass, cardClass } from "@/lib/theme/surfaces";
+import {
+  buttonVariantClass,
+  cardClass,
+  cardFooterClass,
+  controlClass,
+  dividerLineClass,
+  messageToneClass,
+} from "@/lib/theme/surfaces";
 
 describe("surface theme helpers", () => {
   it("includes w-full when fullWidth is true", () => {
@@ -16,5 +23,27 @@ describe("surface theme helpers", () => {
     expect(cardClass("coach")).toContain("border-coach-border");
     expect(cardClass("athlete")).toContain("border-athlete-border");
     expect(cardClass()).toContain("border-surface-divider");
+  });
+
+  it("returns shared control styling", () => {
+    expect(controlClass()).toContain("glass-surface");
+    expect(controlClass()).toContain("rounded-control");
+    expect(controlClass()).toContain("w-full");
+  });
+
+  it("returns tone-specific message styling", () => {
+    expect(messageToneClass("error")).toContain("text-danger");
+    expect(messageToneClass("success")).toContain("text-success");
+    expect(messageToneClass("info")).toContain("text-surface-muted");
+  });
+
+  it("returns card footer styling", () => {
+    expect(cardFooterClass()).toContain("border-t");
+    expect(cardFooterClass()).toContain("border-surface-divider");
+  });
+
+  it("returns divider line styling", () => {
+    expect(dividerLineClass()).toContain("border-t");
+    expect(dividerLineClass()).toContain("border-surface-divider");
   });
 });

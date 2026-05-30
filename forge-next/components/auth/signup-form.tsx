@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Divider, Input, Message, SubmitButton } from "@/components/ui";
 import { oauthFormAction, signupFormAction } from "@/lib/auth/form-actions";
+import { canContinueSignup } from "@/lib/auth/form-validation";
 import { loginPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
 
@@ -13,8 +14,7 @@ export function SignupForm({ role }: { role: UserRole }) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const canContinue =
-    fullName.trim().length > 0 && email.trim().length > 0 && password.length >= 8;
+  const canContinue = canContinueSignup(fullName, email, password);
 
   return (
     <div className="flex flex-col gap-4">
