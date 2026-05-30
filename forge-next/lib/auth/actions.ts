@@ -18,6 +18,7 @@ import {
   consumeSignupRoleCookie,
   requireSignupRoleCookie,
 } from "@/lib/auth/signup-cookies";
+import { loginPathForRole } from "@/lib/auth/routes";
 import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
 
 function failure(error: string): AuthActionResult {
@@ -45,14 +46,19 @@ export async function signUpWithEmail(input: {
   password: string;
   fullName: string;
   next?: string;
+  role?: string;
 }): Promise<AuthActionResult> {
-  const role = await requireSignupRoleCookie();
+  const cookieRole = await requireSignupRoleCookie();
+  const role = isUserRole(input.role) ? input.role : cookieRole;
   if (!role) {
     return failure("Start signup from /coach/signup or /athlete/signup.");
   }
 
   const origin = await getOrigin();
-  const next = validateRedirectPath(input.next);
+  const roleHome = getPostAuthRedirect(role);
+  const next = input.next
+    ? validateRedirectPath(input.next, roleHome)
+    : roleHome;
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -81,7 +87,7 @@ export async function signUpWithEmail(input: {
 
   return {
     ok: true,
-    redirectTo: "/login?message=check-email",
+    redirectTo: `${loginPathForRole(role)}?message=check-email`,
   };
 }
 
@@ -89,8 +95,10 @@ export async function signInWithEmail(input: {
   email: string;
   password: string;
   next?: string;
+  role?: string;
 }): Promise<AuthActionResult> {
   const next = validateRedirectPath(input.next);
+  const contextRole = isUserRole(input.role) ? input.role : null;
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -108,7 +116,7 @@ export async function signInWithEmail(input: {
     .eq("id", data.user.id)
     .maybeSingle();
 
-  const role =
+  const profileRole =
     (isUserRole(profile?.role) ? profile.role : null) ??
     (isUserRole(data.user.user_metadata?.role)
       ? data.user.user_metadata.role
@@ -116,20 +124,28 @@ export async function signInWithEmail(input: {
 
   return {
     ok: true,
-    redirectTo: next === "/" ? getPostAuthRedirect(role) : next,
+    redirectTo:
+      next === "/"
+        ? getPostAuthRedirect(contextRole ?? profileRole)
+        : next,
   };
 }
 
 export async function signInWithOAuth(input: {
   provider: AuthProvider;
   next?: string;
+  role?: string;
 }): Promise<AuthActionResult> {
   if (!isOAuthProviderEnabled(input.provider)) {
     return failure(oauthProviderUnavailableMessage(input.provider));
   }
 
   const origin = await getOrigin();
-  const next = validateRedirectPath(input.next);
+  const contextRole = isUserRole(input.role) ? input.role : null;
+  const roleHome = contextRole ? getPostAuthRedirect(contextRole) : "/";
+  const next = input.next
+    ? validateRedirectPath(input.next, roleHome)
+    : roleHome;
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({

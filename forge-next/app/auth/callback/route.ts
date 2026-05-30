@@ -43,7 +43,9 @@ export async function GET(request: Request) {
       const metadataRole = claimsData?.claims?.role;
       const role = profile?.role ?? (isUserRole(metadataRole) ? metadataRole : null);
       const redirectTo =
-        next === "/" ? getPostAuthRedirect(role) : next;
+        next === "/"
+          ? getPostAuthRedirect(signupRole ?? role)
+          : next;
 
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }

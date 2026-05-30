@@ -21,6 +21,7 @@ export function SignupForm({ role }: { role: UserRole }) {
       ) : null}
 
       <form action={formAction} className="flex flex-col gap-4">
+        <input type="hidden" name="role" value={role} />
         <AuthField
           label="Full name"
           name="fullName"
@@ -52,7 +53,7 @@ export function SignupForm({ role }: { role: UserRole }) {
         <span className="bg-white px-2 dark:bg-black">or</span>
       </div>
 
-      <GoogleOAuthButton label="Continue with Google" />
+      <GoogleOAuthButton label="Continue with Google" role={role} />
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         Already have an account?{" "}
