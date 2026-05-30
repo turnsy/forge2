@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
-import {
-  isOAuthProviderEnabled,
-  oauthProviderUnavailableMessage,
-} from "@/lib/auth/providers";
+import { isOAuthProviderEnabled } from "@/lib/auth/providers";
 
 describe("OAuth provider availability", () => {
-  it("enables Google for MVP", () => {
+  it("enables Google", () => {
     expect(isOAuthProviderEnabled("google")).toBe(true);
   });
 
-  it("blocks Apple until implemented", () => {
+  it("disables Apple for now", () => {
     expect(isOAuthProviderEnabled("apple")).toBe(false);
-    expect(oauthProviderUnavailableMessage("apple")).toContain("Apple");
   });
 });

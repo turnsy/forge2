@@ -28,6 +28,17 @@ export function getPostAuthRedirect(role: UserRole | null): string {
   return "/signup";
 }
 
+export function getRoleMismatchRedirect(
+  requiredRole: UserRole,
+  userRole: UserRole | null,
+): string {
+  if (!userRole) {
+    return "/signup";
+  }
+
+  return requiredRole === "coach" ? "/athlete" : "/coach";
+}
+
 export function getAuthCallbackUrl(origin: string, next?: string): string {
   const params = new URLSearchParams();
   if (next) {

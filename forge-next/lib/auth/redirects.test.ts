@@ -3,6 +3,7 @@ import {
   getAuthCallbackUrl,
   getOAuthRedirectTo,
   getPostAuthRedirect,
+  getRoleMismatchRedirect,
   isUserRole,
   validateRedirectPath,
 } from "@/lib/auth/redirects";
@@ -36,6 +37,17 @@ describe("getPostAuthRedirect", () => {
     expect(getPostAuthRedirect("coach")).toBe("/coach");
     expect(getPostAuthRedirect("athlete")).toBe("/athlete");
     expect(getPostAuthRedirect(null)).toBe("/signup");
+  });
+});
+
+describe("getRoleMismatchRedirect", () => {
+  it("sends users without a role to signup", () => {
+    expect(getRoleMismatchRedirect("coach", null)).toBe("/signup");
+  });
+
+  it("sends users to the other role home", () => {
+    expect(getRoleMismatchRedirect("coach", "athlete")).toBe("/athlete");
+    expect(getRoleMismatchRedirect("athlete", "coach")).toBe("/coach");
   });
 });
 

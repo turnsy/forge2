@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import {
   isOAuthProviderEnabled,
-  oauthProviderUnavailableMessage,
 } from "@/lib/auth/providers";
 import {
   getAuthCallbackUrl,
@@ -126,7 +125,7 @@ export async function signInWithEmail(input: {
     ok: true,
     redirectTo:
       next === "/"
-        ? getPostAuthRedirect(contextRole ?? profileRole)
+        ? getPostAuthRedirect(profileRole ?? contextRole)
         : next,
   };
 }
@@ -137,7 +136,7 @@ export async function signInWithOAuth(input: {
   role?: string;
 }): Promise<AuthActionResult> {
   if (!isOAuthProviderEnabled(input.provider)) {
-    return failure(oauthProviderUnavailableMessage(input.provider));
+    return failure("Sign in with Apple is not available yet.");
   }
 
   const origin = await getOrigin();
