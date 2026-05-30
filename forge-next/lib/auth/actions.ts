@@ -102,9 +102,17 @@ export async function signInWithEmail(input: {
     return failure(error.message);
   }
 
-  const role = isUserRole(data.user?.user_metadata?.role)
-    ? data.user.user_metadata.role
-    : null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  const role =
+    (isUserRole(profile?.role) ? profile.role : null) ??
+    (isUserRole(data.user.user_metadata?.role)
+      ? data.user.user_metadata.role
+      : null);
 
   return {
     ok: true,

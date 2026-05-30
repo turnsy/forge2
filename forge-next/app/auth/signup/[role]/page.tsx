@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { SignupForm } from "@/components/auth/signup-form";
 import { isUserRole } from "@/lib/auth/redirects";
 
 export default async function SignupRolePage({
@@ -6,21 +9,25 @@ export default async function SignupRolePage({
 }: Readonly<{
   params: Promise<{ role: string }>;
 }>) {
-  const { role } = await params;
+  const { role: roleParam } = await params;
 
-  if (!isUserRole(role)) {
+  if (!isUserRole(roleParam)) {
     notFound();
   }
 
-  const label = role === "coach" ? "Coach" : "Athlete";
+  const label = roleParam === "coach" ? "Coach" : "Athlete";
 
   return (
-    <main className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold">Sign up as {label}</h1>
-      <p className="text-zinc-600">
-        Signup form UI will live here. Role is fixed by this route and stored
-        server-side for the auth flow.
-      </p>
-    </main>
+    <AuthShell
+      title={`Sign up as ${label}`}
+      description="Your role is set by this signup route."
+      footer={
+        <Link href="/auth/signup" className="font-medium text-zinc-900 dark:text-zinc-100">
+          Choose a different role
+        </Link>
+      }
+    >
+      <SignupForm role={roleParam} />
+    </AuthShell>
   );
 }
