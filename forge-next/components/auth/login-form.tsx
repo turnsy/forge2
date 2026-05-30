@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { loginFormAction } from "@/lib/auth/form-actions";
-import { loginHubPath, signupPathForRole } from "@/lib/auth/routes";
+import { useActionState, useState } from "react";
+import { GoogleIcon } from "@/components/icons/google-icon";
+import { Divider, Input, Message, SubmitButton } from "@/components/ui";
+import { loginFormAction, oauthFormAction } from "@/lib/auth/form-actions";
+import { canContinueLogin } from "@/lib/auth/form-validation";
+import { signupPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
-import { AuthField } from "@/components/auth/auth-field";
-import { AuthMessage } from "@/components/auth/auth-message";
-import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
-import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
 export function LoginForm({
   role,
@@ -18,57 +17,65 @@ export function LoginForm({
   banner?: string | null;
 }) {
   const [state, formAction] = useActionState(loginFormAction, null);
-  const label = role === "coach" ? "coach" : "athlete";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const canContinue = canContinueLogin(email, password);
 
   return (
     <div className="flex flex-col gap-4">
-      {banner ? <AuthMessage tone="info">{banner}</AuthMessage> : null}
+      {banner ? <Message tone="info">{banner}</Message> : null}
       {state && !state.ok ? (
-        <AuthMessage tone="error">{state.error}</AuthMessage>
+        <Message tone="error">{state.error}</Message>
       ) : null}
+
+      <form action={oauthFormAction}>
+        <input type="hidden" name="provider" value="google" />
+        <input type="hidden" name="role" value={role} />
+        <SubmitButton
+          variant="ghost"
+          icon={<GoogleIcon />}
+          pendingLabel="Redirecting…"
+        >
+          Continue with Google
+        </SubmitButton>
+      </form>
+
+      <Divider />
 
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="role" value={role} />
-        <AuthField
-          label="Email"
+        <Input
+          aria-label="Email"
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="Email"
           required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
-        <AuthField
-          label="Password"
+        <Input
+          aria-label="Password"
           name="password"
           type="password"
           autoComplete="current-password"
+          placeholder="Password"
           required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
         />
-        <AuthSubmitButton pendingLabel="Signing in…">
-          Sign in as {label}
-        </AuthSubmitButton>
+        <SubmitButton disabled={!canContinue} pendingLabel="Signing in…">
+          Continue
+        </SubmitButton>
       </form>
 
-      <div className="relative text-center text-xs uppercase tracking-wide text-zinc-500">
-        <span className="bg-white px-2 dark:bg-black">or</span>
-      </div>
-
-      <GoogleOAuthButton label="Continue with Google" role={role} />
-
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-        New {label}?{" "}
+        New to Forge?{" "}
         <Link
           href={signupPathForRole(role)}
           className="font-medium text-zinc-900 dark:text-zinc-100"
         >
-          Create a {label} account
-        </Link>
-      </p>
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-        <Link
-          href={loginHubPath()}
-          className="font-medium text-zinc-900 dark:text-zinc-100"
-        >
-          Sign in as a different role
+          Create Account →
         </Link>
       </p>
     </div>

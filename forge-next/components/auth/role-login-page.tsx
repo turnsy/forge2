@@ -1,13 +1,9 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
-import { loginHubPath } from "@/lib/auth/routes";
+import { AuthRoleTitle } from "@/components/auth/auth-role-title";
+import { resolveLoginBanner } from "@/lib/auth/login-banner";
 import type { UserRole } from "@/lib/auth/types";
-
-const LOGIN_MESSAGES: Record<string, string> = {
-  "check-email": "Check your email to confirm your account, then sign in.",
-  "reset-email-sent": "If that email exists, a reset link is on its way.",
-};
 
 export async function RoleLoginPage({
   role,
@@ -17,21 +13,16 @@ export async function RoleLoginPage({
   searchParams: Promise<{ message?: string; error?: string }>;
 }>) {
   const query = await searchParams;
-  const label = role === "coach" ? "Coach" : "Athlete";
-  const banner =
-    (query.message && LOGIN_MESSAGES[query.message]) || query.error || null;
+  const banner = resolveLoginBanner(query);
+  const roleLabel = role === "coach" ? "Coach" : "Athlete";
 
   return (
     <AuthShell
-      title={`Sign in as ${label}`}
-      description="Sign in with email or Google."
-      footer={
-        <Link
-          href={loginHubPath()}
-          className="font-medium text-zinc-900 dark:text-zinc-100"
-        >
-          Choose a different role
-        </Link>
+      role={role}
+      title={
+        <Suspense fallback={<>Sign in as {roleLabel}</>}>
+          <AuthRoleTitle role={role} mode="sign-in" />
+        </Suspense>
       }
     >
       <LoginForm role={role} banner={banner} />

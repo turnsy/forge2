@@ -24,13 +24,13 @@ export default function SignupHubPage() {
           href={signupPathForRole("coach")}
           className="rounded-lg border border-zinc-300 px-4 py-3 text-center font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >
-          Sign up as a coach
+          Register as a coach
         </Link>
         <Link
           href={signupPathForRole("athlete")}
           className="rounded-lg border border-zinc-300 px-4 py-3 text-center font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >
-          Sign up as an athlete
+          Register as an athlete
         </Link>
       </div>
     </AuthShell>

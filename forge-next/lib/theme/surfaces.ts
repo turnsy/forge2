@@ -1,0 +1,50 @@
+import type { UserRole } from "@/lib/auth/types";
+import { radius } from "@/lib/theme/tokens";
+import { roleBorderClass } from "@/lib/theme/roles";
+
+export type ButtonVariant = "primary" | "ghost";
+export type MessageTone = "error" | "success" | "info";
+
+const buttonVariantClasses: Record<ButtonVariant, string> = {
+  primary: "glass-button-primary",
+  ghost: "glass-button-ghost",
+};
+
+const messageToneClasses: Record<MessageTone, string> = {
+  error:
+    "border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md",
+  success:
+    "border-success-border bg-success-muted text-success shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md",
+  info: "border-glass-border bg-glass text-surface-muted shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md",
+};
+
+export function controlClass(): string {
+  return `w-full ${radius.control} px-5 py-3.5 font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus`;
+}
+
+export function buttonVariantClass(
+  variant: ButtonVariant,
+  fullWidth = true,
+): string {
+  const widthClass = fullWidth ? "w-full" : "";
+
+  return `inline-flex ${widthClass} items-center justify-center ${radius.control} px-5 py-3.5 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+}
+
+export function messageToneClass(tone: MessageTone): string {
+  return `${radius.control} border px-4 py-3 text-sm ${messageToneClasses[tone]}`;
+}
+
+export function cardClass(role?: UserRole): string {
+  const borderClass = role ? roleBorderClass(role) : "border-surface-divider";
+
+  return `dark flex w-full max-w-md flex-col gap-6 ${radius.card} border bg-surface p-8 text-surface-foreground shadow-sm ${borderClass}`;
+}
+
+export function cardFooterClass(): string {
+  return "border-t border-surface-divider pt-4 text-sm text-surface-muted";
+}
+
+export function dividerLineClass(): string {
+  return "grow border-t border-surface-divider";
+}

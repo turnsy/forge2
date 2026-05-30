@@ -1,3 +1,7 @@
+/*
+ * Forge design tokens (Tailwind v4 @theme).
+ * Semantic colors and radii live here; composed class helpers are in lib/theme/.
+ */
 @import "tailwindcss";
 
 :root {
@@ -10,12 +14,95 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Role accents */
+  --color-coach: #f87171;
+  --color-coach-muted: rgb(248 113 113 / 0.4);
+  --color-coach-border: rgb(239 68 68 / 0.25);
+  --color-athlete: #4ade80;
+  --color-athlete-muted: rgb(74 222 128 / 0.4);
+  --color-athlete-border: rgb(34 197 94 / 0.25);
+
+  /* Dark surfaces */
+  --color-surface: #09090b;
+  --color-surface-foreground: #fafafa;
+  --color-surface-muted: #a1a1aa;
+  --color-surface-divider: #27272a;
+
+  /* Glass */
+  --color-glass: rgb(255 255 255 / 0.06);
+  --color-glass-border: rgb(255 255 255 / 0.1);
+  --color-glass-highlight: rgb(255 255 255 / 0.06);
+  --color-glass-focus: rgb(255 255 255 / 0.08);
+  --color-glass-primary: rgb(255 255 255 / 0.9);
+  --color-glass-primary-border: rgb(255 255 255 / 0.25);
+
+  /* Feedback */
+  --color-danger: #fca5a5;
+  --color-danger-muted: rgb(239 68 68 / 0.1);
+  --color-danger-border: rgb(239 68 68 / 0.2);
+  --color-success: #6ee7b7;
+  --color-success-muted: rgb(16 185 129 / 0.1);
+  --color-success-border: rgb(16 185 129 / 0.2);
+
+  /* Radii */
+  --radius-control: 1.5rem;
+  --radius-card: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+  }
+}
+
+@utility glass-surface {
+  border-width: 1px;
+  border-color: var(--color-glass-border);
+  background-color: var(--color-glass);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 0 var(--color-glass-highlight);
+}
+
+@utility glass-surface-focus {
+  &:focus {
+    border-color: rgb(255 255 255 / 0.2);
+    background-color: var(--color-glass-focus);
+    outline: none;
+    box-shadow:
+      inset 0 1px 0 0 var(--color-glass-highlight),
+      0 0 0 2px rgb(255 255 255 / 0.1);
+  }
+}
+
+@utility glass-button-primary {
+  border-width: 1px;
+  border-color: var(--color-glass-primary-border);
+  background-color: var(--color-glass-primary);
+  color: #18181b;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.5),
+    0 8px 24px -12px rgb(0 0 0 / 0.5);
+
+  &:hover:not(:disabled) {
+    border-color: rgb(255 255 255 / 0.4);
+    background-color: rgb(255 255 255 / 0.95);
+  }
+}
+
+@utility glass-button-ghost {
+  border-width: 1px;
+  border-color: var(--color-glass-border);
+  background-color: var(--color-glass);
+  color: #ffffff;
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 0 var(--color-glass-highlight);
+
+  &:hover:not(:disabled) {
+    border-color: rgb(255 255 255 / 0.2);
+    background-color: rgb(255 255 255 / 0.1);
   }
 }
 
