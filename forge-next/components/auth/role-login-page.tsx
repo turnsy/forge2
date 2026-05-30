@@ -1,7 +1,7 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
-import { loginHubPath } from "@/lib/auth/routes";
+import { SignInRoleTitle } from "@/components/auth/sign-in-role-title";
 import type { UserRole } from "@/lib/auth/types";
 
 const LOGIN_MESSAGES: Record<string, string> = {
@@ -17,21 +17,16 @@ export async function RoleLoginPage({
   searchParams: Promise<{ message?: string; error?: string }>;
 }>) {
   const query = await searchParams;
-  const label = role === "coach" ? "Coach" : "Athlete";
   const banner =
     (query.message && LOGIN_MESSAGES[query.message]) || query.error || null;
+  const roleLabel = role === "coach" ? "Coach" : "Athlete";
 
   return (
     <AuthShell
-      title={`Sign in as ${label}`}
-      description="Sign in with email or Google."
-      footer={
-        <Link
-          href={loginHubPath()}
-          className="font-medium text-zinc-900 dark:text-zinc-100"
-        >
-          Choose a different role
-        </Link>
+      title={
+        <Suspense fallback={<>Sign in as {roleLabel}</>}>
+          <SignInRoleTitle role={role} />
+        </Suspense>
       }
     >
       <LoginForm role={role} banner={banner} />
