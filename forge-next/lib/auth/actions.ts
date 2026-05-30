@@ -1,8 +1,12 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import {
+  isOAuthProviderEnabled,
+  oauthProviderUnavailableMessage,
+} from "@/lib/auth/providers";
 import {
   getAuthCallbackUrl,
   getOAuthRedirectTo,
@@ -10,12 +14,11 @@ import {
   isUserRole,
   validateRedirectPath,
 } from "@/lib/auth/redirects";
-import type {
-  AuthActionResult,
-  AuthProvider,
-  UserRole,
-} from "@/lib/auth/types";
-import { SIGNUP_ROLE_COOKIE } from "@/lib/auth/types";
+import {
+  consumeSignupRoleCookie,
+  requireSignupRoleCookie,
+} from "@/lib/auth/signup";
+import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
 
 function failure(error: string): AuthActionResult {
   return { ok: false, error };
@@ -37,32 +40,17 @@ async function getOrigin(): Promise<string> {
   return "http://localhost:3000";
 }
 
-async function setSignupRoleCookie(role: UserRole): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(SIGNUP_ROLE_COOKIE, role, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 10,
-  });
-}
-
-async function consumeSignupRoleCookie(): Promise<UserRole | null> {
-  const cookieStore = await cookies();
-  const role = cookieStore.get(SIGNUP_ROLE_COOKIE)?.value;
-  cookieStore.delete(SIGNUP_ROLE_COOKIE);
-
-  return isUserRole(role) ? role : null;
-}
-
 export async function signUpWithEmail(input: {
   email: string;
   password: string;
-  role: UserRole;
   fullName: string;
   next?: string;
 }): Promise<AuthActionResult> {
+  const role = await requireSignupRoleCookie();
+  if (!role) {
+    return failure("Start signup from /auth/signup/coach or /auth/signup/athlete.");
+  }
+
   const origin = await getOrigin();
   const next = validateRedirectPath(input.next);
   const supabase = await createClient();
@@ -72,7 +60,7 @@ export async function signUpWithEmail(input: {
     password: input.password,
     options: {
       data: {
-        role: input.role,
+        role,
         full_name: input.fullName,
       },
       emailRedirectTo: getAuthCallbackUrl(origin, next),
@@ -84,9 +72,10 @@ export async function signUpWithEmail(input: {
   }
 
   if (data.session) {
+    await consumeSignupRoleCookie();
     const profileRole = isUserRole(data.user?.user_metadata?.role)
       ? data.user.user_metadata.role
-      : input.role;
+      : role;
     return { ok: true, redirectTo: getPostAuthRedirect(profileRole) };
   }
 
@@ -125,27 +114,20 @@ export async function signInWithEmail(input: {
 
 export async function signInWithOAuth(input: {
   provider: AuthProvider;
-  role?: UserRole;
   next?: string;
 }): Promise<AuthActionResult> {
+  if (!isOAuthProviderEnabled(input.provider)) {
+    return failure(oauthProviderUnavailableMessage(input.provider));
+  }
+
   const origin = await getOrigin();
   const next = validateRedirectPath(input.next);
   const supabase = await createClient();
 
-  if (input.role) {
-    await setSignupRoleCookie(input.role);
-  }
-
-  const redirectTo = getOAuthRedirectTo(origin, input.provider, input.role);
-
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: input.provider,
     options: {
-      redirectTo,
-      queryParams:
-        input.provider === "apple"
-          ? { scope: "name email" }
-          : undefined,
+      redirectTo: getOAuthRedirectTo(origin, next),
     },
   });
 
@@ -178,11 +160,11 @@ export async function requestPasswordReset(input: {
 }
 
 export async function completeRoleSelection(input: {
-  role: UserRole;
   fullName?: string;
 }): Promise<AuthActionResult> {
-  if (!isUserRole(input.role)) {
-    return failure("Role must be coach or athlete.");
+  const role = await requireSignupRoleCookie();
+  if (!role) {
+    return failure("Start signup from /auth/signup/coach or /auth/signup/athlete.");
   }
 
   const supabase = await createClient();
@@ -190,11 +172,10 @@ export async function completeRoleSelection(input: {
     await supabase.auth.getClaims();
 
   if (claimsError || !claimsData?.claims?.sub) {
-    return failure("You must be signed in to choose a role.");
+    return failure("You must be signed in to complete signup.");
   }
 
-  const userId = claimsData.claims.sub;
-  const metadata: Record<string, string> = { role: input.role };
+  const metadata: Record<string, string> = { role };
   if (input.fullName) {
     metadata.full_name = input.fullName;
   }
@@ -208,7 +189,7 @@ export async function completeRoleSelection(input: {
   }
 
   const { error: profileError } = await supabase.rpc("complete_profile_role", {
-    target_role: input.role,
+    target_role: role,
     target_full_name: input.fullName ?? null,
   });
 
@@ -216,7 +197,9 @@ export async function completeRoleSelection(input: {
     return failure(profileError.message);
   }
 
-  return { ok: true, redirectTo: getPostAuthRedirect(input.role) };
+  await consumeSignupRoleCookie();
+
+  return { ok: true, redirectTo: getPostAuthRedirect(role) };
 }
 
 export async function signOutAction(): Promise<void> {
@@ -225,8 +208,4 @@ export async function signOutAction(): Promise<void> {
   redirect("/login");
 }
 
-export async function finalizeOAuthSignup(): Promise<UserRole | null> {
-  return consumeSignupRoleCookie();
-}
-
-export { consumeSignupRoleCookie, getPostAuthRedirect, validateRedirectPath };
+export { getPostAuthRedirect, validateRedirectPath };

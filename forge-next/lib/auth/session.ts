@@ -76,7 +76,7 @@ export async function requireAuth(): Promise<AuthUser> {
 export async function requireRole(role: UserRole): Promise<AuthUser> {
   const user = await requireAuth();
   if (user.role !== role) {
-    redirect(user.role ? (role === "coach" ? "/athlete" : "/coach") : "/onboarding/role");
+    redirect(user.role ? (role === "coach" ? "/athlete" : "/coach") : "/auth/signup");
   }
 
   return user;

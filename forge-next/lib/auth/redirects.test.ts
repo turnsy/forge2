@@ -35,7 +35,7 @@ describe("getPostAuthRedirect", () => {
   it("routes by role", () => {
     expect(getPostAuthRedirect("coach")).toBe("/coach");
     expect(getPostAuthRedirect("athlete")).toBe("/athlete");
-    expect(getPostAuthRedirect(null)).toBe("/onboarding/role");
+    expect(getPostAuthRedirect(null)).toBe("/auth/signup");
   });
 });
 
@@ -44,8 +44,8 @@ describe("auth callback URLs", () => {
     expect(getAuthCallbackUrl("http://localhost:3000", "/coach")).toBe(
       "http://localhost:3000/auth/callback?next=%2Fcoach",
     );
-    expect(getOAuthRedirectTo("http://localhost:3000", "google", "coach")).toBe(
-      "http://localhost:3000/auth/callback?provider=google&role=coach",
+    expect(getOAuthRedirectTo("http://localhost:3000", "/coach")).toBe(
+      "http://localhost:3000/auth/callback?next=%2Fcoach",
     );
   });
 });

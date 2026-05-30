@@ -25,7 +25,7 @@ export function getPostAuthRedirect(role: UserRole | null): string {
     return ROLE_HOME[role];
   }
 
-  return "/onboarding/role";
+  return "/auth/signup";
 }
 
 export function getAuthCallbackUrl(origin: string, next?: string): string {
@@ -38,15 +38,6 @@ export function getAuthCallbackUrl(origin: string, next?: string): string {
   return `${origin}/auth/callback${query ? `?${query}` : ""}`;
 }
 
-export function getOAuthRedirectTo(
-  origin: string,
-  provider: "google" | "apple",
-  role?: UserRole,
-): string {
-  const params = new URLSearchParams({ provider });
-  if (role) {
-    params.set("role", role);
-  }
-
-  return `${origin}/auth/callback?${params.toString()}`;
+export function getOAuthRedirectTo(origin: string, next?: string): string {
+  return getAuthCallbackUrl(origin, next);
 }
