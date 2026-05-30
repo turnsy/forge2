@@ -209,11 +209,3 @@ export async function completeRoleSelection(input: {
 
   return { ok: true, redirectTo: getPostAuthRedirect(role) };
 }
-
-export async function signOutAction(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}
-
-export { getPostAuthRedirect, validateRedirectPath };
