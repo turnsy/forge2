@@ -41,7 +41,7 @@ export function GoogleOAuthButton({
     <form action={oauthFormAction}>
       <input type="hidden" name="provider" value="google" />
       {role ? <input type="hidden" name="role" value={role} /> : null}
-      <AuthSubmitButton pendingLabel="Redirecting…" variant="inverted">
+      <AuthSubmitButton pendingLabel="Redirecting…" variant="ghost">
         <span className="inline-flex items-center gap-3">
           <GoogleIcon />
           {label}

@@ -4,18 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { loginPathForRole, signupPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  coach: "Coach",
-  athlete: "Athlete",
-};
-
-const roleLinkClassName = (role: UserRole) =>
-  `inline-flex items-center gap-0.5 underline decoration-2 underline-offset-[6px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
-    role === "coach"
-      ? "text-red-400 decoration-red-400/40 hover:text-red-300 focus-visible:ring-red-500/50"
-      : "text-green-400 decoration-green-400/40 hover:text-green-300 focus-visible:ring-green-500/50"
-  }`;
+import { roleLabel, roleLinkClass } from "@/lib/theme";
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
@@ -102,8 +91,8 @@ export function AuthRoleTitle({
           aria-controls={menuId}
           aria-expanded={open}
           aria-haspopup="menu"
-          aria-label={`Current role: ${ROLE_LABELS[role]}. Switch role.`}
-          className={roleLinkClassName(role)}
+          aria-label={`Current role: ${roleLabel(role)}. Switch role.`}
+          className={roleLinkClass(role)}
           onClick={() => setOpen((current) => !current)}
           onKeyDown={(event) => {
             if (
@@ -116,7 +105,7 @@ export function AuthRoleTitle({
             }
           }}
         >
-          {ROLE_LABELS[role]}
+          {roleLabel(role)}
           <ChevronDownIcon
             className={`transition-transform ${open ? "rotate-180" : ""}`}
           />
@@ -133,13 +122,13 @@ export function AuthRoleTitle({
             type="button"
             role="menuitem"
             tabIndex={open ? 0 : -1}
-            aria-label={`Switch to ${ROLE_LABELS[otherRole]}`}
-            className={`${roleLinkClassName(otherRole)} ${
+            aria-label={`Switch to ${roleLabel(otherRole)}`}
+            className={`${roleLinkClass(otherRole)} ${
               open ? "" : "pointer-events-none invisible"
             }`}
             onClick={switchRole}
           >
-            {ROLE_LABELS[otherRole]}
+            {roleLabel(otherRole)}
             <ChevronDownIcon className="invisible" />
           </button>
         </span>
