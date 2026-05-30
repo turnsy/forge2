@@ -1,20 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { Divider, Input, Message, SubmitButton } from "@/components/ui";
+import {
+  Divider,
+  Form,
+  FormControl,
+  FormField,
+  FormFieldItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Message,
+  SubmitButton,
+} from "@/components/ui";
 import { oauthFormAction, signupFormAction } from "@/lib/auth/form-actions";
-import { canContinueSignup } from "@/lib/auth/form-validation";
 import { loginPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
+import { useServerActionForm } from "@/lib/forms/use-server-action-form";
+import { signupSchema } from "@/lib/forms/schemas/auth";
 
 export function SignupForm({ role }: { role: UserRole }) {
-  const [state, formAction] = useActionState(signupFormAction, null);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const canContinue = canContinueSignup(fullName, email, password);
+  const { form, state, onSubmit } = useServerActionForm({
+    schema: signupSchema,
+    defaultValues: { fullName: "", email: "", password: "", role },
+    action: signupFormAction,
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -36,43 +47,66 @@ export function SignupForm({ role }: { role: UserRole }) {
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-4">
-        <input type="hidden" name="role" value={role} />
-        <Input
-          aria-label="Full name"
+      <Form form={form} onSubmit={onSubmit} className="flex flex-col gap-4">
+        <input type="hidden" {...form.register("role")} />
+        <FormField
           name="fullName"
-          type="text"
-          autoComplete="name"
-          placeholder="Full name"
-          required
-          value={fullName}
-          onChange={(event) => setFullName(event.target.value)}
+          render={({ field }) => (
+            <FormFieldItem>
+              <FormLabel>Full name</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Full name"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormFieldItem>
+          )}
         />
-        <Input
-          aria-label="Email"
+        <FormField
           name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          render={({ field }) => (
+            <FormFieldItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormFieldItem>
+          )}
         />
-        <Input
-          aria-label="Password"
+        <FormField
           name="password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Password"
-          minLength={8}
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          render={({ field }) => (
+            <FormFieldItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormFieldItem>
+          )}
         />
-        <SubmitButton disabled={!canContinue} pendingLabel="Creating account…">
+        <SubmitButton
+          disabled={!form.formState.isValid}
+          pendingLabel="Creating account…"
+        >
           Continue
         </SubmitButton>
-      </form>
+      </Form>
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         Already have an account?{" "}

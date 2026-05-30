@@ -6,18 +6,28 @@ import {
   signInWithOAuth,
   signUpWithEmail,
 } from "@/lib/auth/actions";
-import { isUserRole } from "@/lib/auth/redirects";
 import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
+import { isUserRole } from "@/lib/auth/redirects";
+import { FORM_PARSE_ERROR, parseFormData } from "@/lib/forms/parse";
+import { loginSchema, signupSchema } from "@/lib/forms/schemas/auth";
+
+function parseFailure(): AuthActionResult {
+  return { ok: false, error: FORM_PARSE_ERROR };
+}
 
 export async function loginFormAction(
   _prev: AuthActionResult | null,
   formData: FormData,
 ): Promise<AuthActionResult | null> {
-  const role = String(formData.get("role") ?? "");
+  const parsed = parseFormData(loginSchema, formData);
+  if (!parsed.success) {
+    return parseFailure();
+  }
+
   const result = await signInWithEmail({
-    email: String(formData.get("email") ?? "").trim(),
-    password: String(formData.get("password") ?? ""),
-    role: isUserRole(role) ? role : undefined,
+    email: parsed.data.email,
+    password: parsed.data.password,
+    role: parsed.data.role,
   });
 
   if (result.ok) {
@@ -31,12 +41,16 @@ export async function signupFormAction(
   _prev: AuthActionResult | null,
   formData: FormData,
 ): Promise<AuthActionResult | null> {
-  const role = String(formData.get("role") ?? "");
+  const parsed = parseFormData(signupSchema, formData);
+  if (!parsed.success) {
+    return parseFailure();
+  }
+
   const result = await signUpWithEmail({
-    email: String(formData.get("email") ?? "").trim(),
-    password: String(formData.get("password") ?? ""),
-    fullName: String(formData.get("fullName") ?? "").trim(),
-    role: isUserRole(role) ? role : undefined,
+    email: parsed.data.email,
+    password: parsed.data.password,
+    fullName: parsed.data.fullName,
+    role: parsed.data.role,
   });
 
   if (result.ok) {

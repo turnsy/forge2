@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { Divider, Input, Message, SubmitButton } from "@/components/ui";
+import {
+  Divider,
+  Form,
+  FormControl,
+  FormField,
+  FormFieldItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Message,
+  SubmitButton,
+} from "@/components/ui";
 import { loginFormAction, oauthFormAction } from "@/lib/auth/form-actions";
-import { canContinueLogin } from "@/lib/auth/form-validation";
 import { signupPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
+import { useServerActionForm } from "@/lib/forms/use-server-action-form";
+import { loginSchema } from "@/lib/forms/schemas/auth";
 
 export function LoginForm({
   role,
@@ -16,10 +27,11 @@ export function LoginForm({
   role: UserRole;
   banner?: string | null;
 }) {
-  const [state, formAction] = useActionState(loginFormAction, null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const canContinue = canContinueLogin(email, password);
+  const { form, state, onSubmit } = useServerActionForm({
+    schema: loginSchema,
+    defaultValues: { email: "", password: "", role },
+    action: loginFormAction,
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,32 +54,49 @@ export function LoginForm({
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-4">
-        <input type="hidden" name="role" value={role} />
-        <Input
-          aria-label="Email"
+      <Form form={form} onSubmit={onSubmit} className="flex flex-col gap-4">
+        <input type="hidden" {...form.register("role")} />
+        <FormField
           name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          render={({ field }) => (
+            <FormFieldItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormFieldItem>
+          )}
         />
-        <Input
-          aria-label="Password"
+        <FormField
           name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          render={({ field }) => (
+            <FormFieldItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormFieldItem>
+          )}
         />
-        <SubmitButton disabled={!canContinue} pendingLabel="Signing in…">
+        <SubmitButton
+          disabled={!form.formState.isValid}
+          pendingLabel="Signing in…"
+        >
           Continue
         </SubmitButton>
-      </form>
+      </Form>
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         New to Forge?{" "}

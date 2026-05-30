@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FORM_PARSE_ERROR } from "@/lib/forms/parse";
 
 const mockSignInWithEmail = vi.fn();
 const mockSignUpWithEmail = vi.fn();
@@ -50,6 +51,20 @@ describe("auth form actions", () => {
     });
   });
 
+  it("returns a generic error when login FormData fails schema validation", async () => {
+    const formData = new FormData();
+    formData.set("email", "not-an-email");
+    formData.set("password", "password123");
+    formData.set("role", "coach");
+
+    await expect(loginFormAction(null, formData)).resolves.toEqual({
+      ok: false,
+      error: FORM_PARSE_ERROR,
+    });
+    expect(mockSignInWithEmail).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
   it("returns login errors without redirecting", async () => {
     mockSignInWithEmail.mockResolvedValue({
       ok: false,
@@ -87,6 +102,20 @@ describe("auth form actions", () => {
       fullName: "Athlete",
       role: "athlete",
     });
+  });
+
+  it("returns a generic error when signup FormData fails schema validation", async () => {
+    const formData = new FormData();
+    formData.set("email", "athlete@example.com");
+    formData.set("password", "short");
+    formData.set("fullName", "Athlete");
+    formData.set("role", "athlete");
+
+    await expect(signupFormAction(null, formData)).resolves.toEqual({
+      ok: false,
+      error: FORM_PARSE_ERROR,
+    });
+    expect(mockSignUpWithEmail).not.toHaveBeenCalled();
   });
 
   it("redirects OAuth failures to the login hub", async () => {
