@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { signupFormAction } from "@/lib/auth/form-actions";
+import { GoogleIcon } from "@/components/icons/google-icon";
+import { Divider, Input, Message, SubmitButton } from "@/components/ui";
+import { oauthFormAction, signupFormAction } from "@/lib/auth/form-actions";
 import { loginPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
-import { AuthDivider } from "@/components/auth/auth-divider";
-import { AuthField } from "@/components/auth/auth-field";
-import { AuthMessage } from "@/components/auth/auth-message";
-import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
-import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
 export function SignupForm({ role }: { role: UserRole }) {
   const [state, formAction] = useActionState(signupFormAction, null);
@@ -22,16 +19,26 @@ export function SignupForm({ role }: { role: UserRole }) {
   return (
     <div className="flex flex-col gap-4">
       {state && !state.ok ? (
-        <AuthMessage tone="error">{state.error}</AuthMessage>
+        <Message tone="error">{state.error}</Message>
       ) : null}
 
-      <GoogleOAuthButton label="Continue with Google" role={role} />
+      <form action={oauthFormAction}>
+        <input type="hidden" name="provider" value="google" />
+        <input type="hidden" name="role" value={role} />
+        <SubmitButton
+          variant="ghost"
+          icon={<GoogleIcon />}
+          pendingLabel="Redirecting…"
+        >
+          Continue with Google
+        </SubmitButton>
+      </form>
 
-      <AuthDivider />
+      <Divider />
 
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="role" value={role} />
-        <AuthField
+        <Input
           aria-label="Full name"
           name="fullName"
           type="text"
@@ -41,7 +48,7 @@ export function SignupForm({ role }: { role: UserRole }) {
           value={fullName}
           onChange={(event) => setFullName(event.target.value)}
         />
-        <AuthField
+        <Input
           aria-label="Email"
           name="email"
           type="email"
@@ -51,7 +58,7 @@ export function SignupForm({ role }: { role: UserRole }) {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <AuthField
+        <Input
           aria-label="Password"
           name="password"
           type="password"
@@ -62,9 +69,9 @@ export function SignupForm({ role }: { role: UserRole }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        <AuthSubmitButton disabled={!canContinue} pendingLabel="Creating account…">
+        <SubmitButton disabled={!canContinue} pendingLabel="Creating account…">
           Continue
-        </AuthSubmitButton>
+        </SubmitButton>
       </form>
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">

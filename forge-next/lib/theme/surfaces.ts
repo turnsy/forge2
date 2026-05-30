@@ -22,8 +22,13 @@ export function controlClass(): string {
   return `w-full ${radius.control} px-5 py-3.5 font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus`;
 }
 
-export function buttonVariantClass(variant: ButtonVariant): string {
-  return `inline-flex w-full items-center justify-center ${radius.control} px-5 py-3.5 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+export function buttonVariantClass(
+  variant: ButtonVariant,
+  fullWidth = true,
+): string {
+  const widthClass = fullWidth ? "w-full" : "";
+
+  return `inline-flex ${widthClass} items-center justify-center ${radius.control} px-5 py-3.5 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
 
 export function messageToneClass(tone: MessageTone): string {

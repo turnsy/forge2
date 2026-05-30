@@ -1,11 +1,12 @@
+import type { ReactNode } from "react";
 import { messageToneClass, type MessageTone } from "@/lib/theme";
 
-export function AuthMessage({
+export function Message({
   tone,
   children,
 }: {
   tone: MessageTone;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <p

@@ -1,12 +1,8 @@
-import { oauthFormAction } from "@/lib/auth/form-actions";
-import type { UserRole } from "@/lib/auth/types";
-import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
-
-function GoogleIcon() {
+export function GoogleIcon({ className = "h-5 w-5 shrink-0" }: { className?: string }) {
   return (
     <svg
       aria-hidden="true"
-      className="h-5 w-5 shrink-0"
+      className={className}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -27,26 +23,5 @@ function GoogleIcon() {
         fill="#EA4335"
       />
     </svg>
-  );
-}
-
-export function GoogleOAuthButton({
-  label,
-  role,
-}: {
-  label: string;
-  role?: UserRole;
-}) {
-  return (
-    <form action={oauthFormAction}>
-      <input type="hidden" name="provider" value="google" />
-      {role ? <input type="hidden" name="role" value={role} /> : null}
-      <AuthSubmitButton pendingLabel="Redirecting…" variant="ghost">
-        <span className="inline-flex items-center gap-3">
-          <GoogleIcon />
-          {label}
-        </span>
-      </AuthSubmitButton>
-    </form>
   );
 }

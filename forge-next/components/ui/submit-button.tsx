@@ -1,29 +1,40 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { buttonVariantClass, type ButtonVariant } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
+import type { ButtonVariant } from "@/lib/theme";
 
-export function AuthSubmitButton({
+export function SubmitButton({
   children,
   pendingLabel = "Please wait…",
   disabled = false,
   variant = "primary",
+  fullWidth = true,
+  icon,
+  className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   pendingLabel?: string;
   disabled?: boolean;
   variant?: ButtonVariant;
+  fullWidth?: boolean;
+  icon?: ReactNode;
+  className?: string;
 }) {
   const { pending } = useFormStatus();
   const isDisabled = pending || disabled;
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={isDisabled}
-      className={buttonVariantClass(variant)}
+      variant={variant}
+      fullWidth={fullWidth}
+      icon={icon}
+      className={className}
     >
       {pending ? pendingLabel : children}
-    </button>
+    </Button>
   );
 }

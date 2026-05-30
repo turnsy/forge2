@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { UserRole } from "@/lib/auth/types";
-import { cardClass, cardFooterClass } from "@/lib/theme";
+import { Card, CardFooter, CardHeader } from "@/components/ui";
 
 export function AuthShell({
   title,
@@ -17,16 +17,16 @@ export function AuthShell({
 }) {
   return (
     <main className="flex min-h-screen w-full items-center justify-center p-4 sm:p-8">
-      <div className={cardClass(role)}>
-        <header className="space-y-3 text-center">
+      <Card role={role}>
+        <CardHeader>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {description ? (
             <p className="text-sm leading-6 text-surface-muted">{description}</p>
           ) : null}
-        </header>
+        </CardHeader>
         {children}
-        {footer ? <footer className={cardFooterClass()}>{footer}</footer> : null}
-      </div>
+        {footer ? <CardFooter>{footer}</CardFooter> : null}
+      </Card>
     </main>
   );
 }
