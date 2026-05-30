@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { isUserRole } from "@/lib/auth/redirects";
-import { establishSignupRole } from "@/lib/auth/signup";
 
 export default async function SignupRoleLayout({
   children,
@@ -14,8 +13,6 @@ export default async function SignupRoleLayout({
   if (!isUserRole(role)) {
     notFound();
   }
-
-  await establishSignupRole(role);
 
   return children;
 }

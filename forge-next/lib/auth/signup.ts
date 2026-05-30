@@ -14,15 +14,20 @@ export function roleFromSignupPath(pathname: string): UserRole | null {
   return match && isUserRole(match[1]) ? match[1] : null;
 }
 
-export async function establishSignupRole(role: UserRole): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(SIGNUP_ROLE_COOKIE, role, {
+export function signupRoleCookieOptions(): {
+  httpOnly: true;
+  sameSite: "lax";
+  secure: boolean;
+  path: string;
+  maxAge: number;
+} {
+  return {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SIGNUP_COOKIE_MAX_AGE_SECONDS,
-  });
+  };
 }
 
 export async function readSignupRoleCookie(): Promise<UserRole | null> {
