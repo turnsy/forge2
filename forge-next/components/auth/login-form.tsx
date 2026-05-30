@@ -5,22 +5,11 @@ import { useActionState, useState } from "react";
 import { loginFormAction } from "@/lib/auth/form-actions";
 import { signupPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
+import { AuthDivider } from "@/components/auth/auth-divider";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthMessage } from "@/components/auth/auth-message";
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
-
-function AuthDivider() {
-  return (
-    <div className="relative flex items-center">
-      <div className="grow border-t border-zinc-200 dark:border-zinc-800" />
-      <span className="mx-3 shrink-0 text-xs uppercase tracking-wide text-zinc-500">
-        or
-      </span>
-      <div className="grow border-t border-zinc-200 dark:border-zinc-800" />
-    </div>
-  );
-}
 
 export function LoginForm({
   role,

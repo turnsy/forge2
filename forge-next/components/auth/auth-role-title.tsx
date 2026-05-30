@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { loginPathForRole } from "@/lib/auth/routes";
+import { loginPathForRole, signupPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -39,7 +39,13 @@ function ChevronDownIcon({ className }: { className?: string }) {
   );
 }
 
-export function SignInRoleTitle({ role }: { role: UserRole }) {
+export function AuthRoleTitle({
+  role,
+  mode,
+}: {
+  role: UserRole;
+  mode: "sign-in" | "sign-up";
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const menuId = useId();
@@ -47,14 +53,16 @@ export function SignInRoleTitle({ role }: { role: UserRole }) {
   const [open, setOpen] = useState(false);
 
   const otherRole: UserRole = role === "coach" ? "athlete" : "coach";
+  const prefix = mode === "sign-in" ? "Sign in as" : "Register as";
+  const pathForRole = mode === "sign-in" ? loginPathForRole : signupPathForRole;
 
   const switchRole = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     const query = params.toString();
-    const path = loginPathForRole(otherRole);
+    const path = pathForRole(otherRole);
     router.push(query ? `${path}?${query}` : path);
     setOpen(false);
-  }, [otherRole, router, searchParams]);
+  }, [otherRole, pathForRole, router, searchParams]);
 
   useEffect(() => {
     if (!open) {
@@ -87,7 +95,7 @@ export function SignInRoleTitle({ role }: { role: UserRole }) {
 
   return (
     <>
-      Sign in as{" "}
+      {prefix}{" "}
       <span ref={containerRef} className="inline-flex flex-col items-start">
         <button
           type="button"

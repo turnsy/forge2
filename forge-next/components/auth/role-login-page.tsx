@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
-import { SignInRoleTitle } from "@/components/auth/sign-in-role-title";
+import { AuthRoleTitle } from "@/components/auth/auth-role-title";
 import type { UserRole } from "@/lib/auth/types";
 
 const LOGIN_MESSAGES: Record<string, string> = {
@@ -23,9 +23,10 @@ export async function RoleLoginPage({
 
   return (
     <AuthShell
+      role={role}
       title={
         <Suspense fallback={<>Sign in as {roleLabel}</>}>
-          <SignInRoleTitle role={role} />
+          <AuthRoleTitle role={role} mode="sign-in" />
         </Suspense>
       }
     >
