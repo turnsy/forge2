@@ -1,4 +1,4 @@
-import { CoachAppShell } from "@/components/coach/coach-app-shell";
+import { AppShell } from "@/components/app-shell";
 import { requireRole } from "@/lib/auth/session";
 
 export default async function CoachAppLayout({
@@ -6,7 +6,11 @@ export default async function CoachAppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await requireRole("coach");
+  const user = await requireRole("coach");
 
-  return <CoachAppShell>{children}</CoachAppShell>;
+  return (
+    <AppShell role="coach" fullName={user.fullName} email={user.email}>
+      {children}
+    </AppShell>
+  );
 }

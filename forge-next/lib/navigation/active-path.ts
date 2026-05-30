@@ -1,6 +1,10 @@
-export function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === "/coach") {
-    return pathname === "/coach";
+export function isNavItemActive(
+  pathname: string,
+  href: string,
+  exact = false,
+): boolean {
+  if (exact) {
+    return pathname === href;
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

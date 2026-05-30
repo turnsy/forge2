@@ -6,26 +6,28 @@ import type { ReactNode } from "react";
 import { isNavItemActive } from "@/lib/navigation/active-path";
 
 const baseClass =
-  "flex w-full items-center gap-3 rounded-control px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coach/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+  "flex w-full items-center gap-3 rounded-xl px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 const inactiveClass =
   "text-surface-muted hover:bg-glass hover:text-surface-foreground";
 
-const activeClass = "bg-coach-muted/20 text-coach";
+const activeClass = "bg-glass text-surface-foreground";
 
 export function SidebarNavLink({
   href,
   children,
   icon,
   trailingIcon,
+  exact = false,
 }: {
   href: string;
   children: ReactNode;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
+  exact?: boolean;
 }) {
   const pathname = usePathname();
-  const active = isNavItemActive(pathname, href);
+  const active = isNavItemActive(pathname, href, exact);
 
   return (
     <Link

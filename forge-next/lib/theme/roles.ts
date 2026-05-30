@@ -20,6 +20,16 @@ const roleBorderColors: Record<UserRole, string> = {
   athlete: "border-athlete-border",
 };
 
+const roleMutedBorderColors: Record<UserRole, string> = {
+  coach: "!border-coach-muted",
+  athlete: "!border-athlete-muted",
+};
+
+const roleFocusRingColors: Record<UserRole, string> = {
+  coach: "focus-visible:ring-coach/50",
+  athlete: "focus-visible:ring-athlete/50",
+};
+
 export function roleLabel(role: UserRole): string {
   return roleLabels[role];
 }
@@ -30,4 +40,12 @@ export function roleLinkClass(role: UserRole): string {
 
 export function roleBorderClass(role: UserRole): string {
   return roleBorderColors[role];
+}
+
+export function roleMutedBorderClass(role: UserRole): string {
+  return roleMutedBorderColors[role];
+}
+
+export function roleFocusRingClass(role: UserRole): string {
+  return roleFocusRingColors[role];
 }
