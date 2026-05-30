@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   roleBorderClass,
+  roleFocusRingClass,
   roleLabel,
   roleLinkClass,
+  roleMutedBorderClass,
 } from "@/lib/theme/roles";
 
 describe("role theme helpers", () => {
@@ -30,5 +32,15 @@ describe("role theme helpers", () => {
   it("returns role-specific border classes", () => {
     expect(roleBorderClass("coach")).toBe("border-coach-border");
     expect(roleBorderClass("athlete")).toBe("border-athlete-border");
+  });
+
+  it("returns role-specific muted border classes", () => {
+    expect(roleMutedBorderClass("coach")).toBe("!border-coach-muted");
+    expect(roleMutedBorderClass("athlete")).toBe("!border-athlete-muted");
+  });
+
+  it("returns role-specific focus ring classes", () => {
+    expect(roleFocusRingClass("coach")).toBe("focus-visible:ring-coach/50");
+    expect(roleFocusRingClass("athlete")).toBe("focus-visible:ring-athlete/50");
   });
 });
