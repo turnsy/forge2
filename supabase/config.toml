@@ -40,15 +40,32 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000/auth/callback",
+]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
+# Refresh tokens remain valid until revoked; access tokens expire after jwt_expiry seconds.
 enable_signup = true
 enable_anonymous_sign_ins = false
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true
+
+# OAuth providers are configured in the Supabase Dashboard for the hosted project.
+# Uncomment and set env vars for local `supabase start` development.
+#
+# [auth.external.google]
+# enabled = true
+# client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# skip_nonce_check = true
+#
+# [auth.external.apple]
+# enabled = true
+# client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
