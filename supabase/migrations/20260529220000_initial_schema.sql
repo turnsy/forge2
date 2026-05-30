@@ -6,8 +6,6 @@
 -- ============================================================
 
 create type user_role as enum ('coach', 'athlete');
-create type relationship_status as enum ('pending', 'active', 'revoked');
-create type plan_source as enum ('file_upload', 'prompt');
 create type assignment_status as enum ('active', 'completed', 'unassigned');
 
 
@@ -20,7 +18,6 @@ create table profiles (
   id              uuid primary key references auth.users(id) on delete cascade,
   role            user_role not null,
   full_name       text,
-  avatar_url      text,
   -- Coaches only. Unique short code athletes use to link.
   invite_code     text unique,
   -- Flexible metadata per role.
@@ -79,7 +76,6 @@ create table coach_athletes (
   id            uuid primary key default gen_random_uuid(),
   coach_id      uuid not null references profiles(id) on delete cascade,
   athlete_id    uuid not null references profiles(id) on delete cascade,
-  status        relationship_status not null default 'active',
   linked_at     timestamptz not null default now(),
   unlinked_at   timestamptz
 );
@@ -87,7 +83,7 @@ create table coach_athletes (
 -- Enforce one active coach per athlete at the DB level.
 create unique index coach_athletes_one_active_coach_idx
   on coach_athletes (athlete_id)
-  where status = 'active';
+  where unlinked_at is null;
 
 -- Fast lookups both ways.
 create index coach_athletes_coach_id_idx   on coach_athletes (coach_id);
@@ -103,8 +99,6 @@ create index coach_athletes_athlete_id_idx on coach_athletes (athlete_id);
 create table plans (
   id            uuid primary key default gen_random_uuid(),
   coach_id      uuid not null references profiles(id) on delete cascade,
-  title         text not null,
-  source_type   plan_source not null,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -121,37 +115,20 @@ create index plans_coach_id_idx on plans (coach_id);
 create table plan_versions (
   id              uuid primary key default gen_random_uuid(),
   plan_id         uuid not null references plans(id) on delete cascade,
-  -- Monotonically increasing per plan, starting at 1.
-  version_number  int not null,
   -- Full plan JSON blob (your existing workout plan schema).
   plan_data       jsonb not null,
   -- Human-readable note for the rollback UI. e.g. "Added week 3 deload"
   change_summary  text,
-  -- The AI prompt that generated this version, if any.
-  edit_prompt     text,
   created_by      uuid not null references profiles(id),
-  created_at      timestamptz not null default now(),
-
-  unique (plan_id, version_number)
+  created_at      timestamptz not null default now()
 );
 
 create index plan_versions_plan_id_idx on plan_versions (plan_id);
 
--- Auto-increment version_number per plan on insert.
-create or replace function set_plan_version_number()
-returns trigger language plpgsql as $$
-begin
-  new.version_number := coalesce(
-    (select max(version_number) from plan_versions where plan_id = new.plan_id),
-    0
-  ) + 1;
-  return new;
-end;
-$$;
+alter table plans
+  add column active_version_id uuid references plan_versions(id) on delete set null;
 
-create trigger plan_versions_auto_number
-  before insert on plan_versions
-  for each row execute procedure set_plan_version_number();
+create index plans_active_version_id_idx on plans (active_version_id);
 
 
 -- ============================================================
