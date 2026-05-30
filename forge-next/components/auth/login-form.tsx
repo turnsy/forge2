@@ -3,13 +3,23 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { loginFormAction } from "@/lib/auth/form-actions";
+import { loginHubPath } from "@/lib/auth/login";
+import { signupPathForRole } from "@/lib/auth/routes";
+import type { UserRole } from "@/lib/auth/types";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthMessage } from "@/components/auth/auth-message";
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
-export function LoginForm({ banner }: { banner?: string | null }) {
+export function LoginForm({
+  role,
+  banner,
+}: {
+  role: UserRole;
+  banner?: string | null;
+}) {
   const [state, formAction] = useActionState(loginFormAction, null);
+  const label = role === "coach" ? "coach" : "athlete";
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +44,7 @@ export function LoginForm({ banner }: { banner?: string | null }) {
           required
         />
         <AuthSubmitButton pendingLabel="Signing in…">
-          Sign in
+          Sign in as {label}
         </AuthSubmitButton>
       </form>
 
@@ -45,9 +55,20 @@ export function LoginForm({ banner }: { banner?: string | null }) {
       <GoogleOAuthButton label="Continue with Google" />
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-        Need an account?{" "}
-        <Link href="/auth/signup" className="font-medium text-zinc-900 dark:text-zinc-100">
-          Sign up
+        New {label}?{" "}
+        <Link
+          href={signupPathForRole(role)}
+          className="font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Create a {label} account
+        </Link>
+      </p>
+      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <Link
+          href={loginHubPath()}
+          className="font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Sign in as a different role
         </Link>
       </p>
     </div>

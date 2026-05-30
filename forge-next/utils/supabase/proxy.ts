@@ -1,9 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  roleFromSignupPath,
+  roleFromAuthRolePath,
   signupRoleCookieOptions,
-} from "@/lib/auth/signup";
+} from "@/lib/auth/routes";
 import { SIGNUP_ROLE_COOKIE } from "@/lib/auth/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,7 +38,7 @@ export const updateSession = async (request: NextRequest) => {
 
   await supabase.auth.getClaims();
 
-  const signupRole = roleFromSignupPath(request.nextUrl.pathname);
+  const signupRole = roleFromAuthRolePath(request.nextUrl.pathname);
   if (signupRole) {
     supabaseResponse.cookies.set(
       SIGNUP_ROLE_COOKIE,

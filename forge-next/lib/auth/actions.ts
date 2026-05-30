@@ -17,7 +17,7 @@ import {
 import {
   consumeSignupRoleCookie,
   requireSignupRoleCookie,
-} from "@/lib/auth/signup";
+} from "@/lib/auth/signup-cookies";
 import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
 
 function failure(error: string): AuthActionResult {

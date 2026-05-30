@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { AuthUser, Profile, UserRole } from "@/lib/auth/types";
 import { isUserRole } from "@/lib/auth/redirects";
+import { loginHubPath } from "@/lib/auth/login";
 
 export async function getAuthClaims(): Promise<{
   userId: string | null;
@@ -67,7 +68,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 export async function requireAuth(): Promise<AuthUser> {
   const user = await getAuthUser();
   if (!user) {
-    redirect("/login");
+    redirect(loginHubPath());
   }
 
   return user;

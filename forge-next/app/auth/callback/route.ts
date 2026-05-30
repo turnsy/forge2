@@ -8,7 +8,7 @@ import {
   isUserRole,
   validateRedirectPath,
 } from "@/lib/auth/redirects";
-import { readSignupRoleCookie } from "@/lib/auth/signup";
+import { readSignupRoleCookie } from "@/lib/auth/signup-cookies";
 import { getProfile } from "@/lib/auth/session";
 
 export async function GET(request: Request) {

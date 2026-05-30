@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signupFormAction } from "@/lib/auth/form-actions";
+import { loginPathForRole } from "@/lib/auth/login";
 import type { UserRole } from "@/lib/auth/types";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthMessage } from "@/components/auth/auth-message";
@@ -55,7 +56,10 @@ export function SignupForm({ role }: { role: UserRole }) {
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-zinc-900 dark:text-zinc-100">
+        <Link
+          href={loginPathForRole(role)}
+          className="font-medium text-zinc-900 dark:text-zinc-100"
+        >
           Sign in
         </Link>
       </p>
