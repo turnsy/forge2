@@ -48,7 +48,7 @@ export async function signUpWithEmail(input: {
 }): Promise<AuthActionResult> {
   const role = await requireSignupRoleCookie();
   if (!role) {
-    return failure("Start signup from /auth/signup/coach or /auth/signup/athlete.");
+    return failure("Start signup from /coach/signup or /athlete/signup.");
   }
 
   const origin = await getOrigin();
@@ -172,7 +172,7 @@ export async function completeRoleSelection(input: {
 }): Promise<AuthActionResult> {
   const role = await requireSignupRoleCookie();
   if (!role) {
-    return failure("Start signup from /auth/signup/coach or /auth/signup/athlete.");
+    return failure("Start signup from /coach/signup or /athlete/signup.");
   }
 
   const supabase = await createClient();

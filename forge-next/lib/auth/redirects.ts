@@ -25,7 +25,7 @@ export function getPostAuthRedirect(role: UserRole | null): string {
     return ROLE_HOME[role];
   }
 
-  return "/auth/signup";
+  return "/signup";
 }
 
 export function getAuthCallbackUrl(origin: string, next?: string): string {

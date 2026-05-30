@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { AuthUser, Profile, UserRole } from "@/lib/auth/types";
 import { isUserRole } from "@/lib/auth/redirects";
-import { loginHubPath } from "@/lib/auth/login";
+import { loginHubPath, signupHubPath } from "@/lib/auth/routes";
 
 export async function getAuthClaims(): Promise<{
   userId: string | null;
@@ -77,7 +77,7 @@ export async function requireAuth(): Promise<AuthUser> {
 export async function requireRole(role: UserRole): Promise<AuthUser> {
   const user = await requireAuth();
   if (user.role !== role) {
-    redirect(user.role ? (role === "coach" ? "/athlete" : "/coach") : "/auth/signup");
+    redirect(user.role ? (role === "coach" ? "/athlete" : "/coach") : signupHubPath());
   }
 
   return user;

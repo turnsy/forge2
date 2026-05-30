@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signupFormAction } from "@/lib/auth/form-actions";
-import { loginPathForRole } from "@/lib/auth/login";
+import { loginPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthMessage } from "@/components/auth/auth-message";

@@ -35,7 +35,7 @@ describe("getPostAuthRedirect", () => {
   it("routes by role", () => {
     expect(getPostAuthRedirect("coach")).toBe("/coach");
     expect(getPostAuthRedirect("athlete")).toBe("/athlete");
-    expect(getPostAuthRedirect(null)).toBe("/auth/signup");
+    expect(getPostAuthRedirect(null)).toBe("/signup");
   });
 });
 
