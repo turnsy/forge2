@@ -1,5 +1,6 @@
 export { Button } from "./button";
 export { ButtonLink } from "./button-link";
+export { IconButton } from "./icon-button";
 export { SubmitButton } from "./submit-button";
 export { Input } from "./input";
 export { Message } from "./message";

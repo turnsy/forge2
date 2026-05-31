@@ -11,6 +11,7 @@ export {
   cardFooterClass,
   controlClass,
   dividerLineClass,
+  iconButtonVariantClass,
   listRowClass,
   messageToneClass,
   pageContentClass,

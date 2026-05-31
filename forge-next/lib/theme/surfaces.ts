@@ -41,6 +41,15 @@ export function buttonVariantClass(
   return `inline-flex ${widthClass} items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
 
+export function iconButtonVariantClass(
+  variant: ButtonVariant,
+  size: ButtonSize = "md",
+): string {
+  const sizeClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
+
+  return `inline-flex shrink-0 items-center justify-center rounded-full ${sizeClass} transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+}
+
 export function messageToneClass(tone: MessageTone): string {
   return `${radius.control} border px-4 py-3 text-sm ${messageToneClasses[tone]}`;
 }
