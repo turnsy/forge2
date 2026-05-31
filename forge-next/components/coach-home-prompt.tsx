@@ -4,8 +4,10 @@ import { useRef, useState } from "react";
 import { AttachedFileList } from "@/components/attached-file-list";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
+import { PromptComposer } from "@/components/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import type { UserRole } from "@/lib/auth/types";
+import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 import { roleLinkClass } from "@/lib/theme";
 
 type AttachedFile = {
@@ -16,11 +18,13 @@ type AttachedFile = {
 export function CoachHomePrompt({
   firstName,
   role,
+  mentionItems,
 }: {
   firstName: string;
   role: UserRole;
+  mentionItems: PromptMentionItem[];
 }) {
-  const [message, setMessage] = useState("");
+  const [documentEmpty, setDocumentEmpty] = useState(true);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [dragDepth, setDragDepth] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +81,7 @@ export function CoachHomePrompt({
     // AI submission will be wired up later.
   }
 
-  const canSend = message.trim().length > 0 || attachedFiles.length > 0;
+  const canSend = !documentEmpty || attachedFiles.length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-8 text-center">
@@ -105,20 +109,11 @@ export function CoachHomePrompt({
             multiple
             onChange={handleFileChange}
           />
-          <textarea
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
+          <PromptComposer
+            mentionItems={mentionItems}
             placeholder="Ask Forge to build or update a plan..."
-            rows={3}
-            className="min-h-[4.5rem] w-full flex-1 resize-none bg-transparent px-1 py-1 text-base text-surface-foreground outline-none placeholder:text-surface-muted"
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                if (canSend) {
-                  handleSend();
-                }
-              }
-            }}
+            onDocumentChange={(_, isEmpty) => setDocumentEmpty(isEmpty)}
+            onSend={handleSend}
           />
           <div className="mt-3 flex items-center justify-between gap-2">
             <Button
