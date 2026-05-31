@@ -54,7 +54,7 @@ enable_anonymous_sign_ins = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true 
 
 # OAuth providers are configured in the Supabase Dashboard for the hosted project.
 # Uncomment and set env vars for local `supabase start` development.
