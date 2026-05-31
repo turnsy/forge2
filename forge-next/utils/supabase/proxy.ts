@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getAuthCallbackRedirectUrl } from "@/lib/auth/oauth-callback-redirect";
 import {
   roleFromAuthRolePath,
   signupRoleCookieOptions,
@@ -10,6 +11,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 export const updateSession = async (request: NextRequest) => {
+  const callbackRedirect = getAuthCallbackRedirectUrl(request);
+  if (callbackRedirect) {
+    return NextResponse.redirect(callbackRedirect);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
