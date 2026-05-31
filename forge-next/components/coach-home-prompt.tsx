@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
-import { Button, IconButton } from "@/components/ui";
+import { Button, FadeIn, IconButton } from "@/components/ui";
 import type { UserRole } from "@/lib/auth/types";
 import { roleLinkClass } from "@/lib/theme";
 
@@ -85,7 +85,7 @@ export function CoachHomePrompt({
         <span className={roleLinkClass(role)}>{firstName}</span>
       </h1>
 
-      <div className="relative w-full text-left">
+      <FadeIn index={0} className="relative w-full text-left">
         <div
           className={`flex min-h-40 flex-col rounded-card border bg-glass p-3 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition ${
             isDragging
@@ -162,7 +162,7 @@ export function CoachHomePrompt({
             ))}
           </div>
         ) : null}
-      </div>
+      </FadeIn>
     </div>
   );
 }
