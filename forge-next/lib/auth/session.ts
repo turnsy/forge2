@@ -1,13 +1,14 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { AuthUser, Profile, UserRole } from "@/lib/auth/types";
 import { isUserRole, getRoleMismatchRedirect } from "@/lib/auth/redirects";
 import { loginHubPath } from "@/lib/auth/routes";
 
-export async function getAuthClaims(): Promise<{
+export const getAuthClaims = cache(async (): Promise<{
   userId: string | null;
   email: string | undefined;
-}> {
+}> => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -19,9 +20,9 @@ export async function getAuthClaims(): Promise<{
     typeof data.claims.email === "string" ? data.claims.email : undefined;
 
   return { userId: data.claims.sub, email };
-}
+});
 
-export async function getProfile(userId: string): Promise<Profile | null> {
+export const getProfile = cache(async (userId: string): Promise<Profile | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
@@ -44,9 +45,9 @@ export async function getProfile(userId: string): Promise<Profile | null> {
         ? (data.contact_info as Record<string, unknown>)
         : {},
   };
-}
+});
 
-export async function getAuthUser(): Promise<AuthUser | null> {
+export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
   const { userId, email } = await getAuthClaims();
   if (!userId) {
     return null;
@@ -63,25 +64,25 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     role: profile.role,
     fullName: profile.full_name,
   };
-}
+});
 
-export async function requireAuth(): Promise<AuthUser> {
+export const requireAuth = cache(async (): Promise<AuthUser> => {
   const user = await getAuthUser();
   if (!user) {
     redirect(loginHubPath());
   }
 
   return user;
-}
+});
 
-export async function requireRole(role: UserRole): Promise<AuthUser> {
+export const requireRole = cache(async (role: UserRole): Promise<AuthUser> => {
   const user = await requireAuth();
   if (user.role !== role) {
     redirect(getRoleMismatchRedirect(role, user.role));
   }
 
   return user;
-}
+});
 
 export async function signOut(): Promise<void> {
   const supabase = await createClient();

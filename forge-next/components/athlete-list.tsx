@@ -4,6 +4,7 @@ import {
   EmptyState,
   List,
   ListRow,
+  MetaGroup,
   MetaItem,
 } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
@@ -33,13 +34,13 @@ export function AthleteListRow({
         </div>
       }
       meta={
-        <>
+        <MetaGroup>
           <MetaItem
             label="Current plan"
             value={athlete.currentPlanName ?? "No plan"}
           />
           <MetaItem label="Joined" value={formatDate(athlete.joinedAt)} />
-        </>
+        </MetaGroup>
       }
       actions={
         <ActionGroup>

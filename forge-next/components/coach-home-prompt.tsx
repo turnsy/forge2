@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AttachedFileList } from "@/components/attached-file-list";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { Button, FadeIn, IconButton } from "@/components/ui";
@@ -141,27 +142,7 @@ export function CoachHomePrompt({
           </div>
         </div>
 
-        {attachedFiles.length > 0 ? (
-          <div className="absolute inset-x-0 top-full z-10 mt-2 flex flex-wrap justify-start gap-2">
-            {attachedFiles.map((file) => (
-              <span
-                key={file.id}
-                className="inline-flex items-center gap-2 rounded-full border border-glass-border bg-glass px-3 py-1.5 text-sm text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]"
-              >
-                <PaperclipIcon className="h-3.5 w-3.5 shrink-0 text-surface-muted" />
-                <span className="max-w-[14rem] truncate">{file.name}</span>
-                <button
-                  type="button"
-                  className="text-surface-muted transition hover:text-surface-foreground"
-                  aria-label={`Remove ${file.name}`}
-                  onClick={() => removeFile(file.id)}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        ) : null}
+        <AttachedFileList files={attachedFiles} onRemove={removeFile} />
       </FadeIn>
     </div>
   );

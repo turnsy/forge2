@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { PlanList } from "@/components/plan-list";
 import { PlansPageHeader } from "@/components/plans-page-header";
-import { PageContent, Spinner } from "@/components/ui";
+import { ListSectionSpinner, PageContent } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 import { listCoachPlans } from "@/lib/plans/repository";
 
@@ -11,19 +11,11 @@ async function PlansListSection() {
   return <PlanList plans={plans} />;
 }
 
-function PlansListFallback() {
-  return (
-    <div className="flex flex-1 items-center justify-center py-16">
-      <Spinner />
-    </div>
-  );
-}
-
 export default function CoachPlansPage() {
   return (
     <PageContent>
       <PlansPageHeader />
-      <Suspense fallback={<PlansListFallback />}>
+      <Suspense fallback={<ListSectionSpinner />}>
         <PlansListSection />
       </Suspense>
     </PageContent>

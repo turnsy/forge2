@@ -4,6 +4,7 @@ import {
   EmptyState,
   List,
   ListRow,
+  MetaGroup,
   MetaItem,
 } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
@@ -31,11 +32,11 @@ export function PlanListRow({
         </h2>
       }
       meta={
-        <>
+        <MetaGroup>
           <MetaItem label="Weeks" value={plan.weekCount} />
           <MetaItem label="Days/week" value={formatDaysPerWeek(plan.daysPerWeek)} />
           <MetaItem label="Created" value={formatDate(plan.createdAt)} />
-        </>
+        </MetaGroup>
       }
       actions={
         <ActionGroup>
