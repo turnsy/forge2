@@ -1,4 +1,5 @@
 import type { PromptMentionSegment, PromptSegment } from "@/lib/prompts/mention-types";
+import { createMentionKindIconElement } from "@/lib/prompts/mention-kind-icon-dom";
 import { mergeAdjacentTextSegments } from "@/lib/prompts/prompt-document-segments";
 
 export function parseEditorToSegments(root: HTMLElement): PromptSegment[] {
@@ -39,8 +40,9 @@ export function createMentionElement(segment: PromptMentionSegment): HTMLSpanEle
   element.dataset.mentionLabel = segment.label;
   element.contentEditable = "false";
   element.className =
-    "mx-0.5 inline-flex items-center rounded-full border border-coach-border bg-coach-muted/20 px-2 py-0.5 text-sm font-medium text-coach";
-  element.textContent = `@${segment.label}`;
+    "mx-0.5 inline-flex items-center gap-1 rounded-full border border-glass-border bg-glass px-2 py-0.5 text-sm font-semibold text-surface-foreground align-middle";
+  element.appendChild(createMentionKindIconElement(segment.kind));
+  element.appendChild(document.createTextNode(segment.label));
   return element;
 }
 

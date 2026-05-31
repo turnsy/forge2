@@ -9,25 +9,33 @@ import {
   useState,
 } from "react";
 import { MentionMenu } from "@/components/mention-menu";
-import { getCaretIndex, setCaretIndex } from "@/lib/prompts/editor-selection";
+import {
+  focusCaretAtIndex,
+  getCaretIndex,
+  getCoordinatesAtLinearIndex,
+} from "@/lib/prompts/editor-selection";
 import { parseEditorToSegments, renderSegmentsToEditor } from "@/lib/prompts/editor-dom";
 import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
+import { shouldFlipMenuAbove } from "@/lib/prompts/mention-anchor-position";
 import {
-  buildMirrorTextBeforeAnchor,
-  getMentionAnchorPoint,
-  shouldFlipMenuAbove,
-} from "@/lib/prompts/mention-anchor-position";
+  flattenMentionSearchGroups,
+  searchMentionItemGroups,
+} from "@/lib/prompts/mention-search";
 import {
   deleteMentionBeforeCaret,
   getActiveMentionQuery,
-  getLinearText,
+  getCaretIndexAfterMentionInsert,
   insertMentionChip,
   isEmptyDocument,
-  searchMentionItems,
 } from "@/lib/prompts/prompt-document";
 
 const MENU_HEIGHT = 180;
-const MENU_OFFSET = 8;
+const MENU_OFFSET = 4;
+
+type SuppressedMentionRange = {
+  start: number;
+  end: number;
+};
 
 export function PromptComposer({
   mentionItems,
@@ -42,19 +50,24 @@ export function PromptComposer({
 }) {
   const menuId = useId();
   const editorRef = useRef<HTMLDivElement>(null);
-  const mirrorRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<HTMLSpanElement | null>(null);
   const skipInputRef = useRef(false);
   const [segments, setSegments] = useState<PromptSegment[]>([]);
   const [caretIndex, setCaretIndexState] = useState(0);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [suppressedRange, setSuppressedRange] =
+    useState<SuppressedMentionRange | null>(null);
 
   const activeQuery = getActiveMentionQuery(segments, caretIndex);
-  const menuItems = activeQuery
-    ? searchMentionItems(mentionItems, activeQuery.query, 4)
-    : [];
-  const menuOpen = activeQuery !== null;
+  const mentionGroups = activeQuery
+    ? searchMentionItemGroups(mentionItems, activeQuery.query, 4)
+    : { athletes: [], plans: [] };
+  const menuItems = flattenMentionSearchGroups(mentionGroups);
+  const menuVisible =
+    activeQuery !== null &&
+    (suppressedRange === null ||
+      suppressedRange.start !== activeQuery.start ||
+      suppressedRange.end !== activeQuery.end);
 
   const syncDocumentState = useCallback(
     (nextSegments: PromptSegment[]) => {
@@ -80,6 +93,17 @@ export function PromptComposer({
     setCaretIndexState(getCaretIndex(editorRef.current));
   }, []);
 
+  const dismissMenu = useCallback(() => {
+    if (!activeQuery) {
+      return;
+    }
+
+    setSuppressedRange({
+      start: activeQuery.start,
+      end: activeQuery.end,
+    });
+  }, [activeQuery]);
+
   const applySegmentsToEditor = useCallback(
     (nextSegments: PromptSegment[], nextCaretIndex: number) => {
       if (!editorRef.current) {
@@ -88,54 +112,39 @@ export function PromptComposer({
 
       skipInputRef.current = true;
       renderSegmentsToEditor(editorRef.current, nextSegments);
-      setCaretIndex(editorRef.current, nextCaretIndex);
       syncDocumentState(nextSegments);
-      skipInputRef.current = false;
+      focusCaretAtIndex(editorRef.current, nextCaretIndex);
+      requestAnimationFrame(() => {
+        if (!editorRef.current) {
+          skipInputRef.current = false;
+          return;
+        }
+
+        focusCaretAtIndex(editorRef.current, nextCaretIndex);
+        setCaretIndexState(nextCaretIndex);
+        skipInputRef.current = false;
+      });
     },
     [syncDocumentState],
   );
 
   const updateAnchor = useCallback(() => {
-    if (!editorRef.current || !mirrorRef.current || !activeQuery) {
+    if (!editorRef.current || !activeQuery || !menuVisible) {
       setAnchor((current) => (current === null ? current : null));
       return;
     }
 
-    const editor = editorRef.current;
-    const mirror = mirrorRef.current;
-    if (!markerRef.current) {
-      markerRef.current = document.createElement("span");
-    }
-    const marker = markerRef.current;
-    const styles = window.getComputedStyle(editor);
-    const linearText = getLinearText(segments);
-    const { before, marker: markerChar } = buildMirrorTextBeforeAnchor(
-      linearText,
+    const point = getCoordinatesAtLinearIndex(
+      editorRef.current,
       activeQuery.start,
     );
-
-    mirror.style.width = `${editor.clientWidth}px`;
-    mirror.style.font = styles.font;
-    mirror.style.lineHeight = styles.lineHeight;
-    mirror.style.letterSpacing = styles.letterSpacing;
-    mirror.style.padding = styles.padding;
-    mirror.style.whiteSpace = "pre-wrap";
-    mirror.style.wordWrap = "break-word";
-    mirror.style.overflow = "hidden";
-    mirror.scrollTop = editor.scrollTop;
-    mirror.replaceChildren();
-    mirror.append(document.createTextNode(before));
-    mirror.appendChild(marker);
-    marker.textContent = markerChar;
-
-    const point = getMentionAnchorPoint(mirror, marker);
     const flip = shouldFlipMenuAbove(
-      point.top,
+      point.bottom + MENU_OFFSET,
       MENU_HEIGHT,
       window.innerHeight,
     );
     const nextAnchor = {
-      top: flip ? point.top - MENU_HEIGHT - MENU_OFFSET : point.top + MENU_OFFSET,
+      top: flip ? point.top - MENU_HEIGHT - MENU_OFFSET : point.bottom + MENU_OFFSET,
       left: point.left,
     };
 
@@ -150,11 +159,11 @@ export function PromptComposer({
 
       return nextAnchor;
     });
-  }, [activeQuery, segments]);
+  }, [activeQuery, menuVisible]);
 
   useLayoutEffect(() => {
     updateAnchor();
-  }, [updateAnchor, caretIndex, menuItems.length, activeQuery?.query]);
+  }, [updateAnchor, caretIndex, menuItems.length, activeQuery?.query, menuVisible]);
 
   useEffect(() => {
     function handleResize() {
@@ -164,6 +173,38 @@ export function PromptComposer({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [updateAnchor]);
+
+  useEffect(() => {
+    if (!activeQuery) {
+      setSuppressedRange(null);
+    }
+  }, [activeQuery]);
+
+  useEffect(() => {
+    if (!menuVisible) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+
+      if (editorRef.current?.contains(target)) {
+        return;
+      }
+
+      if (
+        target instanceof Element &&
+        target.closest("[data-mention-menu]")
+      ) {
+        return;
+      }
+
+      dismissMenu();
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [dismissMenu, menuVisible]);
 
   useEffect(() => {
     if (highlightedIndex >= menuItems.length) {
@@ -187,14 +228,18 @@ export function PromptComposer({
 
     const currentSegments = readSegmentsFromEditor();
     const nextSegments = insertMentionChip(currentSegments, activeQuery, item);
-    const nextCaret = getLinearText(nextSegments).length;
+    const nextCaret = getCaretIndexAfterMentionInsert(
+      activeQuery.start,
+      item.label,
+    );
     applySegmentsToEditor(nextSegments, nextCaret);
     setHighlightedIndex(0);
     setCaretIndexState(nextCaret);
+    setSuppressedRange(null);
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (menuOpen && menuItems.length > 0) {
+    if (menuVisible && menuItems.length > 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setHighlightedIndex((current) => (current + 1) % menuItems.length);
@@ -219,8 +264,9 @@ export function PromptComposer({
       }
     }
 
-    if (menuOpen && event.key === "Escape") {
+    if (menuVisible && event.key === "Escape") {
       event.preventDefault();
+      dismissMenu();
       return;
     }
 
@@ -237,7 +283,7 @@ export function PromptComposer({
       }
     }
 
-    if (event.key === "Enter" && !event.shiftKey && !menuOpen) {
+    if (event.key === "Enter" && !event.shiftKey && !menuVisible) {
       event.preventDefault();
       onSend?.(readSegmentsFromEditor());
     }
@@ -250,8 +296,8 @@ export function PromptComposer({
           ref={editorRef}
           role="textbox"
           aria-multiline="true"
-          aria-expanded={menuOpen}
-          aria-controls={menuOpen ? menuId : undefined}
+          aria-expanded={menuVisible}
+          aria-controls={menuVisible ? menuId : undefined}
           aria-haspopup="listbox"
           contentEditable
           suppressContentEditableWarning
@@ -272,16 +318,11 @@ export function PromptComposer({
             updateAnchor();
           }}
         />
-        <div
-          aria-hidden
-          ref={mirrorRef}
-          className="pointer-events-none absolute inset-0 min-h-[4.5rem] overflow-hidden px-1 py-1 opacity-0"
-        />
       </div>
       <MentionMenu
         menuId={menuId}
-        open={menuOpen}
-        items={menuItems}
+        open={menuVisible}
+        groups={mentionGroups}
         highlightedIndex={highlightedIndex}
         anchor={anchor}
         onHighlight={setHighlightedIndex}

@@ -59,11 +59,12 @@ describe("PromptComposer", () => {
     await user.type(editor, "@ja");
     await user.click(screen.getByRole("option", { name: /Jane Smith/i }));
 
-    expect(editor).toHaveTextContent("@Jane Smith");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(editor).toHaveTextContent("Jane Smith");
     expect(editor.querySelector("[data-mention-id='a1']")).toBeTruthy();
   });
 
-  it("closes the menu and keeps plain text when space is pressed", async () => {
+  it("keeps the menu open when space is typed in the query", async () => {
     const user = userEvent.setup();
     render(
       <PromptComposer
@@ -76,9 +77,25 @@ describe("PromptComposer", () => {
     await user.click(editor);
     await user.type(editor, "@jane ");
 
+    expect(screen.getByRole("listbox", { name: /Mention suggestions/i })).toBeInTheDocument();
+    expect(editor.querySelector("[data-mention-id]")).toBeNull();
+  });
+
+  it("closes the menu on Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <PromptComposer
+        mentionItems={mentionItems}
+        placeholder="Ask Forge..."
+      />,
+    );
+
+    const editor = screen.getByRole("textbox");
+    await user.click(editor);
+    await user.type(editor, "@jane{Escape}");
+
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(editor).toHaveTextContent("@jane");
-    expect(editor.querySelector("[data-mention-id]")).toBeNull();
   });
 
   it("selects a mention with Enter instead of sending", async () => {
