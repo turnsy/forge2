@@ -11,7 +11,11 @@ export {
   cardFooterClass,
   controlClass,
   dividerLineClass,
+  iconButtonVariantClass,
+  listRowClass,
   messageToneClass,
+  pageContentClass,
+  type ButtonSize,
   type ButtonVariant,
   type MessageTone,
 } from "@/lib/theme/surfaces";
