@@ -17,4 +17,5 @@ export { ActionGroup } from "./action-group";
 export { ListSectionSpinner } from "./list-section-spinner";
 export { List, ListRow } from "./list";
 export { Spinner } from "./spinner";
+export { MentionChip } from "./mention-chip";
 export { FadeIn } from "./fade-in";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapCoachPlanRow } from "@/lib/plans/repository";
+import { mapCoachPlanRow, mapCoachPlanSummaryRow } from "@/lib/plans/repository";
 
 describe("mapCoachPlanRow", () => {
   it("maps a plan row with active version to a list item", () => {
@@ -58,6 +58,33 @@ describe("mapCoachPlanRow", () => {
         id: "plan-1",
         created_at: "2026-01-01T00:00:00.000Z",
         active_version: null,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("mapCoachPlanSummaryRow", () => {
+  it("extracts plan title from active version plan_data", () => {
+    expect(
+      mapCoachPlanSummaryRow({
+        id: "plan-1",
+        active_version: {
+          plan_data: { name: "4-Week Strength Block" },
+        },
+      }),
+    ).toEqual({
+      id: "plan-1",
+      title: "4-Week Strength Block",
+    });
+  });
+
+  it("returns null when name is missing", () => {
+    expect(
+      mapCoachPlanSummaryRow({
+        id: "plan-1",
+        active_version: {
+          plan_data: { weeks: [] },
+        },
       }),
     ).toBeNull();
   });
