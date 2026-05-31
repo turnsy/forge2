@@ -2,12 +2,17 @@ import type { UserRole } from "@/lib/auth/types";
 import { radius } from "@/lib/theme/tokens";
 import { roleBorderClass } from "@/lib/theme/roles";
 
-export type ButtonVariant = "primary" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
 
 const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary: "glass-button-primary",
+  secondary:
+    "border border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus",
   ghost: "glass-button-ghost",
+  danger:
+    "border border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md hover:bg-danger-muted/80",
 };
 
 const messageToneClasses: Record<MessageTone, string> = {
@@ -25,10 +30,15 @@ export function controlClass(): string {
 export function buttonVariantClass(
   variant: ButtonVariant,
   fullWidth = true,
+  size: ButtonSize = "md",
 ): string {
   const widthClass = fullWidth ? "w-full" : "";
+  const sizeClass =
+    size === "sm"
+      ? `${radius.card} px-3 py-1.5 text-sm`
+      : `${radius.control} px-5 py-3.5 text-base`;
 
-  return `inline-flex ${widthClass} items-center justify-center ${radius.control} px-5 py-3.5 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+  return `inline-flex ${widthClass} items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
 
 export function messageToneClass(tone: MessageTone): string {
@@ -47,4 +57,12 @@ export function cardFooterClass(): string {
 
 export function dividerLineClass(): string {
   return "grow border-t border-surface-divider";
+}
+
+export function pageContentClass(): string {
+  return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-8";
+}
+
+export function listRowClass(): string {
+  return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }

@@ -1,8 +1,9 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { buttonVariantClass, type ButtonVariant } from "@/lib/theme";
+import { buttonVariantClass, type ButtonSize, type ButtonVariant } from "@/lib/theme";
 
 export function Button({
   variant = "primary",
+  size = "md",
   fullWidth = true,
   icon,
   className,
@@ -10,11 +11,14 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   fullWidth?: boolean;
   icon?: ReactNode;
 }) {
   const content = icon ? (
-    <span className="inline-flex items-center gap-3">
+    <span
+      className={`inline-flex items-center ${size === "sm" ? "gap-1.5" : "gap-3"}`}
+    >
       {icon}
       {children}
     </span>
@@ -24,7 +28,7 @@ export function Button({
 
   return (
     <button
-      className={`${buttonVariantClass(variant, fullWidth)}${className ? ` ${className}` : ""}`}
+      className={`${buttonVariantClass(variant, fullWidth, size)}${className ? ` ${className}` : ""}`}
       {...props}
     >
       {content}

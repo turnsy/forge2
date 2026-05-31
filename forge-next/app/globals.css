@@ -48,6 +48,20 @@
   /* Radii */
   --radius-control: 1.5rem;
   --radius-card: 1rem;
+
+  --animate-fade-in: fade-in 450ms ease-out both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -110,4 +124,16 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@utility animate-fade-in {
+  animation: var(--animate-fade-in);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
