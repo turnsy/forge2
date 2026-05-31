@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'supabase/migrations/**'
+
+  ci:
+    name: Lint, test, and schema types
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: forge-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: forge-next/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Verify generated plan types
+        run: pnpm generate:check
+
+  db-types:
+    name: Database types
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase db start
+
+      - name: Verify generated database types
+        run: |
+          supabase gen types typescript --local \
+            | node -e "process.stdout.write('/* AUTO-GENERATED — do not edit */\\n' + require('fs').readFileSync(0,'utf8'))" \
+            > /tmp/database.types.ts
+          diff forge-next/lib/database.types.ts /tmp/database.types.ts
