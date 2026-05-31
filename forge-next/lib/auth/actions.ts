@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -18,26 +17,11 @@ import {
   requireSignupRoleCookie,
 } from "@/lib/auth/signup-cookies";
 import { loginPathForRole } from "@/lib/auth/routes";
+import { getRequestOrigin } from "@/lib/auth/origin";
 import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
 
 function failure(error: string): AuthActionResult {
   return { ok: false, error };
-}
-
-async function getOrigin(): Promise<string> {
-  const headerStore = await headers();
-  const origin = headerStore.get("origin");
-  if (origin) {
-    return origin;
-  }
-
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-  if (host) {
-    return `${protocol}://${host}`;
-  }
-
-  return "http://localhost:3000";
 }
 
 export async function signUpWithEmail(input: {
@@ -53,7 +37,7 @@ export async function signUpWithEmail(input: {
     return failure("Start signup from /coach/signup or /athlete/signup.");
   }
 
-  const origin = await getOrigin();
+  const origin = await getRequestOrigin();
   const roleHome = getPostAuthRedirect(role);
   const next = input.next
     ? validateRedirectPath(input.next, roleHome)
@@ -139,7 +123,7 @@ export async function signInWithOAuth(input: {
     return failure("Sign in with Apple is not available yet.");
   }
 
-  const origin = await getOrigin();
+  const origin = await getRequestOrigin();
   const contextRole = isUserRole(input.role) ? input.role : null;
   const roleHome = contextRole ? getPostAuthRedirect(contextRole) : "/";
   const next = input.next
@@ -168,7 +152,7 @@ export async function signInWithOAuth(input: {
 export async function requestPasswordReset(input: {
   email: string;
 }): Promise<AuthActionResult> {
-  const origin = await getOrigin();
+  const origin = await getRequestOrigin();
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
