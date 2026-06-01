@@ -1,39 +1,44 @@
 import { describe, expect, it } from "vitest";
 import {
-  loginHubPath,
-  loginPathForRole,
-  roleFromAuthRolePath,
-  roleFromSignupPath,
-  signupHubPath,
-  signupPathForRole,
+  HOME_PATH,
+  homePath,
+  resolveInitialRole,
+  signupRoleCookieOptions,
 } from "@/lib/auth/routes";
 
 describe("auth route helpers", () => {
-  it("maps roles to signup paths", () => {
-    expect(signupPathForRole("coach")).toBe("/coach/signup");
-    expect(signupPathForRole("athlete")).toBe("/athlete/signup");
+  it("exposes home path", () => {
+    expect(HOME_PATH).toBe("/");
   });
 
-  it("maps roles to login paths", () => {
-    expect(loginPathForRole("coach")).toBe("/coach/login");
-    expect(loginPathForRole("athlete")).toBe("/athlete/login");
+  it("resolves initial role from param", () => {
+    expect(resolveInitialRole("coach")).toBe("coach");
+    expect(resolveInitialRole("athlete")).toBe("athlete");
+    expect(resolveInitialRole(undefined)).toBe("coach");
+    expect(resolveInitialRole("admin")).toBe("coach");
   });
 
-  it("exposes auth hub paths", () => {
-    expect(loginHubPath()).toBe("/login");
-    expect(signupHubPath()).toBe("/signup");
-  });
-});
-
-describe("auth role path parsing", () => {
-  it("derives role from signup paths", () => {
-    expect(roleFromSignupPath("/coach/signup")).toBe("coach");
-    expect(roleFromSignupPath("/athlete/signup")).toBe("athlete");
-    expect(roleFromSignupPath("/login")).toBeNull();
+  it("builds home path with role", () => {
+    expect(homePath("coach")).toBe("/?role=coach");
+    expect(homePath("athlete")).toBe("/?role=athlete");
+    expect(homePath()).toBe("/");
+    expect(homePath(null)).toBe("/");
   });
 
-  it("derives role from login paths for OAuth cookie", () => {
-    expect(roleFromAuthRolePath("/coach/login")).toBe("coach");
-    expect(roleFromAuthRolePath("/athlete/login")).toBe("athlete");
+  it("builds home path with message and error", () => {
+    expect(homePath("coach", { message: "check-email" })).toBe(
+      "/?role=coach&message=check-email",
+    );
+    expect(homePath("athlete", { error: "auth-code-error" })).toBe(
+      "/?role=athlete&error=auth-code-error",
+    );
+  });
+
+  it("exposes signup cookie options", () => {
+    const options = signupRoleCookieOptions();
+    expect(options.httpOnly).toBe(true);
+    expect(options.sameSite).toBe("lax");
+    expect(options.path).toBe("/");
+    expect(options.maxAge).toBeGreaterThan(0);
   });
 });

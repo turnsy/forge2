@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SIGNUP_ROLE_COOKIE } from "@/lib/auth/types";
 
 const cookieGet = vi.fn();
+const cookieSet = vi.fn();
 const cookieDelete = vi.fn();
 
 vi.mock("server-only", () => ({}));
@@ -9,6 +10,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
     get: cookieGet,
+    set: cookieSet,
     delete: cookieDelete,
   })),
 }));
@@ -17,11 +19,13 @@ import {
   consumeSignupRoleCookie,
   readSignupRoleCookie,
   requireSignupRoleCookie,
+  writeSignupRoleCookie,
 } from "@/lib/auth/signup-cookies";
 
 describe("signup role cookie helpers", () => {
   beforeEach(() => {
     cookieGet.mockReset();
+    cookieSet.mockReset();
     cookieDelete.mockReset();
   });
 
@@ -56,5 +60,19 @@ describe("signup role cookie helpers", () => {
 
     await expect(consumeSignupRoleCookie()).resolves.toBeNull();
     expect(cookieDelete).not.toHaveBeenCalled();
+  });
+
+  it("writes signup role cookie", async () => {
+    await writeSignupRoleCookie("athlete");
+
+    expect(cookieSet).toHaveBeenCalledWith(
+      SIGNUP_ROLE_COOKIE,
+      "athlete",
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      }),
+    );
   });
 });

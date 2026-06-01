@@ -6,6 +6,8 @@ export {
   roleLinkClass,
 } from "@/lib/theme/roles";
 export {
+  authHeroClass,
+  authHeroTitleClass,
   buttonVariantClass,
   cardClass,
   cardFooterClass,

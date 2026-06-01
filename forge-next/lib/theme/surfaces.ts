@@ -75,3 +75,11 @@ export function pageContentClass(): string {
 export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }
+
+export function authHeroClass(): string {
+  return "auth-hero-background relative flex min-h-[40vh] flex-col items-center justify-center md:min-h-screen";
+}
+
+export function authHeroTitleClass(): string {
+  return "text-5xl font-semibold tracking-tight text-surface-foreground sm:text-6xl md:text-7xl";
+}

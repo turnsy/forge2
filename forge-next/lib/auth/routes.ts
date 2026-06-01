@@ -3,33 +3,32 @@ import type { UserRole } from "@/lib/auth/types";
 
 const SIGNUP_COOKIE_MAX_AGE_SECONDS = 60 * 30;
 
-export const LOGIN_HUB_PATH = "/login";
-export const SIGNUP_HUB_PATH = "/signup";
+export const HOME_PATH = "/";
 
-export function loginHubPath(): string {
-  return LOGIN_HUB_PATH;
+export function resolveInitialRole(param: string | undefined): UserRole {
+  return isUserRole(param) ? param : "coach";
 }
 
-export function signupHubPath(): string {
-  return SIGNUP_HUB_PATH;
-}
+export function homePath(
+  role?: UserRole | null,
+  extra?: { message?: string; error?: string },
+): string {
+  const params = new URLSearchParams();
 
-export function loginPathForRole(role: UserRole): string {
-  return `/${role}/login`;
-}
+  if (role) {
+    params.set("role", role);
+  }
 
-export function signupPathForRole(role: UserRole): string {
-  return `/${role}/signup`;
-}
+  if (extra?.message) {
+    params.set("message", extra.message);
+  }
 
-export function roleFromSignupPath(pathname: string): UserRole | null {
-  return roleFromAuthRolePath(pathname);
-}
+  if (extra?.error) {
+    params.set("error", extra.error);
+  }
 
-/** Role from /{coach|athlete}/{login|signup} — used for OAuth role cookie. */
-export function roleFromAuthRolePath(pathname: string): UserRole | null {
-  const match = pathname.match(/^\/(coach|athlete)\/(?:login|signup)(?:\/|$)/);
-  return match && isUserRole(match[1]) ? match[1] : null;
+  const query = params.toString();
+  return query ? `${HOME_PATH}?${query}` : HOME_PATH;
 }
 
 export function signupRoleCookieOptions(): {

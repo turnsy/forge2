@@ -1,20 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useState } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Divider, Input, Message, SubmitButton } from "@/components/ui";
 import { loginFormAction, oauthFormAction } from "@/lib/auth/form-actions";
 import { canContinueLogin } from "@/lib/auth/form-validation";
-import { signupPathForRole } from "@/lib/auth/routes";
-import type { UserRole } from "@/lib/auth/types";
 
 export function LoginForm({
-  role,
   banner,
+  onSwitchToSignup,
 }: {
-  role: UserRole;
   banner?: string | null;
+  onSwitchToSignup: () => void;
 }) {
   const [state, formAction] = useActionState(loginFormAction, null);
   const [email, setEmail] = useState("");
@@ -30,7 +27,6 @@ export function LoginForm({
 
       <form action={oauthFormAction}>
         <input type="hidden" name="provider" value="google" />
-        <input type="hidden" name="role" value={role} />
         <SubmitButton
           variant="ghost"
           icon={<GoogleIcon />}
@@ -43,7 +39,6 @@ export function LoginForm({
       <Divider />
 
       <form action={formAction} className="flex flex-col gap-4">
-        <input type="hidden" name="role" value={role} />
         <Input
           aria-label="Email"
           name="email"
@@ -69,14 +64,15 @@ export function LoginForm({
         </SubmitButton>
       </form>
 
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-surface-muted">
         New to Forge?{" "}
-        <Link
-          href={signupPathForRole(role)}
-          className="font-medium text-zinc-900 dark:text-zinc-100"
+        <button
+          type="button"
+          className="font-medium text-surface-foreground"
+          onClick={onSwitchToSignup}
         >
           Create Account →
-        </Link>
+        </button>
       </p>
     </div>
   );

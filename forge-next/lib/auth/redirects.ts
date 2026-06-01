@@ -25,7 +25,7 @@ export function getPostAuthRedirect(role: UserRole | null): string {
     return ROLE_HOME[role];
   }
 
-  return "/signup";
+  return "/";
 }
 
 export function getRoleMismatchRedirect(
@@ -33,7 +33,7 @@ export function getRoleMismatchRedirect(
   userRole: UserRole | null,
 ): string {
   if (!userRole) {
-    return "/signup";
+    return "/";
   }
 
   return requiredRole === "coach" ? "/athlete" : "/coach";

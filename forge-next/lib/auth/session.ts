@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { AuthUser, Profile, UserRole } from "@/lib/auth/types";
 import { isUserRole, getRoleMismatchRedirect } from "@/lib/auth/redirects";
-import { loginHubPath } from "@/lib/auth/routes";
+import { homePath } from "@/lib/auth/routes";
 
 export const getAuthClaims = cache(async (): Promise<{
   userId: string | null;
@@ -69,7 +69,7 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
 export const requireAuth = cache(async (): Promise<AuthUser> => {
   const user = await getAuthUser();
   if (!user) {
-    redirect(loginHubPath());
+    redirect(homePath());
   }
 
   return user;

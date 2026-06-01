@@ -36,13 +36,13 @@ describe("getPostAuthRedirect", () => {
   it("routes by role", () => {
     expect(getPostAuthRedirect("coach")).toBe("/coach");
     expect(getPostAuthRedirect("athlete")).toBe("/athlete");
-    expect(getPostAuthRedirect(null)).toBe("/signup");
+    expect(getPostAuthRedirect(null)).toBe("/");
   });
 });
 
 describe("getRoleMismatchRedirect", () => {
-  it("sends users without a role to signup", () => {
-    expect(getRoleMismatchRedirect("coach", null)).toBe("/signup");
+  it("sends users without a role to home", () => {
+    expect(getRoleMismatchRedirect("coach", null)).toBe("/");
   });
 
   it("sends users to the other role home", () => {

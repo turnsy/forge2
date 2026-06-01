@@ -1,11 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuthCallbackRedirectUrl } from "@/lib/auth/oauth-callback-redirect";
-import {
-  roleFromAuthRolePath,
-  signupRoleCookieOptions,
-} from "@/lib/auth/routes";
-import { SIGNUP_ROLE_COOKIE } from "@/lib/auth/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -43,15 +38,6 @@ export const updateSession = async (request: NextRequest) => {
   });
 
   await supabase.auth.getClaims();
-
-  const signupRole = roleFromAuthRolePath(request.nextUrl.pathname);
-  if (signupRole) {
-    supabaseResponse.cookies.set(
-      SIGNUP_ROLE_COOKIE,
-      signupRole,
-      signupRoleCookieOptions(),
-    );
-  }
 
   return supabaseResponse;
 };
