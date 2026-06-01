@@ -117,4 +117,23 @@ describe("PromptComposer", () => {
     expect(onSend).not.toHaveBeenCalled();
     expect(editor.querySelector("[data-mention-id='a1']")).toBeTruthy();
   });
+
+  it("does not send when the prompt contains only a mention chip", async () => {
+    const user = userEvent.setup();
+    const onSend = vi.fn();
+
+    render(
+      <PromptComposer
+        mentionItems={mentionItems}
+        placeholder="Ask Forge..."
+        onSend={onSend}
+      />,
+    );
+
+    const editor = screen.getByRole("textbox");
+    await user.click(editor);
+    await user.type(editor, "@jane{Enter}{Enter}");
+
+    expect(onSend).not.toHaveBeenCalled();
+  });
 });

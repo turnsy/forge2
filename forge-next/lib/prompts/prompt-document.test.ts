@@ -4,6 +4,7 @@ import {
   createTextDocument,
   getActiveMentionQuery,
   getLinearText,
+  hasSubstantivePromptText,
   insertMentionChip,
   isEmptyDocument,
   serializePromptDocument,
@@ -94,6 +95,28 @@ describe("serializePromptDocument", () => {
 describe("isEmptyDocument", () => {
   it("treats whitespace-only documents as empty", () => {
     expect(isEmptyDocument(createTextDocument("   "))).toBe(true);
+  });
+});
+
+describe("hasSubstantivePromptText", () => {
+  it("returns false for mention-only documents", () => {
+    const segments = insertMentionChip(
+      createTextDocument("@ja"),
+      { start: 0, end: 3 },
+      items[0]!,
+    );
+
+    expect(hasSubstantivePromptText(segments)).toBe(false);
+  });
+
+  it("returns true when typed text accompanies mentions", () => {
+    const segments = insertMentionChip(
+      createTextDocument("Update @Summer"),
+      { start: 7, end: 14 },
+      items[2]!,
+    );
+
+    expect(hasSubstantivePromptText(segments)).toBe(true);
   });
 });
 

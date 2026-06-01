@@ -5,6 +5,7 @@ export { SubmitButton } from "./submit-button";
 export { Input } from "./input";
 export { Message } from "./message";
 export { Divider } from "./divider";
+export { Separator } from "./separator";
 export { Card, CardHeader, CardFooter } from "./card";
 export { SidebarNavLink } from "./sidebar-nav-link";
 export { PagePlaceholder } from "./page-placeholder";

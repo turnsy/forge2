@@ -24,7 +24,7 @@ export function CoachHomePrompt({
   role: UserRole;
   mentionItems: PromptMentionItem[];
 }) {
-  const [documentEmpty, setDocumentEmpty] = useState(true);
+  const [hasSubstantiveText, setHasSubstantiveText] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [dragDepth, setDragDepth] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +81,7 @@ export function CoachHomePrompt({
     // AI submission will be wired up later.
   }
 
-  const canSend = !documentEmpty || attachedFiles.length > 0;
+  const canSend = hasSubstantiveText || attachedFiles.length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-8 text-center">
@@ -112,7 +112,9 @@ export function CoachHomePrompt({
           <PromptComposer
             mentionItems={mentionItems}
             placeholder="Ask Forge to build or update a plan..."
-            onDocumentChange={(_, isEmpty) => setDocumentEmpty(isEmpty)}
+            onDocumentChange={(_, state) =>
+              setHasSubstantiveText(state.hasSubstantiveText)
+            }
             onSend={handleSend}
           />
           <div className="mt-3 flex items-center justify-between gap-2">

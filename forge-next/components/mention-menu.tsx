@@ -2,44 +2,10 @@
 
 import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
-import { MentionKindIcon } from "@/components/mention-kind-icon";
+import { MentionMenuRow } from "@/components/mention-menu-row";
+import { Separator } from "@/components/ui/separator";
 import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
-
-const rowClass =
-  "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold transition hover:bg-glass-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coach/50";
-
-function MentionMenuRow({
-  item,
-  index,
-  highlightedIndex,
-  onHighlight,
-  onSelect,
-}: {
-  item: MentionSearchGroups["athletes"][number];
-  index: number;
-  highlightedIndex: number;
-  onHighlight: (index: number) => void;
-  onSelect: (item: MentionSearchGroups["athletes"][number]) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={index === highlightedIndex}
-      className={`${rowClass}${
-        index === highlightedIndex ? " bg-glass-focus" : ""
-      }`}
-      onMouseEnter={() => onHighlight(index)}
-      onMouseDown={(event) => {
-        event.preventDefault();
-        onSelect(item);
-      }}
-    >
-      <MentionKindIcon kind={item.kind} />
-      <span className="truncate text-surface-foreground">{item.label}</span>
-    </button>
-  );
-}
+import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
 export function MentionMenu({
   groups,
@@ -55,7 +21,7 @@ export function MentionMenu({
   anchor: { top: number; left: number } | null;
   open: boolean;
   onHighlight: (index: number) => void;
-  onSelect: (item: MentionSearchGroups["athletes"][number]) => void;
+  onSelect: (item: PromptMentionItem) => void;
   menuId: string;
 }) {
   const mounted = useSyncExternalStore(
@@ -100,11 +66,7 @@ export function MentionMenu({
             />
           ))}
           {groups.athletes.length > 0 && groups.plans.length > 0 ? (
-            <div
-              className="my-1 border-t border-glass-border"
-              role="separator"
-              aria-hidden="true"
-            />
+            <Separator />
           ) : null}
           {planRows.map(({ item, index }) => (
             <MentionMenuRow
