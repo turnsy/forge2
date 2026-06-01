@@ -1,4 +1,5 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { loadWorkoutPlan } from "@/lib/plans/validate";
 
 export type PlanStats = {
   weekCount: number;
@@ -27,14 +28,6 @@ export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStat
 }
 
 export function parseWorkoutPlan(value: unknown): WorkoutPlan | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const plan = value as WorkoutPlan;
-  if (plan.schemaVersion !== "2.0.0" || typeof plan.name !== "string") {
-    return null;
-  }
-
-  return plan;
+  const result = loadWorkoutPlan(value);
+  return result.ok ? result.plan : null;
 }

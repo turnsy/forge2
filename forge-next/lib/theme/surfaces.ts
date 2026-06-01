@@ -75,3 +75,17 @@ export function pageContentClass(): string {
 export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }
+
+export function accordionClass(): string {
+  return listRowClass();
+}
+
+export function accordionNestedClass(): string {
+  return `${radius.card} border border-glass-border bg-[var(--color-glass-nested)] p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
+}
+
+export function accordionContentCardClass(variant: "default" | "nested" = "default"): string {
+  const surfaceClass = variant === "nested" ? accordionNestedClass() : accordionClass();
+
+  return `${surfaceClass} overflow-hidden p-0`;
+}
