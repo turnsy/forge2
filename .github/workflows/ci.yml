@@ -25,7 +25,7 @@ jobs:
               - 'supabase/migrations/**'
 
   ci:
-    name: Lint, test, and schema types
+    name: Lint, test, build, and schema types
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,6 +54,9 @@ jobs:
 
       - name: Verify generated plan types
         run: pnpm generate:check
+
+      - name: Production build
+        run: pnpm run build
 
   db-types:
     name: Database types
