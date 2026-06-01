@@ -8,6 +8,7 @@ import {
   isUserRole,
   validateRedirectPath,
 } from "@/lib/auth/redirects";
+import { homePath } from "@/lib/auth/routes";
 import { readSignupRoleCookie } from "@/lib/auth/signup-cookies";
 import { getProfile } from "@/lib/auth/session";
 
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
 
     if (error) {
       return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent(error.message)}`,
+        `${origin}${homePath(signupRole, { error: error.message })}`,
       );
     }
 
@@ -51,5 +52,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth-code-error`);
+  return NextResponse.redirect(`${origin}${homePath(signupRole, { error: "auth-code-error" })}`);
 }

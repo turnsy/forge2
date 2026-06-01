@@ -2,8 +2,14 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { isUserRole } from "@/lib/auth/redirects";
+import { signupRoleCookieOptions } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
 import { SIGNUP_ROLE_COOKIE } from "@/lib/auth/types";
+
+export async function writeSignupRoleCookie(role: UserRole): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(SIGNUP_ROLE_COOKIE, role, signupRoleCookieOptions());
+}
 
 export async function readSignupRoleCookie(): Promise<UserRole | null> {
   const cookieStore = await cookies();

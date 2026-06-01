@@ -2,32 +2,27 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const push = vi.fn();
-const searchParams = new URLSearchParams("redirect=%2Fcoach");
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
-  useSearchParams: () => searchParams,
-}));
+const onRoleChange = vi.fn();
 
 import { AuthRoleTitle } from "@/components/auth/auth-role-title";
 
 describe("AuthRoleTitle", () => {
   beforeEach(() => {
-    push.mockClear();
+    onRoleChange.mockClear();
   });
 
   it("renders current role label", () => {
-    render(<AuthRoleTitle role="coach" mode="sign-in" />);
+    render(<AuthRoleTitle role="coach" onRoleChange={onRoleChange} />);
 
     expect(
       screen.getByRole("button", { name: /Current role: Coach/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/Register as/i)).toBeInTheDocument();
   });
 
   it("toggles menu open and exposes alternate role", async () => {
     const user = userEvent.setup();
-    render(<AuthRoleTitle role="coach" mode="sign-in" />);
+    render(<AuthRoleTitle role="coach" onRoleChange={onRoleChange} />);
 
     const trigger = screen.getByRole("button", { name: /Current role: Coach/i });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -39,19 +34,19 @@ describe("AuthRoleTitle", () => {
     ).toBeVisible();
   });
 
-  it("navigates to alternate role preserving query", async () => {
+  it("calls onRoleChange when switching role", async () => {
     const user = userEvent.setup();
-    render(<AuthRoleTitle role="coach" mode="sign-in" />);
+    render(<AuthRoleTitle role="coach" onRoleChange={onRoleChange} />);
 
     await user.click(screen.getByRole("button", { name: /Current role: Coach/i }));
     await user.click(screen.getByRole("menuitem", { name: /Switch to Athlete/i }));
 
-    expect(push).toHaveBeenCalledWith("/athlete/login?redirect=%2Fcoach");
+    expect(onRoleChange).toHaveBeenCalledWith("athlete");
   });
 
   it("closes on Escape", async () => {
     const user = userEvent.setup();
-    render(<AuthRoleTitle role="coach" mode="sign-in" />);
+    render(<AuthRoleTitle role="coach" onRoleChange={onRoleChange} />);
 
     const trigger = screen.getByRole("button", { name: /Current role: Coach/i });
     await user.click(trigger);
@@ -65,7 +60,7 @@ describe("AuthRoleTitle", () => {
     render(
       <>
         <div data-testid="outside">outside</div>
-        <AuthRoleTitle role="coach" mode="sign-in" />
+        <AuthRoleTitle role="coach" onRoleChange={onRoleChange} />
       </>,
     );
 

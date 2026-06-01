@@ -65,7 +65,7 @@ describe("auth actions", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Start signup from /coach/signup or /athlete/signup.",
+      error: "Start signup from the home page.",
     });
   });
 

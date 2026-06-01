@@ -1,23 +1,40 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Divider, Input, Message, SubmitButton } from "@/components/ui";
-import { oauthFormAction, signupFormAction } from "@/lib/auth/form-actions";
+import { oauthFormAction, setSignupRoleCookieAction, signupFormAction } from "@/lib/auth/form-actions";
 import { canContinueSignup } from "@/lib/auth/form-validation";
-import { loginPathForRole } from "@/lib/auth/routes";
 import type { UserRole } from "@/lib/auth/types";
 
-export function SignupForm({ role }: { role: UserRole }) {
+export function SignupForm({
+  role,
+  onSwitchToSignIn,
+  active = true,
+}: {
+  role: UserRole;
+  onSwitchToSignIn: () => void;
+  active?: boolean;
+}) {
   const [state, formAction] = useActionState(signupFormAction, null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [, startTransition] = useTransition();
   const canContinue = canContinueSignup(fullName, email, password);
 
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    startTransition(() => {
+      void setSignupRoleCookieAction(role);
+    });
+  }, [active, role]);
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {state && !state.ok ? (
         <Message tone="error">{state.error}</Message>
       ) : null}
@@ -36,7 +53,7 @@ export function SignupForm({ role }: { role: UserRole }) {
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="role" value={role} />
         <Input
           aria-label="Full name"
@@ -74,14 +91,15 @@ export function SignupForm({ role }: { role: UserRole }) {
         </SubmitButton>
       </form>
 
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-surface-muted">
         Already have an account?{" "}
-        <Link
-          href={loginPathForRole(role)}
-          className="font-medium text-zinc-900 dark:text-zinc-100"
+        <button
+          type="button"
+          className="font-medium text-surface-foreground"
+          onClick={onSwitchToSignIn}
         >
           Sign in →
-        </Link>
+        </button>
       </p>
     </div>
   );

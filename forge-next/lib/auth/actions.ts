@@ -16,7 +16,7 @@ import {
   consumeSignupRoleCookie,
   requireSignupRoleCookie,
 } from "@/lib/auth/signup-cookies";
-import { loginPathForRole } from "@/lib/auth/routes";
+import { homePath } from "@/lib/auth/routes";
 import { getRequestOrigin } from "@/lib/auth/origin";
 import type { AuthActionResult, AuthProvider } from "@/lib/auth/types";
 
@@ -34,7 +34,7 @@ export async function signUpWithEmail(input: {
   const cookieRole = await requireSignupRoleCookie();
   const role = isUserRole(input.role) ? input.role : cookieRole;
   if (!role) {
-    return failure("Start signup from /coach/signup or /athlete/signup.");
+    return failure("Start signup from the home page.");
   }
 
   const origin = await getRequestOrigin();
@@ -70,7 +70,7 @@ export async function signUpWithEmail(input: {
 
   return {
     ok: true,
-    redirectTo: `${loginPathForRole(role)}?message=check-email`,
+    redirectTo: homePath(role, { message: "check-email" }),
   };
 }
 
@@ -163,7 +163,7 @@ export async function requestPasswordReset(input: {
     return failure(error.message);
   }
 
-  return { ok: true, redirectTo: "/login?message=reset-email-sent" };
+  return { ok: true, redirectTo: homePath(null, { message: "reset-email-sent" }) };
 }
 
 export async function completeRoleSelection(input: {
@@ -171,7 +171,7 @@ export async function completeRoleSelection(input: {
 }): Promise<AuthActionResult> {
   const role = await requireSignupRoleCookie();
   if (!role) {
-    return failure("Start signup from /coach/signup or /athlete/signup.");
+    return failure("Start signup from the home page.");
   }
 
   const supabase = await createClient();

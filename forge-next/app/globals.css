@@ -51,6 +51,16 @@
   --radius-card: 1rem;
 
   --animate-fade-in: fade-in 450ms ease-out both;
+  --animate-auth-panel-forward: auth-panel-enter-forward 320ms ease-out both;
+  --animate-auth-panel-back: auth-panel-enter-back 320ms ease-out both;
+
+  /* Auth hero greyscale sweep */
+  --color-auth-sweep-1: #09090b;
+  --color-auth-sweep-2: #27272a;
+  --color-auth-sweep-3: #52525b;
+  --color-auth-sweep-4: #18181b;
+
+  --animate-auth-sweep: auth-sweep 12s ease-in-out infinite;
 }
 
 @keyframes fade-in {
@@ -62,6 +72,41 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes auth-panel-enter-forward {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes auth-panel-enter-back {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes auth-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
   }
 }
 
@@ -131,10 +176,39 @@ body {
   animation: var(--animate-fade-in);
 }
 
+@utility animate-auth-panel-forward {
+  animation: var(--animate-auth-panel-forward);
+}
+
+@utility animate-auth-panel-back {
+  animation: var(--animate-auth-panel-back);
+}
+
+@utility auth-hero-background {
+  background-color: var(--color-auth-sweep-1);
+  background-image: linear-gradient(
+    135deg,
+    var(--color-auth-sweep-1) 0%,
+    var(--color-auth-sweep-4) 25%,
+    var(--color-auth-sweep-2) 50%,
+    var(--color-auth-sweep-3) 75%,
+    var(--color-auth-sweep-1) 100%
+  );
+  background-size: 300% 300%;
+  animation: var(--animate-auth-sweep);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in {
+  .animate-fade-in,
+  .animate-auth-panel-forward,
+  .animate-auth-panel-back {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .auth-hero-background {
+    animation: none;
+    background-size: 100% 100%;
   }
 }

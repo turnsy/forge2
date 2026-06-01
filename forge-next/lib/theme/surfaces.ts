@@ -76,6 +76,23 @@ export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }
 
+export function authLandingClass(): string {
+  return "auth-hero-background dark flex min-h-dvh w-full flex-col items-center justify-center px-4 py-4";
+}
+
+export function authHeroTitleClass(): string {
+  return "text-4xl font-semibold tracking-tight text-surface-foreground sm:text-5xl";
+}
+
+export function authPanelCardClass(role?: UserRole): string {
+  const borderClass = role ? roleBorderClass(role) : "border-glass-border";
+
+  return `flex w-full max-w-sm flex-col gap-3 ${radius.card} border ${borderClass} glass-surface p-4 text-surface-foreground backdrop-blur-md transition-[border-color] duration-300`;
+}
+
+export function authPanelStackClass(): string {
+  return "grid [&>*]:col-start-1 [&>*]:row-start-1";
+}
 export function accordionClass(): string {
   return listRowClass();
 }
