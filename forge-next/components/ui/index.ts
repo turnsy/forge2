@@ -12,6 +12,8 @@ export { PagePlaceholder } from "./page-placeholder";
 export { PageContent } from "./page-content";
 export { PageHeader } from "./page-header";
 export { EmptyState } from "./empty-state";
+export { ErrorState } from "./error-state";
+export { Accordion, AccordionItem, type AccordionVariant } from "./accordion";
 export { MetaItem } from "./meta-item";
 export { MetaGroup } from "./meta-group";
 export { ActionGroup } from "./action-group";

@@ -93,3 +93,16 @@ export function authPanelCardClass(role?: UserRole): string {
 export function authPanelStackClass(): string {
   return "grid [&>*]:col-start-1 [&>*]:row-start-1";
 }
+export function accordionClass(): string {
+  return listRowClass();
+}
+
+export function accordionNestedClass(): string {
+  return `${radius.card} border border-glass-border bg-[var(--color-glass-nested)] p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
+}
+
+export function accordionContentCardClass(variant: "default" | "nested" = "default"): string {
+  const surfaceClass = variant === "nested" ? accordionNestedClass() : accordionClass();
+
+  return `${surfaceClass} overflow-hidden p-0`;
+}
