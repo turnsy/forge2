@@ -36,8 +36,8 @@ export function Sidebar({
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-surface-divider bg-surface text-surface-foreground">
-      <div className="px-5 py-5 text-center">
-        <span className="text-lg font-semibold tracking-tight">Forge</span>
+      <div className="flex justify-center px-5 py-5">
+        <ForgeLogo size="sidebar" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-3">

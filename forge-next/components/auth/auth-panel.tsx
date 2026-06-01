@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { AuthRoleTitle } from "@/components/auth/auth-role-title";
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
@@ -47,7 +47,7 @@ export function AuthPanel({
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [role, setRole] = useState<UserRole>(initialRole);
   const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
-  const shouldAnimate = useRef(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const handleRoleChange = useCallback((nextRole: UserRole) => {
     setRole(nextRole);
@@ -55,18 +55,18 @@ export function AuthPanel({
   }, []);
 
   const switchToSignup = useCallback(() => {
-    shouldAnimate.current = true;
+    setShouldAnimate(true);
     setSlideDirection("forward");
     setMode("sign-up");
   }, []);
 
   const switchToSignIn = useCallback(() => {
-    shouldAnimate.current = true;
+    setShouldAnimate(true);
     setSlideDirection("back");
     setMode("sign-in");
   }, []);
 
-  const slideClass = authPanelSlideClass(slideDirection, shouldAnimate.current);
+  const slideClass = authPanelSlideClass(slideDirection, shouldAnimate);
   const signInSlideClass =
     mode === "sign-in" ? authPanelLayerClass(true, slideClass) : authPanelLayerClass(false);
   const signUpSlideClass =
