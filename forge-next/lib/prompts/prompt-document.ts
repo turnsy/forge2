@@ -192,24 +192,6 @@ export function isEmptyDocument(segments: PromptSegment[]): boolean {
   return normalizePromptText(getLinearText(segments)).trim().length === 0;
 }
 
-export function hasSubstantivePromptText(segments: PromptSegment[]): boolean {
-  return segments.some(
-    (segment) =>
-      segment.type === "text" &&
-      normalizePromptText(segment.value).trim().length > 0,
-  );
-}
-
-export function getPromptDocumentState(segments: PromptSegment[]): {
-  isEmpty: boolean;
-  hasSubstantiveText: boolean;
-} {
-  return {
-    isEmpty: isEmptyDocument(segments),
-    hasSubstantiveText: hasSubstantivePromptText(segments),
-  };
-}
-
 export function createTextDocument(value: string): PromptSegment[] {
   if (value.length === 0) {
     return [];

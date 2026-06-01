@@ -25,9 +25,8 @@ import {
   deleteMentionBeforeCaret,
   getActiveMentionQuery,
   getCaretIndexAfterMentionInsert,
-  getPromptDocumentState,
-  hasSubstantivePromptText,
   insertMentionChip,
+  isEmptyDocument,
 } from "@/lib/prompts/prompt-document";
 
 const MENU_HEIGHT = 180;
@@ -46,10 +45,7 @@ export function PromptComposer({
 }: {
   mentionItems: PromptMentionItem[];
   placeholder: string;
-  onDocumentChange?: (
-    segments: PromptSegment[],
-    state: ReturnType<typeof getPromptDocumentState>,
-  ) => void;
+  onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
   onSend?: (segments: PromptSegment[]) => void;
 }) {
   const menuId = useId();
@@ -84,7 +80,7 @@ export function PromptComposer({
           setSuppressedRange(null);
         }
       }
-      onDocumentChange?.(nextSegments, getPromptDocumentState(nextSegments));
+      onDocumentChange?.(nextSegments, isEmptyDocument(nextSegments));
     },
     [onDocumentChange],
   );
@@ -287,10 +283,7 @@ export function PromptComposer({
 
     if (event.key === "Enter" && !event.shiftKey && !menuVisible) {
       event.preventDefault();
-      const segments = readSegmentsFromEditor();
-      if (hasSubstantivePromptText(segments)) {
-        onSend?.(segments);
-      }
+      onSend?.(readSegmentsFromEditor());
     }
   }
 
