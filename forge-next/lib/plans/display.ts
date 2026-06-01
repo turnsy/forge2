@@ -11,10 +11,6 @@ export function formatReps(reps: RepsValue): string {
   return String(reps);
 }
 
-function formatBasis(basis: string): string {
-  return basis.replace(/_/g, " ");
-}
-
 export function formatLoad(load: Load): string {
   if (load.type === "absolute") {
     return formatAbsoluteLoad(load);
@@ -28,19 +24,17 @@ function formatAbsoluteLoad(load: AbsoluteLoad): string {
 }
 
 export function formatPercentageLoad(load: PercentageLoad): string {
-  const basis = formatBasis(load.basis);
-
   switch (load.operator) {
     case "exact":
-      return `${load.value}% ${basis}`;
+      return `${load.value}%`;
     case "at-least":
-      return `≥${load.value}% ${basis}`;
+      return `≥${load.value}%`;
     case "at-most":
-      return `≤${load.value}% ${basis}`;
+      return `≤${load.value}%`;
     case "range":
-      return `${load.minValue}–${load.maxValue}% ${basis}`;
+      return `${load.minValue}–${load.maxValue}%`;
     default:
-      return `${basis}`;
+      return "%";
   }
 }
 
@@ -61,15 +55,7 @@ export function getWeekTitle(week: Week): string {
 }
 
 export function getDayTitle(day: Day): string {
-  if (day.name?.trim()) {
-    return day.name.trim();
-  }
-
-  return day.code;
-}
-
-export function formatRestSeconds(seconds: number): string {
-  return `${seconds}s`;
+  return `Day ${day.index}`;
 }
 
 export const EMPTY_CELL = "—";

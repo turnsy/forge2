@@ -81,7 +81,16 @@ describe("PlanViewer", () => {
   it("renders week accordion open by default", () => {
     render(<PlanViewer plan={makePlanWithIdenticalSets(1)} view="coach" />);
 
-    const weekAccordion = screen.getByText("Week 1").closest("details");
-    expect(weekAccordion).toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: /Week 1/i })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("renders day accordions with Day index titles", () => {
+    render(<PlanViewer plan={makePlanWithIdenticalSets(1)} view="coach" />);
+
+    expect(screen.getByRole("button", { name: /Day 1/i })).toBeInTheDocument();
+    expect(screen.queryByText("w1d1")).not.toBeInTheDocument();
   });
 });

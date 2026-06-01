@@ -3,7 +3,6 @@ import {
   formatLoad,
   formatPercentageLoad,
   formatReps,
-  formatRestSeconds,
   formatTargetInstruction,
   getDayTitle,
   getWeekTitle,
@@ -33,7 +32,7 @@ describe("formatLoad", () => {
         operator: "exact",
         value: 70,
       }),
-    ).toBe("70% snatch 1rm");
+    ).toBe("70%");
   });
 
   it("formats range percentage load", () => {
@@ -46,7 +45,7 @@ describe("formatLoad", () => {
         minValue: 70,
         maxValue: 80,
       }),
-    ).toBe("70–80% clean 1rm");
+    ).toBe("70–80%");
   });
 
   it("formats at-least percentage load", () => {
@@ -58,7 +57,7 @@ describe("formatLoad", () => {
         operator: "at-least",
         value: 80,
       }),
-    ).toBe("≥80% back squat 1rm");
+    ).toBe("≥80%");
   });
 });
 
@@ -81,19 +80,10 @@ describe("getWeekTitle", () => {
 });
 
 describe("getDayTitle", () => {
-  it("prefers name over code", () => {
-    expect(getDayTitle({ index: 1, code: "w1d1", name: "Heavy day", exercises: [] as never })).toBe(
-      "Heavy day",
+  it("returns Day with index", () => {
+    expect(getDayTitle({ index: 1, code: "w1d1", exercises: [] as never })).toBe("Day 1");
+    expect(getDayTitle({ index: 3, code: "w2d3", name: "Heavy day", exercises: [] as never })).toBe(
+      "Day 3",
     );
-  });
-
-  it("falls back to code", () => {
-    expect(getDayTitle({ index: 1, code: "w1d1", exercises: [] as never })).toBe("w1d1");
-  });
-});
-
-describe("formatRestSeconds", () => {
-  it("formats seconds with suffix", () => {
-    expect(formatRestSeconds(90)).toBe("90s");
   });
 });
