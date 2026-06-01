@@ -1,1 +1,1 @@
-export type { WorkoutPlan, Week, Day, Exercise, Set } from "./workout-plan.generated";
+export type * from "./workout-plan.generated";
