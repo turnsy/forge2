@@ -5,6 +5,13 @@ import type {
 } from "@/lib/prompts/mention-types";
 import { mergeAdjacentTextSegments } from "@/lib/prompts/prompt-document-segments";
 
+/** Space + zero-width space keeps a visible caret anchor after chips in contenteditable. */
+export const MENTION_TRAILING_TEXT = " \u200B";
+
+export function normalizePromptText(value: string): string {
+  return value.replace(/\u200B/g, "");
+}
+
 export function getLinearText(segments: PromptSegment[]): string {
   return segments
     .map((segment) =>
@@ -17,81 +24,52 @@ export function getActiveMentionQuery(
   segments: PromptSegment[],
   caretIndex: number,
 ): ActiveMentionQuery | null {
-  const text = getLinearText(segments);
+  const textLength = getLinearText(segments).length;
 
-  if (caretIndex < 0 || caretIndex > text.length) {
+  if (caretIndex < 0 || caretIndex > textLength) {
     return null;
   }
 
-  const beforeCaret = text.slice(0, caretIndex);
-  const atIndex = beforeCaret.lastIndexOf("@");
+  let index = 0;
 
-  if (atIndex === -1) {
-    return null;
-  }
+  for (const segment of segments) {
+    if (segment.type === "mention") {
+      index += `@${segment.label}`.length;
+      continue;
+    }
 
-  const query = beforeCaret.slice(atIndex + 1);
+    const segmentStart = index;
+    const segmentEnd = segmentStart + segment.value.length;
+    index = segmentEnd;
 
-  if (/\s/.test(query)) {
-    return null;
-  }
+    if (caretIndex <= segmentStart || caretIndex > segmentEnd) {
+      continue;
+    }
 
-  const charBeforeAt = atIndex > 0 ? beforeCaret[atIndex - 1] : "";
-  if (charBeforeAt && /[^\s]/.test(charBeforeAt)) {
-    return null;
-  }
+    const localCaret = caretIndex - segmentStart;
+    const textBeforeCaret = segment.value.slice(0, localCaret);
+    const atIndex = textBeforeCaret.lastIndexOf("@");
 
-  return {
-    start: atIndex,
-    query,
-    end: caretIndex,
-  };
-}
+    if (atIndex === -1) {
+      return null;
+    }
 
-function mentionMatchScore(label: string, query: string): number | null {
-  const normalizedLabel = label.toLowerCase();
-  const normalizedQuery = query.toLowerCase();
+    const query = textBeforeCaret.slice(atIndex + 1);
+    const charBeforeAt = atIndex > 0 ? textBeforeCaret[atIndex - 1] : "";
 
-  if (normalizedQuery.length === 0) {
-    return 0;
-  }
+    if (charBeforeAt && /[^\s]/.test(charBeforeAt)) {
+      return null;
+    }
 
-  if (normalizedLabel.startsWith(normalizedQuery)) {
-    return 2;
-  }
-
-  if (normalizedLabel.includes(normalizedQuery)) {
-    return 1;
+    return {
+      start: segmentStart + atIndex,
+      query,
+      end: caretIndex,
+    };
   }
 
   return null;
 }
-
-export function searchMentionItems(
-  items: PromptMentionItem[],
-  query: string,
-  limit = 4,
-): PromptMentionItem[] {
-  const ranked = items
-    .map((item) => ({
-      item,
-      score: mentionMatchScore(item.label, query),
-    }))
-    .filter(
-      (entry): entry is { item: PromptMentionItem; score: number } =>
-        entry.score !== null,
-    )
-    .sort((left, right) => {
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
-
-      return left.item.label.localeCompare(right.item.label);
-    });
-
-  return ranked.slice(0, limit).map((entry) => entry.item);
-}
-
 
 function replaceRangeInSegments(
   segments: PromptSegment[],
@@ -151,8 +129,15 @@ export function insertMentionChip(
 
   return replaceRangeInSegments(segments, range.start, range.end, [
     mentionSegment,
-    { type: "text", value: " " },
+    { type: "text", value: MENTION_TRAILING_TEXT },
   ]);
+}
+
+export function getCaretIndexAfterMentionInsert(
+  mentionStart: number,
+  label: string,
+): number {
+  return mentionStart + `@${label}`.length + MENTION_TRAILING_TEXT.length;
 }
 
 export function deleteMentionBeforeCaret(
@@ -200,11 +185,11 @@ export function deleteMentionBeforeCaret(
 }
 
 export function serializePromptDocument(segments: PromptSegment[]): string {
-  return getLinearText(segments);
+  return normalizePromptText(getLinearText(segments));
 }
 
 export function isEmptyDocument(segments: PromptSegment[]): boolean {
-  return serializePromptDocument(segments).trim().length === 0;
+  return normalizePromptText(getLinearText(segments)).trim().length === 0;
 }
 
 export function createTextDocument(value: string): PromptSegment[] {

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { AttachedFileList } from "@/components/attached-file-list";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
-import { PromptComposer } from "@/components/prompt-composer";
+import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
@@ -81,7 +81,7 @@ export function CoachHomePrompt({
     // AI submission will be wired up later.
   }
 
-  const canSend = !documentEmpty || attachedFiles.length > 0;
+  const canSend = !documentEmpty;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-8 text-center">

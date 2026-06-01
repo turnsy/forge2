@@ -6,7 +6,6 @@ import {
   getLinearText,
   insertMentionChip,
   isEmptyDocument,
-  searchMentionItems,
   serializePromptDocument,
   updateTextAtRange,
 } from "@/lib/prompts/prompt-document";
@@ -30,10 +29,14 @@ describe("getActiveMentionQuery", () => {
     });
   });
 
-  it("returns null after whitespace ends the query", () => {
-    const segments = createTextDocument("@jane ");
+  it("keeps the mention active when the query contains spaces", () => {
+    const segments = createTextDocument("@jane doe");
 
-    expect(getActiveMentionQuery(segments, 6)).toBeNull();
+    expect(getActiveMentionQuery(segments, 9)).toEqual({
+      start: 0,
+      query: "jane doe",
+      end: 9,
+    });
   });
 
   it("ignores email-like @ symbols", () => {
@@ -41,18 +44,15 @@ describe("getActiveMentionQuery", () => {
 
     expect(getActiveMentionQuery(segments, 18)).toBeNull();
   });
-});
 
-describe("searchMentionItems", () => {
-  it("returns top matches capped at four", () => {
-    expect(searchMentionItems(items, "", 4)).toHaveLength(4);
-  });
+  it("does not treat @ labels inside mention chips as active queries", () => {
+    const segments = insertMentionChip(
+      createTextDocument("@ja"),
+      { start: 0, end: 3 },
+      items[0]!,
+    );
 
-  it("prefers prefix matches", () => {
-    expect(searchMentionItems(items, "ja", 4).map((item) => item.label)).toEqual([
-      "Jamie Lee",
-      "Jane Smith",
-    ]);
+    expect(getActiveMentionQuery(segments, getLinearText(segments).length)).toBeNull();
   });
 });
 
@@ -65,7 +65,7 @@ describe("insertMentionChip", () => {
 
     const next = insertMentionChip(segments, query!, items[0]!);
 
-    expect(getLinearText(next)).toBe("Hi @Jane Smith ");
+    expect(getLinearText(next)).toBe("Hi @Jane Smith \u200B");
     expect(next).toEqual([
       { type: "text", value: "Hi " },
       {
@@ -74,7 +74,7 @@ describe("insertMentionChip", () => {
         id: "a1",
         label: "Jane Smith",
       },
-      { type: "text", value: " " },
+      { type: "text", value: " \u200B" },
     ]);
   });
 });

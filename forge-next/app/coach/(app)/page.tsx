@@ -1,4 +1,4 @@
-import { CoachHomePrompt } from "@/components/coach-home-prompt";
+import { CoachHomePrompt } from "@/components/coach/coach-home-prompt";
 import { PageContent } from "@/components/ui";
 import { listCoachAthleteSummaries } from "@/lib/athletes/repository";
 import { firstName } from "@/lib/auth/first-name";
