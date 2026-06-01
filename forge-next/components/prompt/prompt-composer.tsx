@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { MentionMenu } from "@/components/mention-menu";
+import { MentionMenu } from "@/components/prompt/mention-menu";
 import {
   focusCaretAtIndex,
   getCaretIndex,

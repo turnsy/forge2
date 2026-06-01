@@ -1,4 +1,4 @@
-import { MentionKindIcon } from "@/components/mention-kind-icon";
+import { MentionKindIcon } from "@/components/prompt/mention-kind-icon";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
 const rowClass =

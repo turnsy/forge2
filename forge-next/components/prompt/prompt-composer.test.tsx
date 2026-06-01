@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { PromptComposer } from "@/components/prompt-composer";
+import { PromptComposer } from "@/components/prompt/prompt-composer";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
 const mentionItems: PromptMentionItem[] = [

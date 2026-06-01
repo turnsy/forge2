@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
-import { MentionMenuRow } from "@/components/mention-menu-row";
+import { MentionMenuRow } from "@/components/prompt/mention-menu-row";
 import { Separator } from "@/components/ui/separator";
 import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";

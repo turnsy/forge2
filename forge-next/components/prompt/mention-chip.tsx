@@ -1,4 +1,4 @@
-import { MentionKindIcon } from "@/components/mention-kind-icon";
+import { MentionKindIcon } from "@/components/prompt/mention-kind-icon";
 import type { PromptMentionSegment } from "@/lib/prompts/mention-types";
 
 export function MentionChip({

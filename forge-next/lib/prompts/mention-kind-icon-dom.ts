@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MentionKindIcon } from "@/components/mention-kind-icon";
+import { MentionKindIcon } from "@/components/prompt/mention-kind-icon";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
 export function createMentionKindIconElement(

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { AttachedFileList } from "@/components/attached-file-list";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
-import { PromptComposer } from "@/components/prompt-composer";
+import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
