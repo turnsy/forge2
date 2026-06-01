@@ -87,5 +87,9 @@ export function authHeroTitleClass(): string {
 export function authPanelCardClass(role?: UserRole): string {
   const borderClass = role ? roleBorderClass(role) : "border-glass-border";
 
-  return `flex w-full max-w-sm flex-col gap-3 ${radius.card} border ${borderClass} glass-surface p-4 text-surface-foreground backdrop-blur-md`;
+  return `flex w-full max-w-sm flex-col gap-3 ${radius.card} border ${borderClass} glass-surface p-4 text-surface-foreground backdrop-blur-md transition-[border-color] duration-300`;
+}
+
+export function authPanelStackClass(): string {
+  return "grid [&>*]:col-start-1 [&>*]:row-start-1";
 }

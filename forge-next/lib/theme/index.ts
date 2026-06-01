@@ -9,6 +9,7 @@ export {
   authHeroTitleClass,
   authLandingClass,
   authPanelCardClass,
+  authPanelStackClass,
   buttonVariantClass,
   cardClass,
   cardFooterClass,

@@ -10,9 +10,11 @@ import type { UserRole } from "@/lib/auth/types";
 export function SignupForm({
   role,
   onSwitchToSignIn,
+  active = true,
 }: {
   role: UserRole;
   onSwitchToSignIn: () => void;
+  active?: boolean;
 }) {
   const [state, formAction] = useActionState(signupFormAction, null);
   const [fullName, setFullName] = useState("");
@@ -22,10 +24,14 @@ export function SignupForm({
   const canContinue = canContinueSignup(fullName, email, password);
 
   useEffect(() => {
+    if (!active) {
+      return;
+    }
+
     startTransition(() => {
       void setSignupRoleCookieAction(role);
     });
-  }, [role]);
+  }, [active, role]);
 
   return (
     <div className="flex flex-col gap-3">

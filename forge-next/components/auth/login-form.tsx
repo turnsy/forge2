@@ -19,7 +19,7 @@ export function LoginForm({
   const canContinue = canContinueLogin(email, password);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-8">
       {banner ? <Message tone="info">{banner}</Message> : null}
       {state && !state.ok ? (
         <Message tone="error">{state.error}</Message>

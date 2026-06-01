@@ -65,4 +65,22 @@ describe("AuthPanel", () => {
       screen.getByRole("button", { name: /Current role: Athlete/i }),
     ).toBeInTheDocument();
   });
+
+  it("does not animate on initial render", () => {
+    const { container } = render(<AuthPanel initialRole="coach" />);
+
+    expect(container.querySelector(".animate-auth-panel-forward")).not.toBeInTheDocument();
+    expect(container.querySelector(".animate-auth-panel-back")).not.toBeInTheDocument();
+  });
+
+  it("animates forward when switching to signup and back when returning to sign in", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<AuthPanel initialRole="coach" />);
+
+    await user.click(screen.getByRole("button", { name: /Create Account/i }));
+    expect(container.querySelector(".animate-auth-panel-forward")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Sign in/i }));
+    expect(container.querySelector(".animate-auth-panel-back")).toBeInTheDocument();
+  });
 });

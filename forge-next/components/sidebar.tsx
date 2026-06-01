@@ -1,4 +1,5 @@
 import { SidebarProfileMenu } from "@/components/sidebar-profile-menu";
+import { ForgeLogo } from "@/components/forge-logo";
 import {
   AthletesIcon,
   HomeIcon,
