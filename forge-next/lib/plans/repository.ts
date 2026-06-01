@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { getPlanStats, parseWorkoutPlan } from "@/lib/plans/stats";
 import type { CoachPlanListItem, CoachPlanSummary } from "@/lib/plans/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { loadWorkoutPlan, type WorkoutPlanValidationError } from "@/lib/plans/validate";
 
 type PlanRow = {
   id: string;
@@ -113,4 +115,66 @@ export async function listCoachPlans(coachId: string): Promise<CoachPlanListItem
   return ((data as PlanRow[] | null) ?? [])
     .map(mapCoachPlanRow)
     .filter((plan): plan is CoachPlanListItem => plan !== null);
+}
+
+export type CoachPlanDetail = {
+  id: string;
+  createdAt: string;
+  plan: WorkoutPlan;
+};
+
+export type CoachPlanFetchResult =
+  | { status: "ok"; detail: CoachPlanDetail }
+  | { status: "not_found" }
+  | { status: "invalid"; errors: WorkoutPlanValidationError[] };
+
+export function mapCoachPlanDetailRow(
+  row: PlanRow,
+): Extract<CoachPlanFetchResult, { status: "ok" | "invalid" }> {
+  const planData = getActiveVersionPlanData(row.active_version);
+  const result = loadWorkoutPlan(planData);
+
+  if (!result.ok) {
+    return { status: "invalid", errors: result.errors };
+  }
+
+  return {
+    status: "ok",
+    detail: {
+      id: row.id,
+      createdAt: row.created_at,
+      plan: result.plan,
+    },
+  };
+}
+
+export async function getCoachPlanById(
+  coachId: string,
+  planId: string,
+): Promise<CoachPlanFetchResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("plans")
+    .select(
+      `
+      id,
+      created_at,
+      active_version:plan_versions!plans_active_version_id_fkey (
+        plan_data
+      )
+    `,
+    )
+    .eq("coach_id", coachId)
+    .eq("id", planId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return { status: "not_found" };
+  }
+
+  return mapCoachPlanDetailRow(data as PlanRow);
 }
