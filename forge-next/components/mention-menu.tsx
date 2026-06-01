@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { MentionKindIcon } from "@/components/mention-kind-icon";
 import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
 
@@ -58,18 +58,21 @@ export function MentionMenu({
   onSelect: (item: MentionSearchGroups["athletes"][number]) => void;
   menuId: string;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const hasResults = groups.athletes.length > 0 || groups.plans.length > 0;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const athleteRows = groups.athletes.map((item, index) => ({ item, index }));
+  const planRows = groups.plans.map((item, index) => ({
+    item,
+    index: groups.athletes.length + index,
+  }));
 
   if (!open || !anchor || !mounted) {
     return null;
   }
-
-  let optionIndex = 0;
 
   return createPortal(
     <div
@@ -86,21 +89,16 @@ export function MentionMenu({
         </div>
       ) : (
         <>
-          {groups.athletes.map((item) => {
-            const index = optionIndex;
-            optionIndex += 1;
-
-            return (
-              <MentionMenuRow
-                key={`${item.kind}-${item.id}`}
-                item={item}
-                index={index}
-                highlightedIndex={highlightedIndex}
-                onHighlight={onHighlight}
-                onSelect={onSelect}
-              />
-            );
-          })}
+          {athleteRows.map(({ item, index }) => (
+            <MentionMenuRow
+              key={`${item.kind}-${item.id}`}
+              item={item}
+              index={index}
+              highlightedIndex={highlightedIndex}
+              onHighlight={onHighlight}
+              onSelect={onSelect}
+            />
+          ))}
           {groups.athletes.length > 0 && groups.plans.length > 0 ? (
             <div
               className="my-1 border-t border-glass-border"
@@ -108,21 +106,16 @@ export function MentionMenu({
               aria-hidden="true"
             />
           ) : null}
-          {groups.plans.map((item) => {
-            const index = optionIndex;
-            optionIndex += 1;
-
-            return (
-              <MentionMenuRow
-                key={`${item.kind}-${item.id}`}
-                item={item}
-                index={index}
-                highlightedIndex={highlightedIndex}
-                onHighlight={onHighlight}
-                onSelect={onSelect}
-              />
-            );
-          })}
+          {planRows.map(({ item, index }) => (
+            <MentionMenuRow
+              key={`${item.kind}-${item.id}`}
+              item={item}
+              index={index}
+              highlightedIndex={highlightedIndex}
+              onHighlight={onHighlight}
+              onSelect={onSelect}
+            />
+          ))}
         </>
       )}
     </div>,

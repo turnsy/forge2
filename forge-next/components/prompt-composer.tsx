@@ -63,6 +63,8 @@ export function PromptComposer({
     ? searchMentionItemGroups(mentionItems, activeQuery.query, 4)
     : { athletes: [], plans: [] };
   const menuItems = flattenMentionSearchGroups(mentionGroups);
+  const activeHighlightedIndex =
+    menuItems.length === 0 ? 0 : highlightedIndex % menuItems.length;
   const menuVisible =
     activeQuery !== null &&
     (suppressedRange === null ||
@@ -70,8 +72,14 @@ export function PromptComposer({
       suppressedRange.end !== activeQuery.end);
 
   const syncDocumentState = useCallback(
-    (nextSegments: PromptSegment[]) => {
+    (nextSegments: PromptSegment[], nextCaret?: number) => {
       setSegments(nextSegments);
+      if (nextCaret !== undefined) {
+        setCaretIndexState(nextCaret);
+        if (!getActiveMentionQuery(nextSegments, nextCaret)) {
+          setSuppressedRange(null);
+        }
+      }
       onDocumentChange?.(nextSegments, isEmptyDocument(nextSegments));
     },
     [onDocumentChange],
@@ -90,8 +98,11 @@ export function PromptComposer({
       return;
     }
 
-    setCaretIndexState(getCaretIndex(editorRef.current));
-  }, []);
+    syncDocumentState(
+      readSegmentsFromEditor(),
+      getCaretIndex(editorRef.current),
+    );
+  }, [readSegmentsFromEditor, syncDocumentState]);
 
   const dismissMenu = useCallback(() => {
     if (!activeQuery) {
@@ -175,12 +186,6 @@ export function PromptComposer({
   }, [updateAnchor]);
 
   useEffect(() => {
-    if (!activeQuery) {
-      setSuppressedRange(null);
-    }
-  }, [activeQuery]);
-
-  useEffect(() => {
     if (!menuVisible) {
       return;
     }
@@ -206,18 +211,11 @@ export function PromptComposer({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [dismissMenu, menuVisible]);
 
-  useEffect(() => {
-    if (highlightedIndex >= menuItems.length) {
-      setHighlightedIndex(0);
-    }
-  }, [highlightedIndex, menuItems.length]);
-
   function handleInput() {
     if (skipInputRef.current || !editorRef.current) {
       return;
     }
 
-    syncDocumentState(readSegmentsFromEditor());
     syncCaret();
   }
 
@@ -256,7 +254,7 @@ export function PromptComposer({
 
       if (event.key === "Enter" || event.key === "Tab") {
         event.preventDefault();
-        const item = menuItems[highlightedIndex];
+        const item = menuItems[activeHighlightedIndex];
         if (item) {
           selectMention(item);
         }
@@ -296,7 +294,6 @@ export function PromptComposer({
           ref={editorRef}
           role="textbox"
           aria-multiline="true"
-          aria-expanded={menuVisible}
           aria-controls={menuVisible ? menuId : undefined}
           aria-haspopup="listbox"
           contentEditable
@@ -323,7 +320,7 @@ export function PromptComposer({
         menuId={menuId}
         open={menuVisible}
         groups={mentionGroups}
-        highlightedIndex={highlightedIndex}
+        highlightedIndex={activeHighlightedIndex}
         anchor={anchor}
         onHighlight={setHighlightedIndex}
         onSelect={selectMention}
