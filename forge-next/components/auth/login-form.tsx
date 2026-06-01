@@ -19,7 +19,7 @@ export function LoginForm({
   const canContinue = canContinueLogin(email, password);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {banner ? <Message tone="info">{banner}</Message> : null}
       {state && !state.ok ? (
         <Message tone="error">{state.error}</Message>
@@ -38,7 +38,7 @@ export function LoginForm({
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-3">
         <Input
           aria-label="Email"
           name="email"

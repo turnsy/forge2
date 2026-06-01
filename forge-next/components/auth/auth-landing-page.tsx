@@ -1,5 +1,5 @@
-import { AuthBrandHero } from "@/components/auth/auth-brand-hero";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { authHeroTitleClass, authLandingClass } from "@/lib/theme";
 import type { UserRole } from "@/lib/auth/types";
 
 export function AuthLandingPage({
@@ -10,9 +10,11 @@ export function AuthLandingPage({
   initialBanner?: string | null;
 }) {
   return (
-    <main className="dark flex min-h-screen flex-col bg-background md:flex-row">
-      <AuthBrandHero className="md:w-2/3" />
-      <AuthPanel initialRole={initialRole} initialBanner={initialBanner} />
+    <main className={authLandingClass()}>
+      <div className="flex w-full max-w-sm flex-col items-center gap-5">
+        <h1 className={authHeroTitleClass()}>Forge</h1>
+        <AuthPanel initialRole={initialRole} initialBanner={initialBanner} />
+      </div>
     </main>
   );
 }

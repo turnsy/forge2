@@ -28,7 +28,7 @@ export function SignupForm({
   }, [role]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {state && !state.ok ? (
         <Message tone="error">{state.error}</Message>
       ) : null}
@@ -47,7 +47,7 @@ export function SignupForm({
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="role" value={role} />
         <Input
           aria-label="Full name"

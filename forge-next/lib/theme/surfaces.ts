@@ -76,10 +76,16 @@ export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }
 
-export function authHeroClass(): string {
-  return "auth-hero-background relative flex min-h-[40vh] flex-col items-center justify-center md:min-h-screen";
+export function authLandingClass(): string {
+  return "auth-hero-background dark flex min-h-dvh w-full flex-col items-center justify-center px-4 py-4";
 }
 
 export function authHeroTitleClass(): string {
-  return "text-5xl font-semibold tracking-tight text-surface-foreground sm:text-6xl md:text-7xl";
+  return "text-4xl font-semibold tracking-tight text-surface-foreground sm:text-5xl";
+}
+
+export function authPanelCardClass(role?: UserRole): string {
+  const borderClass = role ? roleBorderClass(role) : "border-glass-border";
+
+  return `flex w-full max-w-sm flex-col gap-3 ${radius.card} border ${borderClass} glass-surface p-4 text-surface-foreground backdrop-blur-md`;
 }
