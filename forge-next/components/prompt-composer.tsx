@@ -54,6 +54,8 @@ export function PromptComposer({
   const menuItems = activeQuery
     ? searchMentionItems(mentionItems, activeQuery.query, 4)
     : [];
+  const activeHighlightedIndex =
+    menuItems.length === 0 ? 0 : highlightedIndex % menuItems.length;
   const menuOpen = activeQuery !== null;
 
   const syncDocumentState = useCallback(
@@ -165,12 +167,6 @@ export function PromptComposer({
     return () => window.removeEventListener("resize", handleResize);
   }, [updateAnchor]);
 
-  useEffect(() => {
-    if (highlightedIndex >= menuItems.length) {
-      setHighlightedIndex(0);
-    }
-  }, [highlightedIndex, menuItems.length]);
-
   function handleInput() {
     if (skipInputRef.current || !editorRef.current) {
       return;
@@ -211,7 +207,7 @@ export function PromptComposer({
 
       if (event.key === "Enter" || event.key === "Tab") {
         event.preventDefault();
-        const item = menuItems[highlightedIndex];
+        const item = menuItems[activeHighlightedIndex];
         if (item) {
           selectMention(item);
         }
@@ -250,7 +246,6 @@ export function PromptComposer({
           ref={editorRef}
           role="textbox"
           aria-multiline="true"
-          aria-expanded={menuOpen}
           aria-controls={menuOpen ? menuId : undefined}
           aria-haspopup="listbox"
           contentEditable
@@ -282,7 +277,7 @@ export function PromptComposer({
         menuId={menuId}
         open={menuOpen}
         items={menuItems}
-        highlightedIndex={highlightedIndex}
+        highlightedIndex={activeHighlightedIndex}
         anchor={anchor}
         onHighlight={setHighlightedIndex}
         onSelect={selectMention}
