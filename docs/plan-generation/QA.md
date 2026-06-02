@@ -5,8 +5,8 @@ Use after Phase 6 integration. Requires local `.env.local` with Vercel AI Gatewa
 ## Setup
 
 - [ ] Coach user logged in
-- [ ] Open `/coach/plans/create` (or final route from Phase 5)
-- [ ] DevTools network tab open on plan-chat request
+- [ ] Open **coach home** (`/coach`) — prompt + thread + preview on one page
+- [ ] DevTools network tab open on `upload-context` and `plan-chat` requests
 
 ## Prompt-only
 
@@ -36,11 +36,13 @@ Use after Phase 6 integration. Requires local `.env.local` with Vercel AI Gatewa
 ## Run lifecycle
 
 - [ ] UI shows parsing → generating → sandbox → validating → done (or error)
+- [ ] Assistant text streams; preview updates in one shot when artifact event arrives
 
-## Auth & scope
+## Boundaries
 
 - [ ] Logged-out request fails
-- [ ] No new rows in `plans` / `plan_versions` after session (DB check optional)
+- [ ] No new rows in `plans` / `plan_versions` after session
+- [ ] Upload content not required inside sandbox (verify via logs or integration test)
 
 ## Refresh
 

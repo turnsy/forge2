@@ -17,7 +17,8 @@
   - `@vercel/sandbox` (or current official package name from Vercel docs)
   - Upload parsers: e.g. `pdf-parse` or equivalent, `xlsx` / `exceljs` for XLSX (evaluate bundle size for server-only)
 - [ ] Add `lib/uploads/limits.ts` with caps from overview (exported constants + tests)
-- [ ] Scaffold empty modules (no behavior yet): `lib/ai/plan-chat/`, `lib/sandbox/`, `sandbox/forge_plan/`
+- [ ] Scaffold empty modules (no behavior yet): `lib/ai/plan-chat/`, `lib/sandbox/`, `lib/uploads/context-storage.ts`, `sandbox/forge_plan/`
+- [ ] Document Supabase Storage bucket/path for ephemeral `draft-uploads/` (see Phase 2)
 - [ ] Add Vitest smoke test that `limits` and env helpers load
 
 ---

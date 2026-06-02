@@ -37,7 +37,8 @@
 - [ ] All Phase 1–5 done criteria checked
 - [ ] CI green
 - [ ] Manual QA checklist signed off by developer
-- [ ] No accidental DB writes in plan-chat path (grep `plan_versions`, `.insert`, etc.)
+- [ ] No accidental DB writes to `plans` / `plan_versions` in plan-chat path (grep `.insert`, etc.)
+- [ ] Storage uploads are ephemeral only; sandbox integration test asserts no `input_context` files
 
 ---
 
