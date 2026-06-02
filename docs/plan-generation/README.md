@@ -5,6 +5,7 @@ Documentation for the coach plan-creation chat pipeline (v1).
 ## Start here
 
 - **[overview.md](./overview.md)** — architecture, decisions, upload policy, done definition
+- **[supabase-draft-uploads.md](./supabase-draft-uploads.md)** — Storage bucket `draft-uploads/` layout (Phase 1+)
 - **Phases** (build in order):
   1. [Foundation](./phases/phase-1-foundation.md)
   2. [Upload normalization](./phases/phase-2-upload-normalization.md)

@@ -14,12 +14,18 @@
     "generate:check": "pnpm generate:plan-types && git diff --exit-code -- lib/plans/workout-plan.generated.ts"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^3.0.122",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
+    "@vercel/sandbox": "^2.1.0",
+    "ai": "^6.0.194",
     "ajv": "^8.20.0",
     "next": "16.2.6",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

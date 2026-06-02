@@ -18,7 +18,7 @@
   - Upload parsers: e.g. `pdf-parse` or equivalent, `xlsx` / `exceljs` for XLSX (evaluate bundle size for server-only)
 - [ ] Add `lib/uploads/limits.ts` with caps from overview (exported constants + tests)
 - [ ] Scaffold empty modules (no behavior yet): `lib/ai/plan-chat/`, `lib/sandbox/`, `lib/uploads/context-storage.ts`, `sandbox/forge_plan/`
-- [ ] Document Supabase Storage bucket/path for ephemeral `draft-uploads/` (see Phase 2)
+- [ ] Document Supabase Storage bucket/path for ephemeral `draft-uploads/` (see Phase 2) → [supabase-draft-uploads.md](../supabase-draft-uploads.md)
 - [ ] Add Vitest smoke test that `limits` and env helpers load
 
 ---

@@ -2,7 +2,7 @@
 
 Build a coaching app with separate `/coach` and `/athlete` experiences using Next.js App Router, Supabase Auth/Postgres, Next.js AI, JSON schemas, and **Vercel Sandbox** (Python) for plan artifact execution.
 
-**Plan generation (v1):** See [docs/plan-generation/README.md](./docs/plan-generation/README.md) — coach-only in-memory plan create/iterate via chat, Vercel AI Gateway, server-side upload normalization, sandbox codegen + `loadWorkoutPlan()` validation. No DB writes in v1.
+**Plan generation (v1):** See [docs/plan-generation/README.md](./docs/plan-generation/README.md) — coach-only in-memory plan create/iterate via chat, Vercel AI Gateway, server-side upload normalization, **Vercel Sandbox** (Python) codegen + `loadWorkoutPlan()` validation. No DB writes in v1. Ephemeral uploads: [supabase-draft-uploads.md](./docs/plan-generation/supabase-draft-uploads.md).
 
 Rules:
 
