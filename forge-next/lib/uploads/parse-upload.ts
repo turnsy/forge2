@@ -1,5 +1,6 @@
 import { PDFParse } from "pdf-parse";
 import * as XLSX from "xlsx";
+import { ensurePdfParseWorker } from "@/lib/uploads/pdf-worker";
 import { getAllowedExtension } from "@/lib/uploads/file-utils";
 import {
   selectXlsxSheet,
@@ -70,6 +71,7 @@ export async function parsePdfUpload(
   filename: string,
   buffer: Buffer,
 ): Promise<ParseUploadResult> {
+  ensurePdfParseWorker();
   const parser = new PDFParse({ data: buffer });
 
   try {
