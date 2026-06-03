@@ -24,7 +24,7 @@ function getProjectRoots(): string[] {
   return roots;
 }
 
-function resolvePdfWorkerPath(): string {
+function resolvePdfWorkerPath(): string | null {
   for (const root of getProjectRoots()) {
     for (const rel of WORKER_RELATIVE_PATHS) {
       const candidate = path.join(root, rel);
@@ -51,10 +51,11 @@ function resolvePdfWorkerPath(): string {
     }
   }
 
-  throw new Error(
-    "pdf-parse worker file not found. Run pnpm install in forge-next.",
-  );
+  return null;
 }
+
+const PDF_WORKER_CDN =
+  "https://cdn.jsdelivr.net/npm/pdf-parse@2.4.5/dist/pdf-parse/esm/pdf.worker.mjs";
 
 /**
  * pdf-parse uses pdf.js workers. Next.js/Turbopack externals break
@@ -66,6 +67,10 @@ export function ensurePdfParseWorker(): void {
   }
 
   const workerPath = resolvePdfWorkerPath();
-  PDFParse.setWorker(pathToFileURL(workerPath).href);
+  if (workerPath) {
+    PDFParse.setWorker(pathToFileURL(workerPath).href);
+  } else {
+    PDFParse.setWorker(PDF_WORKER_CDN);
+  }
   workerConfigured = true;
 }
