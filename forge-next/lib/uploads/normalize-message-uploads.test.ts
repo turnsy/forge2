@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { draftUploadSlug } from "@/lib/uploads/file-utils";
 import { makeCsvBuffer, makeXlsxBuffer } from "@/lib/uploads/__tests__/fixtures";
 
 const mockSaveUploadContext = vi.fn();
@@ -14,11 +15,16 @@ describe("normalizeMessageUploads", () => {
     mockSaveUploadContext.mockReset();
     mockSaveUploadContext.mockResolvedValue({
       ok: true,
-      contextFileId: "coach-1/draft-1/plan.txt",
+      contextFileId: "coach-1/draft-1/stored.txt",
     });
   });
 
   it("normalizes CSV and persists to storage", async () => {
+    mockSaveUploadContext.mockResolvedValueOnce({
+      ok: true,
+      contextFileId: "coach-1/draft-1/plan.txt",
+    });
+
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
       draftId: "draft-1",
@@ -29,32 +35,51 @@ describe("normalizeMessageUploads", () => {
       ok: true,
       contextFileIds: ["coach-1/draft-1/plan.txt"],
     });
-    expect(mockSaveUploadContext).toHaveBeenCalledOnce();
+    expect(mockSaveUploadContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: draftUploadSlug("plan.csv"),
+      }),
+    );
   });
 
-  it("returns sheet clarification without persisting", async () => {
+  it("persists every sheet for multi-sheet XLSX without clarification", async () => {
+    mockSaveUploadContext
+      .mockResolvedValueOnce({
+        ok: true,
+        contextFileId: "coach-1/draft-1/workbook__summary.txt",
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        contextFileId: "coach-1/draft-1/workbook__volume.txt",
+      });
+
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
       draftId: "draft-1",
       files: [
         {
-          filename: "multi.xlsx",
+          filename: "workbook.xlsx",
           buffer: makeXlsxBuffer({
             Summary: [["1"]],
             Volume: [["2"]],
           }),
         },
       ],
-      promptText: "no match",
     });
 
     expect(result).toEqual({
-      ok: false,
-      needsSheetClarification: true,
-      sheets: ["Summary", "Volume"],
-      filename: "multi.xlsx",
+      ok: true,
+      contextFileIds: [
+        "coach-1/draft-1/workbook__summary.txt",
+        "coach-1/draft-1/workbook__volume.txt",
+      ],
     });
-    expect(mockSaveUploadContext).not.toHaveBeenCalled();
+    expect(mockSaveUploadContext).toHaveBeenCalledTimes(2);
+    expect(mockSaveUploadContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: draftUploadSlug("workbook.xlsx", "Summary"),
+      }),
+    );
   });
 
   it("rejects a sixth file", async () => {

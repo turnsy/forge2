@@ -20,10 +20,6 @@ export async function POST(request: Request) {
 
   const result = await handleUploadContextFormData(auth.user.id, formData);
 
-  if (!result.ok && "needsSheetClarification" in result) {
-    return NextResponse.json(result, { status: 422 });
-  }
-
   if (!result.ok) {
     const status =
       result.error === "TOO_MANY_FILES" || result.error === "FILE_TOO_LARGE"

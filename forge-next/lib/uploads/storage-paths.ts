@@ -7,6 +7,9 @@
  * Object key pattern:
  *   draft-uploads/{coachId}/{draftId}/{slug}.txt
  *
+ * Multi-sheet XLSX uses one object per sheet, e.g.:
+ *   {workbook-stem}__{sheet-slug}.txt
+ *
  * Normalized text is for the LLM prompt only — never copied into Vercel Sandbox.
  *
  * @see docs/plan-generation/phases/phase-2-upload-normalization.md
@@ -14,6 +17,10 @@
  */
 
 export const DRAFT_UPLOADS_BUCKET = "draft-uploads" as const;
+
+export function draftUploadPrefix(coachId: string, draftId: string): string {
+  return `${coachId}/${draftId}`;
+}
 
 export function draftUploadObjectPath(
   coachId: string,

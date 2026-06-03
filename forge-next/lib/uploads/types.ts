@@ -3,7 +3,6 @@ export type UploadErrorCode =
   | "TOO_MANY_FILES"
   | "UNSUPPORTED_TYPE"
   | "PARSE_FAILED"
-  | "XLSX_NEEDS_SHEET"
   | "STORAGE_FAILED";
 
 export type UploadWarning = {
@@ -53,17 +52,7 @@ export type UploadContextError = {
   message: string;
 };
 
-export type UploadContextSheetClarification = {
-  ok: false;
-  needsSheetClarification: true;
-  sheets: string[];
-  filename: string;
-};
-
-export type UploadContextResult =
-  | UploadContextSuccess
-  | UploadContextError
-  | UploadContextSheetClarification;
+export type UploadContextResult = UploadContextSuccess | UploadContextError;
 
 export type MessageUploadFile = {
   filename: string;

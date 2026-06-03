@@ -1,3 +1,8 @@
+/**
+ * Optional fuzzy sheet matching from user prompt text.
+ * Upload (Phase 2 revision) exports all sheets; plan-chat tools list/read drafts instead.
+ */
+
 export type XlsxSheetSelection =
   | { ok: true; sheetName: string }
   | { ok: false; needsClarification: true; sheets: string[] };

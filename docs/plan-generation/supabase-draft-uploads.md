@@ -1,49 +1,57 @@
 # Supabase Storage — ephemeral draft uploads
 
-Plan generation v1 stores **normalized upload text** in Supabase Storage for the coach plan-chat flow. Objects are ephemeral (deleted after a run or by TTL janitor in Phase 2).
+Plan generation v1 stores **normalized upload text** in Supabase Storage for the coach plan-chat flow. Objects are ephemeral (deleted after a run or by TTL janitor).
 
 ## Bucket
 
 | Setting | Value |
 | --- | --- |
 | Bucket name | `draft-uploads` |
-| Visibility | **Private** (signed URLs or service-role server reads only) |
-| Max object size | Align with [overview.md](./overview.md) caps (25 MB total per message at API layer) |
+| Visibility | **Private** (server reads via authenticated Supabase client + RLS) |
+| Max object size | Enforced at API layer per [overview.md](./overview.md) |
 
-Create the bucket via migration `supabase/migrations/20260602120000_draft_uploads_storage.sql` (or Supabase Dashboard if migrating manually).
+Create via `supabase/migrations/20260602120000_draft_uploads_storage.sql`.
 
 ## Object key layout
 
-```
+```text
 draft-uploads/{coachId}/{draftId}/{slug}.txt
 ```
 
-- `coachId` — authenticated coach user id (UUID)
-- `draftId` — client-generated draft/session id for one plan iteration workspace
-- `slug` — sanitized filename stem (e.g. `weekly-volume` from `weekly-volume.csv`)
+- `coachId` — authenticated coach user id
+- `draftId` — client workspace / conversation id (one plan-chat session)
+- `slug` — see below
 
-Helpers: `forge-next/lib/uploads/storage-paths.ts` (`DRAFT_UPLOADS_BUCKET`, `draftUploadObjectPath()`).
+### Slugs
 
-## RLS (developer action — Phase 2)
+| Source | Example slug |
+| --- | --- |
+| CSV / PDF | `my-plan` from `My Plan.csv` |
+| XLSX (per sheet) | `my-workbook__summary`, `my-workbook__volume` |
 
-Policies should ensure:
+One physical `.xlsx` with three sheets → **three** objects under the same `{draftId}`.
 
-- Coaches can **write** only under `{their coachId}/**`
-- Coaches can **read** only their own prefix
-- No public read access
-- Athlete role has **no** access to this bucket in v1
+Helpers:
+
+- `draftUploadObjectPath()`, `draftUploadPrefix()` — `lib/uploads/storage-paths.ts`
+- `draftUploadSlug()` — `lib/uploads/file-utils.ts`
+- `listDraftUploads(coachId, draftId)` — `lib/uploads/list-draft-uploads.ts` (Storage `list` on prefix)
+
+## RLS
+
+Coach-scoped policies in the migration: read/write/delete only under `{auth.uid()}/**`.
 
 ## Lifecycle
 
-- Written by `POST /api/coach/upload-context` (Phase 2)
-- Referenced in plan-chat as `contextFileIds[]` (Phase 3)
-- Normalized text is injected into **AI Gateway** prompts only — **never** mounted in Vercel Sandbox
-- Delete after plan-chat completes or after ~24h (janitor TBD in Phase 2)
+- **Write:** `POST /api/coach/upload-context` (Phase 2)
+- **List / read:** plan-chat tools in Phase 3 (`list_draft_files`, `read_draft_file`) — not browser-direct
+- **Never** copied into Vercel Sandbox
+- **Delete:** after plan-chat run or TTL janitor (TBD)
 
 ## Related code
 
-| Module | Phase |
+| Module | Role |
 | --- | --- |
-| `lib/uploads/context-storage.ts` | 2 |
-| `lib/uploads/limits.ts` | 1 |
-| `app/api/coach/upload-context/route.ts` | 2 |
+| `lib/uploads/context-storage.ts` | save / load / delete |
+| `lib/uploads/list-draft-uploads.ts` | list prefix for tools |
+| `app/api/coach/upload-context/route.ts` | attach API |

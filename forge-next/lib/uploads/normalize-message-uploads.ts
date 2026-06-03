@@ -1,7 +1,7 @@
+import { draftUploadSlug } from "@/lib/uploads/file-utils";
 import {
   normalizedUploadToText,
-  parseUpload,
-  type ParseUploadXlsxMeta,
+  parseUploadFile,
 } from "@/lib/uploads/parse-upload";
 import { validateMessageUploadBatch } from "@/lib/uploads/validate-batch";
 import {
@@ -18,22 +18,8 @@ export type NormalizeMessageUploadsInput = {
   coachId: string;
   draftId: string;
   files: MessageUploadFile[];
-  promptText?: string;
-  /** Per-file sheet override after user clarification (filename → sheet). */
-  xlsxSheetByFilename?: Record<string, string>;
   persist?: boolean;
 };
-
-function isXlsxClarification(
-  value: unknown,
-): value is ParseUploadXlsxMeta {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "needsClarification" in value &&
-    (value as ParseUploadXlsxMeta).needsClarification === true
-  );
-}
 
 export async function normalizeMessageUploads(
   input: NormalizeMessageUploadsInput,
@@ -51,58 +37,53 @@ export async function normalizeMessageUploads(
   const warnings: UploadWarning[] = [];
 
   for (const file of input.files) {
-    const parsed = await parseUpload({
+    const parsedList = await parseUploadFile({
       filename: file.filename,
       buffer: file.buffer,
       mimeType: file.mimeType,
-      promptText: input.promptText,
-      xlsxSheetName: input.xlsxSheetByFilename?.[file.filename],
     });
 
-    if (isXlsxClarification(parsed)) {
-      return {
-        ok: false,
-        needsSheetClarification: true,
-        sheets: parsed.sheets,
-        filename: parsed.filename,
-      };
-    }
-
-    if (!parsed.ok) {
-      return {
-        ok: false,
-        error: parsed.code,
-        message: parsed.message,
-      };
-    }
-
-    if (parsed.warnings?.length) {
-      warnings.push(...parsed.warnings);
-    }
-
-    const normalizedText = normalizedUploadToText(parsed.upload);
-
-    if (input.persist !== false) {
-      const stored = await saveUploadContext({
-        coachId: input.coachId,
-        draftId: input.draftId,
-        filename: file.filename,
-        normalizedText,
-      });
-
-      if (!stored.ok) {
+    for (const parsed of parsedList) {
+      if (!parsed.ok) {
         return {
           ok: false,
-          error: "STORAGE_FAILED",
-          message: stored.message,
+          error: parsed.code,
+          message: parsed.message,
         };
       }
 
-      contextFileIds.push(stored.contextFileId);
-    } else {
-      contextFileIds.push(
-        `${input.coachId}/${input.draftId}/${file.filename}`,
-      );
+      if (parsed.warnings?.length) {
+        warnings.push(...parsed.warnings);
+      }
+
+      const normalizedText = normalizedUploadToText(parsed.upload);
+      const slug =
+        parsed.upload.kind === "xlsx"
+          ? draftUploadSlug(parsed.upload.filename, parsed.upload.sheetName)
+          : draftUploadSlug(parsed.upload.filename);
+
+      if (input.persist !== false) {
+        const stored = await saveUploadContext({
+          coachId: input.coachId,
+          draftId: input.draftId,
+          slug,
+          normalizedText,
+        });
+
+        if (!stored.ok) {
+          return {
+            ok: false,
+            error: "STORAGE_FAILED",
+            message: stored.message,
+          };
+        }
+
+        contextFileIds.push(stored.contextFileId);
+      } else {
+        contextFileIds.push(
+          `${input.coachId}/${input.draftId}/${slug}.txt`,
+        );
+      }
     }
   }
 

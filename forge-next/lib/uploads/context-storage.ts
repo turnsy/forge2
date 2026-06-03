@@ -3,7 +3,6 @@ import {
   DRAFT_UPLOADS_BUCKET,
   draftUploadObjectPath,
 } from "@/lib/uploads/storage-paths";
-import { filenameToSlug } from "@/lib/uploads/file-utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ContextFileId = string;
@@ -13,7 +12,8 @@ type StorageSupabaseClient = SupabaseClient;
 export type SaveUploadContextInput = {
   coachId: string;
   draftId: string;
-  filename: string;
+  /** Object slug under the draft prefix (e.g. `workbook-name__summary`). */
+  slug: string;
   normalizedText: string;
 };
 
@@ -34,11 +34,10 @@ export async function saveUploadContext(
   client?: StorageSupabaseClient,
 ): Promise<SaveUploadContextResult> {
   const supabase = client ?? (await createClient());
-  const slug = filenameToSlug(input.filename);
   const objectPath = draftUploadObjectPath(
     input.coachId,
     input.draftId,
-    slug,
+    input.slug,
   );
 
   const body = Buffer.from(input.normalizedText, "utf8");

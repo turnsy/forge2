@@ -2,15 +2,7 @@ import { PDFParse } from "pdf-parse";
 import * as XLSX from "xlsx";
 import { ensurePdfParseWorker } from "@/lib/uploads/pdf-worker";
 import { getAllowedExtension } from "@/lib/uploads/file-utils";
-import {
-  selectXlsxSheet,
-  type XlsxSheetSelection,
-} from "@/lib/uploads/select-xlsx-sheets";
-import type {
-  ParseUploadFailure,
-  ParseUploadResult,
-  UploadWarning,
-} from "@/lib/uploads/types";
+import type { ParseUploadResult, UploadWarning } from "@/lib/uploads/types";
 
 /** Max CSV rows included in normalized context (footer notes truncation). */
 export const UPLOAD_CSV_MAX_ROWS = 500;
@@ -19,15 +11,6 @@ export type ParseUploadInput = {
   filename: string;
   buffer: Buffer;
   mimeType?: string;
-  promptText?: string;
-  /** When set, skips sheet selection (used after clarification). */
-  xlsxSheetName?: string;
-};
-
-export type ParseUploadXlsxMeta = {
-  needsClarification: true;
-  sheets: string[];
-  filename: string;
 };
 
 export function parseCsvUpload(
@@ -116,101 +99,96 @@ export async function parsePdfUpload(
 
 export function listXlsxSheetNames(buffer: Buffer): string[] {
   const workbook = XLSX.read(buffer, { type: "buffer" });
-  return workbook.SheetNames;
+  return workbook.SheetNames.filter((name) => name.trim().length > 0);
 }
 
-export function parseXlsxSheet(
+export function parseXlsxAllSheets(
   filename: string,
   buffer: Buffer,
-  sheetName: string,
-  allSheetNames: string[],
-): ParseUploadResult {
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const sheet = workbook.Sheets[sheetName];
-  if (!sheet) {
-    return {
-      ok: false,
-      code: "PARSE_FAILED",
-      message: `Sheet "${sheetName}" was not found in ${filename}.`,
-    };
-  }
-
-  const content = XLSX.utils.sheet_to_csv(sheet, { FS: ",", RS: "\n" });
-  return {
-    ok: true,
-    upload: {
-      kind: "xlsx",
-      filename,
-      sheetName,
-      content,
-      allSheetNames,
-    },
-  };
-}
-
-export function resolveXlsxSheetSelection(
-  input: ParseUploadInput,
-): XlsxSheetSelection | ParseUploadFailure {
-  const sheetNames = listXlsxSheetNames(input.buffer);
-  if (input.xlsxSheetName) {
-    if (!sheetNames.includes(input.xlsxSheetName)) {
-      return {
+): ParseUploadResult[] {
+  const sheetNames = listXlsxSheetNames(buffer);
+  if (sheetNames.length === 0) {
+    return [
+      {
         ok: false,
         code: "PARSE_FAILED",
-        message: `Sheet "${input.xlsxSheetName}" was not found in ${input.filename}.`,
-      };
-    }
-    return { ok: true, sheetName: input.xlsxSheetName };
+        message: `No sheets found in ${filename}.`,
+      },
+    ];
   }
 
-  return selectXlsxSheet(sheetNames, input.promptText);
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const results: ParseUploadResult[] = [];
+
+  for (const sheetName of sheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {
+      results.push({
+        ok: false,
+        code: "PARSE_FAILED",
+        message: `Sheet "${sheetName}" was not found in ${filename}.`,
+      });
+      continue;
+    }
+
+    const content = XLSX.utils.sheet_to_csv(sheet, { FS: ",", RS: "\n" });
+    results.push({
+      ok: true,
+      upload: {
+        kind: "xlsx",
+        filename,
+        sheetName,
+        content,
+        allSheetNames: sheetNames,
+      },
+    });
+  }
+
+  return results;
 }
 
-export async function parseUpload(
+/**
+ * Parse one uploaded file. Returns one result for CSV/PDF, one per sheet for XLSX.
+ */
+export async function parseUploadFile(
   input: ParseUploadInput,
-): Promise<ParseUploadResult | ParseUploadXlsxMeta> {
+): Promise<ParseUploadResult[]> {
   const extension = getAllowedExtension(input.filename);
   if (!extension) {
-    return {
-      ok: false,
-      code: "UNSUPPORTED_TYPE",
-      message: `Unsupported file type: ${input.filename}`,
-    };
+    return [
+      {
+        ok: false,
+        code: "UNSUPPORTED_TYPE",
+        message: `Unsupported file type: ${input.filename}`,
+      },
+    ];
   }
 
   switch (extension) {
     case ".csv":
-      return parseCsvUpload(input.filename, input.buffer);
+      return [parseCsvUpload(input.filename, input.buffer)];
     case ".pdf":
-      return parsePdfUpload(input.filename, input.buffer);
+      return [await parsePdfUpload(input.filename, input.buffer)];
     case ".xlsx":
-    case ".xls": {
-      const selection = resolveXlsxSheetSelection(input);
-      if ("code" in selection) {
-        return selection;
-      }
-      if (!selection.ok) {
-        return {
-          needsClarification: true,
-          sheets: selection.sheets,
-          filename: input.filename,
-        };
-      }
-      const sheetNames = listXlsxSheetNames(input.buffer);
-      return parseXlsxSheet(
-        input.filename,
-        input.buffer,
-        selection.sheetName,
-        sheetNames,
-      );
-    }
+    case ".xls":
+      return parseXlsxAllSheets(input.filename, input.buffer);
     default:
-      return {
-        ok: false,
-        code: "UNSUPPORTED_TYPE",
-        message: `Unsupported file type: ${input.filename}`,
-      };
+      return [
+        {
+          ok: false,
+          code: "UNSUPPORTED_TYPE",
+          message: `Unsupported file type: ${input.filename}`,
+        },
+      ];
   }
+}
+
+/** @deprecated Use parseUploadFile — kept for tests migrating to array API. */
+export async function parseUpload(
+  input: ParseUploadInput,
+): Promise<ParseUploadResult> {
+  const results = await parseUploadFile(input);
+  return results[0]!;
 }
 
 export function normalizedUploadToText(upload: {

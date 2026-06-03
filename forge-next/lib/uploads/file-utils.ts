@@ -29,3 +29,23 @@ export function filenameToSlug(filename: string): string {
     .replace(/^-+|-+$/g, "");
   return slug || "upload";
 }
+
+export function sheetNameToSlug(sheetName: string): string {
+  const slug = sheetName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "sheet";
+}
+
+/** Storage object slug: `{workbook-stem}__{sheet-slug}` for XLSX sheets. */
+export function draftUploadSlug(
+  sourceFilename: string,
+  sheetName?: string,
+): string {
+  const stem = filenameToSlug(sourceFilename);
+  if (!sheetName) {
+    return stem;
+  }
+  return `${stem}__${sheetNameToSlug(sheetName)}`;
+}

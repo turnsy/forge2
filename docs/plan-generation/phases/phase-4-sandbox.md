@@ -73,4 +73,4 @@
 
 ## Future hook (not v1)
 
-Plan glimpse/traverse tools for agents (read subtrees without full JSON in prompts). v1 uses server-side `summarizePlan()` for the LLM and full `current_plan.json` in the sandbox only.
+**Plan JSON** glimpse/traverse tools (read subtrees without full JSON in prompts). v1 uses `summarizePlan()` for the plan artifact and **draft file** list/read tools (Phase 3) for uploads — not plan traversal.
