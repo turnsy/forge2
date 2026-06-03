@@ -1,5 +1,7 @@
 # Phase 1 — Foundation
 
+**Status:** ✅ Done (merged via [PR #16](https://github.com/turnsy/forge2/pull/16))
+
 **Goal:** Repo and environment ready for AI Gateway + Vercel Sandbox from local dev and preview deploys.
 
 **Depends on:** Phase 0 decisions (locked — see [overview.md](../overview.md))
@@ -10,16 +12,16 @@
 
 ## Agent actions
 
-- [ ] Update root [AGENTS.md](../../../AGENTS.md): E2B → **Vercel Sandbox**; link to `docs/plan-generation/`
-- [ ] Extend [forge-next/.env.example](../../../forge-next/.env.example) with documented vars (no secrets)
-- [ ] Add dependencies to `forge-next/package.json`:
+- [x] Update root [AGENTS.md](../../../AGENTS.md): E2B → **Vercel Sandbox**; link to `docs/plan-generation/`
+- [x] Extend [forge-next/.env.example](../../../forge-next/.env.example) with documented vars (no secrets)
+- [x] Add dependencies to `forge-next/package.json`:
   - `ai`, `@ai-sdk/*` (per Gateway setup)
   - `@vercel/sandbox` (or current official package name from Vercel docs)
   - Upload parsers: e.g. `pdf-parse` or equivalent, `xlsx` / `exceljs` for XLSX (evaluate bundle size for server-only)
-- [ ] Add `lib/uploads/limits.ts` with caps from overview (exported constants + tests)
-- [ ] Scaffold empty modules (no behavior yet): `lib/ai/plan-chat/`, `lib/sandbox/`, `lib/uploads/context-storage.ts`, `sandbox/forge_plan/`
-- [ ] Document Supabase Storage bucket/path for ephemeral `draft-uploads/` (see Phase 2)
-- [ ] Add Vitest smoke test that `limits` and env helpers load
+- [x] Add `lib/uploads/limits.ts` with caps from overview (exported constants + tests)
+- [x] Scaffold empty modules (no behavior yet): `lib/ai/plan-chat/`, `lib/sandbox/`, `lib/uploads/context-storage.ts`, `sandbox/forge_plan/`
+- [x] Document Supabase Storage bucket/path for ephemeral `draft-uploads/` (see Phase 2) → [supabase-draft-uploads.md](../supabase-draft-uploads.md)
+- [x] Add Vitest smoke test that `limits` and env helpers load
 
 ---
 
@@ -46,11 +48,11 @@ Exact names should match Vercel’s latest Sandbox + Gateway docs when the agent
 
 ## Done criteria
 
-- [ ] `pnpm install` succeeds in `forge-next/`
-- [ ] `pnpm test` passes
-- [ ] `pnpm dev` starts; no runtime errors from new empty modules
+- [x] `pnpm install` succeeds in `forge-next/`
+- [x] `pnpm test` passes
+- [x] `pnpm dev` starts; no runtime errors from new empty modules
 - [ ] Developer can run a one-line script or route stub that **creates and destroys** a sandbox (agent provides stub in Phase 4 early, or developer validates manually after Phase 4)
-- [ ] AGENTS.md reflects Vercel Sandbox
+- [x] AGENTS.md reflects Vercel Sandbox
 
 ---
 
