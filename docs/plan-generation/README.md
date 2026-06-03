@@ -7,7 +7,7 @@ Documentation for the coach plan-creation chat pipeline (v1).
 - **[overview.md](./overview.md)** — architecture, decisions, upload policy, done definition
 - **[supabase-draft-uploads.md](./supabase-draft-uploads.md)** — Storage bucket `draft-uploads/` layout (Phase 1+)
 - **Phases** (build in order):
-  1. [Foundation](./phases/phase-1-foundation.md)
+  1. ~~[Foundation](./phases/phase-1-foundation.md)~~ **Done**
   2. [Upload normalization](./phases/phase-2-upload-normalization.md)
   3. [Chat API + AI Gateway](./phases/phase-3-chat-api.md)
   4. [Vercel Sandbox + Python builder](./phases/phase-4-sandbox.md)
