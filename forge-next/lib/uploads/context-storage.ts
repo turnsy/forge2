@@ -1,9 +1,14 @@
-/**
- * Ephemeral normalized upload text in Supabase Storage.
- * Implementation: Phase 2 (upload normalization).
- */
+import { createClient } from "@/utils/supabase/server";
+import {
+  DRAFT_UPLOADS_BUCKET,
+  draftUploadObjectPath,
+} from "@/lib/uploads/storage-paths";
+import { filenameToSlug } from "@/lib/uploads/file-utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ContextFileId = string;
+
+type StorageSupabaseClient = SupabaseClient;
 
 export type SaveUploadContextInput = {
   coachId: string;
@@ -16,23 +21,78 @@ export type SaveUploadContextResult =
   | { ok: true; contextFileId: ContextFileId }
   | { ok: false; code: "STORAGE_FAILED"; message: string };
 
-/** Persist normalized upload text; returns a stable id for plan-chat. */
+function assertCoachOwnsContextPath(
+  coachId: string,
+  contextFileId: string,
+): boolean {
+  const prefix = `${coachId}/`;
+  return contextFileId.startsWith(prefix) && !contextFileId.includes("..");
+}
+
 export async function saveUploadContext(
-  _input: SaveUploadContextInput,
+  input: SaveUploadContextInput,
+  client?: StorageSupabaseClient,
 ): Promise<SaveUploadContextResult> {
-  throw new Error("saveUploadContext is not implemented (Phase 2)");
+  const supabase = client ?? (await createClient());
+  const slug = filenameToSlug(input.filename);
+  const objectPath = draftUploadObjectPath(
+    input.coachId,
+    input.draftId,
+    slug,
+  );
+
+  const body = Buffer.from(input.normalizedText, "utf8");
+  const { error } = await supabase.storage
+    .from(DRAFT_UPLOADS_BUCKET)
+    .upload(objectPath, body, {
+      contentType: "text/plain; charset=utf-8",
+      upsert: true,
+    });
+
+  if (error) {
+    return {
+      ok: false,
+      code: "STORAGE_FAILED",
+      message: error.message,
+    };
+  }
+
+  return { ok: true, contextFileId: objectPath };
 }
 
-/** Load normalized text by id for Gateway prompt assembly. */
 export async function loadUploadContextById(
-  _contextFileId: ContextFileId,
+  contextFileId: ContextFileId,
+  coachId: string,
+  client?: StorageSupabaseClient,
 ): Promise<string | null> {
-  throw new Error("loadUploadContextById is not implemented (Phase 2)");
+  if (!assertCoachOwnsContextPath(coachId, contextFileId)) {
+    return null;
+  }
+
+  const supabase = client ?? (await createClient());
+  const { data, error } = await supabase.storage
+    .from(DRAFT_UPLOADS_BUCKET)
+    .download(contextFileId);
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.text();
 }
 
-/** Delete ephemeral objects after a plan-chat run (or TTL janitor). */
 export async function deleteUploadContext(
-  _contextFileIds: ContextFileId[],
+  contextFileIds: ContextFileId[],
+  coachId: string,
+  client?: StorageSupabaseClient,
 ): Promise<void> {
-  throw new Error("deleteUploadContext is not implemented (Phase 2)");
+  const paths = contextFileIds.filter((id) =>
+    assertCoachOwnsContextPath(coachId, id),
+  );
+  if (paths.length === 0) {
+    return;
+  }
+
+  const supabase = client ?? (await createClient());
+  await supabase.storage.from(DRAFT_UPLOADS_BUCKET).remove(paths);
 }

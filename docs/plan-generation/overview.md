@@ -143,7 +143,7 @@ Preview and run status may update before assistant text finishes streaming.
 | Phase | Doc | Summary | Status |
 | --- | --- | --- | --- |
 | 1 | [phase-1-foundation.md](./phases/phase-1-foundation.md) | Tooling, env, deps, AGENTS.md | **Done** |
-| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Server parsers, Storage, caps, XLSX sheet rules | |
+| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Server parsers, Storage, caps, XLSX sheet rules | **Done** |
 | 3 | [phase-3-chat-api.md](./phases/phase-3-chat-api.md) | Gateway, route, streaming contract | |
 | 4 | [phase-4-sandbox.md](./phases/phase-4-sandbox.md) | Python builder lib + sandbox executor | |
 | 5 | [phase-5-client-workspace.md](./phases/phase-5-client-workspace.md) | Coach home UI, state, preview pane | |

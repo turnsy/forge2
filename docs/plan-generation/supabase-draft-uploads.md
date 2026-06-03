@@ -10,7 +10,7 @@ Plan generation v1 stores **normalized upload text** in Supabase Storage for the
 | Visibility | **Private** (signed URLs or service-role server reads only) |
 | Max object size | Align with [overview.md](./overview.md) caps (25 MB total per message at API layer) |
 
-Create the bucket in the Supabase Dashboard (Storage → New bucket) or add a migration when RLS policies are finalized.
+Create the bucket via migration `supabase/migrations/20260602120000_draft_uploads_storage.sql` (or Supabase Dashboard if migrating manually).
 
 ## Object key layout
 
