@@ -18,6 +18,8 @@ import {
 import type { PlanChatEmit, PlanChatMessage } from "@/lib/ai/plan-chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { runPlanSandbox } from "@/lib/sandbox";
+import { logSubmittedPlanCode } from "@/lib/ai/plan-chat/log-submitted-code";
+
 
 export type RunPlanChatInput = {
   coachId: string;
@@ -97,6 +99,10 @@ export async function runPlanChat(
     contextFileIds: input.contextFileIds,
     onSubmitPlanCode: (python) => {
       submittedPython = python;
+      logSubmittedPlanCode(python, {
+        coachId: input.coachId,
+        draftId: input.draftId,
+      });
     },
   });
 
