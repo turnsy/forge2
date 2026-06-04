@@ -1,5 +1,4 @@
 /* AUTO-GENERATED — do not edit */
-
 export type Json =
   | string
   | number
@@ -417,4 +416,3 @@ export const Constants = {
     },
   },
 } as const
-
