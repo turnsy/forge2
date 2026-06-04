@@ -2,7 +2,7 @@
 
 **Goal:** Evolve **coach home** into split UI — chat thread, streaming assistant text, non-streamed run/artifact updates, in-memory preview — wired to Phase 3 API.
 
-**Depends on:** Phase 3 (streaming contract)
+**Depends on:** Phase 3 (streaming contract + `draftId`)
 
 **Can start in parallel:** Static layout + state types before API is done (mock events)
 
@@ -10,44 +10,42 @@
 
 ## Agent actions
 
-- [ ] Evolve `app/coach/(app)/page.tsx` + `CoachHomePrompt` — split pane on the **existing home route** (no new `/plans/create` route for v1)
-- [ ] Reusable primitives in `components/ui/` first (e.g. `ChatBubble`, `RunStatusBadge`) — per AGENTS.md
+- [ ] Evolve `app/coach/(app)/page.tsx` + `CoachHomePrompt` — split pane on **coach home** (v1)
+- [ ] Reusable primitives in `components/ui/` (`ChatBubble`, `RunStatusBadge`, etc.)
 - [ ] Feature composition in `components/coach/plan-chat/`:
-  - `PlanChatThread` — user/assistant messages (`ChatBubble`, not `ui/message` banner)
-  - `PlanChatRunStatus` — maps `runStatus` to UI copy + spinner
-  - `PlanChatPreview` — wraps existing `PlanViewer` with `currentArtifact`
-- [ ] Client state (`useReducer` or Context in `lib/plan-chat/state.ts`):
-  - `messages`
-  - `currentArtifact: WorkoutPlan | null`
-  - `runStatus`
-  - `warnings`, `errors`
-  - `draftId` (client UUID — ties to Storage path prefix)
+  - `PlanChatThread`, `PlanChatRunStatus`, `PlanChatPreview` (`PlanViewer`)
+- [ ] Client state (`lib/plan-chat/state.ts` or equivalent):
+  - `messages`, `currentArtifact`, `runStatus`, `warnings`, `errors`
+  - **`draftId`** — client UUID per workspace session (Storage prefix)
+  - `contextFileIds[]` — all ids returned from upload (length may exceed file picker count for XLSX)
 - [ ] Attach flow:
-  1. `POST /api/coach/upload-context` with `FormData` → `contextFileIds`
-  2. `POST /api/coach/plan-chat` with prompt + ids + `currentArtifact`
-- [ ] Stream `assistantTextDelta`; apply `artifact` / `runStatus` / `warnings` / `errors` from non-streamed events
-- [ ] On validation error: keep **last valid** `currentArtifact`; show `errors` inline
-- [ ] `@` mentions: render as today but **no routing**
+  1. `POST /api/coach/upload-context` with `FormData`: `draftId`, `files[]`
+  2. On **200**: show attachments as uploaded (including multi-sheet workbook — e.g. “Spreadsheet (3 sheets)”)
+  3. **Do not** treat multi-sheet XLSX as failed attach
+- [ ] Send flow:
+  - `POST /api/coach/plan-chat` with `draftId`, `prompt`, `currentArtifact`, optional `contextFileIds`, `messages`
+- [ ] Stream `assistantTextDelta`; apply `artifact` / `runStatus` / `warnings` / `errors`
+- [ ] Sheet/file clarification appears in **thread** (from assistant), not as upload error
+- [ ] On validation error: keep last valid `currentArtifact`
 - [ ] Loading / empty / error states per AGENTS.md
-- [ ] Component tests: run status mapping, invalid artifact does not replace preview
+- [ ] Component tests: run status mapping; preview not replaced on invalid artifact
 
 ---
 
 ## Developer actions
 
-- [ ] UX review: split layout on coach home (desktop side-by-side, mobile stack)
-- [ ] Accessibility pass on chat thread (live region for streaming text)
+- [ ] UX review: desktop split / mobile stack
+- [ ] Accessibility: live region for streaming text
 
 ---
 
 ## Done criteria
 
-- [ ] User can send prompt-only from coach home and see preview update
-- [ ] User can attach CSV/PDF/XLSX and see preview update after successful run
-- [ ] Run states visible through full lifecycle
-- [ ] Clarification turn for multi-sheet XLSX works
-- [ ] Refreshing page clears in-memory draft (expected v1)
-- [ ] New UI primitives live under `components/ui/` where reusable
+- [ ] Prompt-only from coach home updates preview
+- [ ] Attach CSV / PDF / multi-sheet XLSX → all succeed on upload; preview updates after successful plan-chat run
+- [ ] Multi-sheet: user sees clarification in chat when agent asks (not 422 on attach)
+- [ ] Run lifecycle visible in UI
+- [ ] Refresh clears in-memory draft (expected v1)
 
 ---
 
@@ -55,5 +53,5 @@
 
 | Surface | Behavior |
 | --- | --- |
-| Coach home `/coach` | Composer + thread + preview on one page |
-| Sidebar | No separate “New plan” route required for v1 |
+| Coach home `/coach` | Composer + thread + preview |
+| Sidebar | No separate “New plan” route for v1 |

@@ -34,7 +34,7 @@ flowchart LR
   Normalize --> Storage
   Composer --> API
   API --> Storage
-  Storage --> Gateway
+  Storage -->|list/read tools| Gateway
   API --> Gateway
   Gateway -->|generated Python| SandboxRunner
   SandboxRunner --> Seed
@@ -71,15 +71,15 @@ flowchart LR
 | Codegen | Gateway produces **Python**; server writes it to sandbox and executes |
 | Local dev | **Real sandbox** connected (no mock runner) |
 | LLM routing | **Vercel AI Gateway** |
-| Uploads | **Multiple files**; **server-side parse**; normalized text to **Supabase Storage**; plan-chat sends **`contextFileIds[]`** not raw file bodies |
-| Upload → model | Normalized text loaded server-side into Gateway prompt only |
-| Formats | CSV (as CSV), PDF (Markdown/plain sections), XLSX (sheet → CSV-like text + metadata) |
-| XLSX ambiguity | If workbook has multiple sheets and user did not specify, **assistant asks which sheet** before running sandbox |
+| Uploads | **Multiple files**; server-side parse; normalized text to **`draft-uploads/{coachId}/{draftId}/`**; attach returns **`contextFileIds[]`** (one per sheet for XLSX) |
+| Upload → model | Phase 3 **tools** `list_draft_files` / `read_draft_file` on the draft prefix — not a full-text dump on attach |
+| Formats | CSV, PDF, XLSX ( **all sheets** → separate `.txt` objects, `{stem}__{sheet-slug}.txt`) |
+| XLSX ambiguity | **Upload always succeeds**; agent **lists draft files** and asks in chat if unclear — before sandbox |
 | Artifact seed | Server writes **`current_plan.json`** in sandbox from client `currentArtifact` (empty seed if none) — **never** sent as full JSON to the LLM |
 | Plan context for LLM | **`summarizePlan(artifact)`** — short text summary for iterations (not full artifact, not traversal tools) |
 | Validation | **Ajv** via existing `loadWorkoutPlan()` — block invalid preview |
 | Persistence | **None** in v1 — preview in memory until explicit save (later) |
-| Future | Plan traversal/glimpse tools for agents; DB `plan_versions`; intent router; saved-plan edits |
+| Future | Plan JSON traversal tools; DB `plan_versions`; intent router; saved-plan edits |
 
 ## Upload policy (defaults)
 
@@ -91,7 +91,7 @@ flowchart LR
 | XLSX max size | **5 MB** |
 | PDF max size | **10 MB** |
 | Allowed extensions | `.csv`, `.xlsx`, `.xls`, `.pdf` |
-| XLSX default | First sheet only if user names one sheet in prompt; otherwise clarify when `sheetCount > 1` |
+| XLSX | All sheets exported on upload; agent picks via tools + conversation |
 
 Adjust caps in `lib/uploads/limits.ts` when implemented.
 
@@ -101,17 +101,18 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 
 `POST /api/coach/upload-context` — multipart `files[]`:
 
-- Normalize server-side → write text to Supabase Storage (`draft-uploads/{coachId}/{draftId}/…`)
-- Return `{ contextFileIds: string[], warnings?: … }`
+- Normalize server-side → write under `draft-uploads/{coachId}/{draftId}/` (one object per XLSX sheet)
+- Return `{ ok: true, contextFileIds: string[], warnings?: … }` — never blocked for multi-sheet workbooks
 
 ### Plan chat
 
 `POST /api/coach/plan-chat` — JSON body:
 
+- `draftId` — workspace / conversation id (Storage prefix); **required** when attachments exist
 - `prompt` — serialized prompt document (segments → text)
-- `messages` — optional prior turns for thread continuity
-- `currentArtifact` — optional `WorkoutPlan` JSON — **server-only** (sandbox seed), not passed to LLM
-- `contextFileIds` — optional ids from upload step (server loads normalized text for Gateway)
+- `messages` — optional prior turns
+- `currentArtifact` — optional — **sandbox seed only**, not passed to LLM
+- `contextFileIds` — optional; if omitted, tools list entire draft prefix
 
 ### Response
 
@@ -143,7 +144,7 @@ Preview and run status may update before assistant text finishes streaming.
 | Phase | Doc | Summary | Status |
 | --- | --- | --- | --- |
 | 1 | [phase-1-foundation.md](./phases/phase-1-foundation.md) | Tooling, env, deps, AGENTS.md | **Done** |
-| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Server parsers, Storage, caps, XLSX sheet rules | |
+| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Parsers, Storage per sheet, `listDraftUploads` | **Done** |
 | 3 | [phase-3-chat-api.md](./phases/phase-3-chat-api.md) | Gateway, route, streaming contract | |
 | 4 | [phase-4-sandbox.md](./phases/phase-4-sandbox.md) | Python builder lib + sandbox executor | |
 | 5 | [phase-5-client-workspace.md](./phases/phase-5-client-workspace.md) | Coach home UI, state, preview pane | |
@@ -155,7 +156,8 @@ Implement in order. Phases 2–4 can overlap slightly once Phase 1 env is green.
 
 | Area | Planned location |
 | --- | --- |
-| Upload limits & parsers | `forge-next/lib/uploads/` |
+| Upload limits, parsers, list | `forge-next/lib/uploads/` (`list-draft-uploads.ts`) |
+| Draft file tools (Phase 3) | `forge-next/lib/ai/plan-chat/tools/` |
 | Chat orchestration | `forge-next/lib/ai/plan-chat/` |
 | Sandbox runner | `forge-next/lib/sandbox/` |
 | Python builder | `forge-next/sandbox/forge_plan/` (bundled into sandbox) |
@@ -172,6 +174,6 @@ Implement in order. Phases 2–4 can overlap slightly once Phase 1 env is green.
 - Saving to `plans` / `plan_versions`
 - Loading/editing plans by `planId` from Supabase
 - Intent classifier (`plan_create` / `plan_edit` / `general_chat`) — labels cosmetic only
-- Agent plan traversal / glimpse tools (v1 uses `summarizePlan` only)
+- Agent **plan JSON** traversal tools (v1: `summarizePlan` for plans; **draft file** list/read in Phase 3)
 - Upload files or summaries inside the sandbox VM
 - Repair loop (validate → auto-fix → re-run) — optional fast-follow after Phase 6
