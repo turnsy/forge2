@@ -25,8 +25,8 @@ Use after Phase 6 integration. Requires local `.env.local` with Vercel AI Gatewa
 ## XLSX
 
 - [ ] Single-sheet workbook → works without extra prompt
-- [ ] Multi-sheet workbook, no sheet in prompt → assistant asks which sheet
-- [ ] Reply with sheet name → succeeds
+- [ ] Multi-sheet workbook, no sheet in prompt → assistant asks which sheet (no preview update until `submit_plan_code` runs)
+- [ ] Reply with sheet name → model reads file and submits code → preview updates
 
 ## Limits
 

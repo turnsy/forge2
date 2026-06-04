@@ -112,7 +112,9 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 - `prompt` — serialized prompt document (segments → text)
 - `messages` — optional prior turns
 - `currentArtifact` — optional — **sandbox seed only**, not passed to LLM
-- `contextFileIds` — optional; if omitted, tools list entire draft prefix
+- `contextFileIds` — optional hint to narrow list/read tools; if omitted, tools list entire draft prefix
+
+**Agent loop (v1):** one Gateway `streamText` per user message with three tools — `list_draft_files`, `read_draft_file`, `submit_plan_code`. The model decides when to list, read, clarify, or submit Python. The server runs Vercel Sandbox **only if** `submit_plan_code` was called in that request (after the loop finishes); otherwise the response ends at `runStatus: done` with assistant text only. See [phase-3-chat-api.md](./phases/phase-3-chat-api.md).
 
 ### Response
 

@@ -56,11 +56,12 @@
 
 ## Clarification (XLSX / ambiguous context)
 
-Handled in **plan-chat**, not upload:
+Handled in **plan-chat** by the **model** (not upload, not server step gating):
 
-1. `list_draft_files(draftId)` returns e.g. `workbook__summary.txt`, `workbook__volume.txt`
-2. Model streams: “Which sheet should I use?”
-3. `runStatus: done`, no `artifact`
-4. User’s next message names the sheet or file; model calls `read_draft_file` then proceeds to sandbox
+1. `list_draft_files` returns e.g. `workbook__summary.txt`, `workbook__volume.txt`
+2. Model may stream “Which sheet should I use?” and **omit** `submit_plan_code` → `runStatus: done`, no `artifact`
+3. User’s next message: model calls `read_draft_file` and `submit_plan_code` when ready
+
+The server never runs sandbox unless `submit_plan_code` was invoked. Whether to clarify vs generate is entirely the model’s call.
 
 No Phase 2 `needsSheetClarification` response.
