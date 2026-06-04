@@ -18,16 +18,15 @@
   - `messages` (optional thread)
   - `contextFileIds` (optional) — narrow scope; if omitted, tools list entire `{coachId}/{draftId}/` prefix
 - [ ] Implement `lib/plans/summarize-plan.ts` — short text for iterations
-- [ ] **Draft context tools** (server-side, AI SDK):
+- [ ] **Draft context tools** (AI SDK — model-invoked only):
   - `list_draft_files` — wraps `listDraftUploads()` → filenames under bucket prefix
   - `read_draft_file` — `loadUploadContextById()` for one normalized `.txt`
-- [ ] Pipeline order:
-  1. Gateway agent turn with tools enabled (`list_draft_files`, optional `read_draft_file`)
-  2. Model may stream assistant text asking which file/sheet to use (no sandbox)
-  3. When ready: codegen system prompt + `summarizePlan` when artifact exists
-  4. Gateway: assistant reply (stream) + generated Python
-  5. Sandbox: `current_plan.json` + `forge_plan/` + `run.py` only → execute → `output/plan.json`
-  6. `loadWorkoutPlan()` → emit `artifact` or `errors`
+- [ ] **Sandbox is not a model tool** — the route orchestrator decides when to run it (see below)
+- [ ] Pipeline order (server state machine in `lib/ai/plan-chat/`, not “model picks sandbox”):
+  1. **Context turn:** Gateway with `list_draft_files` / `read_draft_file` only. Model may stream clarification (“which sheet?”). If still ambiguous → `runStatus: done`, no sandbox.
+  2. **Codegen turn:** When the orchestrator has enough context (user named a file/sheet, or only one draft object, or explicit `contextFileIds`), server starts a **separate** Gateway call with a codegen system prompt + `summarizePlan` (no draft tools). Model streams assistant text + returns generated Python.
+  3. **Sandbox step:** Server writes `current_plan.json` + `forge_plan/` + `run.py`, runs Vercel Sandbox, reads `output/plan.json` — emits `runStatus: sandbox` then `validating`.
+  4. **`loadWorkoutPlan()`** → emit `artifact` or `errors`
 - [ ] **Do not** preload full upload text into the first message (no giant appendix)
 - [ ] Streaming contract unchanged: stream `assistantTextDelta`; non-stream `runStatus`, `artifact`, `warnings`, `errors`
 - [ ] Keep orchestration in `lib/ai/plan-chat/` (tools, prompts, events)

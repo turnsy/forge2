@@ -183,14 +183,6 @@ export async function parseUploadFile(
   }
 }
 
-/** @deprecated Use parseUploadFile — kept for tests migrating to array API. */
-export async function parseUpload(
-  input: ParseUploadInput,
-): Promise<ParseUploadResult> {
-  const results = await parseUploadFile(input);
-  return results[0]!;
-}
-
 export function normalizedUploadToText(upload: {
   kind: string;
   filename: string;
