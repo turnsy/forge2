@@ -1,12 +1,13 @@
 /**
  * Vercel Sandbox executor for plan codegen runs.
- * Phase 3: stub when integration is off; Phase 4: real VM.
+ * Uses a stub in unit tests; live VM when RUN_SANDBOX_INTEGRATION=1.
  *
  * @see docs/plan-generation/phases/phase-4-sandbox.md
  */
 
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { isSandboxIntegrationEnabled } from "@/lib/env/plan-generation";
+import { runPlanSandboxLive } from "@/lib/sandbox/live";
 import { runPlanSandboxStub } from "@/lib/sandbox/stub";
 
 export type RunPlanSandboxInput = {
@@ -26,9 +27,7 @@ export async function runPlanSandbox(
   input: RunPlanSandboxInput,
 ): Promise<RunPlanSandboxResult> {
   if (isSandboxIntegrationEnabled()) {
-    throw new Error(
-      "Real sandbox execution is not implemented yet (Phase 4). Unset RUN_SANDBOX_INTEGRATION or implement runPlanSandboxLive.",
-    );
+    return runPlanSandboxLive(input);
   }
 
   return runPlanSandboxStub(input);

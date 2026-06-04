@@ -1,0 +1,38 @@
+forge_plan public API (use these names in submit_plan_code):
+
+Plan.from_json_file(path: 'str') -> "'Plan'"
+  Load seed from ``current_plan.json`` (empty template when missing).
+
+Plan.empty(name: 'str') -> "'Plan'"
+  Create a new named plan with no weeks.
+
+Plan.is_empty(self) -> 'bool'
+  True when the plan has no weeks (seed not yet built).
+
+Plan.add_week(self, *, index: 'int', label: 'str | None' = None, name: 'str | None' = None) -> 'WeekRef'
+  Add or update a week by index.
+
+Plan.add_day(self, *, week_index: 'int', index: 'int', code: 'str', name: 'str | None' = None) -> 'DayRef'
+  Add or update a day inside a week. ``code`` must match ``w{n}d{m}``.
+
+Plan.add_exercise(self, *, week_index: 'int', day_index: 'int', name: 'str') -> 'ExerciseRef'
+  Append an exercise to a day.
+
+Plan.add_set(self, week_index: 'int', day_index: 'int', exercise_index: 'int', *, reps: 'int | str', load_type: 'str' = 'absolute', load_value: 'float', unit: 'str' = 'kg') -> 'None'
+  Append a planned set to an exercise (generates set id).
+
+Plan.write_json(self, path: 'str') -> 'None'
+  Write plan JSON to ``output/plan.json`` (creates parent dirs).
+
+Example run.py (minimal create):
+
+  from forge_plan import Plan
+
+  plan = Plan.from_json_file("current_plan.json")
+  if plan.is_empty():
+      plan = Plan.empty("4-Week Strength")
+  plan.add_week(index=1, label="Week 1")
+  plan.add_day(week_index=1, index=1, code="w1d1", name="Lower")
+  plan.add_exercise(week_index=1, day_index=1, name="Back Squat")
+  plan.add_set(1, 1, 0, reps=5, load_type="absolute", load_value=100, unit="kg")
+  plan.write_json("output/plan.json")
