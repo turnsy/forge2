@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  assertSystemPromptExcludesFullArtifact,
-  buildPlanChatSystemPrompt,
-} from "@/lib/ai/plan-chat/system-prompts";
+import { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
 
 const samplePlan = {
   schemaVersion: "2.0.0" as const,
@@ -46,6 +43,6 @@ describe("buildPlanChatSystemPrompt", () => {
     });
     expect(system).toContain("Unique Plan Name XYZ");
     expect(system).not.toContain('"weeks":');
-    assertSystemPromptExcludesFullArtifact(system, samplePlan);
+    expect(system).not.toContain(JSON.stringify(samplePlan));
   });
 });

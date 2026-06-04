@@ -11,10 +11,7 @@ import {
   PLAN_CHAT_MAX_TOOL_STEPS,
 } from "@/lib/ai/plan-chat/constants";
 import { createPlanChatTools } from "@/lib/ai/plan-chat/tools/create-plan-chat-tools";
-import {
-  assertSystemPromptExcludesFullArtifact,
-  buildPlanChatSystemPrompt,
-} from "@/lib/ai/plan-chat/system-prompts";
+import { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
 import type { PlanChatEmit, PlanChatMessage } from "@/lib/ai/plan-chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { runPlanSandbox } from "@/lib/sandbox";
@@ -27,7 +24,6 @@ export type RunPlanChatInput = {
   prompt: string;
   messages: PlanChatMessage[];
   currentArtifact: WorkoutPlan | null;
-  contextFileIds?: string[];
   emit: PlanChatEmit;
 };
 
@@ -88,15 +84,10 @@ export async function runPlanChat(
     hasDraftUploads,
   });
 
-  if (input.currentArtifact) {
-    assertSystemPromptExcludesFullArtifact(system, input.currentArtifact);
-  }
-
-  let submittedPython: string | null = null;
+let submittedPython: string | null = null;
   const tools = createPlanChatTools({
     coachId: input.coachId,
     draftId: input.draftId,
-    contextFileIds: input.contextFileIds,
     onSubmitPlanCode: (python) => {
       submittedPython = python;
       logSubmittedPlanCode(python, {

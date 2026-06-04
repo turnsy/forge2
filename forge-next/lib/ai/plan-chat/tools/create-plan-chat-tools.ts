@@ -1,28 +1,14 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { listDraftUploads } from "@/lib/uploads/list-draft-uploads";
-import type { DraftUploadListItem } from "@/lib/uploads/list-draft-uploads";
 import { loadUploadContextById } from "@/lib/uploads/context-storage";
 import { PLAN_CHAT_DRAFT_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
 
 export type PlanChatToolsContext = {
   coachId: string;
   draftId?: string;
-  contextFileIds?: string[];
   onSubmitPlanCode: (python: string) => void;
 };
-
-function filterDraftItems(
-  items: DraftUploadListItem[],
-  contextFileIds: string[] | undefined,
-): DraftUploadListItem[] {
-  if (!contextFileIds?.length) {
-    return items;
-  }
-
-  const allowed = new Set(contextFileIds);
-  return items.filter((item) => allowed.has(item.path));
-}
 
 function truncateDraftText(text: string): { content: string; truncated: boolean } {
   if (text.length <= PLAN_CHAT_DRAFT_READ_MAX_CHARS) {
@@ -39,30 +25,25 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
   return {
     list_draft_files: tool({
       description:
-        "List normalized upload files for this draft workspace (one .txt per CSV/PDF object or per XLSX sheet).",
+        "List storage paths for normalized upload files under this draft (one .txt per CSV/PDF or per XLSX sheet).",
       inputSchema: z.object({}),
       execute: async () => {
         if (!ctx.draftId) {
-          return { files: [] as DraftUploadListItem[] };
+          return { paths: [] as string[] };
         }
 
         const items = await listDraftUploads(ctx.coachId, ctx.draftId);
-        const filtered = filterDraftItems(items, ctx.contextFileIds);
         return {
-          files: filtered.map((item) => ({
-            path: item.path,
-            name: item.name,
-            sizeBytes: item.sizeBytes,
-          })),
+          paths: items.map((item) => item.path).filter((path) => path.length > 0),
         };
       },
     }),
 
     read_draft_file: tool({
       description:
-        "Read normalized text for one draft upload. Use path from list_draft_files.",
+        "Read normalized upload text for one path from list_draft_files.",
       inputSchema: z.object({
-        path: z.string().min(1).describe("Storage object path (contextFileId)."),
+        path: z.string().min(1).describe("Storage object path."),
       }),
       execute: async ({ path }) => {
         if (!ctx.draftId) {

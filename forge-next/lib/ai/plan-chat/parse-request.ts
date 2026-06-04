@@ -12,7 +12,6 @@ export type ParsedPlanChatRequest =
       prompt: string;
       messages: PlanChatMessage[];
       currentArtifact: WorkoutPlan | null;
-      contextFileIds?: string[];
     }
   | { ok: false; message: string };
 
@@ -70,21 +69,11 @@ export function parsePlanChatRequestBody(
     currentArtifact = validated.plan;
   }
 
-  if (record.contextFileIds !== undefined) {
-    if (
-      !Array.isArray(record.contextFileIds) ||
-      record.contextFileIds.some((id) => typeof id !== "string")
-    ) {
-      return { ok: false, message: "contextFileIds must be an array of strings." };
-    }
-  }
-
   return {
     ok: true,
     draftId: record.draftId?.trim() || undefined,
     prompt: record.prompt.trim(),
     messages,
     currentArtifact,
-    contextFileIds: record.contextFileIds,
   };
 }

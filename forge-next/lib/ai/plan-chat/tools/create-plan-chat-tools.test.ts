@@ -19,7 +19,7 @@ describe("createPlanChatTools", () => {
     mockLoad.mockReset();
   });
 
-  it("lists multi-sheet draft files", async () => {
+  it("lists paths under the draft prefix", async () => {
     mockList.mockResolvedValue([
       { path: "c/d/a__summary.txt", name: "a__summary.txt", sizeBytes: 1 },
       { path: "c/d/a__volume.txt", name: "a__volume.txt", sizeBytes: 2 },
@@ -36,7 +36,7 @@ describe("createPlanChatTools", () => {
       { messages: [], toolCallId: "1" },
     );
 
-    expect(result.files).toHaveLength(2);
+    expect(result.paths).toEqual(["c/d/a__summary.txt", "c/d/a__volume.txt"]);
   });
 
   it("captures python on submit_plan_code", async () => {
@@ -54,7 +54,11 @@ describe("createPlanChatTools", () => {
     );
 
     expect(captured).toBe("print('hi')");
-    const listed = await tools.list_draft_files.execute!({}, { messages: [], toolCallId: "3" });
-    expect(listed.files).toEqual([]);
+
+    const listed = await tools.list_draft_files.execute!(
+      {},
+      { messages: [], toolCallId: "3" },
+    );
+    expect(listed.paths).toEqual([]);
   });
 });

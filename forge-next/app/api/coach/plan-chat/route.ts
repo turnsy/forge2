@@ -37,7 +37,6 @@ export async function POST(request: Request) {
       prompt: parsed.prompt,
       messages: parsed.messages,
       currentArtifact: parsed.currentArtifact,
-      contextFileIds: parsed.contextFileIds,
       emit,
     }),
   );

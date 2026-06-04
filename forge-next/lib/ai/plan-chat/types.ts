@@ -18,7 +18,6 @@ export type PlanChatRequestBody = {
   prompt: string;
   messages?: PlanChatMessage[];
   currentArtifact?: WorkoutPlan | null;
-  contextFileIds?: string[];
 };
 
 export type PlanChatValidationError = {

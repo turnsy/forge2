@@ -19,4 +19,4 @@ export {
 } from "@/lib/ai/plan-chat/events";
 export { parsePlanChatRequestBody } from "@/lib/ai/plan-chat/parse-request";
 export { summarizePlan } from "@/lib/plans/summarize-plan";
-export { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/system-prompts";
+export { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";

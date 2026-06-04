@@ -1,6 +1,6 @@
 import { summarizePlan } from "@/lib/plans/summarize-plan";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { buildPythonCodegenRules } from "@/lib/ai/plan-chat/python-codegen-prompt";
+import { buildPythonCodegenRules } from "@/lib/ai/plan-chat/prompts/python-codegen-prompt";
 
 export function buildPlanChatSystemPrompt(input: {
   currentArtifact: WorkoutPlan | null;
@@ -33,14 +33,4 @@ export function buildPlanChatSystemPrompt(input: {
   }
 
   return sections.join("\n");
-}
-
-export function assertSystemPromptExcludesFullArtifact(
-  system: string,
-  artifact: WorkoutPlan,
-): void {
-  const serialized = JSON.stringify(artifact);
-  if (system.includes(serialized)) {
-    throw new Error("System prompt must not contain full currentArtifact JSON.");
-  }
 }

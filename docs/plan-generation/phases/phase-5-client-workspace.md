@@ -23,7 +23,7 @@
   2. On **200**: show attachments as uploaded (including multi-sheet workbook — e.g. “Spreadsheet (3 sheets)”)
   3. **Do not** treat multi-sheet XLSX as failed attach
 - [ ] Send flow:
-  - `POST /api/coach/plan-chat` with `draftId`, `prompt`, `currentArtifact`, optional `contextFileIds`, `messages`
+  - `POST /api/coach/plan-chat` with `draftId`, `prompt`, `currentArtifact`, `messages`
 - [ ] Stream `assistantTextDelta`; apply `artifact` / `runStatus` / `warnings` / `errors`
 - [ ] Sheet/file clarification appears in **thread** (from assistant), not as upload error
 - [ ] On validation error: keep last valid `currentArtifact`

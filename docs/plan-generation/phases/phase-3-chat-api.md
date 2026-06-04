@@ -10,58 +10,38 @@
 
 ## Agent actions
 
-- [ ] Add `app/api/coach/plan-chat/route.ts` with `requireApiRole('coach')`
-- [ ] Accept JSON body:
-  - `draftId` — **required** when the workspace has uploads (ties to Storage prefix)
-  - `prompt` (JSON segments — reuse `serializePromptDocument`)
+- [x] Add `app/api/coach/plan-chat/route.ts` with `requireApiRole('coach')`
+- [x] Accept JSON body:
+  - `draftId` — ties to Storage prefix when uploads exist
+  - `prompt` (serialized prompt document text)
   - `currentArtifact` (optional) — **sandbox seed only; never in LLM messages**
   - `messages` (optional thread)
-  - `contextFileIds` (optional) — narrow scope; if omitted, tools list entire `{coachId}/{draftId}/` prefix
-- [ ] Implement `lib/plans/summarize-plan.ts` — short text for iterations
-- [ ] **Draft context tools** (AI SDK — model-invoked only):
-  - `list_draft_files` — wraps `listDraftUploads()` → filenames under bucket prefix
+- [x] Implement `lib/plans/summarize-plan.ts` — short text for iterations
+- [x] **Three model tools** (model chooses order; no server-forced turns):
+  - `list_draft_files` — returns `paths[]` under `{coachId}/{draftId}/`
   - `read_draft_file` — `loadUploadContextById()` for one normalized `.txt`
-- [ ] **Sandbox is not a model tool** — the route orchestrator decides when to run it (see below)
-- [ ] Pipeline order (server state machine in `lib/ai/plan-chat/`, not “model picks sandbox”):
-  1. **Context turn:** Gateway with `list_draft_files` / `read_draft_file` only. Model may stream clarification (“which sheet?”). If still ambiguous → `runStatus: done`, no sandbox.
-  2. **Codegen turn:** When the orchestrator has enough context (user named a file/sheet, or only one draft object, or explicit `contextFileIds`), server starts a **separate** Gateway call with a codegen system prompt + `summarizePlan` (no draft tools). Model streams assistant text + returns generated Python.
-  3. **Sandbox step:** Server writes `current_plan.json` + `forge_plan/` + `run.py`, runs Vercel Sandbox, reads `output/plan.json` — emits `runStatus: sandbox` then `validating`.
-  4. **`loadWorkoutPlan()`** → emit `artifact` or `errors`
-- [ ] **Do not** preload full upload text into the first message (no giant appendix)
-- [ ] Streaming contract unchanged: stream `assistantTextDelta`; non-stream `runStatus`, `artifact`, `warnings`, `errors`
-- [ ] Keep orchestration in `lib/ai/plan-chat/` (tools, prompts, events)
-- [ ] Unit tests: tools list multi-sheet draft; auth; no full artifact JSON in tool-less system prompt
-- [ ] Integration test with mocked sandbox + mocked Storage list
-
----
-
-## Developer actions
-
-- [ ] Set `AI_GATEWAY_API_KEY` in `.env.local` and Vercel project settings
-- [ ] Choose default Gateway model(s) with **tool calling** support
-- [ ] Test with coach session: attach files → send plan-chat with `draftId`
-
----
-
-## Done criteria
-
-- [ ] Unauthenticated → 401; athlete → 403
-- [ ] Prompt-only request streams assistant text; valid `artifact` after sandbox
-- [ ] Multi-sheet XLSX attached under one `draftId` → `list_draft_files` shows all `__sheet` objects; agent can ask in thread
-- [ ] Upload attach never blocked for multiple sheets (Phase 2)
-- [ ] `currentArtifact` seeds sandbox only — not in Gateway payload (assert in tests)
-- [ ] Sandbox filesystem has no upload copies
+  - `submit_plan_code` — Python for `run.py`; sandbox runs **only if** this tool was called
+- [x] Prompts under `lib/ai/plan-chat/prompts/`
+- [x] **Do not** preload full upload text into the first message
+- [x] Streaming: `assistantTextDelta`; discrete `runStatus`, `artifact`, `warnings`, `errors`
+- [x] Dev: log submitted Python in Next.js server terminal
 
 ---
 
 ## Clarification (XLSX / ambiguous context)
 
-Handled in **plan-chat** by the **model** (not upload, not server step gating):
+Handled by the **model** via tools, not upload blocking:
 
-1. `list_draft_files` returns e.g. `workbook__summary.txt`, `workbook__volume.txt`
-2. Model may stream “Which sheet should I use?” and **omit** `submit_plan_code` → `runStatus: done`, no `artifact`
-3. User’s next message: model calls `read_draft_file` and `submit_plan_code` when ready
+1. `list_draft_files` returns paths for all sheets
+2. Model may ask which sheet and **omit** `submit_plan_code` → `done`, no `artifact`
+3. Next message: `read_draft_file` + `submit_plan_code` when ready
 
-The server never runs sandbox unless `submit_plan_code` was invoked. Whether to clarify vs generate is entirely the model’s call.
+---
 
-No Phase 2 `needsSheetClarification` response.
+## Done criteria
+
+- [x] Unauthenticated → 401; athlete → 403
+- [x] Prompt-only → `artifact` when model submits code
+- [x] Multi-sheet XLSX → `list_draft_files` lists all paths; agent can clarify
+- [x] `currentArtifact` seeds sandbox only — not full JSON in system prompt (unit test)
+- [ ] Sandbox filesystem has no upload copies (Phase 4 integration assert)
