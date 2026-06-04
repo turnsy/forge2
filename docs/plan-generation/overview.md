@@ -112,7 +112,7 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 - `prompt` — serialized prompt document (segments → text)
 - `messages` — optional prior turns
 - `currentArtifact` — optional — **sandbox seed only**, not passed to LLM
-- `contextFileIds` — optional; if omitted, tools list entire draft prefix
+- Upload paths are discovered via `list_draft_files` for the `draftId` prefix (upload-context still returns `contextFileIds` for the client UI)
 
 ### Response
 

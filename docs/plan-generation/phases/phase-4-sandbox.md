@@ -26,7 +26,7 @@
 - [ ] Script to **autogenerate** cheat sheet from pydoc/docstrings (e.g. `generate_api_cheat_sheet.py` or build step in `package.json`)
 - [ ] **Hard limit** on output size (e.g. ≤ 2 KB / ~40 lines) — signatures + one line each; truncate with “see forge_plan for more” if needed
 - [ ] Commit generated `forge_plan_api_cheat_sheet.txt` or generate at build time in `lib/ai/plan-chat/`
-- [ ] Inject cheat sheet into codegen system prompt in Phase 3 (not duplicated as `schema.json` in sandbox)
+- [ ] Inject cheat sheet into plan-chat system prompt (Phase 3); model passes Python via `submit_plan_code` — not duplicated as `schema.json` in sandbox
 
 ### Sandbox executor (`lib/sandbox/`)
 

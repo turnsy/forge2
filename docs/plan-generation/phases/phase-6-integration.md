@@ -9,7 +9,7 @@
 ## Agent actions
 
 - [ ] Remove sandbox/API stubs; wire happy path
-- [ ] Integration test: attach → multiple sheet ids → plan-chat `list_draft_files` → clarify or sandbox (mocked)
+- [ ] Integration test: attach → multiple sheet ids → plan-chat with three tools (mocked Gateway): clarify path (no `submit_plan_code` → no sandbox) and generate path (`submit_plan_code` → mocked sandbox → `artifact`)
 - [ ] Unit coverage: uploads (multi-sheet ids), draft list/read tools, validation gate
 - [ ] `docs/plan-generation/QA.md` manual checklist
 - [ ] CI: `pnpm test` + `pnpm build` (mock sandbox; no secrets)
