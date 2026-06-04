@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PlanChatRunStatusEvent } from "@/lib/ai/plan-chat";
+import type { PlanChatRunStatusEvent } from "@/lib/ai/plan-chat";
 import {
   getAiGatewayApiKey,
   isAiGatewayConfigured,
