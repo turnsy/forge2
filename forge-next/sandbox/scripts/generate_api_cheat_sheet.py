@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import sys
 from pathlib import Path
 
@@ -85,18 +86,22 @@ def build_cheat_sheet() -> str:
 
 
 def main() -> None:
-    out_path = (
+    cheat_sheet = build_cheat_sheet()
+    out_ts = (
         ROOT.parent
         / "lib"
         / "ai"
         / "plan-chat"
         / "prompts"
-        / "forge_plan_api_cheat_sheet.txt"
+        / "forge_plan_api_cheat_sheet.generated.ts"
     )
-    cheat_sheet = build_cheat_sheet()
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(cheat_sheet + "\n", encoding="utf-8")
-    print(f"Wrote {out_path} ({len(cheat_sheet.encode('utf-8'))} bytes)")
+    out_ts.parent.mkdir(parents=True, exist_ok=True)
+    out_ts.write_text(
+        "/* AUTO-GENERATED — do not edit */\n\n"
+        f"export const FORGE_PLAN_API_CHEAT_SHEET = {json.dumps(cheat_sheet)};\n",
+        encoding="utf-8",
+    )
+    print(f"Wrote {out_ts} ({len(cheat_sheet.encode('utf-8'))} bytes)")
 
 
 if __name__ == "__main__":
