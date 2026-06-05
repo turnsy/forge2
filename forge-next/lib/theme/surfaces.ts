@@ -23,8 +23,12 @@ const messageToneClasses: Record<MessageTone, string> = {
   info: "border-glass-border bg-glass text-surface-muted shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md",
 };
 
-export function controlClass(): string {
-  return `w-full ${radius.control} px-5 py-3.5 font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus`;
+export function controlClass(size: "sm" | "md" = "md"): string {
+  const sizeClass =
+    size === "sm"
+      ? "px-3 py-2 text-base"
+      : "px-5 py-3.5 text-base";
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
 }
 
 export function buttonVariantClass(

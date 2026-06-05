@@ -4,9 +4,13 @@ import { controlClass } from "@/lib/theme";
 export function Input({
   label,
   className,
+  size = "md",
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
-  const inputClassName = `${controlClass()}${className ? ` ${className}` : ""}`;
+}: InputHTMLAttributes<HTMLInputElement> & {
+  label?: string;
+  size?: "sm" | "md";
+}) {
+  const inputClassName = `${controlClass(size)}${className ? ` ${className}` : ""}`;
 
   if (label) {
     return (

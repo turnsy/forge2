@@ -24,7 +24,7 @@ export function CoachPlanWorkspace({
 
   if (!state.hasStarted) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 text-center">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-4 text-center md:px-6">
         <div className="flex w-full items-center justify-center gap-3">
           <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
             Welcome back,{" "}
@@ -47,7 +47,7 @@ export function CoachPlanWorkspace({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ResizableSplitPane
         left={
-          <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">
             <PlanWorkspaceToolbar
               planTitle={state.planTitle}
               saveDisabled={isChatRunning(state)}
@@ -63,7 +63,7 @@ export function CoachPlanWorkspace({
           </div>
         }
         right={
-          <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">
             <PlanChatThread
               messages={state.messages}
               streamingAssistantText={state.streamingAssistantText}

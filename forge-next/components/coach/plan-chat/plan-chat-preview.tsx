@@ -43,7 +43,7 @@ export function PlanChatPreview({
   }
 
   return (
-    <div className="relative h-full min-h-0 overflow-y-auto px-4 pb-4 md:px-6 md:pb-6">
+    <div className="relative h-full min-h-0 overflow-y-auto">
       {showOverlaySpinner ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
           <Spinner label="Updating plan" />
