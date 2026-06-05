@@ -4,15 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import { PlanWorkspaceToolbar } from "@/components/coach/plan-chat/plan-workspace-toolbar";
 
 describe("PlanWorkspaceToolbar", () => {
-  it("renders title input and save button", () => {
-    render(
+  it("renders a page-style header with title input and save button", () => {
+    const { container } = render(
       <PlanWorkspaceToolbar
         planTitle="Summer block"
         saveDisabled={false}
         onPlanTitleChange={vi.fn()}
       />,
     );
+    expect(container.querySelector("header")).toBeTruthy();
     expect(screen.getByLabelText("Plan title")).toHaveValue("Summer block");
+    expect(screen.getByLabelText("Plan title")).toHaveClass("bg-transparent");
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 

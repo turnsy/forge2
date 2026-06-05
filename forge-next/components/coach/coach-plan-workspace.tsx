@@ -44,21 +44,22 @@ export function CoachPlanWorkspace({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <PlanWorkspaceToolbar
-        planTitle={state.planTitle}
-        saveDisabled={isChatRunning(state)}
-        onPlanTitleChange={setPlanTitle}
-      />
-
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ResizableSplitPane
         left={
           <div className="flex h-full min-h-0 flex-col overflow-hidden">
-            <PlanChatPreview
-              plan={state.currentArtifact}
-              runStatus={state.runStatus}
-              isAwaitingPlan={isAwaitingFirstPlan(state)}
+            <PlanWorkspaceToolbar
+              planTitle={state.planTitle}
+              saveDisabled={isChatRunning(state)}
+              onPlanTitleChange={setPlanTitle}
             />
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <PlanChatPreview
+                plan={state.currentArtifact}
+                runStatus={state.runStatus}
+                isAwaitingPlan={isAwaitingFirstPlan(state)}
+              />
+            </div>
           </div>
         }
         right={
