@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isSandboxAuthConfigured, isSandboxIntegrationEnabled } from "@/lib/env/plan-generation";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
-import { runPlanSandbox } from "@/lib/sandbox";
+import { runSandbox } from "@/lib/sandbox";
 import {
   CURRENT_PLAN_PATH,
   OUTPUT_PLAN_PATH,
@@ -24,11 +24,14 @@ plan.write_json("output/plan.json")
 const integrationEnabled =
   isSandboxIntegrationEnabled() && isSandboxAuthConfigured();
 
-describe.runIf(integrationEnabled)("runPlanSandbox integration", () => {
+describe.runIf(integrationEnabled)("runSandbox integration", () => {
   it("executes forge_plan in a real Vercel Sandbox", async () => {
-    const result = await runPlanSandbox({
-      currentPlan: null,
-      generatedPython: EXAMPLE_RUN_PY,
+    const result = await runSandbox({
+      artifact: {
+        type: "plan",
+        currentPlan: null,
+        generatedPython: EXAMPLE_RUN_PY,
+      },
     });
 
     expect(result.ok).toBe(true);
@@ -42,9 +45,12 @@ describe.runIf(integrationEnabled)("runPlanSandbox integration", () => {
   }, 120_000);
 
   it("iterates an existing seed plan", async () => {
-    const seedResult = await runPlanSandbox({
-      currentPlan: null,
-      generatedPython: EXAMPLE_RUN_PY,
+    const seedResult = await runSandbox({
+      artifact: {
+        type: "plan",
+        currentPlan: null,
+        generatedPython: EXAMPLE_RUN_PY,
+      },
     });
     expect(seedResult.ok).toBe(true);
     if (!seedResult.ok) {
@@ -60,9 +66,12 @@ plan.add_day(week_index=2, index=1, code="w2d1")
 plan.write_json("output/plan.json")
 `.trim();
 
-    const result = await runPlanSandbox({
-      currentPlan: seedResult.plan,
-      generatedPython: iteratePy,
+    const result = await runSandbox({
+      artifact: {
+        type: "plan",
+        currentPlan: seedResult.plan,
+        generatedPython: iteratePy,
+      },
     });
 
     expect(result.ok).toBe(true);
@@ -72,7 +81,7 @@ plan.write_json("output/plan.json")
   }, 180_000);
 });
 
-describe("runPlanSandbox integration guard", () => {
+describe("runSandbox integration guard", () => {
   it("documents required env for live sandbox tests", () => {
     if (!isSandboxIntegrationEnabled()) {
       expect(process.env.RUN_SANDBOX_INTEGRATION).not.toBe("1");

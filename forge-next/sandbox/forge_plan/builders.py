@@ -69,21 +69,37 @@ def build_absolute_load(value: float, unit: str) -> dict[str, Any]:
     return {"type": "absolute", "value": value, "unit": unit}
 
 
+def build_percentage_load(value: float, operator: str = "exact") -> dict[str, Any]:
+    """Build a percentage load (``basis`` omitted — optional in schema v2.0.0)."""
+    load: dict[str, Any] = {
+        "type": "percentage",
+        "unit": "%",
+        "operator": operator,
+        "value": value,
+    }
+    return load
+
+
 def build_planned_set(
     *,
     reps: int | str,
     load_type: str,
     load_value: float,
     unit: str = "kg",
+    operator: str = "exact",
 ) -> dict[str, Any]:
-    """Build a minimal exact planned set."""
-    if load_type != "absolute":
-        raise ValueError("v1 add_set supports load_type='absolute' only")
+    """Build a minimal exact planned set (absolute or percentage load)."""
+    if load_type == "absolute":
+        load = build_absolute_load(load_value, unit)
+    elif load_type == "percentage":
+        load = build_percentage_load(load_value, operator=operator)
+    else:
+        raise ValueError("load_type must be 'absolute' or 'percentage'")
 
     return {
         "type": "exact",
         "reps": reps,
-        "load": build_absolute_load(load_value, unit),
+        "load": load,
     }
 
 
@@ -94,6 +110,7 @@ def build_set_entry(
     load_type: str,
     load_value: float,
     unit: str = "kg",
+    operator: str = "exact",
 ) -> dict[str, Any]:
     """Build a full set entry for the workout plan schema."""
     return {
@@ -103,6 +120,7 @@ def build_set_entry(
             load_type=load_type,
             load_value=load_value,
             unit=unit,
+            operator=operator,
         ),
         "actual": None,
         "status": "planned",
@@ -114,3 +132,15 @@ def validate_day_code(code: str) -> None:
     """Raise ValueError when day code does not match w{n}d{m}."""
     if not DAY_CODE_PATTERN.match(code):
         raise ValueError(f"day code must match w{{n}}d{{m}}, got {code!r}")
+
+
+def move_list_item(items: list[Any], from_index: int, to_index: int) -> None:
+    """Move an item within a list (0-based indices; ``to_index`` is insert position)."""
+    if from_index < 0 or from_index >= len(items):
+        raise ValueError(f"from_index {from_index} out of range (0..{len(items) - 1})")
+    item = items.pop(from_index)
+    if to_index < 0:
+        to_index = 0
+    if to_index > len(items):
+        to_index = len(items)
+    items.insert(to_index, item)

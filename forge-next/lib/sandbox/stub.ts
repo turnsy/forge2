@@ -1,5 +1,5 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import type { RunPlanSandboxInput, RunPlanSandboxResult } from "@/lib/sandbox/index";
+import type { RunPlanSandboxInput, RunSandboxResult } from "@/lib/sandbox/types";
 
 /** Minimal valid plan for stub sandbox runs (Phase 3 tests / dev without VM). */
 export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
@@ -44,7 +44,7 @@ export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
  */
 export async function runPlanSandboxStub(
   input: RunPlanSandboxInput,
-): Promise<RunPlanSandboxResult> {
+): Promise<RunSandboxResult> {
   if (input.currentPlan) {
     return { ok: true, plan: input.currentPlan };
   }

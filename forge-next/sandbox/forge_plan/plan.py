@@ -10,6 +10,7 @@ from forge_plan.builders import (
     build_set_entry,
     empty_plan_template,
     load_seed_from_file,
+    move_list_item,
     next_set_id,
     validate_day_code,
 )
@@ -90,18 +91,19 @@ class Plan:
         label: str | None = None,
         name: str | None = None,
     ) -> WeekRef:
-        """Add or update a week by index."""
+        """Add or update a week by schema ``index`` (renumbers array order after)."""
         weeks = self._ensure_weeks()
-        week = self._find_week(weeks, index)
+        week = self._find_week_by_schema_index(weeks, index)
         if week is None:
             week = {"index": index, "days": []}
             weeks.append(week)
-            weeks.sort(key=lambda item: int(item["index"]))
 
         if label is not None:
             week["label"] = label
         if name is not None:
             week["name"] = name
+
+        self._sync_structure()
         return WeekRef(self, week)
 
     def add_day(
@@ -112,20 +114,21 @@ class Plan:
         code: str,
         name: str | None = None,
     ) -> DayRef:
-        """Add or update a day inside a week. ``code`` must match ``w{n}d{m}``."""
+        """Add or update a day (``week_index`` is schema week index; renumbers after)."""
         validate_day_code(code)
-        week = self._require_week(week_index)
+        week = self._require_week_by_schema_index(week_index)
         days = week.setdefault("days", [])
-        day = self._find_day(days, index)
+        day = self._find_day_by_schema_index(days, index)
         if day is None:
             day = {"index": index, "code": code, "exercises": []}
             days.append(day)
-            days.sort(key=lambda item: int(item["index"]))
         else:
             day["code"] = code
 
         if name is not None:
             day["name"] = name
+
+        self._sync_structure()
         return DayRef(self, day)
 
     def add_exercise(
@@ -135,11 +138,12 @@ class Plan:
         day_index: int,
         name: str,
     ) -> ExerciseRef:
-        """Append an exercise to a day."""
-        day = self._require_day(week_index, day_index)
+        """Append an exercise to a day (``week_index`` / ``day_index`` are schema indices)."""
+        day = self._require_day_by_schema_index(week_index, day_index)
         exercises = day.setdefault("exercises", [])
         exercise = {"name": name, "sets": []}
         exercises.append(exercise)
+        self._sync_structure()
         return ExerciseRef(self, exercise)
 
     def add_set(
@@ -152,11 +156,18 @@ class Plan:
         load_type: str = "absolute",
         load_value: float,
         unit: str = "kg",
+        operator: str = "exact",
     ) -> None:
-        """Append a planned set to an exercise (generates set id)."""
-        exercise = self._require_exercise(week_index, day_index, exercise_index)
+        """Append a planned set (``exercise_index`` is 0-based position in the day)."""
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        day = self._require_day_at(week_pos, day_pos)
+        exercises = day.setdefault("exercises", [])
+        if exercise_index < 0 or exercise_index >= len(exercises):
+            raise ValueError(
+                f"exercise_index {exercise_index} out of range for week {week_index} day {day_index}"
+            )
+        exercise = exercises[exercise_index]
         sets = exercise.setdefault("sets", [])
-        day = self._require_day(week_index, day_index)
         set_id = next_set_id(str(day["code"]), str(exercise["name"]), sets)
         sets.append(
             build_set_entry(
@@ -165,8 +176,99 @@ class Plan:
                 load_type=load_type,
                 load_value=load_value,
                 unit=unit,
+                operator=operator,
             )
         )
+        self._sync_structure()
+
+    def move_week(self, from_index: int, to_index: int) -> None:
+        """Reorder weeks by 0-based array position; renumbers indices and day codes."""
+        weeks = self._ensure_weeks()
+        move_list_item(weeks, from_index, to_index)
+        self._sync_structure()
+
+    def remove_week(self, index: int) -> None:
+        """Remove a week by 0-based array position."""
+        weeks = self._ensure_weeks()
+        if index < 0 or index >= len(weeks):
+            raise ValueError(f"week array index {index} out of range")
+        weeks.pop(index)
+        self._sync_structure()
+
+    def move_day(self, week_index: int, from_index: int, to_index: int) -> None:
+        """Reorder days within a week (``week_index`` schema index; day positions 0-based)."""
+        week_pos = self._schema_week_position(week_index)
+        week = self._require_week_at(week_pos)
+        days = week.setdefault("days", [])
+        move_list_item(days, from_index, to_index)
+        self._sync_structure()
+
+    def remove_day(self, week_index: int, index: int) -> None:
+        """Remove a day by 0-based array position within a week (schema ``week_index``)."""
+        week_pos = self._schema_week_position(week_index)
+        week = self._require_week_at(week_pos)
+        days = week.setdefault("days", [])
+        if index < 0 or index >= len(days):
+            raise ValueError(f"day array index {index} out of range")
+        days.pop(index)
+        self._sync_structure()
+
+    def move_exercise(
+        self, week_index: int, day_index: int, from_index: int, to_index: int
+    ) -> None:
+        """Reorder exercises (schema week/day indices; 0-based exercise positions)."""
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        day = self._require_day_at(week_pos, day_pos)
+        exercises = day.setdefault("exercises", [])
+        move_list_item(exercises, from_index, to_index)
+        self._sync_structure()
+
+    def remove_exercise(self, week_index: int, day_index: int, index: int) -> None:
+        """Remove an exercise by 0-based array position."""
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        day = self._require_day_at(week_pos, day_pos)
+        exercises = day.setdefault("exercises", [])
+        if index < 0 or index >= len(exercises):
+            raise ValueError(f"exercise array index {index} out of range")
+        exercises.pop(index)
+        self._sync_structure()
+
+    def move_set(
+        self,
+        week_index: int,
+        day_index: int,
+        exercise_index: int,
+        from_index: int,
+        to_index: int,
+    ) -> None:
+        """Reorder sets within an exercise (0-based set positions)."""
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        day = self._require_day_at(week_pos, day_pos)
+        exercises = day.setdefault("exercises", [])
+        if exercise_index < 0 or exercise_index >= len(exercises):
+            raise ValueError(f"exercise_index {exercise_index} out of range")
+        sets = exercises[exercise_index].setdefault("sets", [])
+        move_list_item(sets, from_index, to_index)
+        self._sync_structure()
+
+    def remove_set(
+        self,
+        week_index: int,
+        day_index: int,
+        exercise_index: int,
+        index: int,
+    ) -> None:
+        """Remove a set by 0-based array position."""
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        day = self._require_day_at(week_pos, day_pos)
+        exercises = day.setdefault("exercises", [])
+        if exercise_index < 0 or exercise_index >= len(exercises):
+            raise ValueError(f"exercise_index {exercise_index} out of range")
+        sets = exercises[exercise_index].setdefault("sets", [])
+        if index < 0 or index >= len(sets):
+            raise ValueError(f"set array index {index} out of range")
+        sets.pop(index)
+        self._sync_structure()
 
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-serializable plan data (schema v2.0.0)."""
@@ -181,6 +283,21 @@ class Plan:
             encoding="utf-8",
         )
 
+    def _sync_structure(self) -> None:
+        """Renumber week/day schema indices and day codes to match array order."""
+        weeks = self._ensure_weeks()
+        for week_pos, week in enumerate(weeks):
+            week_number = week_pos + 1
+            week["index"] = week_number
+            days = week.get("days")
+            if not isinstance(days, list):
+                week["days"] = []
+                continue
+            for day_pos, day in enumerate(days):
+                day_number = day_pos + 1
+                day["index"] = day_number
+                day["code"] = f"w{week_number}d{day_number}"
+
     def _ensure_weeks(self) -> list[dict[str, Any]]:
         weeks = self._data.get("weeks")
         if not isinstance(weeks, list):
@@ -188,48 +305,68 @@ class Plan:
             self._data["weeks"] = weeks
         return weeks
 
-    def _find_week(self, weeks: list[dict[str, Any]], index: int) -> dict[str, Any] | None:
+    def _find_week_by_schema_index(
+        self, weeks: list[dict[str, Any]], index: int
+    ) -> dict[str, Any] | None:
         for week in weeks:
             if int(week.get("index", -1)) == index:
                 return week
         return None
 
-    def _find_day(self, days: list[dict[str, Any]], index: int) -> dict[str, Any] | None:
+    def _find_day_by_schema_index(
+        self, days: list[dict[str, Any]], index: int
+    ) -> dict[str, Any] | None:
         for day in days:
             if int(day.get("index", -1)) == index:
                 return day
         return None
 
-    def _require_week(self, week_index: int) -> dict[str, Any]:
-        week = self._find_week(self._ensure_weeks(), week_index)
+    def _schema_week_position(self, week_index: int) -> int:
+        weeks = self._ensure_weeks()
+        for pos, week in enumerate(weeks):
+            if int(week.get("index", -1)) == week_index:
+                return pos
+        raise ValueError(f"week {week_index} does not exist; call add_week first")
+
+    def _schema_week_day_positions(self, week_index: int, day_index: int) -> tuple[int, int]:
+        week_pos = self._schema_week_position(week_index)
+        week = weeks[week_pos] if (weeks := self._ensure_weeks()) else None
+        if week is None:
+            raise ValueError(f"week {week_index} does not exist")
+        days = week.get("days")
+        if not isinstance(days, list):
+            raise ValueError(f"week {week_index} has no days")
+        for pos, day in enumerate(days):
+            if int(day.get("index", -1)) == day_index:
+                return week_pos, pos
+        raise ValueError(
+            f"day {day_index} in week {week_index} does not exist; call add_day first"
+        )
+
+    def _require_week_by_schema_index(self, week_index: int) -> dict[str, Any]:
+        week = self._find_week_by_schema_index(self._ensure_weeks(), week_index)
         if week is None:
             raise ValueError(f"week {week_index} does not exist; call add_week first")
         return week
 
-    def _require_day(self, week_index: int, day_index: int) -> dict[str, Any]:
-        week = self._require_week(week_index)
+    def _require_week_at(self, week_pos: int) -> dict[str, Any]:
+        weeks = self._ensure_weeks()
+        if week_pos < 0 or week_pos >= len(weeks):
+            raise ValueError(f"week array index {week_pos} out of range")
+        return weeks[week_pos]
+
+    def _require_day_by_schema_index(self, week_index: int, day_index: int) -> dict[str, Any]:
+        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
+        return self._require_day_at(week_pos, day_pos)
+
+    def _require_day_at(self, week_pos: int, day_pos: int) -> dict[str, Any]:
+        week = self._require_week_at(week_pos)
         days = week.get("days")
         if not isinstance(days, list):
-            raise ValueError(f"week {week_index} has no days")
-        day = self._find_day(days, day_index)
-        if day is None:
-            raise ValueError(
-                f"day {day_index} in week {week_index} does not exist; call add_day first"
-            )
-        return day
-
-    def _require_exercise(
-        self, week_index: int, day_index: int, exercise_index: int
-    ) -> dict[str, Any]:
-        day = self._require_day(week_index, day_index)
-        exercises = day.get("exercises")
-        if not isinstance(exercises, list) or exercise_index < 0 or exercise_index >= len(
-            exercises
-        ):
-            raise ValueError(
-                f"exercise index {exercise_index} out of range for week {week_index} day {day_index}"
-            )
-        return exercises[exercise_index]
+            raise ValueError(f"week at position {week_pos} has no days")
+        if day_pos < 0 or day_pos >= len(days):
+            raise ValueError(f"day array index {day_pos} out of range")
+        return days[day_pos]
 
 
 def summarize(plan: Plan | dict[str, Any]) -> str:

@@ -13,6 +13,7 @@ Documentation for the coach plan-creation chat pipeline (v1).
   4. [Vercel Sandbox + Python builder](./phases/phase-4-sandbox.md)
   5. [Client workspace](./phases/phase-5-client-workspace.md)
   6. [Integration & QA](./phases/phase-6-integration.md)
+  7. [Schema guard & Python packaging](./phases/phase-7-schema-and-packaging.md)
 
 ## Roles
 

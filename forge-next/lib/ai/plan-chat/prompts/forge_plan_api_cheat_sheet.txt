@@ -10,19 +10,50 @@ Plan.is_empty(self) -> 'bool'
   True when the plan has no weeks (seed not yet built).
 
 Plan.add_week(self, *, index: 'int', label: 'str | None' = None, name: 'str | None' = None) -> 'WeekRef'
-  Add or update a week by index.
+  Add or update a week by schema ``index`` (renumbers array order after).
 
 Plan.add_day(self, *, week_index: 'int', index: 'int', code: 'str', name: 'str | None' = None) -> 'DayRef'
-  Add or update a day inside a week. ``code`` must match ``w{n}d{m}``.
+  Add or update a day (``week_index`` is schema week index; renumbers after).
 
 Plan.add_exercise(self, *, week_index: 'int', day_index: 'int', name: 'str') -> 'ExerciseRef'
-  Append an exercise to a day.
+  Append an exercise to a day (``week_index`` / ``day_index`` are schema indices).
 
-Plan.add_set(self, week_index: 'int', day_index: 'int', exercise_index: 'int', *, reps: 'int | str', load_type: 'str' = 'absolute', load_value: 'float', unit: 'str' = 'kg') -> 'None'
-  Append a planned set to an exercise (generates set id).
+Plan.add_set(self, week_index: 'int', day_index: 'int', exercise_index: 'int', *, reps: 'int | str', load_type: 'str' = 'absolute', load_value: 'float', unit: 'str' = 'kg', operator: 'str' = 'exact') -> 'None'
+  Append a planned set (``exercise_index`` is 0-based position in the day).
+
+Plan.move_week(self, from_index: 'int', to_index: 'int') -> 'None'
+  Reorder weeks by 0-based array position; renumbers indices and day codes.
+
+Plan.remove_week(self, index: 'int') -> 'None'
+  Remove a week by 0-based array position.
+
+Plan.move_day(self, week_index: 'int', from_index: 'int', to_index: 'int') -> 'None'
+  Reorder days within a week (``week_index`` schema index; day positions 0-based).
+
+Plan.remove_day(self, week_index: 'int', index: 'int') -> 'None'
+  Remove a day by 0-based array position within a week (schema ``week_index``).
+
+Plan.move_exercise(self, week_index: 'int', day_index: 'int', from_index: 'int', to_index: 'int') -> 'None'
+  Reorder exercises (schema week/day indices; 0-based exercise positions).
+
+Plan.remove_exercise(self, week_index: 'int', day_index: 'int', index: 'int') -> 'None'
+  Remove an exercise by 0-based array position.
+
+Plan.move_set(self, week_index: 'int', day_index: 'int', exercise_index: 'int', from_index: 'int', to_index: 'int') -> 'None'
+  Reorder sets within an exercise (0-based set positions).
+
+Plan.remove_set(self, week_index: 'int', day_index: 'int', exercise_index: 'int', index: 'int') -> 'None'
+  Remove a set by 0-based array position.
 
 Plan.write_json(self, path: 'str') -> 'None'
   Write plan JSON to ``output/plan.json`` (creates parent dirs).
+
+Plan.to_dict(self) -> 'dict[str, Any]'
+  Return JSON-serializable plan data (schema v2.0.0).
+
+load_type for add_set: 'absolute' (value + unit) or 'percentage' (load_value = percent, operator defaults to 'exact'; basis omitted in JSON).
+
+move_* / remove_* use 0-based array positions. add_* week_index / day_index use schema indices (renumbered to match array order after every mutation).
 
 Example run.py (minimal create):
 
@@ -35,4 +66,12 @@ Example run.py (minimal create):
   plan.add_day(week_index=1, index=1, code="w1d1", name="Lower")
   plan.add_exercise(week_index=1, day_index=1, name="Back Squat")
   plan.add_set(1, 1, 0, reps=5, load_type="absolute", load_value=100, unit="kg")
+  plan.write_json("output/plan.json")
+
+Example run.py (reorder a day):
+
+  from forge_plan import Plan
+
+  plan = Plan.from_json_file("current_plan.json")
+  plan.move_day(week_index=1, from_index=0, to_index=1)
   plan.write_json("output/plan.json")

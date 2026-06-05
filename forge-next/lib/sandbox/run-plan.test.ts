@@ -5,8 +5,9 @@ import {
   OUTPUT_PLAN_PATH,
   RUN_SCRIPT_PATH,
 } from "@/lib/sandbox/constants";
-import { runPlanSandboxLive } from "@/lib/sandbox/live";
+import { runPlanSandbox } from "@/lib/sandbox/run-plan";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
+import { Sandbox } from "@vercel/sandbox";
 
 const EXAMPLE_RUN_PY = `
 from forge_plan import Plan
@@ -33,41 +34,40 @@ function createMockSandbox(options?: {
       ? buildMinimalWorkoutPlan("Sandbox Plan")
       : options.outputPlan;
 
-  return {
-    writtenPaths,
-    sandbox: {
-      writeFiles: vi.fn(async (files: { path: string }[]) => {
-        writtenPaths.push(...files.map((file) => file.path));
-      }),
-      mkDir: vi.fn(async () => undefined),
-      runCommand: vi.fn(async () => {
-        if (options?.throwOnRun) {
-          throw options.throwOnRun;
-        }
-        return {
-          exitCode: options?.exitCode ?? 0,
-          stdout: async () => "",
-          stderr: async () => options?.stderr ?? "",
-        };
-      }),
-      readFileToBuffer: vi.fn(async () => {
-        if (outputPlan === null) {
-          return null;
-        }
-        return Buffer.from(JSON.stringify(outputPlan));
-      }),
-      stop: vi.fn(async () => undefined),
-    },
+  const sandbox = {
+    writeFiles: vi.fn(async (files: { path: string }[]) => {
+      writtenPaths.push(...files.map((file) => file.path));
+    }),
+    mkDir: vi.fn(async () => undefined),
+    runCommand: vi.fn(async () => {
+      if (options?.throwOnRun) {
+        throw options.throwOnRun;
+      }
+      return {
+        exitCode: options?.exitCode ?? 0,
+        stdout: async () => "",
+        stderr: async () => options?.stderr ?? "",
+      };
+    }),
+    readFileToBuffer: vi.fn(async () => {
+      if (outputPlan === null) {
+        return null;
+      }
+      return Buffer.from(JSON.stringify(outputPlan));
+    }),
+    stop: vi.fn(async () => undefined),
   };
+
+  return { writtenPaths, sandbox };
 }
 
-describe("runPlanSandboxLive", () => {
+describe("runPlanSandbox", () => {
   it("writes only plan seed, library, and run.py", async () => {
     const { sandbox, writtenPaths } = createMockSandbox();
 
-    await runPlanSandboxLive(
+    await runPlanSandbox(
       { currentPlan: null, generatedPython: EXAMPLE_RUN_PY },
-      { createSandbox: async () => sandbox },
+      { createSandbox: async () => sandbox as never },
     );
 
     expect(writtenPaths).toContain(CURRENT_PLAN_PATH);
@@ -86,9 +86,9 @@ describe("runPlanSandboxLive", () => {
 
   it("returns validated plan on success", async () => {
     const { sandbox } = createMockSandbox();
-    const result = await runPlanSandboxLive(
+    const result = await runPlanSandbox(
       { currentPlan: null, generatedPython: EXAMPLE_RUN_PY },
-      { createSandbox: async () => sandbox },
+      { createSandbox: async () => sandbox as never },
     );
 
     expect(result.ok).toBe(true);
@@ -99,9 +99,9 @@ describe("runPlanSandboxLive", () => {
 
   it("returns MISSING_OUTPUT when plan.json is absent", async () => {
     const { sandbox } = createMockSandbox({ outputPlan: null });
-    const result = await runPlanSandboxLive(
+    const result = await runPlanSandbox(
       { currentPlan: null, generatedPython: EXAMPLE_RUN_PY },
-      { createSandbox: async () => sandbox },
+      { createSandbox: async () => sandbox as never },
     );
 
     expect(result).toEqual({
@@ -114,9 +114,9 @@ describe("runPlanSandboxLive", () => {
 
   it("returns SANDBOX_FAILED on non-zero exit", async () => {
     const { sandbox } = createMockSandbox({ exitCode: 1, stderr: "SyntaxError" });
-    const result = await runPlanSandboxLive(
+    const result = await runPlanSandbox(
       { currentPlan: null, generatedPython: "raise SystemExit(1)" },
-      { createSandbox: async () => sandbox },
+      { createSandbox: async () => sandbox as never },
     );
 
     expect(result.ok).toBe(false);
@@ -131,9 +131,9 @@ describe("runPlanSandboxLive", () => {
     abort.name = "AbortError";
     const { sandbox } = createMockSandbox({ throwOnRun: abort });
 
-    const result = await runPlanSandboxLive(
+    const result = await runPlanSandbox(
       { currentPlan: null, generatedPython: EXAMPLE_RUN_PY },
-      { createSandbox: async () => sandbox },
+      { createSandbox: async () => sandbox as never },
     );
 
     expect(result).toEqual({
@@ -143,19 +143,21 @@ describe("runPlanSandboxLive", () => {
     });
   });
 
-  it("passes current plan as seed JSON", async () => {
-    const { sandbox, writtenPaths } = createMockSandbox();
-    const seed = buildMinimalWorkoutPlan("Kept");
+  it("uses Sandbox.create by default", async () => {
+    const createSpy = vi.spyOn(Sandbox, "create");
+    const { sandbox } = createMockSandbox();
+    createSpy.mockResolvedValueOnce(sandbox as never);
 
-    await runPlanSandboxLive(
-      { currentPlan: seed, generatedPython: EXAMPLE_RUN_PY },
-      { createSandbox: async () => sandbox },
+    await runPlanSandbox({ currentPlan: null, generatedPython: EXAMPLE_RUN_PY });
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runtime: "python3.13",
+        persistent: false,
+        networkPolicy: "deny-all",
+      }),
     );
 
-    const writeCall = vi.mocked(sandbox.writeFiles).mock.calls[0]?.[0];
-    const currentFile = writeCall?.find((file) => file.path === CURRENT_PLAN_PATH);
-    expect(currentFile?.content).toContain('"Kept"');
-    expect(writtenPaths).not.toContain("input_context.json");
-    expect(writtenPaths).not.toContain("schema.json");
+    createSpy.mockRestore();
   });
 });

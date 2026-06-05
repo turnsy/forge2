@@ -24,13 +24,13 @@
 ### API cheat sheet (short — for Gateway system prompt)
 
 - [ ] Script to **autogenerate** cheat sheet from pydoc/docstrings (e.g. `generate_api_cheat_sheet.py` or build step in `package.json`)
-- [ ] **Hard limit** on output size (e.g. ≤ 2 KB / ~40 lines) — signatures + one line each; truncate with “see forge_plan for more” if needed
+- [ ] Autogenerate full cheat sheet from docstrings (no truncation; prompt budget managed at Gateway layer)
 - [ ] Commit generated `forge_plan_api_cheat_sheet.txt` or generate at build time in `lib/ai/plan-chat/`
 - [ ] Inject cheat sheet into plan-chat system prompt (Phase 3); model passes Python via `submit_plan_code` — not duplicated as `schema.json` in sandbox
 
 ### Sandbox executor (`lib/sandbox/`)
 
-- [ ] `runPlanSandbox({ currentPlan, generatedPython })`
+- [ ] `runSandbox({ artifact: { type: "plan", currentPlan, generatedPython } })` (VM always on in production; stub for tests/CI only)
 - [ ] Write **only** these files into the VM:
   - `current_plan.json` (from client artifact)
   - `forge_plan/` (library tree)

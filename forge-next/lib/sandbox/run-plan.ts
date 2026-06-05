@@ -10,7 +10,7 @@ import {
   SANDBOX_RUNTIME,
   SANDBOX_WORKDIR,
 } from "@/lib/sandbox/constants";
-import type { RunPlanSandboxInput, RunPlanSandboxResult } from "@/lib/sandbox/index";
+import type { RunPlanSandboxInput, RunSandboxResult } from "@/lib/sandbox/types";
 
 const EMPTY_SEED = {
   schemaVersion: "2.0.0",
@@ -18,35 +18,8 @@ const EMPTY_SEED = {
   weeks: [],
 } as const;
 
-export type SandboxLike = {
-  writeFiles: (
-    files: { path: string; content: string | Uint8Array }[],
-    opts?: { signal?: AbortSignal },
-  ) => Promise<void>;
-  mkDir: (path: string, opts?: { signal?: AbortSignal }) => Promise<void>;
-  runCommand: (
-    command: string,
-    args?: string[],
-    opts?: { signal?: AbortSignal; timeoutMs?: number },
-  ) => Promise<{
-    exitCode: number;
-    stdout: (opts?: { signal?: AbortSignal }) => Promise<string>;
-    stderr: (opts?: { signal?: AbortSignal }) => Promise<string>;
-  }>;
-  readFileToBuffer: (
-    file: { path: string; cwd?: string },
-    opts?: { signal?: AbortSignal },
-  ) => Promise<Buffer | null>;
-  stop: (opts?: { signal?: AbortSignal }) => Promise<unknown>;
-};
-
-export type RunPlanSandboxLiveDeps = {
-  createSandbox?: (params?: {
-    runtime?: string;
-    timeout?: number;
-    persistent?: boolean;
-    networkPolicy?: "deny-all";
-  }) => Promise<SandboxLike>;
+export type RunPlanSandboxDeps = {
+  createSandbox?: typeof Sandbox.create;
 };
 
 function buildCurrentPlanSeed(currentPlan: WorkoutPlan | null): string {
@@ -60,21 +33,17 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-export async function runPlanSandboxLive(
+/**
+ * Execute plan codegen in a real Vercel Sandbox (python3.13).
+ * Production plan-chat always uses this path.
+ */
+export async function runPlanSandbox(
   input: RunPlanSandboxInput,
-  deps: RunPlanSandboxLiveDeps = {},
-): Promise<RunPlanSandboxResult> {
-  const createSandbox =
-    deps.createSandbox ??
-    (async (params) =>
-      Sandbox.create({
-        runtime: params?.runtime ?? SANDBOX_RUNTIME,
-        timeout: params?.timeout ?? SANDBOX_LIFETIME_MS,
-        persistent: params?.persistent ?? false,
-        networkPolicy: params?.networkPolicy ?? "deny-all",
-      }));
+  deps: RunPlanSandboxDeps = {},
+): Promise<RunSandboxResult> {
+  const createSandbox = deps.createSandbox ?? Sandbox.create;
 
-  let sandbox: SandboxLike | null = null;
+  let sandbox: Sandbox | null = null;
 
   try {
     sandbox = await createSandbox({

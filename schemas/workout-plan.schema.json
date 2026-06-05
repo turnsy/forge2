@@ -316,7 +316,6 @@
       "required": [
         "type",
         "unit",
-        "basis",
         "operator"
       ],
       "properties": {

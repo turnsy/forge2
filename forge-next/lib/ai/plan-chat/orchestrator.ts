@@ -14,7 +14,7 @@ import { createPlanChatTools } from "@/lib/ai/plan-chat/tools/create-plan-chat-t
 import { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
 import type { PlanChatEmit, PlanChatMessage } from "@/lib/ai/plan-chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { runPlanSandbox } from "@/lib/sandbox";
+import { runSandbox } from "@/lib/sandbox";
 import { logSubmittedPlanCode } from "@/lib/ai/plan-chat/log-submitted-code";
 
 
@@ -29,7 +29,7 @@ export type RunPlanChatInput = {
 
 export type PlanChatOrchestratorDeps = {
   streamTextFn?: typeof streamText;
-  runSandbox?: typeof runPlanSandbox;
+  runSandbox?: typeof runSandbox;
   listDrafts?: typeof listDraftUploads;
   isGatewayConfigured?: () => boolean;
   createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
@@ -52,7 +52,7 @@ export async function runPlanChat(
   deps: PlanChatOrchestratorDeps = {},
 ): Promise<void> {
   const streamTextFn = deps.streamTextFn ?? streamText;
-  const runSandbox = deps.runSandbox ?? runPlanSandbox;
+  const executeSandbox = deps.runSandbox ?? runSandbox;
   const listDrafts = deps.listDrafts ?? listDraftUploads;
   const gatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const createModel = deps.createModel ?? createPlanChatGatewayModel;
@@ -132,9 +132,12 @@ let submittedPython: string | null = null;
 
   input.emit({ type: "runStatus", status: "sandbox" });
 
-  const sandboxResult = await runSandbox({
-    currentPlan: input.currentArtifact,
-    generatedPython: submittedPython,
+  const sandboxResult = await executeSandbox({
+    artifact: {
+      type: "plan",
+      currentPlan: input.currentArtifact,
+      generatedPython: submittedPython,
+    },
   });
 
   if (!sandboxResult.ok) {
