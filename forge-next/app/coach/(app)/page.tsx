@@ -1,4 +1,4 @@
-import { CoachHomePrompt } from "@/components/coach/coach-home-prompt";
+import { CoachPlanWorkspace } from "@/components/coach/coach-plan-workspace";
 import { PageContent } from "@/components/ui";
 import { listCoachAthleteSummaries } from "@/lib/athletes/repository";
 import { firstName } from "@/lib/auth/first-name";
@@ -14,8 +14,8 @@ export default async function CoachHomePage() {
   ]);
 
   return (
-    <PageContent className="flex flex-1 items-center justify-center">
-      <CoachHomePrompt
+    <PageContent className="flex min-h-0 flex-1 flex-col max-w-none p-4 md:p-6 lg:max-w-[90rem]">
+      <CoachPlanWorkspace
         firstName={firstName(user.fullName)}
         role="coach"
         mentionItems={toPromptMentionItems(athletes, plans)}
