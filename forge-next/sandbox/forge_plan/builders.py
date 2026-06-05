@@ -11,6 +11,11 @@ SCHEMA_VERSION = "2.0.0"
 DAY_CODE_PATTERN = re.compile(r"^w[0-9]+d[0-9]+$")
 
 
+def format_day_code(week_number: int, day_number: int) -> str:
+    """Build schema day code from 1-based week and day numbers (e.g. w1d1)."""
+    return f"w{week_number}d{day_number}"
+
+
 def empty_plan_template() -> dict[str, Any]:
     """Return an in-memory empty seed (not valid output until weeks are added)."""
     return {"schemaVersion": SCHEMA_VERSION, "name": "", "weeks": []}
