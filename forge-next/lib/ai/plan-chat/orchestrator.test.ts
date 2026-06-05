@@ -90,8 +90,11 @@ describe("runPlanChat", () => {
     );
 
     expect(runSandbox).toHaveBeenCalledWith({
-      currentPlan: null,
-      generatedPython: "print('plan')",
+      artifact: {
+        type: "plan",
+        currentPlan: null,
+        generatedPython: "print('plan')",
+      },
     });
     expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
       true,

@@ -4,7 +4,7 @@ import {
   getAiGatewayApiKey,
   isAiGatewayConfigured,
 } from "@/lib/env/plan-generation";
-import { runPlanSandbox } from "@/lib/sandbox";
+import { runSandbox } from "@/lib/sandbox";
 import {
   DRAFT_UPLOADS_BUCKET,
   draftUploadObjectPath,
@@ -34,6 +34,6 @@ describe("phase 1 foundation smoke", () => {
       status: "parsing",
     };
     expect(event.status).toBe("parsing");
-    expect(typeof runPlanSandbox).toBe("function");
+    expect(typeof runSandbox).toBe("function");
   });
 });

@@ -27,7 +27,7 @@ export type PercentageLoad = (
 ) & {
   type: "percentage";
   unit: "%";
-  basis: NonEmptyString;
+  basis?: NonEmptyString;
   operator: "exact" | "range" | "at-least" | "at-most";
   value?: number;
   minValue?: number;
