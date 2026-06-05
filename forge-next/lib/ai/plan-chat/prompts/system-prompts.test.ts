@@ -65,4 +65,18 @@ describe("buildPlanChatSystemPrompt", () => {
     expect(system).not.toContain("Stay short");
     expect(system).toContain("multi-week block");
   });
+
+  it("constrains assistant replies to one short sentence without implementation jargon", () => {
+    const system = buildPlanChatSystemPrompt({
+      currentArtifact: null,
+      hasDraftUploads: false,
+    });
+    expect(system).toContain("Assistant reply style");
+    expect(system).toContain("one short plain-language sentence");
+    expect(system).toContain("no markdown headings or bullet lists");
+    expect(system).toContain("Do not mention workspace, sandbox, JSON");
+    expect(system).toContain(
+      "Do not recap program structure, weekly splits, progression",
+    );
+  });
 });

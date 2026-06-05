@@ -10,6 +10,8 @@ export { FORGE_PLAN_API_CHEAT_SHEET };
 
 export function buildPythonCodegenRules(): string {
   return [
+    "These rules apply to the Python in submit_plan_code only — not to your user-visible chat message (keep chat to one short sentence after success; see Assistant reply style in the system prompt).",
+    "",
     "When calling submit_plan_code, provide the complete Python script body for run.py (not a snippet).",
     "The script must:",
     "- Read current_plan.json from the working directory",
