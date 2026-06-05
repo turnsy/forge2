@@ -14,7 +14,7 @@ export default async function CoachHomePage() {
   ]);
 
   return (
-    <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden max-w-none lg:max-w-[90rem]">
+    <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden max-w-none px-0 py-0">
       <CoachPlanWorkspace
         firstName={firstName(user.fullName)}
         role="coach"

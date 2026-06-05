@@ -48,13 +48,13 @@ export function CoachPlanWorkspace({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ResizableSplitPane
         left={
-          <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">
+          <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
             <PlanWorkspaceToolbar
               planTitle={state.planTitle}
               saveDisabled={isChatRunning(state)}
               onPlanTitleChange={setPlanTitle}
             />
-            <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden px-2">
               <PlanChatPreview
                 plan={state.currentArtifact}
                 runStatus={state.runStatus}

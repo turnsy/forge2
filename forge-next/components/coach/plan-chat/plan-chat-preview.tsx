@@ -26,11 +26,7 @@ export function PlanChatPreview({
 
   if (!plan) {
     if (isAwaitingPlan) {
-      const label =
-        runStatus && runStatus !== "done" && runStatus !== "error"
-          ? getRunStatusLabel(runStatus)
-          : "Building your plan…";
-      return <PreviewLoadingState label={label} />;
+      <Spinner />
     }
 
     return (
