@@ -14,7 +14,7 @@ describe("PlanWorkspaceToolbar", () => {
     );
     expect(container.querySelector("header")).toBeTruthy();
     expect(screen.getByLabelText("Plan title")).toHaveValue("Summer block");
-    expect(screen.getByLabelText("Plan title")).toHaveClass("bg-transparent");
+    expect(screen.getByLabelText("Plan title")).toHaveClass("glass-surface");
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
