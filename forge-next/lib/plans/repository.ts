@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
-import { getPlanStats, parseWorkoutPlan } from "@/lib/plans/stats";
+import { parseWorkoutPlan } from "@/lib/plans/parse-workout-plan";
+import { getPlanStats } from "@/lib/plans/stats";
 import type { CoachPlanListItem, CoachPlanSummary } from "@/lib/plans/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { loadWorkoutPlan, type WorkoutPlanValidationError } from "@/lib/plans/validate";
