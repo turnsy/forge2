@@ -20,7 +20,8 @@ export function CoachPlanWorkspace({
   role: UserRole;
   mentionItems: PromptMentionItem[];
 }) {
-  const { state, attachFiles, sendMessage, setPlanTitle } = usePlanChatWorkspace();
+  const { state, attachFiles, sendMessage, setPlanTitle, restart } =
+    usePlanChatWorkspace();
 
   if (!state.hasStarted) {
     return (
@@ -70,6 +71,8 @@ export function CoachPlanWorkspace({
               runStatus={state.runStatus}
               errors={state.errors}
               phase={state.phase}
+              onRestart={restart}
+              restartDisabled={isChatRunning(state)}
             />
             <div className="shrink-0 border-t border-glass-border p-2">
               <PlanChatComposer
