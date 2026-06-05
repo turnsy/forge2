@@ -3,9 +3,9 @@
 import { PlanChatComposer } from "@/components/coach/plan-chat/plan-chat-composer";
 import { PlanChatPreview } from "@/components/coach/plan-chat/plan-chat-preview";
 import { PlanChatThread } from "@/components/coach/plan-chat/plan-chat-thread";
+import { PlanWorkspaceToolbar } from "@/components/coach/plan-chat/plan-workspace-toolbar";
 import { ResizableSplitPane } from "@/components/coach/resizable-split-pane";
-import { RotateIcon } from "@/components/icons/rotate-icon";
-import { IconButton } from "@/components/ui";
+import { isAwaitingFirstPlan, isChatRunning } from "@/lib/plan-chat";
 import { usePlanChatWorkspace } from "@/lib/plan-chat/use-plan-chat-workspace";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
@@ -20,7 +20,7 @@ export function CoachPlanWorkspace({
   role: UserRole;
   mentionItems: PromptMentionItem[];
 }) {
-  const { state, attachFiles, sendMessage, restart } = usePlanChatWorkspace();
+  const { state, attachFiles, sendMessage, setPlanTitle } = usePlanChatWorkspace();
 
   if (!state.hasStarted) {
     return (
@@ -45,23 +45,20 @@ export function CoachPlanWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-1">
-        <h1 className="text-lg font-semibold tracking-tight text-surface-foreground">
-          Plan workspace
-        </h1>
-        <IconButton
-          variant="ghost"
-          size="sm"
-          icon={<RotateIcon />}
-          aria-label="Restart workspace"
-          onClick={restart}
-        />
-      </div>
+      <PlanWorkspaceToolbar
+        planTitle={state.planTitle}
+        saveDisabled={isChatRunning(state)}
+        onPlanTitleChange={setPlanTitle}
+      />
 
       <ResizableSplitPane
         left={
           <div className="flex h-full min-h-0 flex-col overflow-hidden">
-            <PlanChatPreview plan={state.currentArtifact} runStatus={state.runStatus} />
+            <PlanChatPreview
+              plan={state.currentArtifact}
+              runStatus={state.runStatus}
+              isAwaitingPlan={isAwaitingFirstPlan(state)}
+            />
           </div>
         }
         right={

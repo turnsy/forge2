@@ -21,6 +21,7 @@ export function applyPlanChatEvent(
       return {
         ...state,
         currentArtifact: event.plan,
+        planTitle: event.plan.name,
       };
     case "warnings":
       return {

@@ -17,7 +17,12 @@ export {
 export { uploadContextFile } from "@/lib/plan-chat/upload-context-client";
 export { streamPlanChat } from "@/lib/plan-chat/plan-chat-client";
 export { validateClientFiles } from "@/lib/plan-chat/validate-client-files";
-export { canSendPlanChat, hasUploadingAttachments } from "@/lib/plan-chat/workspace-selectors";
+export {
+  canSendPlanChat,
+  hasUploadingAttachments,
+  isAwaitingFirstPlan,
+  isChatRunning,
+} from "@/lib/plan-chat/workspace-selectors";
 export type {
   PlanChatAttachment,
   PlanChatWorkspaceAction,

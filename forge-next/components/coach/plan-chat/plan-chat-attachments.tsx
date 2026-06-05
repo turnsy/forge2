@@ -16,7 +16,7 @@ export function PlanChatAttachments({
       {attachments.map((attachment) => (
         <span
           key={attachment.localId}
-          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] ${
+          className={`inline-flex items-center gap-1.5 rounded-full border py-1.5 pl-3 pr-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] ${
             attachment.status === "failed"
               ? "border-red-500/40 bg-red-500/10 text-red-200"
               : "border-glass-border bg-glass text-surface-foreground"
@@ -27,10 +27,17 @@ export function PlanChatAttachments({
           ) : (
             <PaperclipIcon className="h-3.5 w-3.5 shrink-0 text-surface-muted" />
           )}
-          <span className="max-w-[14rem] truncate">{attachment.displayLabel}</span>
+          <span className="max-w-[12rem] truncate">{attachment.displayLabel}</span>
           {attachment.status === "failed" && attachment.errorMessage ? (
             <span className="text-xs text-red-300/90">— {attachment.errorMessage}</span>
           ) : null}
+          <button
+            type="button"
+            className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-surface-muted transition hover:bg-glass-focus hover:text-surface-foreground"
+            aria-label={`Remove ${attachment.displayLabel}`}
+          >
+            ×
+          </button>
         </span>
       ))}
     </div>

@@ -108,11 +108,16 @@ export function usePlanChatWorkspace() {
     dispatch({ type: "RESTART", draftId: createDraftId() });
   }, []);
 
+  const setPlanTitle = useCallback((planTitle: string) => {
+    dispatch({ type: "SET_PLAN_TITLE", planTitle });
+  }, []);
+
   return {
     state,
     attachFiles,
     sendMessage,
     restart,
+    setPlanTitle,
   };
 }
 

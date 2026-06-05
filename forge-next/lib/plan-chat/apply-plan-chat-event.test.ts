@@ -29,6 +29,7 @@ describe("applyPlanChatEvent", () => {
       plan: samplePlan,
     });
     expect(state.currentArtifact).toEqual(samplePlan);
+    expect(state.planTitle).toBe("Test");
   });
 
   it("does not clear currentArtifact on errors", () => {

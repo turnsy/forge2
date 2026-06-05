@@ -7,6 +7,7 @@ export function createInitialPlanChatWorkspaceState(
   return {
     draftId,
     hasStarted: false,
+    planTitle: "",
     messages: [],
     currentArtifact: null,
     contextFileIds: [],

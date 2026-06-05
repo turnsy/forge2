@@ -37,7 +37,10 @@ export function planChatWorkspaceReducer(
         errors: [],
         phase: "idle",
         streamingAssistantText: "",
+        planTitle: "",
       };
+    case "SET_PLAN_TITLE":
+      return { ...state, planTitle: action.planTitle };
     case "ATTACH_FILES":
       return {
         ...state,

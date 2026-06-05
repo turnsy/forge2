@@ -10,18 +10,32 @@ const samplePlan: WorkoutPlan = {
 };
 
 describe("PlanChatPreview", () => {
-  it("shows empty state when there is no plan", () => {
-    render(<PlanChatPreview plan={null} runStatus={null} />);
-    expect(screen.getByText("Plan preview")).toBeInTheDocument();
+  it("shows a loading state while awaiting the first plan", () => {
+    render(
+      <PlanChatPreview plan={null} runStatus="generating" isAwaitingPlan />,
+    );
+    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+    expect(screen.queryByText("Plan preview")).not.toBeInTheDocument();
+  });
+
+  it("shows a muted placeholder when idle without a plan", () => {
+    render(
+      <PlanChatPreview plan={null} runStatus={null} isAwaitingPlan={false} />,
+    );
+    expect(screen.getByText(/will show here once it is ready/)).toBeInTheDocument();
   });
 
   it("renders PlanViewer when a valid plan is provided", () => {
-    render(<PlanChatPreview plan={samplePlan} runStatus="done" />);
+    render(
+      <PlanChatPreview plan={samplePlan} runStatus="done" isAwaitingPlan={false} />,
+    );
     expect(screen.getByText("Weeks")).toBeInTheDocument();
   });
 
-  it("shows a spinner during sandbox", () => {
-    render(<PlanChatPreview plan={samplePlan} runStatus="sandbox" />);
+  it("shows a spinner overlay during sandbox when a plan exists", () => {
+    render(
+      <PlanChatPreview plan={samplePlan} runStatus="sandbox" isAwaitingPlan={false} />,
+    );
     expect(screen.getByLabelText("Updating plan")).toBeInTheDocument();
   });
 });

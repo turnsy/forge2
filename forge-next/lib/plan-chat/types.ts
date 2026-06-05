@@ -26,6 +26,7 @@ export type PlanChatAttachment = {
 export type PlanChatWorkspaceState = {
   draftId: string;
   hasStarted: boolean;
+  planTitle: string;
   messages: PlanChatMessage[];
   currentArtifact: WorkoutPlan | null;
   contextFileIds: string[];
@@ -39,6 +40,7 @@ export type PlanChatWorkspaceState = {
 
 export type PlanChatWorkspaceAction =
   | { type: "RESTART"; draftId: string }
+  | { type: "SET_PLAN_TITLE"; planTitle: string }
   | { type: "ATTACH_FILES"; attachments: PlanChatAttachment[] }
   | { type: "ATTACH_UPLOAD_START"; localIds: string[] }
   | {
