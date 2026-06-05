@@ -92,10 +92,12 @@ def build_planned_set(
     load_value: float,
     unit: str = "kg",
     operator: str = "exact",
+    notes: str | None = None,
 ) -> dict[str, Any]:
     """Build a minimal exact planned set (absolute or percentage load).
 
-    Schema: reps is int >= 1 or string matching ``^[0-9]+(?:\\+[0-9]+)*$``.
+    Prefer integer ``reps``. Use ``notes`` for per-side, time, and other qualifiers.
+    Schema also allows rep-complex strings matching ``^[0-9]+(?:\\+[0-9]+)*$``.
     """
     if load_type == "absolute":
         load = build_absolute_load(load_value, unit)
@@ -104,11 +106,14 @@ def build_planned_set(
     else:
         raise ValueError("load_type must be 'absolute' or 'percentage'")
 
-    return {
+    planned: dict[str, Any] = {
         "type": "exact",
         "reps": reps,
         "load": load,
     }
+    if notes:
+        planned["notes"] = notes
+    return planned
 
 
 def build_set_entry(
@@ -119,6 +124,7 @@ def build_set_entry(
     load_value: float,
     unit: str = "kg",
     operator: str = "exact",
+    notes: str | None = None,
 ) -> dict[str, Any]:
     """Build a full set entry for the workout plan schema."""
     return {
@@ -129,6 +135,7 @@ def build_set_entry(
             load_value=load_value,
             unit=unit,
             operator=operator,
+            notes=notes,
         ),
         "actual": None,
         "status": "planned",

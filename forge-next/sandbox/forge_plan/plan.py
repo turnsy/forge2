@@ -172,14 +172,16 @@ class Plan:
         load_type: str = "absolute",
         unit: str = "kg",
         operator: str = "exact",
+        notes: str | None = None,
         exercise_name: str | None = None,
         exercise_index: int | None = None,
     ) -> None:
         """Append a planned exact set to a day.
 
-        Set ``id``, ``status``, ``locked``, and ``actual`` are filled automatically.
-        Target the exercise by ``exercise_name``, ``exercise_index`` (0-based), or
-        omit both to use the last exercise on that day.
+        Use integer ``reps`` for the count. Put per-side, time, and coaching detail in
+        ``notes`` (e.g. ``notes="per side"``). Set ``id``, ``status``, ``locked``, and
+        ``actual`` are filled automatically. Target the exercise by ``exercise_name``,
+        ``exercise_index`` (0-based), or omit both to use the last exercise on that day.
         """
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
         day = self._require_day_at(week_pos, day_pos)
@@ -200,6 +202,7 @@ class Plan:
                 load_value=load_value,
                 unit=unit,
                 operator=operator,
+                notes=notes,
             )
         )
         self._sync_structure()

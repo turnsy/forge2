@@ -37,6 +37,23 @@ class ForgePlanTests(unittest.TestCase):
         self.assertEqual(set_entry["id"], "w1d1-bs-1")
         self.assertEqual(set_entry["planned"]["reps"], 5)
 
+    def test_add_set_notes(self) -> None:
+        plan = Plan.empty("Notes")
+        plan.add_week()
+        plan.add_day(week_index=1)
+        plan.add_exercise(week_index=1, day_index=1, name="Lunge")
+        plan.add_set(
+            week_index=1,
+            day_index=1,
+            reps=3,
+            load_value=0,
+            load_type="absolute",
+            notes="per side",
+        )
+        planned = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]
+        self.assertEqual(planned["reps"], 3)
+        self.assertEqual(planned["notes"], "per side")
+
     def test_add_day_derives_code_from_position(self) -> None:
         plan = Plan.empty("Codes")
         plan.add_week()

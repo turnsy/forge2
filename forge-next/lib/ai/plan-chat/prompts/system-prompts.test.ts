@@ -66,6 +66,17 @@ describe("buildPlanChatSystemPrompt", () => {
     expect(system).toContain("multi-week block");
   });
 
+  it("documents integer reps and notes for coaching qualifiers", () => {
+    const system = buildPlanChatSystemPrompt({
+      currentArtifact: null,
+      hasDraftUploads: false,
+    });
+    expect(system).toContain("Reps and notes");
+    expect(system).toContain("plain integer count");
+    expect(system).toContain('add_set(notes=...)');
+    expect(system).toContain("3/side");
+  });
+
   it("constrains assistant replies to one short sentence without implementation jargon", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: null,
