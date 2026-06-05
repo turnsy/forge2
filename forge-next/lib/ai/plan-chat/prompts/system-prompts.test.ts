@@ -45,4 +45,14 @@ describe("buildPlanChatSystemPrompt", () => {
     expect(system).not.toContain('"weeks":');
     expect(system).not.toContain(JSON.stringify(samplePlan));
   });
+
+  it("documents forge_plan validation rules including day codes", () => {
+    const system = buildPlanChatSystemPrompt({
+      currentArtifact: null,
+      hasDraftUploads: false,
+    });
+    expect(system).toContain("w1d1");
+    expect(system).toContain("W1D1");
+    expect(system).toContain("^w[0-9]+d[0-9]+$");
+  });
 });

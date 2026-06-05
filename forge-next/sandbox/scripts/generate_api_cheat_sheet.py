@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from forge_plan import Plan  # noqa: E402
+from forge_plan.schema_rules import validation_rules_cheat_sheet  # noqa: E402
 
 PUBLIC_METHODS = [
     "from_json_file",
@@ -56,9 +57,8 @@ def build_cheat_sheet() -> str:
 
     lines.extend(
         [
-            "load_type for add_set: 'absolute' (value + unit) or 'percentage' (load_value = percent, operator defaults to 'exact'; basis omitted in JSON).",
             "",
-            "move_* / remove_* use 0-based array positions. add_* week_index / day_index use schema indices (renumbered to match array order after every mutation).",
+            validation_rules_cheat_sheet(),
             "",
             "Example run.py (minimal create):",
             "",

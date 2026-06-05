@@ -57,7 +57,11 @@ class ExerciseRef:
 
 
 class Plan:
-    """Mutable workout plan builder."""
+    """Mutable workout plan builder for workout-plan.schema.json v2.0.0.
+
+    See ``forge_plan.schema_rules.validation_rules_cheat_sheet()`` for field-level
+    constraints (day codes, reps, loads, min array lengths).
+    """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
         self._data = data if data is not None else empty_plan_template()
@@ -114,7 +118,12 @@ class Plan:
         code: str,
         name: str | None = None,
     ) -> DayRef:
-        """Add or update a day (``week_index`` is schema week index; renumbers after)."""
+        """Add or update a day (``week_index`` / ``index`` are schema indices).
+
+        ``code`` must match ``^w[0-9]+d[0-9]+$`` with lowercase ``w`` and ``d``
+        (e.g. ``w1d1``, not ``W1D1``). After every mutation, ``_sync_structure``
+        rewrites day codes to ``w{week}d{day}`` from array order.
+        """
         validate_day_code(code)
         week = self._require_week_by_schema_index(week_index)
         days = week.setdefault("days", [])
@@ -158,7 +167,12 @@ class Plan:
         unit: str = "kg",
         operator: str = "exact",
     ) -> None:
-        """Append a planned set (``exercise_index`` is 0-based position in the day)."""
+        """Append a planned exact set (``exercise_index`` is 0-based in the day).
+
+        ``reps``: positive int or string like ``"3+1"``. ``load_type`` must be
+        ``"absolute"`` (``unit`` in kg/lb/g) or ``"percentage"`` (``load_value`` =
+        percent, ``operator`` one of exact/range/at-least/at-most; basis omitted).
+        """
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
         day = self._require_day_at(week_pos, day_pos)
         exercises = day.setdefault("exercises", [])

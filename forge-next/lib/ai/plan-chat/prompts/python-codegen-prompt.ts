@@ -18,6 +18,11 @@ export function buildPythonCodegenRules(): string {
     "- Avoid network access, subprocesses, and reading files other than current_plan.json",
     "- Stay short and deterministic",
     "",
+    "Critical validation pitfalls (also listed in the cheat sheet):",
+    "- Day codes: lowercase w and d only — use w1d1, never W1D1 (schema pattern ^w[0-9]+d[0-9]+$)",
+    "- Each week needs >=1 day; each day >=1 exercise; each exercise >=1 set",
+    "- add_set load_type is only absolute or percentage; reps must be a positive int or strings like 3+1",
+    "",
     "Cheat sheet:",
     FORGE_PLAN_API_CHEAT_SHEET,
   ].join("\n");

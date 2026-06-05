@@ -88,7 +88,10 @@ def build_planned_set(
     unit: str = "kg",
     operator: str = "exact",
 ) -> dict[str, Any]:
-    """Build a minimal exact planned set (absolute or percentage load)."""
+    """Build a minimal exact planned set (absolute or percentage load).
+
+    Schema: reps is int >= 1 or string matching ``^[0-9]+(?:\\+[0-9]+)*$``.
+    """
     if load_type == "absolute":
         load = build_absolute_load(load_value, unit)
     elif load_type == "percentage":
@@ -129,9 +132,15 @@ def build_set_entry(
 
 
 def validate_day_code(code: str) -> None:
-    """Raise ValueError when day code does not match w{n}d{m}."""
+    """Raise ValueError when day code does not match schema pattern ``^w[0-9]+d[0-9]+$``.
+
+    Codes must use a **lowercase** ``w`` and ``d`` (e.g. ``w1d1``). Uppercase
+    letters such as ``W1D1`` fail validation and JSON Schema checks.
+    """
     if not DAY_CODE_PATTERN.match(code):
-        raise ValueError(f"day code must match w{{n}}d{{m}}, got {code!r}")
+        raise ValueError(
+            f"day code must match w{{n}}d{{m}} (lowercase w and d), got {code!r}"
+        )
 
 
 def move_list_item(items: list[Any], from_index: int, to_index: int) -> None:

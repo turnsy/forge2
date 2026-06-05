@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from forge_plan import Plan, summarize
-from forge_plan.builders import empty_plan_template, load_seed_from_file
+from forge_plan.builders import empty_plan_template, load_seed_from_file, validate_day_code
 
 
 class ForgePlanTests(unittest.TestCase):
@@ -150,6 +150,18 @@ class ForgePlanTests(unittest.TestCase):
         plan.add_day(week_index=1, index=1, code="w1d1")
         text = summarize(plan)
         self.assertIn("1 week", text)
+
+    def test_validate_day_code_rejects_uppercase(self) -> None:
+        validate_day_code("w1d1")
+        with self.assertRaises(ValueError) as ctx:
+            validate_day_code("W1D1")
+        self.assertIn("lowercase", str(ctx.exception).lower())
+
+    def test_add_day_rejects_uppercase_code(self) -> None:
+        plan = Plan.empty("Codes")
+        plan.add_week(index=1)
+        with self.assertRaises(ValueError):
+            plan.add_day(week_index=1, index=1, code="W1D1")
 
     def test_load_seed_from_file_invalid_json(self) -> None:
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
