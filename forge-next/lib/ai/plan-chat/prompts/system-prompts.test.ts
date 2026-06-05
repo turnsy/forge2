@@ -55,4 +55,14 @@ describe("buildPlanChatSystemPrompt", () => {
     expect(system).toContain("W1D1");
     expect(system).toContain("^w[0-9]+d[0-9]+$");
   });
+
+  it("requires full program scope in one submit_plan_code when user specifies weeks", () => {
+    const system = buildPlanChatSystemPrompt({
+      currentArtifact: null,
+      hasDraftUploads: false,
+    });
+    expect(system).toContain("full requested structure");
+    expect(system).not.toContain("Stay short");
+    expect(system).toContain("multi-week block");
+  });
 });
