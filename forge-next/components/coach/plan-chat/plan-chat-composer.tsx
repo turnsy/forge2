@@ -17,6 +17,7 @@ export function PlanChatComposer({
   onAttach,
   onSend,
   className = "",
+  compact = false,
 }: {
   state: PlanChatWorkspaceState;
   mentionItems: PromptMentionItem[];
@@ -24,6 +25,7 @@ export function PlanChatComposer({
   onAttach: (files: File[]) => void;
   onSend: (segments: PromptSegment[]) => void;
   className?: string;
+  compact?: boolean;
 }) {
   const [documentEmpty, setDocumentEmpty] = useState(true);
   const [dragDepth, setDragDepth] = useState(0);
@@ -51,7 +53,9 @@ export function PlanChatComposer({
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
-          className={`flex min-h-40 flex-col rounded-card border bg-glass p-3 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition ${
+          className={`flex flex-col rounded-card border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition ${
+            compact ? "min-h-0 p-2" : "min-h-40 p-3"
+          } ${
             isDragging
               ? "border-coach-muted bg-glass-focus"
               : "border-glass-border"
@@ -84,6 +88,7 @@ export function PlanChatComposer({
           />
           <PromptComposer
             key={composerKey}
+            compact={compact}
             mentionItems={mentionItems}
             placeholder="Ask Forge to build or update a plan..."
             onDocumentChange={(segments, isEmpty) => {
@@ -97,7 +102,9 @@ export function PlanChatComposer({
               }
             }}
           />
-          <div className="mt-3 flex items-center justify-between gap-2">
+          <div
+            className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
+          >
             <Button
               type="button"
               variant="ghost"
@@ -119,9 +126,11 @@ export function PlanChatComposer({
           </div>
         </div>
       </div>
-      <div className="mt-3">
-        <PlanChatAttachments attachments={state.attachments} />
-      </div>
+      {state.attachments.length > 0 ? (
+        <div className={compact ? "mt-2" : "mt-3"}>
+          <PlanChatAttachments attachments={state.attachments} />
+        </div>
+      ) : null}
     </FadeIn>
   );
 }

@@ -14,9 +14,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="dark flex min-h-screen bg-background text-foreground">
+    <div className="dark flex h-dvh min-h-0 bg-background text-foreground">
       <Sidebar role={role} fullName={fullName} email={email} />
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }

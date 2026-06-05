@@ -15,7 +15,7 @@ export function PlanChatPreview({
 
   if (!plan) {
     return (
-      <div className="relative flex h-full min-h-0 flex-col">
+      <div className="relative flex h-full min-h-0 flex-col overflow-y-auto">
         {showSpinner ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
             <Spinner label="Building plan" />
@@ -30,7 +30,7 @@ export function PlanChatPreview({
   }
 
   return (
-    <div className="relative min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+    <div className="relative h-full min-h-0 overflow-y-auto p-4 md:p-6">
       {showSpinner ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
           <Spinner label="Updating plan" />

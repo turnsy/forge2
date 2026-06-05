@@ -2,7 +2,6 @@
 
 import { PlanChatComposer } from "@/components/coach/plan-chat/plan-chat-composer";
 import { PlanChatPreview } from "@/components/coach/plan-chat/plan-chat-preview";
-import { PlanChatRunStatus } from "@/components/coach/plan-chat/plan-chat-run-status";
 import { PlanChatThread } from "@/components/coach/plan-chat/plan-chat-thread";
 import { ResizableSplitPane } from "@/components/coach/resizable-split-pane";
 import { RotateIcon } from "@/components/icons/rotate-icon";
@@ -45,7 +44,7 @@ export function CoachPlanWorkspace({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-3 px-1">
         <h1 className="text-lg font-semibold tracking-tight text-surface-foreground">
           Plan workspace
@@ -61,21 +60,22 @@ export function CoachPlanWorkspace({
 
       <ResizableSplitPane
         left={
-          <PlanChatPreview plan={state.currentArtifact} runStatus={state.runStatus} />
+          <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            <PlanChatPreview plan={state.currentArtifact} runStatus={state.runStatus} />
+          </div>
         }
         right={
-          <div className="flex min-h-0 flex-1 flex-col">
-            <PlanChatRunStatus
+          <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            <PlanChatThread
+              messages={state.messages}
+              streamingAssistantText={state.streamingAssistantText}
               runStatus={state.runStatus}
               errors={state.errors}
               phase={state.phase}
             />
-            <PlanChatThread
-              messages={state.messages}
-              streamingAssistantText={state.streamingAssistantText}
-            />
-            <div className="shrink-0 border-t border-glass-border p-3">
+            <div className="shrink-0 border-t border-glass-border p-2">
               <PlanChatComposer
+                compact
                 state={state}
                 mentionItems={mentionItems}
                 composerKey={`${state.draftId}-${state.messages.length}`}

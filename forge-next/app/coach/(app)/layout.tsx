@@ -10,7 +10,7 @@ export default async function CoachAppLayout({
 
   return (
     <AppShell role="coach" fullName={user.fullName} email={user.email}>
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
     </AppShell>
   );
 }

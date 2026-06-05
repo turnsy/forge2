@@ -42,11 +42,13 @@ export function PromptComposer({
   placeholder,
   onDocumentChange,
   onSend,
+  compact = false,
 }: {
   mentionItems: PromptMentionItem[];
   placeholder: string;
   onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
   onSend?: (segments: PromptSegment[]) => void;
+  compact?: boolean;
 }) {
   const menuId = useId();
   const editorRef = useRef<HTMLDivElement>(null);
@@ -289,7 +291,9 @@ export function PromptComposer({
 
   return (
     <>
-      <div className="relative min-h-[4.5rem] w-full flex-1">
+      <div
+        className={`relative w-full flex-1 ${compact ? "min-h-[2.75rem]" : "min-h-[4.5rem]"}`}
+      >
         <div
           ref={editorRef}
           role="textbox"
@@ -299,7 +303,9 @@ export function PromptComposer({
           contentEditable
           suppressContentEditableWarning
           data-placeholder={placeholder}
-          className="prompt-composer min-h-[4.5rem] w-full bg-transparent px-1 py-1 text-base text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)]"
+          className={`prompt-composer w-full bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
+            compact ? "min-h-[2.75rem] text-sm" : "min-h-[4.5rem] text-base"
+          }`}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onKeyUp={() => {
