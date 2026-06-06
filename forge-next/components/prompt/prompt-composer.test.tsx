@@ -17,8 +17,8 @@ const athletesResponse = {
 
 const plansResponse = {
   items: [
-    { id: "p1", title: "Summer Block", weekCount: 4, daysPerWeek: 3, createdAt: "" },
-    { id: "p2", title: "Winter Base", weekCount: 8, daysPerWeek: 4, createdAt: "" },
+    { id: "p1", title: "Summer Block", weekCount: 4, createdAt: "" },
+    { id: "p2", title: "Winter Base", weekCount: 8, createdAt: "" },
   ],
   total: 2,
   page: 1,

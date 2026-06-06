@@ -10,10 +10,6 @@ import {
 import { formatDate } from "@/lib/format/date";
 import type { CoachPlanListItem } from "@/lib/plans/types";
 
-function formatDaysPerWeek(daysPerWeek: number | string): string {
-  return typeof daysPerWeek === "number" ? String(daysPerWeek) : daysPerWeek;
-}
-
 export function PlanListRow({
   plan,
   appearIndex,
@@ -24,7 +20,7 @@ export function PlanListRow({
   return (
     <ListRow
       href={`/coach/plans/${plan.id}`}
-      metaColumns={3}
+      metaColumns={2}
       appearIndex={appearIndex}
       leading={
         <h2 className="truncate text-base font-semibold text-surface-foreground">
@@ -34,7 +30,6 @@ export function PlanListRow({
       meta={
         <MetaGroup>
           <MetaItem label="Weeks" value={plan.weekCount} />
-          <MetaItem label="Days/week" value={formatDaysPerWeek(plan.daysPerWeek)} />
           <MetaItem label="Created" value={formatDate(plan.createdAt)} />
         </MetaGroup>
       }

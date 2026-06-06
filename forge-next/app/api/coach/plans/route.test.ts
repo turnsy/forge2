@@ -49,7 +49,6 @@ describe("GET /api/coach/plans", () => {
           id: "p1",
           title: "Strength Block",
           weekCount: 4,
-          daysPerWeek: 3,
           createdAt: "2026-01-01T00:00:00.000Z",
         },
       ],

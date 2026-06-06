@@ -51,7 +51,6 @@ describe("mapCoachPlanRow", () => {
       id: "plan-1",
       title: "4-Week Strength Block",
       weekCount: 1,
-      daysPerWeek: 1,
       createdAt: "2026-01-01T00:00:00.000Z",
     });
   });
@@ -74,8 +73,6 @@ describe("mapCoachPlanRpcRow", () => {
         plan_id: "plan-1",
         title: "4-Week Strength Block",
         week_count: 4,
-        min_days_per_week: 3,
-        max_days_per_week: 4,
         created_at: "2026-01-01T00:00:00.000Z",
         total_count: 1,
       }),
@@ -83,7 +80,6 @@ describe("mapCoachPlanRpcRow", () => {
       id: "plan-1",
       title: "4-Week Strength Block",
       weekCount: 4,
-      daysPerWeek: "3–4",
       createdAt: "2026-01-01T00:00:00.000Z",
     });
   });
@@ -94,8 +90,6 @@ describe("mapCoachPlanRpcRow", () => {
         plan_id: "plan-1",
         title: "   ",
         week_count: 0,
-        min_days_per_week: 0,
-        max_days_per_week: 0,
         created_at: "2026-01-01T00:00:00.000Z",
         total_count: 1,
       }),

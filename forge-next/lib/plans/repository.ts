@@ -7,7 +7,7 @@ import {
 import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
 import { createClient } from "@/utils/supabase/server";
 import { parseWorkoutPlan } from "@/lib/plans/parse-workout-plan";
-import { formatDaysPerWeek, getPlanStats } from "@/lib/plans/stats";
+import { getPlanStats } from "@/lib/plans/stats";
 import type { CoachPlanListItem } from "@/lib/plans/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { loadWorkoutPlan, type WorkoutPlanValidationError } from "@/lib/plans/validate";
@@ -22,8 +22,6 @@ type CoachPlanRpcRow = {
   plan_id: string;
   title: string;
   week_count: number;
-  min_days_per_week: number;
-  max_days_per_week: number;
   created_at: string;
   total_count: number;
 };
@@ -49,13 +47,12 @@ export function mapCoachPlanRow(row: PlanRow): CoachPlanListItem | null {
     return null;
   }
 
-  const { weekCount, daysPerWeek } = getPlanStats(planData);
+  const { weekCount } = getPlanStats(planData);
 
   return {
     id: row.id,
     title: planData.name,
     weekCount,
-    daysPerWeek,
     createdAt: row.created_at,
   };
 }
@@ -71,7 +68,6 @@ export function mapCoachPlanRpcRow(row: CoachPlanRpcRow): CoachPlanListItem | nu
     id: row.plan_id,
     title,
     weekCount: row.week_count,
-    daysPerWeek: formatDaysPerWeek(row.min_days_per_week, row.max_days_per_week),
     createdAt: row.created_at,
   };
 }
