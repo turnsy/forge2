@@ -1,11 +1,11 @@
 import type { UploadContextResult } from "@/lib/uploads/types";
 
 export async function uploadContextFile(input: {
-  draftId: string;
+  sessionId: string;
   file: File;
 }): Promise<UploadContextResult> {
   const formData = new FormData();
-  formData.set("draftId", input.draftId);
+  formData.set("sessionId", input.sessionId);
   formData.append("files[]", input.file);
 
   const response = await fetch("/api/coach/upload-context", {

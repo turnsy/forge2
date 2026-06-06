@@ -1,4 +1,4 @@
-import { draftUploadSlug } from "@/lib/uploads/file-utils";
+import { uploadFileSlug } from "@/lib/uploads/file-utils";
 import {
   normalizedUploadToText,
   parseUploadFile,
@@ -16,7 +16,7 @@ import type {
 
 export type NormalizeMessageUploadsInput = {
   coachId: string;
-  draftId: string;
+  sessionId: string;
   files: MessageUploadFile[];
   persist?: boolean;
 };
@@ -59,13 +59,13 @@ export async function normalizeMessageUploads(
       const normalizedText = normalizedUploadToText(parsed.upload);
       const slug =
         parsed.upload.kind === "xlsx"
-          ? draftUploadSlug(parsed.upload.filename, parsed.upload.sheetName)
-          : draftUploadSlug(parsed.upload.filename);
+          ? uploadFileSlug(parsed.upload.filename, parsed.upload.sheetName)
+          : uploadFileSlug(parsed.upload.filename);
 
       if (input.persist !== false) {
         const stored = await saveUploadContext({
           coachId: input.coachId,
-          draftId: input.draftId,
+          sessionId: input.sessionId,
           slug,
           normalizedText,
         });
@@ -81,7 +81,7 @@ export async function normalizeMessageUploads(
         contextFileIds.push(stored.contextFileId);
       } else {
         contextFileIds.push(
-          `${input.coachId}/${input.draftId}/${slug}.txt`,
+          `${input.coachId}/${input.sessionId}/${slug}.txt`,
         );
       }
     }

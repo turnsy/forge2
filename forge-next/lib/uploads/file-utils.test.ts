@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { draftUploadSlug } from "@/lib/uploads/file-utils";
+import { uploadFileSlug } from "@/lib/uploads/file-utils";
 
-describe("draftUploadSlug", () => {
-  it("uses stem only for non-sheet uploads", () => {
-    expect(draftUploadSlug("My Plan.csv")).toBe("my-plan");
+describe("uploadFileSlug", () => {
+  it("slugifies a csv filename", () => {
+    expect(uploadFileSlug("My Plan.csv")).toBe("my-plan");
   });
 
-  it("combines stem and sheet with double underscore", () => {
-    expect(draftUploadSlug("General Strength.xlsx", "Weekly Volume")).toBe(
+  it("includes sheet slug for xlsx", () => {
+    expect(uploadFileSlug("General Strength.xlsx", "Weekly Volume")).toBe(
       "general-strength__weekly-volume",
     );
   });

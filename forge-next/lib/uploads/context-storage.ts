@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import {
-  DRAFT_UPLOADS_BUCKET,
-  draftUploadObjectPath,
+  SESSION_UPLOADS_BUCKET,
+  sessionUploadObjectPath,
 } from "@/lib/uploads/storage-paths";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -11,8 +11,8 @@ type StorageSupabaseClient = SupabaseClient;
 
 export type SaveUploadContextInput = {
   coachId: string;
-  draftId: string;
-  /** Object slug under the draft prefix (e.g. `workbook-name__summary`). */
+  sessionId: string;
+  /** Object slug under the session prefix (e.g. `workbook-name__summary`). */
   slug: string;
   normalizedText: string;
 };
@@ -34,15 +34,15 @@ export async function saveUploadContext(
   client?: StorageSupabaseClient,
 ): Promise<SaveUploadContextResult> {
   const supabase = client ?? (await createClient());
-  const objectPath = draftUploadObjectPath(
+  const objectPath = sessionUploadObjectPath(
     input.coachId,
-    input.draftId,
+    input.sessionId,
     input.slug,
   );
 
   const body = Buffer.from(input.normalizedText, "utf8");
   const { error } = await supabase.storage
-    .from(DRAFT_UPLOADS_BUCKET)
+    .from(SESSION_UPLOADS_BUCKET)
     .upload(objectPath, body, {
       contentType: "text/plain; charset=utf-8",
       upsert: true,
@@ -70,7 +70,7 @@ export async function loadUploadContextById(
 
   const supabase = client ?? (await createClient());
   const { data, error } = await supabase.storage
-    .from(DRAFT_UPLOADS_BUCKET)
+    .from(SESSION_UPLOADS_BUCKET)
     .download(contextFileId);
 
   if (error || !data) {
@@ -93,5 +93,5 @@ export async function deleteUploadContext(
   }
 
   const supabase = client ?? (await createClient());
-  await supabase.storage.from(DRAFT_UPLOADS_BUCKET).remove(paths);
+  await supabase.storage.from(SESSION_UPLOADS_BUCKET).remove(paths);
 }

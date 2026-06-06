@@ -2,7 +2,7 @@
 
 **Status:** ✅ Done (revision: all XLSX sheets → separate Storage objects)
 
-**Goal:** Server accepts multiple coach uploads, enforces caps, normalizes to compact text, stores in **Supabase Storage** under `{coachId}/{draftId}/`, and returns ids for plan-chat. Normalized text is for the **LLM prompt only** — never copied into the sandbox.
+**Goal:** Server accepts multiple coach uploads, enforces caps, normalizes to compact text, stores in **Supabase Storage** under `{coachId}/{sessionId}/`, and returns ids for plan-chat. Normalized text is for the **LLM prompt only** — never copied into the sandbox.
 
 **Depends on:** Phase 1 (deps + limits)
 
@@ -19,7 +19,7 @@
 - [x] Object naming: `{workbook-stem}__{sheet-slug}.txt` (see `draftUploadSlug()`)
 - [x] Implement `lib/uploads/normalize-message-uploads.ts` — batch upload, no upload-time sheet gate
 - [x] Implement `lib/uploads/context-storage.ts` — write/read/delete by slug
-- [x] Implement `lib/uploads/list-draft-uploads.ts` — `storage.list` under draft prefix (for Phase 3 tools)
+- [x] Implement `lib/uploads/list-session-uploads.ts` — `storage.list` under session prefix (for Phase 3 tools)
 - [x] Add `POST /api/coach/upload-context` with coach auth
 - [x] Unit tests: CSV, multi-sheet XLSX → multiple ids, limits, list helper
 - [x] Error codes: `FILE_TOO_LARGE`, `TOO_MANY_FILES`, `UNSUPPORTED_TYPE`, `PARSE_FAILED`, `STORAGE_FAILED`
@@ -35,8 +35,8 @@
 ## Developer actions
 
 - [ ] Review cap values in [overview.md](../overview.md)
-- [ ] Apply `supabase/migrations/20260602120000_draft_uploads_storage.sql` on hosted Supabase
-- [ ] Manual QA: CSV, PDF, multi-sheet XLSX → multiple `contextFileIds` under one `draftId`
+- [ ] Apply `supabase/migrations/20260606120000_session_uploads_bucket.sql` on hosted Supabase (`supabase db push`)
+- [ ] Manual QA: CSV, PDF, multi-sheet XLSX → multiple `contextFileIds` under one `sessionId`
 
 ---
 
@@ -47,14 +47,14 @@
 - [x] 6th file or oversize file fails with clear error code
 - [x] Normalized text in Storage only — not `plans` / `plan_versions`
 - [x] No upload files in Vercel Sandbox
-- [x] `listDraftUploads(coachId, draftId)` returns object names under the draft prefix
+- [x] `listSessionUploads(coachId, sessionId)` returns object names under the session prefix
 
 ---
 
 ## Storage layout
 
 ```text
-draft-uploads/{coachId}/{draftId}/
+session-uploads/{coachId}/{sessionId}/
   my-workbook__summary.txt
   my-workbook__volume.txt
   program-notes.pdf.txt   # slug from source filename
@@ -69,7 +69,7 @@ draft-uploads/{coachId}/{draftId}/
 
 ### `POST /api/coach/upload-context`
 
-Multipart: `draftId` (required), `files` / `files[]`.
+Multipart: `sessionId` (required), `files` / `files[]`.
 
 **Success:**
 
@@ -82,4 +82,4 @@ Multipart: `draftId` (required), `files` / `files[]`.
 
 **Errors:** `FILE_TOO_LARGE`, `TOO_MANY_FILES`, `UNSUPPORTED_TYPE`, `PARSE_FAILED`, `STORAGE_FAILED`.
 
-Phase 3 uses `draftId` + tools to list/read objects; see [phase-3-chat-api.md](./phase-3-chat-api.md).
+Phase 3 uses `sessionId` + tools to list/read objects; see [phase-3-chat-api.md](./phase-3-chat-api.md).

@@ -5,14 +5,15 @@ Documentation for the coach plan-creation chat pipeline (v1).
 ## Start here
 
 - **[overview.md](./overview.md)** — architecture, decisions, upload policy, done definition
-- **[supabase-draft-uploads.md](./supabase-draft-uploads.md)** — Storage bucket `draft-uploads/` layout (Phase 1+)
+- **[code-map.md](./code-map.md)** — authoritative file layout
+- **[supabase-session-uploads.md](./supabase-session-uploads.md)** — Storage bucket `session-uploads/` layout (Phase 1+)
 - **Phases** (build in order):
   1. ~~[Foundation](./phases/phase-1-foundation.md)~~ **Done**
   2. ~~[Upload normalization](./phases/phase-2-upload-normalization.md)~~ **Done**
-  3. [Chat API + AI Gateway](./phases/phase-3-chat-api.md)
-  4. [Vercel Sandbox + Python builder](./phases/phase-4-sandbox.md)
-  5. [Client workspace](./phases/phase-5-client-workspace.md)
-  6. [Integration & QA](./phases/phase-6-integration.md)
+  3. ~~[Chat API + AI Gateway](./phases/phase-3-chat-api.md)~~ **Done**
+  4. ~~[Vercel Sandbox + Python builder](./phases/phase-4-sandbox.md)~~ **Done**
+  5. ~~[Client workspace](./phases/phase-5-client-workspace.md)~~ **Done**
+  6. [Integration & QA](./phases/phase-6-integration.md) — **In progress** ([Task 2 spec](./task-2-edge-case-testing.md))
   7. [Schema guard & Python packaging](./phases/phase-7-schema-and-packaging.md)
 
 ## Roles

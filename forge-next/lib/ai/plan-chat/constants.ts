@@ -1,5 +1,5 @@
-/** Max characters returned from read_draft_file (tool output). */
-export const PLAN_CHAT_DRAFT_READ_MAX_CHARS = 48_000;
+/** Max characters returned from read_session_file (tool output). */
+export const SESSION_UPLOAD_READ_MAX_CHARS = 48_000;
 
 /** Max tool-loop steps per user message. */
 export const PLAN_CHAT_MAX_TOOL_STEPS = 12;

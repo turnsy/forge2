@@ -14,7 +14,7 @@ export type PlanChatMessage = {
 };
 
 export type PlanChatRequestBody = {
-  draftId?: string;
+  sessionId: string;
   prompt: string;
   messages?: PlanChatMessage[];
   currentArtifact?: WorkoutPlan | null;

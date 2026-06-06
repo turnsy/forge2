@@ -39,7 +39,7 @@ describe("buildPlanChatSystemPrompt", () => {
   it("includes summarize text but not full artifact JSON", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: samplePlan,
-      hasDraftUploads: true,
+      hasSessionUploads: true,
     });
     expect(system).toContain("Unique Plan Name XYZ");
     expect(system).not.toContain('"weeks":');
@@ -49,7 +49,7 @@ describe("buildPlanChatSystemPrompt", () => {
   it("documents forge_plan validation rules including day codes", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: null,
-      hasDraftUploads: false,
+      hasSessionUploads: false,
     });
     expect(system).toContain("w1d1");
     expect(system).toContain("W1D1");
@@ -59,7 +59,7 @@ describe("buildPlanChatSystemPrompt", () => {
   it("requires full program scope in one submit_plan_code when user specifies weeks", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: null,
-      hasDraftUploads: false,
+      hasSessionUploads: false,
     });
     expect(system).toContain("full requested structure");
     expect(system).not.toContain("Stay short");
@@ -69,7 +69,7 @@ describe("buildPlanChatSystemPrompt", () => {
   it("documents integer reps and notes for coaching qualifiers", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: null,
-      hasDraftUploads: false,
+      hasSessionUploads: false,
     });
     expect(system).toContain("Reps and notes");
     expect(system).toContain("plain integer count");
@@ -80,7 +80,7 @@ describe("buildPlanChatSystemPrompt", () => {
   it("constrains assistant replies to one short sentence without implementation jargon", () => {
     const system = buildPlanChatSystemPrompt({
       currentArtifact: null,
-      hasDraftUploads: false,
+      hasSessionUploads: false,
     });
     expect(system).toContain("Assistant reply style");
     expect(system).toContain("one short plain-language sentence");

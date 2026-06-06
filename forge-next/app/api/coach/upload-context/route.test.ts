@@ -20,6 +20,22 @@ describe("POST /api/coach/upload-context", () => {
     mockHandleUploadContextFormData.mockReset();
   });
 
+  it("returns 403 when athlete role", async () => {
+    mockRequireApiRole.mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+      }),
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/coach/upload-context", {
+        method: "POST",
+      }),
+    );
+    expect(response.status).toBe(403);
+  });
+
   it("returns auth failure from requireApiRole", async () => {
     mockRequireApiRole.mockResolvedValue({
       ok: false,
@@ -43,11 +59,11 @@ describe("POST /api/coach/upload-context", () => {
     });
     mockHandleUploadContextFormData.mockResolvedValue({
       ok: true,
-      contextFileIds: ["coach-1/draft-1/plan.txt"],
+      contextFileIds: ["coach-1/session-1/plan.txt"],
     });
 
     const form = new FormData();
-    form.set("draftId", "draft-1");
+    form.set("sessionId", "session-1");
     form.append("files", new File(["a,b"], "plan.csv", { type: "text/csv" }));
 
     const response = await POST(
@@ -60,7 +76,7 @@ describe("POST /api/coach/upload-context", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       ok: true,
-      contextFileIds: ["coach-1/draft-1/plan.txt"],
+      contextFileIds: ["coach-1/session-1/plan.txt"],
     });
   });
 });

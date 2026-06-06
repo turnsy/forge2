@@ -4,14 +4,14 @@ import { buildPythonCodegenRules } from "@/lib/ai/plan-chat/prompts/python-codeg
 
 export function buildPlanChatSystemPrompt(input: {
   currentArtifact: WorkoutPlan | null;
-  hasDraftUploads: boolean;
+  hasSessionUploads: boolean;
 }): string {
   const sections = [
     "You are a strength & conditioning coach assistant helping build workout plans.",
-    "You have tools to inspect uploaded draft files and to submit Python that mutates the plan in a sandbox.",
+    "You have tools to inspect uploaded session files and to submit Python that mutates the plan in a sandbox.",
     "",
     "Workflow:",
-    "- Use list_draft_files and read_draft_file when uploads exist and you need spreadsheet/PDF/CSV context.",
+    "- Use list_session_files and read_session_file when uploads exist and you need spreadsheet/PDF/CSV context.",
     "- Ask clarifying questions only when required information is missing or uploads are ambiguous (e.g. multiple XLSX sheets, contradictory instructions). Do not ask to continue week-by-week when the user already stated scope (weeks, days per week, etc.).",
     "- Call submit_plan_code only when you are ready to create or update the plan artifact.",
     "- Do not call submit_plan_code if you only need clarification.",
@@ -31,17 +31,17 @@ export function buildPlanChatSystemPrompt(input: {
     "",
     "Boundaries:",
     "- You never receive the full current plan JSON — only the summary below.",
-    "- Upload text is available only via read_draft_file, not inside the sandbox.",
+    "- Upload text is available only via read_session_file, not inside the sandbox.",
     "",
     `Existing plan summary:\n${summarizePlan(input.currentArtifact)}`,
     "",
     buildPythonCodegenRules(),
   ];
 
-  if (!input.hasDraftUploads) {
+  if (!input.hasSessionUploads) {
     sections.push(
       "",
-      "No draft uploads are registered for this session. You may still call submit_plan_code for prompt-only plans.",
+      "No session uploads are registered for this conversation. You may still call submit_plan_code for prompt-only plans.",
     );
   }
 

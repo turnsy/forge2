@@ -2,7 +2,7 @@ import { WorkoutPlanArtifactPreview } from "@/components/artifact/workout-plan-a
 import { Spinner } from "@/components/ui";
 import { getRunStatusLabel } from "@/lib/chat/run-status-copy";
 import type { ChatStatus } from "@/lib/chat/types";
-import type { ArtifactPreviewModel } from "@/lib/plan-chat/artifact-preview";
+import type { ArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 
 function PreviewLoadingState({ label }: { label: string }) {
   return (

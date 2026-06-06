@@ -52,6 +52,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: forge_plan Python tests
+        run: pnpm test:forge-plan
+
       - name: Verify generated plan types
         run: pnpm generate:check
 

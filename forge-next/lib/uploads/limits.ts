@@ -1,5 +1,5 @@
 /**
- * Upload caps for coach plan-chat context files.
+ * Upload caps for coach session context files.
  * @see docs/plan-generation/overview.md — Upload policy
  */
 

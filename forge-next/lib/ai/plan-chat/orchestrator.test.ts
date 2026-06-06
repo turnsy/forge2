@@ -5,6 +5,14 @@ import { buildMinimalWorkoutPlan } from "@/lib/sandbox/stub";
 function mockStreamText(options: {
   text?: string;
   submitPython?: string;
+  tools?: {
+    submit_plan_code?: {
+      execute: (
+        input: { python: string },
+        context: { messages: unknown[]; toolCallId: string },
+      ) => Promise<unknown>;
+    };
+  };
 }) {
   return {
     textStream: (async function* () {
@@ -34,7 +42,7 @@ describe("runPlanChat", () => {
     await runPlanChat(
       {
         coachId: "coach-1",
-        draftId: "draft-1",
+        sessionId: "session-1",
         prompt: "Which sheet?",
         messages: [],
         currentArtifact: null,
@@ -43,9 +51,9 @@ describe("runPlanChat", () => {
       {
         isGatewayConfigured: () => true,
         createModel: () => ({}) as never,
-        listDrafts: async () => [
-          { path: "coach-1/draft-1/a__s.txt", name: "a__s.txt", sizeBytes: 1 },
-          { path: "coach-1/draft-1/a__v.txt", name: "a__v.txt", sizeBytes: 2 },
+        listSessionUploads: async () => [
+          { path: "coach-1/session-1/a__s.txt", name: "a__s.txt", sizeBytes: 1 },
+          { path: "coach-1/session-1/a__v.txt", name: "a__v.txt", sizeBytes: 2 },
         ],
         streamTextFn: (opts) => mockStreamText({ text: "Which sheet?", tools: opts.tools }),
         runSandbox,
@@ -70,6 +78,7 @@ describe("runPlanChat", () => {
     await runPlanChat(
       {
         coachId: "coach-1",
+        sessionId: "session-1",
         prompt: "Build plan",
         messages: [],
         currentArtifact: null,
@@ -78,7 +87,7 @@ describe("runPlanChat", () => {
       {
         isGatewayConfigured: () => true,
         createModel: () => ({}) as never,
-        listDrafts: async () => [],
+        listSessionUploads: async () => [],
         streamTextFn: (opts) =>
           mockStreamText({
             text: "Building…",
@@ -101,11 +110,96 @@ describe("runPlanChat", () => {
     );
   });
 
+  it("emits errors without artifact when sandbox output fails validation", async () => {
+    const events: unknown[] = [];
+    const runSandbox = vi.fn().mockResolvedValue({
+      ok: true,
+      plan: { schemaVersion: "1.0.0", name: "Invalid" },
+    });
+
+    await runPlanChat(
+      {
+        coachId: "coach-1",
+        sessionId: "session-1",
+        prompt: "Build plan",
+        messages: [],
+        currentArtifact: null,
+        emit: (event) => events.push(event),
+      },
+      {
+        isGatewayConfigured: () => true,
+        createModel: () => ({}) as never,
+        listSessionUploads: async () => [],
+        streamTextFn: (opts) =>
+          mockStreamText({
+            submitPython: "print('bad')",
+            tools: opts.tools,
+          }),
+        runSandbox,
+      },
+    );
+
+    expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
+      false,
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "errors" }),
+    );
+    expect(events.filter((e) => (e as { type?: string }).type === "runStatus").at(-1)).toEqual({
+      type: "runStatus",
+      status: "error",
+    });
+  });
+
+  it("emits errors without artifact when sandbox fails", async () => {
+    const events: unknown[] = [];
+    const runSandbox = vi.fn().mockResolvedValue({
+      ok: false,
+      code: "SANDBOX_TIMEOUT",
+      message: "Sandbox timed out.",
+    });
+
+    await runPlanChat(
+      {
+        coachId: "coach-1",
+        sessionId: "session-1",
+        prompt: "Build plan",
+        messages: [],
+        currentArtifact: null,
+        emit: (event) => events.push(event),
+      },
+      {
+        isGatewayConfigured: () => true,
+        createModel: () => ({}) as never,
+        listSessionUploads: async () => [],
+        streamTextFn: (opts) =>
+          mockStreamText({
+            submitPython: "print('plan')",
+            tools: opts.tools,
+          }),
+        runSandbox,
+      },
+    );
+
+    expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
+      false,
+    );
+    expect(events).toContainEqual({
+      type: "errors",
+      errors: [{ code: "SANDBOX_TIMEOUT", message: "Sandbox timed out." }],
+    });
+    expect(events.filter((e) => (e as { type?: string }).type === "runStatus").at(-1)).toEqual({
+      type: "runStatus",
+      status: "error",
+    });
+  });
+
   it("returns gateway error when not configured", async () => {
     const events: unknown[] = [];
     await runPlanChat(
       {
         coachId: "coach-1",
+        sessionId: "session-1",
         prompt: "hi",
         messages: [],
         currentArtifact: null,

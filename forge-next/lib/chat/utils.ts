@@ -1,4 +1,4 @@
-export function createDraftId(): string {
+export function createSessionId(): string {
   return crypto.randomUUID();
 }
 

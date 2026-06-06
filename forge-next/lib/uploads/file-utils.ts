@@ -39,7 +39,7 @@ export function sheetNameToSlug(sheetName: string): string {
 }
 
 /** Storage object slug: `{workbook-stem}__{sheet-slug}` for XLSX sheets. */
-export function draftUploadSlug(
+export function uploadFileSlug(
   sourceFilename: string,
   sheetName?: string,
 ): string {

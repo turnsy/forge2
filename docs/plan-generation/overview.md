@@ -63,7 +63,7 @@ flowchart LR
 | Topic | Decision |
 | --- | --- |
 | Execution | **Vercel Sandbox** only — **E2B will not be used** |
-| Surface | **Coach only**; workspace is **coach home** (evolve existing `CoachHomePrompt` layout) |
+| Surface | **Coach only**; workspace is **coach home** (`CoachWorkspace` split pane) |
 | v1 scope | **New plan create/iterate only** — client sends ephemeral `currentArtifact`; no loading/updating saved plans from DB |
 | `@` mentions | **Cosmetic in v1** — do not branch on athlete/plan mentions for routing |
 | Sandbox contents | **`current_plan.json` + `forge_plan/` + `run.py` only** — no upload summaries or `input_context` files in the VM |
@@ -71,8 +71,8 @@ flowchart LR
 | Codegen | Gateway produces **Python**; server writes it to sandbox and executes |
 | Local dev | **Real sandbox** connected (no mock runner) |
 | LLM routing | **Vercel AI Gateway** |
-| Uploads | **Multiple files**; server-side parse; normalized text to **`draft-uploads/{coachId}/{draftId}/`**; attach returns **`contextFileIds[]`** (one per sheet for XLSX) |
-| Upload → model | Phase 3 **tools** `list_draft_files` / `read_draft_file` on the draft prefix — not a full-text dump on attach |
+| Uploads | **Multiple files**; server-side parse; normalized text to **`session-uploads/{coachId}/{sessionId}/`**; attach returns **`contextFileIds[]`** (one per sheet for XLSX) |
+| Upload → model | Phase 3 **tools** `list_session_files` / `read_session_file` on the session prefix — not a full-text dump on attach |
 | Formats | CSV, PDF, XLSX ( **all sheets** → separate `.txt` objects, `{stem}__{sheet-slug}.txt`) |
 | XLSX ambiguity | **Upload always succeeds**; agent **lists draft files** and asks in chat if unclear — before sandbox |
 | Artifact seed | Server writes **`current_plan.json`** in sandbox from client `currentArtifact` (empty seed if none) — **never** sent as full JSON to the LLM |
@@ -99,20 +99,21 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 
 ### Upload context (Phase 2–3)
 
-`POST /api/coach/upload-context` — multipart `files[]`:
+`POST /api/coach/upload-context` — multipart `sessionId` (required), `files` / `files[]`:
 
-- Normalize server-side → write under `draft-uploads/{coachId}/{draftId}/` (one object per XLSX sheet)
-- Return `{ ok: true, contextFileIds: string[], warnings?: … }` — never blocked for multi-sheet workbooks
+- Normalize server-side → write under `session-uploads/{coachId}/{sessionId}/` (one object per XLSX sheet)
+- Return `{ ok: true, contextFileIds: string[], warnings?: UploadWarning[] }` — never blocked for multi-sheet workbooks
+- Upload `warnings` are HTTP-only in v1 (not forwarded on plan-chat SSE)
 
 ### Plan chat
 
 `POST /api/coach/plan-chat` — JSON body:
 
-- `draftId` — workspace / conversation id (Storage prefix); **required** when attachments exist
+- `sessionId` — workspace / conversation id (**required** on every request; Storage prefix when uploads exist)
 - `prompt` — serialized prompt document (segments → text)
 - `messages` — optional prior turns
 - `currentArtifact` — optional — **sandbox seed only**, not passed to LLM
-- Upload paths are discovered via `list_draft_files` for the `draftId` prefix (upload-context still returns `contextFileIds` for the client UI)
+- Upload paths are discovered via `list_session_files` for the `sessionId` prefix (upload-context still returns `contextFileIds` for the client UI)
 
 ### Response
 
@@ -123,8 +124,8 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 **Non-streamed events** (discrete SSE / data packets):
 
 - `runStatus` — `parsing` | `generating` | `sandbox` | `validating` | `done` | `error`
-- `artifact` — full plan JSON only when validation passes
-- `warnings` — non-fatal (truncated CSV, page caps, etc.)
+- `artifact` — `{ type: "artifact", plan: WorkoutPlan }` when validation passes
+- `warnings` — defined in types; **not emitted** by orchestrator in v1 (upload warnings stay on upload HTTP response)
 - `errors` — fatal / actionable (parse failure, sandbox timeout, validation paths, missing output)
 
 Preview and run status may update before assistant text finishes streaming.
@@ -144,28 +145,33 @@ Preview and run status may update before assistant text finishes streaming.
 | Phase | Doc | Summary | Status |
 | --- | --- | --- | --- |
 | 1 | [phase-1-foundation.md](./phases/phase-1-foundation.md) | Tooling, env, deps, AGENTS.md | **Done** |
-| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Parsers, Storage per sheet, `listDraftUploads` | **Done** |
-| 3 | [phase-3-chat-api.md](./phases/phase-3-chat-api.md) | Gateway, route, streaming contract | |
-| 4 | [phase-4-sandbox.md](./phases/phase-4-sandbox.md) | Python builder lib + sandbox executor | |
-| 5 | [phase-5-client-workspace.md](./phases/phase-5-client-workspace.md) | Coach home UI, state, preview pane | |
-| 6 | [phase-6-integration.md](./phases/phase-6-integration.md) | E2E wiring, tests, QA checklist | |
+| 2 | [phase-2-upload-normalization.md](./phases/phase-2-upload-normalization.md) | Parsers, Storage per sheet, `listSessionUploads` | **Done** |
+| 3 | [phase-3-chat-api.md](./phases/phase-3-chat-api.md) | Gateway, route, streaming contract | **Done** |
+| 4 | [phase-4-sandbox.md](./phases/phase-4-sandbox.md) | Python builder lib + sandbox executor | **Done** |
+| 5 | [phase-5-client-workspace.md](./phases/phase-5-client-workspace.md) | Coach home UI, state, preview pane | **Done** |
+| 6 | [phase-6-integration.md](./phases/phase-6-integration.md) | E2E wiring, tests, QA checklist | **In progress** |
+| 7 | [phase-7-schema-and-packaging.md](./phases/phase-7-schema-and-packaging.md) | Schema guard & Python packaging | |
 
 Implement in order. Phases 2–4 can overlap slightly once Phase 1 env is green.
 
-## Code map (target)
+## Code map
 
-| Area | Planned location |
+See **[code-map.md](./code-map.md)** for the authoritative file layout.
+
+| Area | Location |
 | --- | --- |
-| Upload limits, parsers, list | `forge-next/lib/uploads/` (`list-draft-uploads.ts`) |
+| Upload limits, parsers, list | `forge-next/lib/uploads/` (`list-session-uploads.ts`) |
 | Draft file tools (Phase 3) | `forge-next/lib/ai/plan-chat/tools/` |
 | Chat orchestration | `forge-next/lib/ai/plan-chat/` |
-| Sandbox runner | `forge-next/lib/sandbox/` |
-| Python builder | `forge-next/sandbox/forge_plan/` (bundled into sandbox) |
-| Cheat sheet generator | `forge-next/sandbox/forge_plan/scripts/generate_api_cheat_sheet.ts` (or `.py` invoker) |
+| Plan client adapter | `forge-next/lib/chat/adapters/plan/` |
+| Generic chat | `forge-next/lib/chat/` |
+| Sandbox runner | `forge-next/lib/sandbox/` (stub in `stub.ts` for CI/tests only) |
+| Python builder | `forge-next/sandbox/forge_plan/` |
+| Cheat sheet generator | `forge-next/sandbox/scripts/generate_api_cheat_sheet.py` |
 | Upload route | `forge-next/app/api/coach/upload-context/route.ts` |
 | Plan chat route | `forge-next/app/api/coach/plan-chat/route.ts` |
-| Coach workspace | `forge-next/app/coach/(app)/page.tsx` + `CoachHomePrompt` (split pane) |
-| Chat UI | `forge-next/components/coach/plan-chat/` |
+| Coach workspace | `forge-next/app/coach/(app)/page.tsx` + `CoachWorkspace` |
+| Chat UI | `forge-next/components/chat/`, `forge-next/components/artifact/` |
 | Shared primitives | `forge-next/components/ui/` |
 
 ## Out of scope (v1)

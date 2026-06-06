@@ -8,7 +8,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 export type ParsedPlanChatRequest =
   | {
       ok: true;
-      draftId?: string;
+      sessionId: string;
       prompt: string;
       messages: PlanChatMessage[];
       currentArtifact: WorkoutPlan | null;
@@ -47,12 +47,12 @@ export function parsePlanChatRequestBody(
 
   const record = body as PlanChatRequestBody;
 
-  if (typeof record.prompt !== "string" || record.prompt.trim().length === 0) {
-    return { ok: false, message: "prompt is required." };
+  if (typeof record.sessionId !== "string" || record.sessionId.trim().length === 0) {
+    return { ok: false, message: "sessionId is required." };
   }
 
-  if (record.draftId !== undefined && typeof record.draftId !== "string") {
-    return { ok: false, message: "draftId must be a string when provided." };
+  if (typeof record.prompt !== "string" || record.prompt.trim().length === 0) {
+    return { ok: false, message: "prompt is required." };
   }
 
   const messages = parseMessages(record.messages);
@@ -71,7 +71,7 @@ export function parsePlanChatRequestBody(
 
   return {
     ok: true,
-    draftId: record.draftId?.trim() || undefined,
+    sessionId: record.sessionId.trim(),
     prompt: record.prompt.trim(),
     messages,
     currentArtifact,

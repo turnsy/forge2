@@ -1,5 +1,5 @@
 import type { PlanChatRequestBody } from "@/lib/ai/plan-chat/types";
-import { readPlanChatSseStream } from "@/lib/plan-chat/parse-plan-chat-sse";
+import { readPlanChatSseStream } from "@/lib/chat/adapters/plan/parse-plan-chat-sse";
 import type { ChatEvent } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 

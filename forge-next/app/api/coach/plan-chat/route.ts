@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const stream = createPlanChatEventStream((emit) =>
     runPlanChat({
       coachId: auth.user.id,
-      draftId: parsed.draftId,
+      sessionId: parsed.sessionId,
       prompt: parsed.prompt,
       messages: parsed.messages,
       currentArtifact: parsed.currentArtifact,

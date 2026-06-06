@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { draftUploadSlug } from "@/lib/uploads/file-utils";
+import { uploadFileSlug } from "@/lib/uploads/file-utils";
+import { UPLOAD_CSV_MAX_ROWS } from "@/lib/uploads/parse-upload";
 import { makeCsvBuffer, makeXlsxBuffer } from "@/lib/uploads/__tests__/fixtures";
 
 const mockSaveUploadContext = vi.fn();
@@ -15,29 +16,29 @@ describe("normalizeMessageUploads", () => {
     mockSaveUploadContext.mockReset();
     mockSaveUploadContext.mockResolvedValue({
       ok: true,
-      contextFileId: "coach-1/draft-1/stored.txt",
+      contextFileId: "coach-1/session-1/stored.txt",
     });
   });
 
   it("normalizes CSV and persists to storage", async () => {
     mockSaveUploadContext.mockResolvedValueOnce({
       ok: true,
-      contextFileId: "coach-1/draft-1/plan.txt",
+      contextFileId: "coach-1/session-1/plan.txt",
     });
 
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files: [{ filename: "plan.csv", buffer: makeCsvBuffer("a,b\n1,2") }],
     });
 
     expect(result).toEqual({
       ok: true,
-      contextFileIds: ["coach-1/draft-1/plan.txt"],
+      contextFileIds: ["coach-1/session-1/plan.txt"],
     });
     expect(mockSaveUploadContext).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: draftUploadSlug("plan.csv"),
+        slug: uploadFileSlug("plan.csv"),
       }),
     );
   });
@@ -46,16 +47,16 @@ describe("normalizeMessageUploads", () => {
     mockSaveUploadContext
       .mockResolvedValueOnce({
         ok: true,
-        contextFileId: "coach-1/draft-1/workbook__summary.txt",
+        contextFileId: "coach-1/session-1/workbook__summary.txt",
       })
       .mockResolvedValueOnce({
         ok: true,
-        contextFileId: "coach-1/draft-1/workbook__volume.txt",
+        contextFileId: "coach-1/session-1/workbook__volume.txt",
       });
 
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files: [
         {
           filename: "workbook.xlsx",
@@ -70,16 +71,39 @@ describe("normalizeMessageUploads", () => {
     expect(result).toEqual({
       ok: true,
       contextFileIds: [
-        "coach-1/draft-1/workbook__summary.txt",
-        "coach-1/draft-1/workbook__volume.txt",
+        "coach-1/session-1/workbook__summary.txt",
+        "coach-1/session-1/workbook__volume.txt",
       ],
     });
     expect(mockSaveUploadContext).toHaveBeenCalledTimes(2);
     expect(mockSaveUploadContext).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: draftUploadSlug("workbook.xlsx", "Summary"),
+        slug: uploadFileSlug("workbook.xlsx", "Summary"),
       }),
     );
+  });
+
+  it("propagates CSV truncation warnings on success", async () => {
+    mockSaveUploadContext.mockResolvedValueOnce({
+      ok: true,
+      contextFileId: "coach-1/session-1/big.txt",
+    });
+
+    const rows = Array.from(
+      { length: UPLOAD_CSV_MAX_ROWS + 5 },
+      (_, i) => `row${i},value`,
+    );
+    const result = await normalizeMessageUploads({
+      coachId: "coach-1",
+      sessionId: "session-1",
+      files: [{ filename: "big.csv", buffer: makeCsvBuffer(rows.join("\n")) }],
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      contextFileIds: ["coach-1/session-1/big.txt"],
+      warnings: [{ code: "CSV_TRUNCATED" }],
+    });
   });
 
   it("rejects a sixth file", async () => {
@@ -89,7 +113,7 @@ describe("normalizeMessageUploads", () => {
     }));
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files,
     });
     expect(result).toMatchObject({ ok: false, error: "TOO_MANY_FILES" });

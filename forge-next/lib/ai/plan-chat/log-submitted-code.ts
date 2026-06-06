@@ -6,7 +6,7 @@
  */
 export function logSubmittedPlanCode(
   python: string,
-  meta: { coachId: string; draftId?: string },
+  meta: { coachId: string; sessionId: string },
 ): void {
   if (
     process.env.NODE_ENV === "production" &&
@@ -15,9 +15,7 @@ export function logSubmittedPlanCode(
     return;
   }
 
-  const header = `[plan-chat] submit_plan_code coach=${meta.coachId}${
-    meta.draftId ? ` draft=${meta.draftId}` : ""
-  } (${python.split("\n").length} lines)`;
+  const header = `[plan-chat] submit_plan_code coach=${meta.coachId} session=${meta.sessionId} (${python.split("\n").length} lines)`;
 
   console.info(header);
   console.info("[plan-chat] generated run.py:\n%s", python);
