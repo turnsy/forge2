@@ -1,8 +1,3 @@
-export type CoachAthleteSummary = {
-  id: string;
-  name: string;
-};
-
 export type CoachAthleteListItem = {
   id: string;
   name: string;

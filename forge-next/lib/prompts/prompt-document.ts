@@ -2,7 +2,7 @@ import type {
   ActiveMentionQuery,
   PromptMentionItem,
   PromptSegment,
-} from "@/lib/prompts/mention-types";
+} from "@/lib/prompts/mentions/types";
 import { mergeAdjacentTextSegments } from "@/lib/prompts/prompt-document-segments";
 
 /** Space + zero-width space keeps a visible caret anchor after chips in contenteditable. */

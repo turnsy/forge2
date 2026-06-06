@@ -1,4 +1,4 @@
-import type { PromptSegment } from "@/lib/prompts/mention-types";
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
 export function mergeAdjacentTextSegments(segments: PromptSegment[]): PromptSegment[] {
   const merged: PromptSegment[] = [];

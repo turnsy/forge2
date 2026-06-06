@@ -1,5 +1,5 @@
-import type { PromptMentionSegment, PromptSegment } from "@/lib/prompts/mention-types";
-import { createMentionKindIconElement } from "@/lib/prompts/mention-kind-icon-dom";
+import { createMentionKindIconElement } from "@/lib/prompts/mentions/kind-icon-dom";
+import type { PromptMentionSegment, PromptSegment } from "@/lib/prompts/mentions/types";
 import { mergeAdjacentTextSegments } from "@/lib/prompts/prompt-document-segments";
 
 export function parseEditorToSegments(root: HTMLElement): PromptSegment[] {

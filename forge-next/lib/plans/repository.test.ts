@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   mapCoachPlanDetailRow,
+  mapCoachPlanRpcRow,
   mapCoachPlanRow,
-  mapCoachPlanSummaryRow,
 } from "@/lib/plans/repository";
 
 describe("mapCoachPlanRow", () => {
@@ -51,7 +51,6 @@ describe("mapCoachPlanRow", () => {
       id: "plan-1",
       title: "4-Week Strength Block",
       weekCount: 1,
-      daysPerWeek: 1,
       createdAt: "2026-01-01T00:00:00.000Z",
     });
   });
@@ -67,28 +66,32 @@ describe("mapCoachPlanRow", () => {
   });
 });
 
-describe("mapCoachPlanSummaryRow", () => {
-  it("extracts plan title from active version plan_data", () => {
+describe("mapCoachPlanRpcRow", () => {
+  it("maps projected rpc columns to a list item", () => {
     expect(
-      mapCoachPlanSummaryRow({
-        id: "plan-1",
-        active_version: {
-          plan_data: { name: "4-Week Strength Block" },
-        },
+      mapCoachPlanRpcRow({
+        plan_id: "plan-1",
+        title: "4-Week Strength Block",
+        week_count: 4,
+        created_at: "2026-01-01T00:00:00.000Z",
+        total_count: 1,
       }),
     ).toEqual({
       id: "plan-1",
       title: "4-Week Strength Block",
+      weekCount: 4,
+      createdAt: "2026-01-01T00:00:00.000Z",
     });
   });
 
-  it("returns null when name is missing", () => {
+  it("returns null when title is empty", () => {
     expect(
-      mapCoachPlanSummaryRow({
-        id: "plan-1",
-        active_version: {
-          plan_data: { weeks: [] },
-        },
+      mapCoachPlanRpcRow({
+        plan_id: "plan-1",
+        title: "   ",
+        week_count: 0,
+        created_at: "2026-01-01T00:00:00.000Z",
+        total_count: 1,
       }),
     ).toBeNull();
   });

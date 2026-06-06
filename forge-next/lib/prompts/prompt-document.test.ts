@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 import {
   createTextDocument,
   getActiveMentionQuery,

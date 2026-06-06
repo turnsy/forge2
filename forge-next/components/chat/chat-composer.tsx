@@ -8,11 +8,10 @@ import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import { canSendChat } from "@/lib/chat/workspace-selectors";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
-import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
 export function ChatComposer({
   state,
-  mentionItems,
   composerKey,
   onAttach,
   onSend,
@@ -20,7 +19,6 @@ export function ChatComposer({
   compact = false,
 }: {
   state: ChatWorkspaceState;
-  mentionItems: PromptMentionItem[];
   composerKey: string;
   onAttach: (files: File[]) => void;
   onSend: (segments: PromptSegment[]) => void;
@@ -89,7 +87,6 @@ export function ChatComposer({
           <PromptComposer
             key={composerKey}
             compact={compact}
-            mentionItems={mentionItems}
             placeholder="Ask Forge to build or update a plan..."
             onDocumentChange={(segments, isEmpty) => {
               latestSegmentsRef.current = segments;

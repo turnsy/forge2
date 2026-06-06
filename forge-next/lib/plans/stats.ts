@@ -22,6 +22,6 @@ export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStat
 
   return {
     weekCount,
-    daysPerWeek: min === max ? min : `${min}–${max}`,
+    daysPerWeek: max === 0 ? 0 : min === max ? min : `${min}–${max}`,
   };
 }

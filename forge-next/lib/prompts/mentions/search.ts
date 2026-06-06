@@ -1,4 +1,4 @@
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
 export type MentionSearchGroups = {
   athletes: PromptMentionItem[];
@@ -77,4 +77,18 @@ export function searchMentionItems(
   limit = 4,
 ): PromptMentionItem[] {
   return flattenMentionSearchGroups(searchMentionItemGroups(items, query, limit));
+}
+
+export function mergeFetchedMentionGroups(
+  athletes: PromptMentionItem[],
+  plans: PromptMentionItem[],
+  limit = 4,
+): MentionSearchGroups {
+  const athleteItems = athletes.slice(0, limit);
+  const remaining = Math.max(0, limit - athleteItems.length);
+
+  return {
+    athletes: athleteItems,
+    plans: plans.slice(0, remaining),
+  };
 }

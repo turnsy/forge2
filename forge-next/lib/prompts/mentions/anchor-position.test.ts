@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMirrorTextBeforeAnchor,
   shouldFlipMenuAbove,
-} from "@/lib/prompts/mention-anchor-position";
+} from "@/lib/prompts/mentions/anchor-position";
 
 describe("buildMirrorTextBeforeAnchor", () => {
   it("uses the @ index rather than the caret", () => {

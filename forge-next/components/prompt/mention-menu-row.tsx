@@ -1,5 +1,5 @@
 import { MentionKindIcon } from "@/components/prompt/mention-kind-icon";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
 const rowClass =
   "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold transition hover:bg-glass-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coach/50";

@@ -1,5 +1,5 @@
 import { AthletesIcon, PlansIcon } from "@/components/icons/sidebar-nav-icons";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
 export function MentionKindIcon({
   kind,

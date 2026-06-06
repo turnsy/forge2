@@ -9,17 +9,14 @@ import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 import { roleLinkClass } from "@/lib/theme";
 
 export function CoachWorkspace({
   firstName,
   role,
-  mentionItems,
 }: {
   firstName: string;
   role: UserRole;
-  mentionItems: PromptMentionItem[];
 }) {
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
     useCoachPlanWorkspace();
@@ -36,7 +33,6 @@ export function CoachWorkspace({
 
         <ChatComposer
           state={state}
-          mentionItems={mentionItems}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
           onSend={sendMessage}
@@ -79,7 +75,6 @@ export function CoachWorkspace({
               <ChatComposer
                 compact
                 state={state}
-                mentionItems={mentionItems}
                 composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
                 onSend={sendMessage}
