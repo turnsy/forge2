@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
+import { toHttpStatus } from "@/lib/errors/service-error";
 import { saveCoachPlanVersion } from "@/lib/plans/mutations";
 import { parseSavePlanRequest } from "@/lib/plans/parse-save-plan-request";
-import { preparePlanForSave } from "@/lib/plans/prepare-plan-for-save";
 import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
+import { preparePlanForSave } from "@/lib/plans/utils";
 
 type RouteContext = {
   params: Promise<{ planId: string }>;
@@ -68,14 +69,10 @@ export async function POST(request: Request, context: RouteContext) {
   );
 
   if (!result.ok) {
-    const status =
-      result.code === "unauthorized"
-        ? 401
-        : result.code === "not_found"
-          ? 404
-          : 500;
-
-    return NextResponse.json({ error: result.message }, { status });
+    return NextResponse.json(
+      { error: result.message },
+      { status: toHttpStatus(result.code) },
+    );
   }
 
   return NextResponse.json({ versionId: result.versionId }, { status: 201 });

@@ -1,13 +1,21 @@
+import {
+  ServiceErrorCode,
+  mapRpcErrorMessage,
+  serviceError,
+  type ServiceError,
+  type ServiceResult,
+} from "@/lib/errors/service-error";
 import { createClient } from "@/utils/supabase/server";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export type CreateCoachPlanResult =
-  | { ok: true; planId: string; versionId: string }
-  | { ok: false; code: "unauthorized" | "not_found" | "db_error"; message: string };
+export type CreateCoachPlanResult = ServiceResult<{
+  planId: string;
+  versionId: string;
+}>;
 
-export type SaveCoachPlanVersionResult =
-  | { ok: true; versionId: string }
-  | { ok: false; code: "unauthorized" | "not_found" | "db_error"; message: string };
+export type SaveCoachPlanVersionResult = ServiceResult<{
+  versionId: string;
+}>;
 
 type CreateCoachPlanRpcRow = {
   plan_id: string;
@@ -17,20 +25,6 @@ type CreateCoachPlanRpcRow = {
 type SaveCoachPlanVersionRpcRow = {
   version_id: string;
 };
-
-function mapRpcError(message: string): CreateCoachPlanResult | SaveCoachPlanVersionResult {
-  const lower = message.toLowerCase();
-
-  if (lower.includes("not authenticated")) {
-    return { ok: false, code: "unauthorized", message };
-  }
-
-  if (lower.includes("plan not found")) {
-    return { ok: false, code: "not_found", message };
-  }
-
-  return { ok: false, code: "db_error", message };
-}
 
 export async function createCoachPlan(
   plan: WorkoutPlan,
@@ -43,17 +37,13 @@ export async function createCoachPlan(
   });
 
   if (error) {
-    return mapRpcError(error.message) as CreateCoachPlanResult;
+    return mapRpcErrorMessage(error.message);
   }
 
   const row = (data as CreateCoachPlanRpcRow[] | null)?.[0];
 
   if (!row?.plan_id || !row.version_id) {
-    return {
-      ok: false,
-      code: "db_error",
-      message: "Plan was not created",
-    };
+    return serviceError(ServiceErrorCode.DB_ERROR, "Plan was not created");
   }
 
   return {
@@ -76,17 +66,16 @@ export async function saveCoachPlanVersion(
   });
 
   if (error) {
-    return mapRpcError(error.message) as SaveCoachPlanVersionResult;
+    return mapRpcErrorMessage(error.message);
   }
 
   const row = (data as SaveCoachPlanVersionRpcRow[] | null)?.[0];
 
   if (!row?.version_id) {
-    return {
-      ok: false,
-      code: "db_error",
-      message: "Plan version was not saved",
-    };
+    return serviceError(
+      ServiceErrorCode.DB_ERROR,
+      "Plan version was not saved",
+    );
   }
 
   return {
@@ -94,3 +83,5 @@ export async function saveCoachPlanVersion(
     versionId: row.version_id,
   };
 }
+
+export type { ServiceError };

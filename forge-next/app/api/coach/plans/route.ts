@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
+import { toHttpStatus } from "@/lib/errors/service-error";
 import { listQueryFromUrl } from "@/lib/lists/query";
 import { createCoachPlan } from "@/lib/plans/mutations";
 import { parseSavePlanRequest } from "@/lib/plans/parse-save-plan-request";
-import { preparePlanForSave } from "@/lib/plans/prepare-plan-for-save";
 import { listCoachPlans } from "@/lib/plans/repository";
+import { preparePlanForSave } from "@/lib/plans/utils";
 
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
@@ -36,14 +37,10 @@ export async function POST(request: Request) {
   const result = await createCoachPlan(prepared.plan, parsed.body.changeSummary);
 
   if (!result.ok) {
-    const status =
-      result.code === "unauthorized"
-        ? 401
-        : result.code === "not_found"
-          ? 404
-          : 500;
-
-    return NextResponse.json({ error: result.message }, { status });
+    return NextResponse.json(
+      { error: result.message },
+      { status: toHttpStatus(result.code) },
+    );
   }
 
   return NextResponse.json(

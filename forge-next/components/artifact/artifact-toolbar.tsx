@@ -1,9 +1,9 @@
 "use client";
 
 import { Button, Input } from "@/components/ui";
-import type { SavePlanStatus } from "@/lib/plans/use-save-plan";
+import type { SaveArtifactStatus } from "@/lib/chat/use-save-artifact";
 
-function getSaveButtonLabel(saveStatus: SavePlanStatus): string {
+function getSaveButtonLabel(saveStatus: SaveArtifactStatus): string {
   switch (saveStatus) {
     case "saving":
       return "Saving…";
@@ -23,7 +23,7 @@ export function ArtifactToolbar({
 }: {
   title: string;
   saveDisabled: boolean;
-  saveStatus?: SavePlanStatus;
+  saveStatus?: SaveArtifactStatus;
   onTitleChange: (value: string) => void;
   onSave?: () => void;
 }) {

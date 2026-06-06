@@ -1,23 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, type MouseEvent } from "react";
+import { useCallback, useRef, type MouseEvent } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { BackRefButton } from "@/components/ui";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
-import { createEditWorkspaceState } from "@/lib/plans/create-edit-workspace-state";
+import { useSavePlan } from "@/lib/plans/use-save-plan";
 import {
   createPlanSnapshot,
   hasUnsavedPlanChanges,
-} from "@/lib/plans/plan-snapshot";
-import { useSavePlan } from "@/lib/plans/use-save-plan";
+} from "@/lib/plans/utils";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass } from "@/lib/theme";
 
@@ -39,20 +38,15 @@ export function CoachWorkspace({
   backHref?: string;
 }) {
   const router = useRouter();
-  const initialState = useMemo(
-    () =>
-      mode === "edit" && initialPlan
-        ? createEditWorkspaceState(initialPlan)
-        : undefined,
-    [initialPlan, mode],
-  );
   const savedSnapshotRef = useRef<string | null>(
     mode === "edit" && initialPlan
       ? createPlanSnapshot(initialPlan, initialPlan.name)
       : null,
   );
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
-    useCoachPlanWorkspace(initialState ? { initialState } : undefined);
+    useCoachPlanWorkspace(
+      mode === "edit" && initialPlan ? { initialPlan } : undefined,
+    );
   const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
     mode === "edit" ? (planId ?? null) : null,
   );
@@ -136,13 +130,9 @@ export function CoachWorkspace({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {mode === "edit" && backHref ? (
         <div className="shrink-0 border-b border-glass-border px-4 py-3 md:px-5">
-          <Link
-            href={backHref}
-            onClick={handleBackClick}
-            className="text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
-          >
+          <BackRefButton href={backHref} onClick={handleBackClick}>
             ← Back to plan
-          </Link>
+          </BackRefButton>
         </div>
       ) : null}
       <ResizableSplitPane

@@ -13,7 +13,7 @@ vi.mock("@/lib/plans/mutations", () => ({
   createCoachPlan: (...args: unknown[]) => mockCreateCoachPlan(...args),
 }));
 
-vi.mock("@/lib/plans/prepare-plan-for-save", () => ({
+vi.mock("@/lib/plans/utils", () => ({
   preparePlanForSave: (...args: unknown[]) => mockPreparePlanForSave(...args),
 }));
 

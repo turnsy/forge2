@@ -20,7 +20,7 @@ vi.mock("@/lib/plans/mutations", () => ({
   saveCoachPlanVersion: (...args: unknown[]) => mockSaveCoachPlanVersion(...args),
 }));
 
-vi.mock("@/lib/plans/prepare-plan-for-save", () => ({
+vi.mock("@/lib/plans/utils", () => ({
   preparePlanForSave: (...args: unknown[]) => mockPreparePlanForSave(...args),
 }));
 

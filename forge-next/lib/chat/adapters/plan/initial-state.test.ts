@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { createEditPlanWorkspaceState } from "@/lib/chat/adapters/plan/initial-state";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
-import { createEditWorkspaceState } from "@/lib/plans/create-edit-workspace-state";
 
-describe("createEditWorkspaceState", () => {
+describe("createEditPlanWorkspaceState", () => {
   it("hydrates workspace for edit mode", () => {
-    const state = createEditWorkspaceState(minimalWorkoutPlan);
+    const state = createEditPlanWorkspaceState(minimalWorkoutPlan);
 
     expect(state).toMatchObject({
       hasStarted: true,

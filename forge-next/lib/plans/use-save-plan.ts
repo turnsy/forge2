@@ -1,26 +1,27 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useMemo } from "react";
+import { useSaveArtifact } from "@/lib/chat/use-save-artifact";
 import {
   createCoachPlanClient,
   saveCoachPlanVersionClient,
 } from "@/lib/plans/save-plan-client";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export type SavePlanStatus = "idle" | "saving" | "saved";
+export type { SaveArtifactStatus as SavePlanStatus } from "@/lib/chat/use-save-artifact";
 
 export function useSavePlan(planId: string | null) {
-  const [saveStatus, setSaveStatus] = useState<SavePlanStatus>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const successStatus = useMemo(
+    () => (planId ? ("saved" as const) : ("saving" as const)),
+    [planId],
+  );
 
-  const savePlan = useCallback(
-    async (input: {
-      plan: WorkoutPlan;
-      title: string;
-    }): Promise<{ planId: string; versionId: string } | null> => {
-      setSaveStatus("saving");
-      setSaveError(null);
-
+  const { save, ...rest } = useSaveArtifact<
+    { plan: WorkoutPlan; title: string },
+    { planId: string; versionId: string }
+  >({
+    successStatus,
+    save: async (input) => {
       const result = planId
         ? await saveCoachPlanVersionClient({
             planId,
@@ -33,30 +34,21 @@ export function useSavePlan(planId: string | null) {
           });
 
       if (!result.ok) {
-        setSaveStatus("idle");
-        setSaveError(result.message);
-        return null;
+        return { ok: false, message: result.message };
       }
 
-      setSaveStatus(planId ? "saved" : "saving");
-
       return {
-        planId: result.planId,
-        versionId: result.versionId,
+        ok: true,
+        value: {
+          planId: result.planId,
+          versionId: result.versionId,
+        },
       };
     },
-    [planId],
-  );
-
-  const resetSaveStatus = useCallback(() => {
-    setSaveStatus("idle");
-    setSaveError(null);
-  }, []);
+  });
 
   return {
-    saveStatus,
-    saveError,
-    savePlan,
-    resetSaveStatus,
+    ...rest,
+    savePlan: save,
   };
 }

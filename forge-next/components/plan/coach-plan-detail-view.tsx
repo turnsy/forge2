@@ -29,15 +29,6 @@ export function CoachPlanDetailView({
         description={plan.description}
         actions={
           <>
-            <ButtonLink
-              href={`/coach/plans/${planId}/edit`}
-              variant="secondary"
-              size="sm"
-              className="inline-flex items-center gap-2"
-            >
-              <PencilIcon />
-              Edit
-            </ButtonLink>
             <Button
               type="button"
               variant={showHistory ? "primary" : "secondary"}
@@ -47,6 +38,15 @@ export function CoachPlanDetailView({
             >
               History
             </Button>
+            <ButtonLink
+              href={`/coach/plans/${planId}/edit`}
+              variant="secondary"
+              size="sm"
+              className="inline-flex items-center gap-2"
+            >
+              <PencilIcon />
+              Edit
+            </ButtonLink>
           </>
         }
       />
