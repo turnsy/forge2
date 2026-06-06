@@ -4,9 +4,13 @@ import { IconButton, Spinner } from "@/components/ui";
 import {
   getRunStatusLabel,
   isActiveRunStatus,
-} from "@/lib/plan-chat/run-status-copy";
-import type { PlanChatRunStatus, PlanChatMessage } from "@/lib/ai/plan-chat/types";
-import type { PlanChatDisplayError, PlanChatWorkspacePhase } from "@/lib/plan-chat/types";
+} from "@/lib/chat/run-status-copy";
+import type {
+  ChatDisplayError,
+  ChatMessage,
+  ChatStatus,
+  ChatWorkspacePhase,
+} from "@/lib/chat/types";
 
 export function ChatThread({
   messages,
@@ -17,11 +21,11 @@ export function ChatThread({
   onRestart,
   restartDisabled = false,
 }: {
-  messages: PlanChatMessage[];
+  messages: ChatMessage[];
   streamingAssistantText: string;
-  runStatus: PlanChatRunStatus | null;
-  errors: PlanChatDisplayError[];
-  phase: PlanChatWorkspacePhase;
+  runStatus: ChatStatus | null;
+  errors: ChatDisplayError[];
+  phase: ChatWorkspacePhase;
   onRestart?: () => void;
   restartDisabled?: boolean;
 }) {

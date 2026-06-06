@@ -6,8 +6,8 @@ import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
-import { canSendPlanChat } from "@/lib/plan-chat/workspace-selectors";
-import type { PlanChatWorkspaceState } from "@/lib/plan-chat/types";
+import { canSendChat } from "@/lib/chat/workspace-selectors";
+import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
 
 export function ChatComposer({
@@ -19,7 +19,7 @@ export function ChatComposer({
   className = "",
   compact = false,
 }: {
-  state: PlanChatWorkspaceState;
+  state: ChatWorkspaceState;
   mentionItems: PromptMentionItem[];
   composerKey: string;
   onAttach: (files: File[]) => void;
@@ -32,7 +32,7 @@ export function ChatComposer({
   const latestSegmentsRef = useRef<PromptSegment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDragging = dragDepth > 0;
-  const sendAllowed = canSendPlanChat(state) && !documentEmpty;
+  const sendAllowed = canSendChat(state) && !documentEmpty;
 
   function addFiles(files: File[]) {
     if (files.length === 0) {

@@ -1,8 +1,5 @@
-import { applyPlanChatEvent } from "@/lib/plan-chat/apply-plan-chat-event";
-import type {
-  PlanChatWorkspaceAction,
-  PlanChatWorkspaceState,
-} from "@/lib/plan-chat/types";
+import { applyChatEvent } from "@/lib/chat/apply-chat-event";
+import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 
 function mergeContextFileIds(
   existing: string[],
@@ -19,10 +16,10 @@ function mergeContextFileIds(
   return merged;
 }
 
-export function planChatWorkspaceReducer(
-  state: PlanChatWorkspaceState,
-  action: PlanChatWorkspaceAction,
-): PlanChatWorkspaceState {
+export function chatWorkspaceReducer<TArtifact>(
+  state: ChatWorkspaceState<TArtifact>,
+  action: ChatWorkspaceAction<TArtifact>,
+): ChatWorkspaceState<TArtifact> {
   switch (action.type) {
     case "RESTART":
       return {
@@ -37,10 +34,10 @@ export function planChatWorkspaceReducer(
         errors: [],
         phase: "idle",
         streamingAssistantText: "",
-        planTitle: "",
+        artifactTitle: "",
       };
-    case "SET_PLAN_TITLE":
-      return { ...state, planTitle: action.planTitle };
+    case "SET_ARTIFACT_TITLE":
+      return { ...state, artifactTitle: action.artifactTitle };
     case "ATTACH_FILES":
       return {
         ...state,
@@ -109,7 +106,7 @@ export function planChatWorkspaceReducer(
         ],
       };
     case "APPLY_EVENT":
-      return applyPlanChatEvent(state, action.event);
+      return applyChatEvent(state, action.event);
     case "STREAM_END": {
       const assistantText = state.streamingAssistantText.trim();
       const messages =

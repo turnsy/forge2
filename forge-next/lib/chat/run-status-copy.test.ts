@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   getRunStatusLabel,
   shouldShowPreviewSpinner,
-} from "@/lib/plan-chat/run-status-copy";
+} from "@/lib/chat/run-status-copy";
 
 describe("run-status-copy", () => {
   it("maps run statuses to labels", () => {
-    expect(getRunStatusLabel("sandbox")).toBe("Running plan builder");
-    expect(getRunStatusLabel("validating")).toBe("Validating plan");
+    expect(getRunStatusLabel("sandbox")).toBe("Running builder");
+    expect(getRunStatusLabel("validating")).toBe("Validating");
   });
 
   it("shows preview spinner only for sandbox and validating", () => {

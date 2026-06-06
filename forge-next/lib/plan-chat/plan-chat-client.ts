@@ -1,5 +1,7 @@
-import type { PlanChatRequestBody, PlanChatEvent } from "@/lib/ai/plan-chat/types";
-import { readPlanChatSseStream } from "@/lib/plan-chat/parse-sse";
+import type { PlanChatRequestBody } from "@/lib/ai/plan-chat/types";
+import { readPlanChatSseStream } from "@/lib/plan-chat/parse-plan-chat-sse";
+import type { ChatEvent } from "@/lib/chat/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type PlanChatClientError =
   | { kind: "http"; status: number; message: string }
@@ -7,7 +9,7 @@ export type PlanChatClientError =
 
 export async function streamPlanChat(input: {
   body: PlanChatRequestBody;
-  onEvent: (event: PlanChatEvent) => void;
+  onEvent: (event: ChatEvent<WorkoutPlan>) => void;
 }): Promise<PlanChatClientError | null> {
   const response = await fetch("/api/coach/plan-chat", {
     method: "POST",

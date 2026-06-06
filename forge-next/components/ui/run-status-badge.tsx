@@ -1,13 +1,13 @@
 import {
   getRunStatusLabel,
   isActiveRunStatus,
-} from "@/lib/plan-chat/run-status-copy";
-import type { PlanChatRunStatus } from "@/lib/ai/plan-chat/types";
+} from "@/lib/chat/run-status-copy";
+import type { ChatStatus } from "@/lib/chat/types";
 
 export function RunStatusBadge({
   status,
 }: {
-  status: PlanChatRunStatus | null;
+  status: ChatStatus | null;
 }) {
   if (!status) {
     return null;

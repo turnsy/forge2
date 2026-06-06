@@ -1,14 +1,16 @@
-import { isActiveRunStatus } from "@/lib/plan-chat/run-status-copy";
-import type { PlanChatWorkspaceState } from "@/lib/plan-chat/types";
+import { isActiveRunStatus } from "@/lib/chat/run-status-copy";
+import type { ChatWorkspaceState } from "@/lib/chat/types";
 
-export function hasUploadingAttachments(state: PlanChatWorkspaceState): boolean {
+export function hasUploadingAttachments<TArtifact>(
+  state: ChatWorkspaceState<TArtifact>,
+): boolean {
   return state.attachments.some(
     (attachment) =>
       attachment.status === "uploading" || attachment.status === "pending",
   );
 }
 
-export function canSendPlanChat(state: PlanChatWorkspaceState): boolean {
+export function canSendChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
   if (state.phase === "streaming" || state.phase === "uploading") {
     return false;
   }
@@ -20,11 +22,13 @@ export function canSendPlanChat(state: PlanChatWorkspaceState): boolean {
   return true;
 }
 
-export function isChatRunning(state: PlanChatWorkspaceState): boolean {
+export function isChatRunning<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
   return state.phase === "streaming" || state.phase === "uploading";
 }
 
-export function isAwaitingFirstPlan(state: PlanChatWorkspaceState): boolean {
+export function isAwaitingFirstArtifact<TArtifact>(
+  state: ChatWorkspaceState<TArtifact>,
+): boolean {
   if (state.currentArtifact || !state.hasStarted) {
     return false;
   }

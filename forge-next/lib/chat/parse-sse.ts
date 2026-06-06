@@ -1,4 +1,4 @@
-import type { PlanChatEvent } from "@/lib/ai/plan-chat/types";
+import type { ChatEvent } from "@/lib/chat/types";
 
 const EVENT_TYPES = new Set([
   "assistantTextDelta",
@@ -8,7 +8,7 @@ const EVENT_TYPES = new Set([
   "errors",
 ]);
 
-export function isPlanChatEvent(value: unknown): value is PlanChatEvent {
+export function isChatEvent(value: unknown): value is ChatEvent {
   if (typeof value !== "object" || value === null || !("type" in value)) {
     return false;
   }
@@ -17,7 +17,7 @@ export function isPlanChatEvent(value: unknown): value is PlanChatEvent {
   return typeof type === "string" && EVENT_TYPES.has(type);
 }
 
-export function parseSseDataLine(line: string): PlanChatEvent | null {
+export function parseSseDataLine(line: string): ChatEvent | null {
   const trimmed = line.trim();
   if (!trimmed.startsWith("data:")) {
     return null;
@@ -30,17 +30,17 @@ export function parseSseDataLine(line: string): PlanChatEvent | null {
 
   try {
     const parsed: unknown = JSON.parse(payload);
-    return isPlanChatEvent(parsed) ? parsed : null;
+    return isChatEvent(parsed) ? parsed : null;
   } catch {
     return null;
   }
 }
 
 export function extractSseEventsFromBuffer(buffer: string): {
-  events: PlanChatEvent[];
+  events: ChatEvent[];
   remainder: string;
 } {
-  const events: PlanChatEvent[] = [];
+  const events: ChatEvent[] = [];
   const parts = buffer.split("\n\n");
   const remainder = parts.pop() ?? "";
 
@@ -56,9 +56,9 @@ export function extractSseEventsFromBuffer(buffer: string): {
   return { events, remainder };
 }
 
-export async function readPlanChatSseStream(
+export async function readChatSseStream(
   body: ReadableStream<Uint8Array>,
-  onEvent: (event: PlanChatEvent) => void,
+  onEvent: (event: ChatEvent) => void,
 ): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();

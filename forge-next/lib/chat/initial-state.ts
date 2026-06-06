@@ -1,13 +1,13 @@
-import { createDraftId } from "@/lib/plan-chat/create-draft-id";
-import type { PlanChatWorkspaceState } from "@/lib/plan-chat/types";
+import { createDraftId } from "@/lib/chat/utils";
+import type { ChatWorkspaceState } from "@/lib/chat/types";
 
-export function createInitialPlanChatWorkspaceState(
+export function createInitialChatWorkspaceState<TArtifact = unknown>(
   draftId: string = createDraftId(),
-): PlanChatWorkspaceState {
+): ChatWorkspaceState<TArtifact> {
   return {
     draftId,
     hasStarted: false,
-    planTitle: "",
+    artifactTitle: "",
     messages: [],
     currentArtifact: null,
     contextFileIds: [],

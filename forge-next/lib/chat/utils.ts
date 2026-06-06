@@ -1,3 +1,7 @@
+export function createDraftId(): string {
+  return crypto.randomUUID();
+}
+
 /**
  * Human-readable label for an uploaded attachment after contextFileIds are known.
  */

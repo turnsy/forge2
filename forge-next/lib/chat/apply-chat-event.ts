@@ -1,10 +1,9 @@
-import type { PlanChatEvent } from "@/lib/ai/plan-chat/types";
-import type { PlanChatWorkspaceState } from "@/lib/plan-chat/types";
+import type { ChatEvent, ChatWorkspaceState } from "@/lib/chat/types";
 
-export function applyPlanChatEvent(
-  state: PlanChatWorkspaceState,
-  event: PlanChatEvent,
-): PlanChatWorkspaceState {
+export function applyChatEvent<TArtifact>(
+  state: ChatWorkspaceState<TArtifact>,
+  event: ChatEvent<TArtifact>,
+): ChatWorkspaceState<TArtifact> {
   switch (event.type) {
     case "assistantTextDelta":
       return {
@@ -20,8 +19,8 @@ export function applyPlanChatEvent(
     case "artifact":
       return {
         ...state,
-        currentArtifact: event.plan,
-        planTitle: event.plan.name,
+        currentArtifact: event.artifact,
+        artifactTitle: event.title ?? state.artifactTitle,
       };
     case "warnings":
       return {

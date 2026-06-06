@@ -1,31 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { createInitialPlanChatWorkspaceState } from "@/lib/plan-chat/initial-state";
+import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import {
-  canSendPlanChat,
-  isAwaitingFirstPlan,
+  canSendChat,
+  isAwaitingFirstArtifact,
   isChatRunning,
-} from "@/lib/plan-chat/workspace-selectors";
+} from "@/lib/chat/workspace-selectors";
 
 describe("workspace selectors", () => {
   it("blocks send while streaming", () => {
-    const state = { ...createInitialPlanChatWorkspaceState(), phase: "streaming" as const };
-    expect(canSendPlanChat(state)).toBe(false);
+    const state = { ...createInitialChatWorkspaceState(), phase: "streaming" as const };
+    expect(canSendChat(state)).toBe(false);
     expect(isChatRunning(state)).toBe(true);
   });
 
-  it("detects awaiting first plan", () => {
+  it("detects awaiting first artifact", () => {
     const state = {
-      ...createInitialPlanChatWorkspaceState(),
+      ...createInitialChatWorkspaceState(),
       hasStarted: true,
       phase: "streaming" as const,
       runStatus: "generating" as const,
     };
-    expect(isAwaitingFirstPlan(state)).toBe(true);
+    expect(isAwaitingFirstArtifact(state)).toBe(true);
   });
 
   it("stops awaiting once an artifact exists", () => {
     const state = {
-      ...createInitialPlanChatWorkspaceState(),
+      ...createInitialChatWorkspaceState(),
       hasStarted: true,
       phase: "streaming" as const,
       currentArtifact: {
@@ -34,6 +34,6 @@ describe("workspace selectors", () => {
         weeks: [],
       },
     };
-    expect(isAwaitingFirstPlan(state)).toBe(false);
+    expect(isAwaitingFirstArtifact(state)).toBe(false);
   });
 });

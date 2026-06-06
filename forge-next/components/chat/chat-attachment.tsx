@@ -1,12 +1,12 @@
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { Spinner } from "@/components/ui";
 import { attachmentChipClass } from "@/lib/theme";
-import type { PlanChatAttachment } from "@/lib/plan-chat/types";
+import type { ChatAttachment as ChatAttachmentModel } from "@/lib/chat/types";
 
 export function ChatAttachment({
   attachment,
 }: {
-  attachment: PlanChatAttachment;
+  attachment: ChatAttachmentModel;
 }) {
   const tone = attachment.status === "failed" ? "error" : "default";
 

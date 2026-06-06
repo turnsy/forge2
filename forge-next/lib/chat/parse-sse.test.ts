@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { encodePlanChatSseEvent } from "@/lib/ai/plan-chat/events";
 import {
   extractSseEventsFromBuffer,
   parseSseDataLine,
-} from "@/lib/plan-chat/parse-sse";
+} from "@/lib/chat/parse-sse";
+
+function encodeChatSseEvent(event: object): string {
+  return `data: ${JSON.stringify(event)}\n\n`;
+}
 
 describe("parseSseDataLine", () => {
-  it("parses encoded plan chat events", () => {
-    const line = encodePlanChatSseEvent({
+  it("parses encoded chat events", () => {
+    const line = encodeChatSseEvent({
       type: "runStatus",
       status: "generating",
     }).trim();
@@ -21,18 +24,17 @@ describe("parseSseDataLine", () => {
 describe("extractSseEventsFromBuffer", () => {
   it("handles multiple events in one chunk", () => {
     const chunk =
-      encodePlanChatSseEvent({
+      encodeChatSseEvent({
         type: "assistantTextDelta",
         delta: "Hi",
-      }) +
-      encodePlanChatSseEvent({ type: "runStatus", status: "done" });
+      }) + encodeChatSseEvent({ type: "runStatus", status: "done" });
     const { events, remainder } = extractSseEventsFromBuffer(chunk);
     expect(events).toHaveLength(2);
     expect(remainder).toBe("");
   });
 
   it("keeps a partial event in the remainder", () => {
-    const full = encodePlanChatSseEvent({
+    const full = encodeChatSseEvent({
       type: "assistantTextDelta",
       delta: "x",
     });

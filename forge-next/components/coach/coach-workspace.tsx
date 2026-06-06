@@ -3,10 +3,10 @@
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { PlanChatPreview } from "@/components/coach/plan-chat/plan-chat-preview";
+import { PlanWorkspacePreview } from "@/components/coach/plan-chat/plan-workspace-preview";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
-import { isAwaitingFirstPlan, isChatRunning } from "@/lib/plan-chat";
-import { usePlanChatWorkspace } from "@/lib/plan-chat/use-plan-chat-workspace";
+import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
+import { useCoachPlanWorkspace } from "@/lib/plan-chat/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 import { roleLinkClass } from "@/lib/theme";
@@ -20,8 +20,8 @@ export function CoachWorkspace({
   role: UserRole;
   mentionItems: PromptMentionItem[];
 }) {
-  const { state, attachFiles, sendMessage, setPlanTitle, restart } =
-    usePlanChatWorkspace();
+  const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
+    useCoachPlanWorkspace();
 
   if (!state.hasStarted) {
     return (
@@ -50,15 +50,15 @@ export function CoachWorkspace({
         left={
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
             <ArtifactToolbar
-              title={state.planTitle}
+              title={state.artifactTitle}
               saveDisabled={isChatRunning(state)}
-              onTitleChange={setPlanTitle}
+              onTitleChange={setArtifactTitle}
             />
             <div className="min-h-0 flex-1 overflow-hidden px-2">
-              <PlanChatPreview
+              <PlanWorkspacePreview
                 plan={state.currentArtifact}
                 runStatus={state.runStatus}
-                isAwaitingPlan={isAwaitingFirstPlan(state)}
+                isAwaitingArtifact={isAwaitingFirstArtifact(state)}
               />
             </div>
           </div>

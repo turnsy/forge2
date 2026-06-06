@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createInitialPlanChatWorkspaceState } from "@/lib/plan-chat/initial-state";
-import { planChatWorkspaceReducer } from "@/lib/plan-chat/reducer";
+import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
+import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const samplePlan: WorkoutPlan = {
@@ -9,9 +9,9 @@ const samplePlan: WorkoutPlan = {
   weeks: [],
 };
 
-describe("planChatWorkspaceReducer", () => {
+describe("chatWorkspaceReducer", () => {
   it("commits assistant message on STREAM_END", () => {
-    let state = planChatWorkspaceReducer(createInitialPlanChatWorkspaceState(), {
+    let state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
       type: "SEND_START",
       userMessage: "Build a plan",
     });
@@ -19,7 +19,7 @@ describe("planChatWorkspaceReducer", () => {
       ...state,
       streamingAssistantText: "Here is your plan.",
     };
-    state = planChatWorkspaceReducer(state, { type: "STREAM_END" });
+    state = chatWorkspaceReducer(state, { type: "STREAM_END" });
     expect(state.messages).toHaveLength(2);
     expect(state.messages[1]).toEqual({
       role: "assistant",
@@ -31,10 +31,10 @@ describe("planChatWorkspaceReducer", () => {
 
   it("keeps prior artifact when errors arrive after a valid artifact", () => {
     let state = {
-      ...createInitialPlanChatWorkspaceState(),
+      ...createInitialChatWorkspaceState<WorkoutPlan>(),
       currentArtifact: samplePlan,
     };
-    state = planChatWorkspaceReducer(state, {
+    state = chatWorkspaceReducer(state, {
       type: "APPLY_EVENT",
       event: {
         type: "errors",
@@ -45,9 +45,9 @@ describe("planChatWorkspaceReducer", () => {
   });
 
   it("restarts workspace with a new draft id", () => {
-    const state = planChatWorkspaceReducer(
+    const state = chatWorkspaceReducer(
       {
-        ...createInitialPlanChatWorkspaceState("old-id"),
+        ...createInitialChatWorkspaceState("old-id"),
         hasStarted: true,
         messages: [{ role: "user", content: "Hi" }],
       },
