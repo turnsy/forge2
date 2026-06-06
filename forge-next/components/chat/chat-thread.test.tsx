@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { PlanChatThread } from "@/components/coach/plan-chat/plan-chat-thread";
+import { ChatThread } from "@/components/chat/chat-thread";
 
-describe("PlanChatThread", () => {
-  it("shows run status as an assistant message with a spinner", () => {
+describe("ChatThread", () => {
+  it("shows run status below messages as an assistant bubble with a spinner", () => {
     render(
-      <PlanChatThread
+      <ChatThread
         messages={[{ role: "user", content: "Build a plan" }]}
         streamingAssistantText=""
         runStatus="generating"
@@ -18,11 +18,25 @@ describe("PlanChatThread", () => {
     expect(screen.getByLabelText("Generating")).toBeInTheDocument();
   });
 
+  it("renders streaming text before the run status bubble", () => {
+    const { container } = render(
+      <ChatThread
+        messages={[{ role: "user", content: "Hi" }]}
+        streamingAssistantText="Partial reply"
+        runStatus="generating"
+        errors={[]}
+        phase="streaming"
+      />,
+    );
+    const scrollPane = container.querySelector(".overflow-y-auto");
+    expect(scrollPane?.textContent).toMatch(/Hi[\s\S]*Partial reply[\s\S]*Generating/);
+  });
+
   it("calls onRestart when the restart control is clicked", async () => {
     const user = userEvent.setup();
     const onRestart = vi.fn();
     render(
-      <PlanChatThread
+      <ChatThread
         messages={[]}
         streamingAssistantText=""
         runStatus={null}
@@ -37,7 +51,7 @@ describe("PlanChatThread", () => {
 
   it("disables restart while chat is running", () => {
     render(
-      <PlanChatThread
+      <ChatThread
         messages={[]}
         streamingAssistantText=""
         runStatus="generating"
@@ -54,7 +68,7 @@ describe("PlanChatThread", () => {
 
   it("shows inline errors in the thread", () => {
     render(
-      <PlanChatThread
+      <ChatThread
         messages={[]}
         streamingAssistantText=""
         runStatus="error"

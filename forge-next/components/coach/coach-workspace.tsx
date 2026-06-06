@@ -1,17 +1,17 @@
 "use client";
 
-import { PlanChatComposer } from "@/components/coach/plan-chat/plan-chat-composer";
+import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
+import { ChatComposer } from "@/components/chat/chat-composer";
+import { ChatThread } from "@/components/chat/chat-thread";
 import { PlanChatPreview } from "@/components/coach/plan-chat/plan-chat-preview";
-import { PlanChatThread } from "@/components/coach/plan-chat/plan-chat-thread";
-import { PlanWorkspaceToolbar } from "@/components/coach/plan-chat/plan-workspace-toolbar";
-import { ResizableSplitPane } from "@/components/coach/resizable-split-pane";
+import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstPlan, isChatRunning } from "@/lib/plan-chat";
 import { usePlanChatWorkspace } from "@/lib/plan-chat/use-plan-chat-workspace";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 import { roleLinkClass } from "@/lib/theme";
 
-export function CoachPlanWorkspace({
+export function CoachWorkspace({
   firstName,
   role,
   mentionItems,
@@ -33,7 +33,7 @@ export function CoachPlanWorkspace({
           </h1>
         </div>
 
-        <PlanChatComposer
+        <ChatComposer
           state={state}
           mentionItems={mentionItems}
           composerKey={`${state.draftId}-${state.messages.length}`}
@@ -49,10 +49,10 @@ export function CoachPlanWorkspace({
       <ResizableSplitPane
         left={
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
-            <PlanWorkspaceToolbar
-              planTitle={state.planTitle}
+            <ArtifactToolbar
+              title={state.planTitle}
               saveDisabled={isChatRunning(state)}
-              onPlanTitleChange={setPlanTitle}
+              onTitleChange={setPlanTitle}
             />
             <div className="min-h-0 flex-1 overflow-hidden px-2">
               <PlanChatPreview
@@ -65,7 +65,7 @@ export function CoachPlanWorkspace({
         }
         right={
           <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">
-            <PlanChatThread
+            <ChatThread
               messages={state.messages}
               streamingAssistantText={state.streamingAssistantText}
               runStatus={state.runStatus}
@@ -75,7 +75,7 @@ export function CoachPlanWorkspace({
               restartDisabled={isChatRunning(state)}
             />
             <div className="shrink-0 border-t border-glass-border p-2">
-              <PlanChatComposer
+              <ChatComposer
                 compact
                 state={state}
                 mentionItems={mentionItems}

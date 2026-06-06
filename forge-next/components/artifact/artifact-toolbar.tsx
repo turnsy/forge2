@@ -2,14 +2,14 @@
 
 import { Button, Input } from "@/components/ui";
 
-export function PlanWorkspaceToolbar({
-  planTitle,
+export function ArtifactToolbar({
+  title,
   saveDisabled,
-  onPlanTitleChange,
+  onTitleChange,
 }: {
-  planTitle: string;
+  title: string;
   saveDisabled: boolean;
-  onPlanTitleChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
 }) {
   return (
     <header className="shrink-0">
@@ -17,10 +17,10 @@ export function PlanWorkspaceToolbar({
         <Input
           type="text"
           size="sm"
-          value={planTitle}
-          placeholder="Plan title"
-          aria-label="Plan title"
-          onChange={(event) => onPlanTitleChange(event.target.value)}
+          value={title}
+          placeholder="Title"
+          aria-label="Artifact title"
+          onChange={(event) => onTitleChange(event.target.value)}
           className="min-w-0 flex-1 font-semibold"
         />
         <div className="flex shrink-0 items-center gap-2">

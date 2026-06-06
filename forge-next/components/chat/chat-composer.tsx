@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PlanChatAttachments } from "@/components/coach/plan-chat/plan-chat-attachments";
+import { ChatAttachment } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
@@ -10,7 +10,7 @@ import { canSendPlanChat } from "@/lib/plan-chat/workspace-selectors";
 import type { PlanChatWorkspaceState } from "@/lib/plan-chat/types";
 import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
 
-export function PlanChatComposer({
+export function ChatComposer({
   state,
   mentionItems,
   composerKey,
@@ -127,8 +127,10 @@ export function PlanChatComposer({
         </div>
       </div>
       {state.attachments.length > 0 ? (
-        <div className={compact ? "mt-2" : "mt-3"}>
-          <PlanChatAttachments attachments={state.attachments} />
+        <div className={`flex flex-wrap gap-2 ${compact ? "mt-2" : "mt-3"}`}>
+          {state.attachments.map((attachment) => (
+            <ChatAttachment key={attachment.localId} attachment={attachment} />
+          ))}
         </div>
       ) : null}
     </FadeIn>

@@ -110,3 +110,16 @@ export function accordionContentCardClass(variant: "default" | "nested" = "defau
 
   return `${surfaceClass} overflow-hidden p-0`;
 }
+
+export type AttachmentChipTone = "default" | "error";
+
+export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
+  const base =
+    "inline-flex items-center gap-1.5 rounded-full border py-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+
+  if (tone === "error") {
+    return `${base} border-red-500/40 bg-red-500/10 pl-3 pr-1.5 text-red-200`;
+  }
+
+  return `${base} border-glass-border bg-glass pl-3 pr-1.5 text-surface-foreground`;
+}
