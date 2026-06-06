@@ -3,6 +3,7 @@ import {
   mapCoachPlanDetailRow,
   mapCoachPlanRpcRow,
   mapCoachPlanRow,
+  mapCoachPlanVersionRow,
 } from "@/lib/plans/repository";
 
 describe("mapCoachPlanRow", () => {
@@ -94,6 +95,26 @@ describe("mapCoachPlanRpcRow", () => {
         total_count: 1,
       }),
     ).toBeNull();
+  });
+});
+
+describe("mapCoachPlanVersionRow", () => {
+  it("maps version rpc row", () => {
+    expect(
+      mapCoachPlanVersionRow({
+        version_id: "version-1",
+        change_summary: "Added week 2",
+        created_at: "2026-01-01T00:00:00.000Z",
+        created_by: "coach-1",
+        is_active: true,
+      }),
+    ).toEqual({
+      id: "version-1",
+      changeSummary: "Added week 2",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      createdBy: "coach-1",
+      isActive: true,
+    });
   });
 });
 

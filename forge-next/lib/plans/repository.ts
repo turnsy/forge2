@@ -130,6 +130,52 @@ export function mapCoachPlanDetailRow(
   };
 }
 
+export type CoachPlanVersionListItem = {
+  id: string;
+  changeSummary: string | null;
+  createdAt: string;
+  createdBy: string;
+  isActive: boolean;
+};
+
+type CoachPlanVersionRpcRow = {
+  version_id: string;
+  change_summary: string | null;
+  created_at: string;
+  created_by: string;
+  is_active: boolean;
+};
+
+export function mapCoachPlanVersionRow(
+  row: CoachPlanVersionRpcRow,
+): CoachPlanVersionListItem {
+  return {
+    id: row.version_id,
+    changeSummary: row.change_summary,
+    createdAt: row.created_at,
+    createdBy: row.created_by,
+    isActive: row.is_active,
+  };
+}
+
+export async function listCoachPlanVersions(
+  coachId: string,
+  planId: string,
+): Promise<CoachPlanVersionListItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_coach_plan_versions", {
+    p_plan_id: planId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data as CoachPlanVersionRpcRow[] | null) ?? [];
+
+  return rows.map(mapCoachPlanVersionRow);
+}
+
 export async function getCoachPlanById(
   coachId: string,
   planId: string,
