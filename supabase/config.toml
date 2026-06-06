@@ -38,6 +38,13 @@ port = 54324
 enabled = true
 file_size_limit = "50MiB"
 
+# Coach session upload bucket (normalized CSV/XLSX/PDF text).
+# Remote: `npx supabase seed buckets --linked` (db push alone does not sync buckets).
+# RLS policies: supabase/migrations/20260606120000_session_uploads_bucket.sql
+[storage.buckets."session-uploads"]
+public = false
+file_size_limit = "25MiB"
+
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
