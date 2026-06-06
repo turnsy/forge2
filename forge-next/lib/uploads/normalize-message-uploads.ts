@@ -16,7 +16,7 @@ import type {
 
 export type NormalizeMessageUploadsInput = {
   coachId: string;
-  draftId: string;
+  sessionId: string;
   files: MessageUploadFile[];
   persist?: boolean;
 };
@@ -65,7 +65,7 @@ export async function normalizeMessageUploads(
       if (input.persist !== false) {
         const stored = await saveUploadContext({
           coachId: input.coachId,
-          draftId: input.draftId,
+          sessionId: input.sessionId,
           slug,
           normalizedText,
         });
@@ -81,7 +81,7 @@ export async function normalizeMessageUploads(
         contextFileIds.push(stored.contextFileId);
       } else {
         contextFileIds.push(
-          `${input.coachId}/${input.draftId}/${slug}.txt`,
+          `${input.coachId}/${input.sessionId}/${slug}.txt`,
         );
       }
     }

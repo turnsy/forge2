@@ -5,6 +5,14 @@ import { buildMinimalWorkoutPlan } from "@/lib/sandbox/stub";
 function mockStreamText(options: {
   text?: string;
   submitPython?: string;
+  tools?: {
+    submit_plan_code?: {
+      execute: (
+        input: { python: string },
+        context: { messages: unknown[]; toolCallId: string },
+      ) => Promise<unknown>;
+    };
+  };
 }) {
   return {
     textStream: (async function* () {
@@ -34,7 +42,7 @@ describe("runPlanChat", () => {
     await runPlanChat(
       {
         coachId: "coach-1",
-        draftId: "draft-1",
+        sessionId: "session-1",
         prompt: "Which sheet?",
         messages: [],
         currentArtifact: null,
@@ -43,9 +51,9 @@ describe("runPlanChat", () => {
       {
         isGatewayConfigured: () => true,
         createModel: () => ({}) as never,
-        listDrafts: async () => [
-          { path: "coach-1/draft-1/a__s.txt", name: "a__s.txt", sizeBytes: 1 },
-          { path: "coach-1/draft-1/a__v.txt", name: "a__v.txt", sizeBytes: 2 },
+        listSessionUploads: async () => [
+          { path: "coach-1/session-1/a__s.txt", name: "a__s.txt", sizeBytes: 1 },
+          { path: "coach-1/session-1/a__v.txt", name: "a__v.txt", sizeBytes: 2 },
         ],
         streamTextFn: (opts) => mockStreamText({ text: "Which sheet?", tools: opts.tools }),
         runSandbox,
@@ -70,6 +78,7 @@ describe("runPlanChat", () => {
     await runPlanChat(
       {
         coachId: "coach-1",
+        sessionId: "session-1",
         prompt: "Build plan",
         messages: [],
         currentArtifact: null,
@@ -78,7 +87,7 @@ describe("runPlanChat", () => {
       {
         isGatewayConfigured: () => true,
         createModel: () => ({}) as never,
-        listDrafts: async () => [],
+        listSessionUploads: async () => [],
         streamTextFn: (opts) =>
           mockStreamText({
             text: "Building…",
@@ -106,6 +115,7 @@ describe("runPlanChat", () => {
     await runPlanChat(
       {
         coachId: "coach-1",
+        sessionId: "session-1",
         prompt: "hi",
         messages: [],
         currentArtifact: null,

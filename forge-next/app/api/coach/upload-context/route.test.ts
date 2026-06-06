@@ -47,7 +47,7 @@ describe("POST /api/coach/upload-context", () => {
     });
 
     const form = new FormData();
-    form.set("draftId", "draft-1");
+    form.set("sessionId", "session-1");
     form.append("files", new File(["a,b"], "plan.csv", { type: "text/csv" }));
 
     const response = await POST(

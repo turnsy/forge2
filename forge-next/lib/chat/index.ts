@@ -18,7 +18,7 @@ export {
   isAwaitingFirstArtifact,
   isChatRunning,
 } from "@/lib/chat/workspace-selectors";
-export { createDraftId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
+export { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
 export { useChatWorkspace } from "@/lib/chat/use-chat-workspace";
 export type {
   ChatAttachment,

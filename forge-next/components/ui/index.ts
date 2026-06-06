@@ -22,4 +22,3 @@ export { List, ListRow } from "./list";
 export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
 export { ChatBubble } from "./chat-bubble";
-export { RunStatusBadge } from "./run-status-badge";

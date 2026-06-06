@@ -1,8 +1,8 @@
 # Phase 3 — Chat API + AI Gateway
 
-**Goal:** Authenticated coach endpoint that streams assistant text, emits run/artifact/warning/error events, and orchestrates **draft file tools** + sandbox + validation — without DB plan writes.
+**Goal:** Authenticated coach endpoint that streams assistant text, emits run/artifact/error events, and orchestrates **upload file tools** + sandbox + validation — without DB plan writes.
 
-**Depends on:** Phase 2 (Storage + `listDraftUploads`), Phase 4 (sandbox) for full E2E — **stub sandbox OK** for early API tests
+**Depends on:** Phase 2 (Storage + `listSessionUploads`), Phase 4 (sandbox) for full E2E
 
 **Blocks:** Phase 5 (client consumes stream)
 
@@ -12,18 +12,18 @@
 
 - [x] Add `app/api/coach/plan-chat/route.ts` with `requireApiRole('coach')`
 - [x] Accept JSON body:
-  - `draftId` — ties to Storage prefix when uploads exist
+  - `sessionId` — **required** workspace / conversation id (Storage prefix when uploads exist)
   - `prompt` (serialized prompt document text)
   - `currentArtifact` (optional) — **sandbox seed only; never in LLM messages**
   - `messages` (optional thread)
 - [x] Implement `lib/plans/summarize-plan.ts` — short text for iterations
 - [x] **Three model tools** (model chooses order; no server-forced turns):
-  - `list_draft_files` — returns `paths[]` under `{coachId}/{draftId}/`
+  - `list_draft_files` — returns `paths[]` under `{coachId}/{sessionId}/`
   - `read_draft_file` — `loadUploadContextById()` for one normalized `.txt`
   - `submit_plan_code` — Python for `run.py`; sandbox runs **only if** this tool was called
 - [x] Prompts under `lib/ai/plan-chat/prompts/`
 - [x] **Do not** preload full upload text into the first message
-- [x] Streaming: `assistantTextDelta`; discrete `runStatus`, `artifact`, `warnings`, `errors`
+- [x] Streaming: `assistantTextDelta`; discrete `runStatus`, `artifact`, `errors` (`warnings` type exists; upload warnings HTTP-only in v1)
 - [x] Dev: log submitted Python in Next.js server terminal
 
 ---
@@ -40,8 +40,8 @@ Handled by the **model** via tools, not upload blocking:
 
 ## Done criteria
 
-- [x] Unauthenticated → 401; athlete → 403
+- [x] Unauthenticated → 401; athlete → 403 (auth layer; route tests in Task 2)
 - [x] Prompt-only → `artifact` when model submits code
 - [x] Multi-sheet XLSX → `list_draft_files` lists all paths; agent can clarify
 - [x] `currentArtifact` seeds sandbox only — not full JSON in system prompt (unit test)
-- [ ] Sandbox filesystem has no upload copies (Phase 4 integration assert)
+- [x] Sandbox filesystem has no upload copies — asserted in `lib/sandbox/run-plan.test.ts`

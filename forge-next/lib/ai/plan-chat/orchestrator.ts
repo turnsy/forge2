@@ -3,7 +3,7 @@ import {
   stepCountIs,
   streamText,
 } from "ai";
-import { listDraftUploads } from "@/lib/uploads/list-draft-uploads";
+import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
@@ -20,7 +20,7 @@ import { logSubmittedPlanCode } from "@/lib/ai/plan-chat/log-submitted-code";
 
 export type RunPlanChatInput = {
   coachId: string;
-  draftId?: string;
+  sessionId: string;
   prompt: string;
   messages: PlanChatMessage[];
   currentArtifact: WorkoutPlan | null;
@@ -30,7 +30,7 @@ export type RunPlanChatInput = {
 export type PlanChatOrchestratorDeps = {
   streamTextFn?: typeof streamText;
   runSandbox?: typeof runSandbox;
-  listDrafts?: typeof listDraftUploads;
+  listSessionUploads?: typeof listSessionUploads;
   isGatewayConfigured?: () => boolean;
   createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
 };
@@ -53,7 +53,7 @@ export async function runPlanChat(
 ): Promise<void> {
   const streamTextFn = deps.streamTextFn ?? streamText;
   const executeSandbox = deps.runSandbox ?? runSandbox;
-  const listDrafts = deps.listDrafts ?? listDraftUploads;
+  const listUploads = deps.listSessionUploads ?? listSessionUploads;
   const gatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const createModel = deps.createModel ?? createPlanChatGatewayModel;
 
@@ -73,26 +73,23 @@ export async function runPlanChat(
 
   input.emit({ type: "runStatus", status: "parsing" });
 
-  
-  const draftFiles = input.draftId
-    ? await listDrafts(input.coachId, input.draftId)
-    : [];
+  const sessionFiles = await listUploads(input.coachId, input.sessionId);
 
-  const hasDraftUploads = draftFiles.length > 0;
+  const hasSessionUploads = sessionFiles.length > 0;
   const system = buildPlanChatSystemPrompt({
     currentArtifact: input.currentArtifact,
-    hasDraftUploads,
+    hasDraftUploads: hasSessionUploads,
   });
 
-let submittedPython: string | null = null;
+  let submittedPython: string | null = null;
   const tools = createPlanChatTools({
     coachId: input.coachId,
-    draftId: input.draftId,
+    sessionId: input.sessionId,
     onSubmitPlanCode: (python) => {
       submittedPython = python;
       logSubmittedPlanCode(python, {
         coachId: input.coachId,
-        draftId: input.draftId,
+        sessionId: input.sessionId,
       });
     },
   });

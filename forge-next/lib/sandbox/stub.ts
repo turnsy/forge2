@@ -1,7 +1,7 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { RunPlanSandboxInput, RunSandboxResult } from "@/lib/sandbox/types";
 
-/** Minimal valid plan for stub sandbox runs (Phase 3 tests / dev without VM). */
+/** Minimal valid plan for stub sandbox runs (unit tests / CI only). */
 export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
   return {
     schemaVersion: "2.0.0",
@@ -39,8 +39,8 @@ export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
 }
 
 /**
- * Stub executor for Phase 3 — returns current plan or a minimal valid plan.
- * Phase 4 replaces with real Vercel Sandbox execution.
+ * Stub executor for unit tests and CI — returns current plan or a minimal valid plan.
+ * Production plan-chat uses real Vercel Sandbox via `runPlanSandbox`.
  */
 export async function runPlanSandboxStub(
   input: RunPlanSandboxInput,

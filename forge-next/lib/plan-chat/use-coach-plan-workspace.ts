@@ -11,10 +11,10 @@ export function useCoachPlanWorkspace() {
   return useChatWorkspace<WorkoutPlan>({
     validateFiles: validateClientFiles,
     uploadFile: uploadContextFile,
-    streamChat: async ({ draftId, prompt, messages, currentArtifact, onEvent }) => {
+    streamChat: async ({ sessionId, prompt, messages, currentArtifact, onEvent }) => {
       const error = await streamPlanChat({
         body: {
-          draftId,
+          sessionId,
           prompt,
           messages,
           currentArtifact,
@@ -30,7 +30,5 @@ export function useCoachPlanWorkspace() {
     },
   });
 }
-
-export type CoachPlanWorkspaceController = ReturnType<typeof useCoachPlanWorkspace>;
 
 export type { PlanWorkspaceState };

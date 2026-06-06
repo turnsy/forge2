@@ -47,13 +47,13 @@ describe("useChatWorkspace", () => {
       }),
     );
 
-    const priorDraftId = result.current.state.draftId;
+    const priorSessionId = result.current.state.sessionId;
 
     act(() => {
       result.current.restart();
     });
 
-    expect(result.current.state.draftId).not.toBe(priorDraftId);
+    expect(result.current.state.sessionId).not.toBe(priorSessionId);
     expect(result.current.state.hasStarted).toBe(false);
     expect(result.current.state.messages).toHaveLength(0);
   });

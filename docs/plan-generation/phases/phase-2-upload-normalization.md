@@ -2,7 +2,7 @@
 
 **Status:** ✅ Done (revision: all XLSX sheets → separate Storage objects)
 
-**Goal:** Server accepts multiple coach uploads, enforces caps, normalizes to compact text, stores in **Supabase Storage** under `{coachId}/{draftId}/`, and returns ids for plan-chat. Normalized text is for the **LLM prompt only** — never copied into the sandbox.
+**Goal:** Server accepts multiple coach uploads, enforces caps, normalizes to compact text, stores in **Supabase Storage** under `{coachId}/{sessionId}/`, and returns ids for plan-chat. Normalized text is for the **LLM prompt only** — never copied into the sandbox.
 
 **Depends on:** Phase 1 (deps + limits)
 

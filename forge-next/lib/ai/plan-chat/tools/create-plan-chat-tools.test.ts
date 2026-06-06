@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockList = vi.fn();
 const mockLoad = vi.fn();
 
-vi.mock("@/lib/uploads/list-draft-uploads", () => ({
-  listDraftUploads: (...args: unknown[]) => mockList(...args),
+vi.mock("@/lib/uploads/list-session-uploads", () => ({
+  listSessionUploads: (...args: unknown[]) => mockList(...args),
 }));
 
 vi.mock("@/lib/uploads/context-storage", () => ({
@@ -19,15 +19,15 @@ describe("createPlanChatTools", () => {
     mockLoad.mockReset();
   });
 
-  it("lists paths under the draft prefix", async () => {
+  it("lists paths under the session prefix", async () => {
     mockList.mockResolvedValue([
-      { path: "c/d/a__summary.txt", name: "a__summary.txt", sizeBytes: 1 },
-      { path: "c/d/a__volume.txt", name: "a__volume.txt", sizeBytes: 2 },
+      { path: "c/s/a__summary.txt", name: "a__summary.txt", sizeBytes: 1 },
+      { path: "c/s/a__volume.txt", name: "a__volume.txt", sizeBytes: 2 },
     ]);
 
     const tools = createPlanChatTools({
       coachId: "c",
-      draftId: "d",
+      sessionId: "s",
       onSubmitPlanCode: () => {},
     });
 
@@ -36,13 +36,15 @@ describe("createPlanChatTools", () => {
       { messages: [], toolCallId: "1" },
     );
 
-    expect(result.paths).toEqual(["c/d/a__summary.txt", "c/d/a__volume.txt"]);
+    expect(result.paths).toEqual(["c/s/a__summary.txt", "c/s/a__volume.txt"]);
   });
 
   it("captures python on submit_plan_code", async () => {
     let captured = "";
+    mockList.mockResolvedValue([]);
     const tools = createPlanChatTools({
       coachId: "c",
+      sessionId: "s",
       onSubmitPlanCode: (python) => {
         captured = python;
       },

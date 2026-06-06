@@ -17,7 +17,10 @@ export function isChatEvent(value: unknown): value is ChatEvent {
   return typeof type === "string" && EVENT_TYPES.has(type);
 }
 
-export function parseSseDataLine(line: string): ChatEvent | null {
+export function parseSseJsonLine<T>(
+  line: string,
+  guard: (value: unknown) => value is T,
+): T | null {
   const trimmed = line.trim();
   if (!trimmed.startsWith("data:")) {
     return null;
@@ -30,23 +33,27 @@ export function parseSseDataLine(line: string): ChatEvent | null {
 
   try {
     const parsed: unknown = JSON.parse(payload);
-    return isChatEvent(parsed) ? parsed : null;
+    return guard(parsed) ? parsed : null;
   } catch {
     return null;
   }
 }
 
-export function extractSseEventsFromBuffer(buffer: string): {
-  events: ChatEvent[];
-  remainder: string;
-} {
-  const events: ChatEvent[] = [];
+export function parseSseDataLine(line: string): ChatEvent | null {
+  return parseSseJsonLine(line, isChatEvent);
+}
+
+function extractEventsFromBuffer<T>(
+  buffer: string,
+  parseLine: (line: string) => T | null,
+): { events: T[]; remainder: string } {
+  const events: T[] = [];
   const parts = buffer.split("\n\n");
   const remainder = parts.pop() ?? "";
 
   for (const block of parts) {
     for (const line of block.split("\n")) {
-      const event = parseSseDataLine(line);
+      const event = parseLine(line);
       if (event) {
         events.push(event);
       }
@@ -56,9 +63,17 @@ export function extractSseEventsFromBuffer(buffer: string): {
   return { events, remainder };
 }
 
-export async function readChatSseStream(
+export function extractSseEventsFromBuffer(buffer: string): {
+  events: ChatEvent[];
+  remainder: string;
+} {
+  return extractEventsFromBuffer(buffer, parseSseDataLine);
+}
+
+export async function readSseStream<T>(
   body: ReadableStream<Uint8Array>,
-  onEvent: (event: ChatEvent) => void,
+  parseLine: (line: string) => T | null,
+  onEvent: (event: T) => void,
 ): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -71,7 +86,7 @@ export async function readChatSseStream(
     }
 
     buffer += decoder.decode(value, { stream: true });
-    const parsed = extractSseEventsFromBuffer(buffer);
+    const parsed = extractEventsFromBuffer(buffer, parseLine);
     buffer = parsed.remainder;
     for (const event of parsed.events) {
       onEvent(event);
@@ -80,9 +95,16 @@ export async function readChatSseStream(
 
   buffer += decoder.decode();
   if (buffer.trim().length > 0) {
-    const parsed = extractSseEventsFromBuffer(`${buffer}\n\n`);
+    const parsed = extractEventsFromBuffer(`${buffer}\n\n`, parseLine);
     for (const event of parsed.events) {
       onEvent(event);
     }
   }
+}
+
+export async function readChatSseStream(
+  body: ReadableStream<Uint8Array>,
+  onEvent: (event: ChatEvent) => void,
+): Promise<void> {
+  await readSseStream(body, parseSseDataLine, onEvent);
 }

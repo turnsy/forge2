@@ -5,7 +5,7 @@
  * before enabling upload-context API. RLS must scope objects to the owning coach.
  *
  * Object key pattern:
- *   draft-uploads/{coachId}/{draftId}/{slug}.txt
+ *   draft-uploads/{coachId}/{sessionId}/{slug}.txt
  *
  * Multi-sheet XLSX uses one object per sheet, e.g.:
  *   {workbook-stem}__{sheet-slug}.txt
@@ -18,15 +18,15 @@
 
 export const DRAFT_UPLOADS_BUCKET = "draft-uploads" as const;
 
-export function draftUploadPrefix(coachId: string, draftId: string): string {
-  return `${coachId}/${draftId}`;
+export function sessionUploadPrefix(coachId: string, sessionId: string): string {
+  return `${coachId}/${sessionId}`;
 }
 
-export function draftUploadObjectPath(
+export function sessionUploadObjectPath(
   coachId: string,
-  draftId: string,
+  sessionId: string,
   slug: string,
 ): string {
   const safeSlug = slug.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `${coachId}/${draftId}/${safeSlug}.txt`;
+  return `${coachId}/${sessionId}/${safeSlug}.txt`;
 }

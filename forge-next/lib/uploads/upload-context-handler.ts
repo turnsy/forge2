@@ -5,12 +5,12 @@ export async function handleUploadContextFormData(
   coachId: string,
   formData: FormData,
 ): Promise<UploadContextResult> {
-  const draftId = formData.get("draftId");
-  if (typeof draftId !== "string" || !draftId.trim()) {
+  const sessionId = formData.get("sessionId");
+  if (typeof sessionId !== "string" || !sessionId.trim()) {
     return {
       ok: false,
       error: "PARSE_FAILED",
-      message: "draftId is required.",
+      message: "sessionId is required.",
     };
   }
 
@@ -52,7 +52,7 @@ export async function handleUploadContextFormData(
 
   return normalizeMessageUploads({
     coachId,
-    draftId: draftId.trim(),
+    sessionId: sessionId.trim(),
     files,
   });
 }

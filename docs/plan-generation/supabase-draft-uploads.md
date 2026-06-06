@@ -15,11 +15,11 @@ Create via `supabase/migrations/20260602120000_draft_uploads_storage.sql`.
 ## Object key layout
 
 ```text
-draft-uploads/{coachId}/{draftId}/{slug}.txt
+draft-uploads/{coachId}/{sessionId}/{slug}.txt
 ```
 
 - `coachId` — authenticated coach user id
-- `draftId` — client workspace / conversation id (one plan-chat session)
+- `sessionId` — client workspace / conversation id (**required** on upload + plan-chat APIs)
 - `slug` — see below
 
 ### Slugs
@@ -29,13 +29,13 @@ draft-uploads/{coachId}/{draftId}/{slug}.txt
 | CSV / PDF | `my-plan` from `My Plan.csv` |
 | XLSX (per sheet) | `my-workbook__summary`, `my-workbook__volume` |
 
-One physical `.xlsx` with three sheets → **three** objects under the same `{draftId}`.
+One physical `.xlsx` with three sheets → **three** objects under the same `{sessionId}`.
 
 Helpers:
 
-- `draftUploadObjectPath()`, `draftUploadPrefix()` — `lib/uploads/storage-paths.ts`
-- `draftUploadSlug()` — `lib/uploads/file-utils.ts`
-- `listDraftUploads(coachId, draftId)` — `lib/uploads/list-draft-uploads.ts` (Storage `list` on prefix)
+- `sessionUploadObjectPath()`, `sessionUploadPrefix()` — `lib/uploads/storage-paths.ts`
+- `draftUploadSlug()` — `lib/uploads/file-utils.ts` (file/sheet slug only)
+- `listSessionUploads(coachId, sessionId)` — `lib/uploads/list-session-uploads.ts`
 
 ## RLS
 
@@ -43,8 +43,8 @@ Coach-scoped policies in the migration: read/write/delete only under `{auth.uid(
 
 ## Lifecycle
 
-- **Write:** `POST /api/coach/upload-context` (Phase 2)
-- **List / read:** plan-chat tools in Phase 3 (`list_draft_files`, `read_draft_file`) — not browser-direct
+- **Write:** `POST /api/coach/upload-context` — multipart `sessionId` + files
+- **List / read:** plan-chat tools (`list_draft_files`, `read_draft_file`)
 - **Never** copied into Vercel Sandbox
 - **Delete:** after plan-chat run or TTL janitor (TBD)
 
@@ -53,5 +53,5 @@ Coach-scoped policies in the migration: read/write/delete only under `{auth.uid(
 | Module | Role |
 | --- | --- |
 | `lib/uploads/context-storage.ts` | save / load / delete |
-| `lib/uploads/list-draft-uploads.ts` | list prefix for tools |
+| `lib/uploads/list-session-uploads.ts` | list prefix for tools |
 | `app/api/coach/upload-context/route.ts` | attach API |

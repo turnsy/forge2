@@ -15,25 +15,25 @@ describe("normalizeMessageUploads", () => {
     mockSaveUploadContext.mockReset();
     mockSaveUploadContext.mockResolvedValue({
       ok: true,
-      contextFileId: "coach-1/draft-1/stored.txt",
+      contextFileId: "coach-1/session-1/stored.txt",
     });
   });
 
   it("normalizes CSV and persists to storage", async () => {
     mockSaveUploadContext.mockResolvedValueOnce({
       ok: true,
-      contextFileId: "coach-1/draft-1/plan.txt",
+      contextFileId: "coach-1/session-1/plan.txt",
     });
 
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files: [{ filename: "plan.csv", buffer: makeCsvBuffer("a,b\n1,2") }],
     });
 
     expect(result).toEqual({
       ok: true,
-      contextFileIds: ["coach-1/draft-1/plan.txt"],
+      contextFileIds: ["coach-1/session-1/plan.txt"],
     });
     expect(mockSaveUploadContext).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -46,16 +46,16 @@ describe("normalizeMessageUploads", () => {
     mockSaveUploadContext
       .mockResolvedValueOnce({
         ok: true,
-        contextFileId: "coach-1/draft-1/workbook__summary.txt",
+        contextFileId: "coach-1/session-1/workbook__summary.txt",
       })
       .mockResolvedValueOnce({
         ok: true,
-        contextFileId: "coach-1/draft-1/workbook__volume.txt",
+        contextFileId: "coach-1/session-1/workbook__volume.txt",
       });
 
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files: [
         {
           filename: "workbook.xlsx",
@@ -70,8 +70,8 @@ describe("normalizeMessageUploads", () => {
     expect(result).toEqual({
       ok: true,
       contextFileIds: [
-        "coach-1/draft-1/workbook__summary.txt",
-        "coach-1/draft-1/workbook__volume.txt",
+        "coach-1/session-1/workbook__summary.txt",
+        "coach-1/session-1/workbook__volume.txt",
       ],
     });
     expect(mockSaveUploadContext).toHaveBeenCalledTimes(2);
@@ -89,7 +89,7 @@ describe("normalizeMessageUploads", () => {
     }));
     const result = await normalizeMessageUploads({
       coachId: "coach-1",
-      draftId: "draft-1",
+      sessionId: "session-1",
       files,
     });
     expect(result).toMatchObject({ ok: false, error: "TOO_MANY_FILES" });

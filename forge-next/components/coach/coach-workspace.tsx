@@ -37,7 +37,7 @@ export function CoachWorkspace({
         <ChatComposer
           state={state}
           mentionItems={mentionItems}
-          composerKey={`${state.draftId}-${state.messages.length}`}
+          composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
           onSend={sendMessage}
         />
@@ -80,7 +80,7 @@ export function CoachWorkspace({
                 compact
                 state={state}
                 mentionItems={mentionItems}
-                composerKey={`${state.draftId}-${state.messages.length}`}
+                composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
                 onSend={sendMessage}
               />

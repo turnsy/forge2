@@ -12,42 +12,33 @@
 
 ### Python library (`forge-next/sandbox/forge_plan/`)
 
-- [ ] Package layout: `__init__.py`, `plan.py`, `builders.py` aligned to schema v2.0.0
-- [ ] Docstrings on all public methods (used for cheat sheet generation)
-- [ ] Load seed from `current_plan.json` in working dir (empty template if missing)
-- [ ] Helpers (minimal v1 set — expand as needed):
-  - `Plan.empty(name)` / `Plan.from_dict`
-  - `add_week`, `add_day`, `add_exercise`, `add_set` (names TBD to match schema)
+- [x] Package layout: `__init__.py`, `plan.py`, `builders.py` aligned to schema v2.0.0
+- [x] Docstrings on all public methods (used for cheat sheet generation)
+- [x] Load seed from `current_plan.json` in working dir (empty template if missing)
+- [x] Helpers (minimal v1 set — expand as needed):
+  - `Plan.empty(name)` / `Plan.from_dict` / `Plan.from_json_file`
+  - `add_week`, `add_day`, `add_exercise`, `add_set`
   - `to_dict()` → JSON-serializable matching `workout-plan.schema.json`
-- [ ] `summarize()` or module-level helper for optional debug prints inside sandbox (not required for v1 UX)
 
-### API cheat sheet (short — for Gateway system prompt)
+### API cheat sheet (for Gateway system prompt)
 
-- [ ] Script to **autogenerate** cheat sheet from pydoc/docstrings (e.g. `generate_api_cheat_sheet.py` or build step in `package.json`)
-- [ ] Autogenerate full cheat sheet from docstrings (no truncation; prompt budget managed at Gateway layer)
-- [ ] Commit generated `forge_plan_api_cheat_sheet.txt` or generate at build time in `lib/ai/plan-chat/`
-- [ ] Inject cheat sheet into plan-chat system prompt (Phase 3); model passes Python via `submit_plan_code` — not duplicated as `schema.json` in sandbox
+- [x] Script: `sandbox/scripts/generate_api_cheat_sheet.py` (`pnpm generate:forge-plan-cheat-sheet`)
+- [x] Generated TS: `lib/ai/plan-chat/prompts/forge_plan_api_cheat_sheet.generated.ts` (checked in CI via `pnpm generate:check`)
+- [x] Inject cheat sheet into plan-chat system prompt
 
 ### Sandbox executor (`lib/sandbox/`)
 
-- [ ] `runSandbox({ artifact: { type: "plan", currentPlan, generatedPython } })` (VM always on in production; stub for tests/CI only)
-- [ ] Write **only** these files into the VM:
-  - `current_plan.json` (from client artifact)
-  - `forge_plan/` (library tree)
-  - `run.py` (Python source from Gateway)
-- [ ] **Do not** write upload summaries, `input_context.*`, or `schema.json` into the sandbox
-- [ ] Run `python run.py`; read `output/plan.json`
-- [ ] `stop()` / dispose sandbox in `finally`
-- [ ] Timeouts and error codes: `SANDBOX_TIMEOUT`, `SANDBOX_FAILED`, `MISSING_OUTPUT`
-- [ ] Unit tests with mocked Sandbox client; opt-in integration test: `RUN_SANDBOX_INTEGRATION=1`
+- [x] `runSandbox({ artifact: { type: "plan", currentPlan, generatedPython } })` — real VM in prod/dev; `stub.ts` for unit tests/CI only
+- [x] Write **only**: `current_plan.json`, `forge_plan/`, `run.py`
+- [x] **Do not** write upload summaries or `schema.json` into the sandbox
+- [x] Run `python3 run.py`; read `output/plan.json`
+- [x] `stop()` in `finally`
+- [x] Timeouts and error codes: `SANDBOX_TIMEOUT`, `SANDBOX_FAILED`, `MISSING_OUTPUT`
+- [x] Unit tests with mocked Sandbox client; opt-in integration: `RUN_SANDBOX_INTEGRATION=1`
 
 ### Codegen prompt assets
 
-- [ ] `lib/ai/plan-chat/python-codegen-prompt.ts` — constraints:
-  - Only use `forge_plan` public API (per cheat sheet)
-  - Read `current_plan.json`, write `output/plan.json`
-  - No network, no arbitrary imports, no reading upload files (none exist in VM)
-  - Keep script short
+- [x] `lib/ai/plan-chat/prompts/python-codegen-prompt.ts` — forge_plan-only, no network, no upload reads
 
 ---
 
@@ -55,22 +46,21 @@
 
 - [ ] Install Vercel CLI; authenticate (`vercel login`)
 - [ ] Ensure **Sandbox** enabled for project; add tokens to `.env.local` per Vercel docs
-- [ ] Run integration test locally: `RUN_SANDBOX_INTEGRATION=1 pnpm test` (once agent adds it)
-- [ ] If Python runtime version matters, pin in docs and match Sandbox template
+- [ ] Run integration test locally: `RUN_SANDBOX_INTEGRATION=1 pnpm test`
 - [ ] Monitor Sandbox billing/latency during dev iteration
 
 ---
 
 ## Done criteria
 
-- [ ] Empty seed + generated script produces valid `workout-plan.schema.json` output
-- [ ] Iteration: updated `current_plan.json` in → coherent `plan.json` out
-- [ ] Sandbox always torn down on success/failure
-- [ ] Server rejects missing `output/plan.json` with `MISSING_OUTPUT`
-- [ ] Sandbox tree contains no upload/context files (assert in integration test)
+- [x] Empty seed + generated script produces valid `workout-plan.schema.json` output
+- [x] Iteration: updated `current_plan.json` in → coherent `plan.json` out
+- [x] Sandbox always torn down on success/failure
+- [x] Server rejects missing `output/plan.json` with `MISSING_OUTPUT`
+- [x] Sandbox tree contains no upload/context files — `lib/sandbox/run-plan.test.ts`
 
 ---
 
 ## Future hook (not v1)
 
-**Plan JSON** glimpse/traverse tools (read subtrees without full JSON in prompts). v1 uses `summarizePlan()` for the plan artifact and **draft file** list/read tools (Phase 3) for uploads — not plan traversal.
+**Plan JSON** glimpse/traverse tools (read subtrees without full JSON in prompts). v1 uses `summarizePlan()` for the plan artifact and **upload file** list/read tools (Phase 3).

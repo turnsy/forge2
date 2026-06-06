@@ -1,12 +1,12 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { listDraftUploads } from "@/lib/uploads/list-draft-uploads";
+import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 import { loadUploadContextById } from "@/lib/uploads/context-storage";
 import { PLAN_CHAT_DRAFT_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
 
 export type PlanChatToolsContext = {
   coachId: string;
-  draftId?: string;
+  sessionId: string;
   onSubmitPlanCode: (python: string) => void;
 };
 
@@ -25,14 +25,10 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
   return {
     list_draft_files: tool({
       description:
-        "List storage paths for normalized upload files under this draft (one .txt per CSV/PDF or per XLSX sheet).",
+        "List storage paths for normalized upload files in this session (one .txt per CSV/PDF or per XLSX sheet).",
       inputSchema: z.object({}),
       execute: async () => {
-        if (!ctx.draftId) {
-          return { paths: [] as string[] };
-        }
-
-        const items = await listDraftUploads(ctx.coachId, ctx.draftId);
+        const items = await listSessionUploads(ctx.coachId, ctx.sessionId);
         return {
           paths: items.map((item) => item.path).filter((path) => path.length > 0),
         };
@@ -46,10 +42,6 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
         path: z.string().min(1).describe("Storage object path."),
       }),
       execute: async ({ path }) => {
-        if (!ctx.draftId) {
-          return { ok: false as const, error: "NO_DRAFT_ID" };
-        }
-
         const text = await loadUploadContextById(path, ctx.coachId);
         if (text === null) {
           return { ok: false as const, error: "FILE_NOT_FOUND" };

@@ -23,7 +23,7 @@ export function chatWorkspaceReducer<TArtifact>(
   switch (action.type) {
     case "RESTART":
       return {
-        draftId: action.draftId,
+        sessionId: action.sessionId,
         hasStarted: false,
         messages: [],
         currentArtifact: null,

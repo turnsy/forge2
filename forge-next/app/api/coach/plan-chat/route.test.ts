@@ -37,10 +37,26 @@ describe("POST /api/coach/plan-chat", () => {
     const response = await POST(
       new Request("http://localhost/api/coach/plan-chat", {
         method: "POST",
-        body: JSON.stringify({ prompt: "hi" }),
+        body: JSON.stringify({ sessionId: "s-1", prompt: "hi" }),
       }),
     );
     expect(response.status).toBe(401);
+  });
+
+  it("returns 400 when sessionId is missing", async () => {
+    mockRequireApiRole.mockResolvedValue({
+      ok: true,
+      user: { id: "coach-1", role: "coach", email: "c@x.com", fullName: null },
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/coach/plan-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "Build a plan" }),
+      }),
+    );
+    expect(response.status).toBe(400);
   });
 
   it("returns 400 for invalid body", async () => {
@@ -53,7 +69,7 @@ describe("POST /api/coach/plan-chat", () => {
       new Request("http://localhost/api/coach/plan-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: "" }),
+        body: JSON.stringify({ sessionId: "s-1", prompt: "" }),
       }),
     );
     expect(response.status).toBe(400);
@@ -69,7 +85,7 @@ describe("POST /api/coach/plan-chat", () => {
       new Request("http://localhost/api/coach/plan-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: "Build a plan" }),
+        body: JSON.stringify({ sessionId: "s-1", prompt: "Build a plan" }),
       }),
     );
 

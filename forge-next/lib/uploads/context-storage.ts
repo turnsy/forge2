@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import {
   DRAFT_UPLOADS_BUCKET,
-  draftUploadObjectPath,
+  sessionUploadObjectPath,
 } from "@/lib/uploads/storage-paths";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -11,8 +11,8 @@ type StorageSupabaseClient = SupabaseClient;
 
 export type SaveUploadContextInput = {
   coachId: string;
-  draftId: string;
-  /** Object slug under the draft prefix (e.g. `workbook-name__summary`). */
+  sessionId: string;
+  /** Object slug under the session prefix (e.g. `workbook-name__summary`). */
   slug: string;
   normalizedText: string;
 };
@@ -34,9 +34,9 @@ export async function saveUploadContext(
   client?: StorageSupabaseClient,
 ): Promise<SaveUploadContextResult> {
   const supabase = client ?? (await createClient());
-  const objectPath = draftUploadObjectPath(
+  const objectPath = sessionUploadObjectPath(
     input.coachId,
-    input.draftId,
+    input.sessionId,
     input.slug,
   );
 

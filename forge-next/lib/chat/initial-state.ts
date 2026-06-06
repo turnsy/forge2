@@ -1,11 +1,11 @@
-import { createDraftId } from "@/lib/chat/utils";
+import { createSessionId } from "@/lib/chat/utils";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 
 export function createInitialChatWorkspaceState<TArtifact = unknown>(
-  draftId: string = createDraftId(),
+  sessionId: string = createSessionId(),
 ): ChatWorkspaceState<TArtifact> {
   return {
-    draftId,
+    sessionId,
     hasStarted: false,
     artifactTitle: "",
     messages: [],

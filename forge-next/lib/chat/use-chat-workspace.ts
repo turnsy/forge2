@@ -5,21 +5,21 @@ import { serializePromptDocument } from "@/lib/prompts/prompt-document";
 import type { PromptSegment } from "@/lib/prompts/mention-types";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
-import { createDraftId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
+import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
 import type { ChatEvent, ChatMessage, ChatWorkspaceState } from "@/lib/chat/types";
 
 export type ChatStreamError = { message: string };
 
 export type UseChatWorkspaceConfig<TArtifact> = {
   streamChat: (input: {
-    draftId: string;
+    sessionId: string;
     prompt: string;
     messages: ChatMessage[];
     currentArtifact: TArtifact | null;
     onEvent: (event: ChatEvent<TArtifact>) => void;
   }) => Promise<ChatStreamError | null>;
   uploadFile: (input: {
-    draftId: string;
+    sessionId: string;
     file: File;
   }) => Promise<
     | { ok: true; contextFileIds: string[] }
@@ -70,7 +70,7 @@ export function useChatWorkspace<TArtifact>(
         });
 
         const result = await config.uploadFile({
-          draftId: stateRef.current.draftId,
+          sessionId: stateRef.current.sessionId,
           file: attachment.file,
         });
 
@@ -108,7 +108,7 @@ export function useChatWorkspace<TArtifact>(
       dispatch({ type: "SEND_START", userMessage: prompt });
 
       const error = await config.streamChat({
-        draftId: snapshot.draftId,
+        sessionId: snapshot.sessionId,
         prompt,
         messages: snapshot.messages,
         currentArtifact: snapshot.currentArtifact,
@@ -127,7 +127,7 @@ export function useChatWorkspace<TArtifact>(
   );
 
   const restart = useCallback(() => {
-    dispatch({ type: "RESTART", draftId: createDraftId() });
+    dispatch({ type: "RESTART", sessionId: createSessionId() });
   }, []);
 
   const setArtifactTitle = useCallback((artifactTitle: string) => {

@@ -51,9 +51,9 @@ describe("chatWorkspaceReducer", () => {
         hasStarted: true,
         messages: [{ role: "user", content: "Hi" }],
       },
-      { type: "RESTART", draftId: "new-id" },
+      { type: "RESTART", sessionId: "new-id" },
     );
-    expect(state.draftId).toBe("new-id");
+    expect(state.sessionId).toBe("new-id");
     expect(state.hasStarted).toBe(false);
     expect(state.messages).toHaveLength(0);
   });

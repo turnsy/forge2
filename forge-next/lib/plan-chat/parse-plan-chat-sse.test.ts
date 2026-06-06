@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encodePlanChatSseEvent } from "@/lib/ai/plan-chat/events";
 import { mapPlanChatEvent } from "@/lib/plan-chat/map-plan-chat-event";
-import { extractSseEventsFromBuffer } from "@/lib/plan-chat/parse-plan-chat-sse";
+import { extractSseEventsFromBuffer } from "@/lib/chat/parse-sse";
 
 describe("mapPlanChatEvent", () => {
   it("maps plan artifact events to chat artifact events", () => {

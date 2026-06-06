@@ -11,7 +11,7 @@ describe("logSubmittedPlanCode", () => {
     vi.stubEnv("NODE_ENV", "development");
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
 
-    logSubmittedPlanCode("print('hi')", { coachId: "coach-1", draftId: "d1" });
+    logSubmittedPlanCode("print('hi')", { coachId: "coach-1", sessionId: "s1" });
 
     expect(info).toHaveBeenCalled();
     expect(info.mock.calls.some((call) => String(call[0]).includes("submit_plan_code"))).toBe(
