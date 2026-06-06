@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildListUrl,
+  escapeIlikePattern,
   getListOffset,
+  listQueryFromUrl,
   normalizeListQuery,
   toPaginatedResult,
 } from "@/lib/lists/query";
@@ -70,5 +72,25 @@ describe("buildListUrl", () => {
     expect(buildListUrl("/coach/plans", { q: "strength", page: 2 })).toBe(
       "/coach/plans?q=strength&page=2",
     );
+  });
+});
+
+describe("escapeIlikePattern", () => {
+  it("escapes ilike wildcard characters", () => {
+    expect(escapeIlikePattern("100%_done")).toBe("100\\%\\_done");
+  });
+});
+
+describe("listQueryFromUrl", () => {
+  it("parses search params into a list query", () => {
+    expect(
+      listQueryFromUrl(
+        new URL("http://localhost/api/coach/plans?q=strength&page=2&limit=4"),
+      ),
+    ).toEqual({
+      q: "strength",
+      page: 2,
+      limit: 4,
+    });
   });
 });

@@ -1,5 +1,5 @@
-import { escapeIlikePattern } from "@/lib/lists/escape-ilike";
 import {
+  escapeIlikePattern,
   getListOffset,
   normalizeListQuery,
   toPaginatedResult,

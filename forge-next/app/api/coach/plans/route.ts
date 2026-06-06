@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
-import { listQueryFromUrl } from "@/lib/lists/api";
+import { listQueryFromUrl } from "@/lib/lists/query";
 import { listCoachPlans } from "@/lib/plans/repository";
 
 export async function GET(request: Request) {

@@ -79,3 +79,15 @@ export function buildListUrl(
   const search = params.toString();
   return search ? `${path}?${search}` : path;
 }
+
+export function escapeIlikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+export function listQueryFromUrl(url: URL): ListQuery {
+  return normalizeListQuery({
+    q: url.searchParams.get("q"),
+    page: url.searchParams.get("page"),
+    limit: url.searchParams.get("limit"),
+  });
+}
