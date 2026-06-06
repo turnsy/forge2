@@ -64,7 +64,7 @@ Keep `RUN_SANDBOX_INTEGRATION=1` **opt-in** locally only.
 
 ## Done when
 
-- [ ] P0 tests merged and green
-- [ ] P1 tests merged (or explicitly descoped with reason)
-- [ ] `pnpm test:forge-plan` in CI
-- [ ] Phase 6 agent checkboxes updated in [phase-6-integration.md](./phases/phase-6-integration.md)
+- [x] P0 tests merged and green
+- [x] P1 tests merged (or explicitly descoped with reason)
+- [x] `pnpm test:forge-plan` in CI
+- [x] Phase 6 agent checkboxes updated in [phase-6-integration.md](./phases/phase-6-integration.md)

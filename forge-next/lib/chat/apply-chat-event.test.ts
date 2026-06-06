@@ -33,6 +33,22 @@ describe("applyChatEvent", () => {
     expect(state.artifactTitle).toBe("Test");
   });
 
+  it("accumulates warnings events", () => {
+    let state = createInitialChatWorkspaceState<WorkoutPlan>();
+    state = applyChatEvent(state, {
+      type: "warnings",
+      warnings: ["CSV truncated"],
+    });
+    state = applyChatEvent(state, {
+      type: "warnings",
+      warnings: ["PDF page cap reached"],
+    });
+    expect(state.warnings).toEqual([
+      "CSV truncated",
+      "PDF page cap reached",
+    ]);
+  });
+
   it("does not clear currentArtifact on errors", () => {
     const initial = {
       ...createInitialChatWorkspaceState<WorkoutPlan>(),

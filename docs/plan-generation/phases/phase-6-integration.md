@@ -18,20 +18,20 @@
 
 ---
 
-## Task 2 — Edge case testing ([spec](../task-2-edge-case-testing.md))
+## Task 2 — Edge case testing ([spec](../task-2-edge-case-testing.md)) ✅
 
-- [ ] Integration test: attach → multi-sheet → plan-chat clarify + generate paths
-- [ ] Unit: `read_session_file`, validation gate, sandbox failure
-- [ ] Route tests: athlete 403, upload handler edge cases
-- [ ] CI: `pnpm test:forge-plan`
+- [x] Integration test: attach → multi-sheet → plan-chat clarify + generate paths
+- [x] Unit: `read_session_file`, validation gate, sandbox failure
+- [x] Route tests: athlete 403, upload handler edge cases
+- [x] CI: `pnpm test:forge-plan`
 
 ---
 
 ## Agent actions (remaining)
 
 - [x] Happy path wired (real sandbox in prod; stub for CI/tests only)
-- [ ] Integration test (Task 2)
-- [x] Unit coverage: uploads multi-sheet, `list_session_files` (partial — `read_session_file` in Task 2)
+- [x] Integration test (Task 2)
+- [x] Unit coverage: uploads multi-sheet, `list_session_files`, `read_session_file`, validation gate
 - [x] `docs/plan-generation/QA.md` manual checklist (exists)
 - [x] CI: `pnpm test` + `pnpm build` (mock sandbox; no secrets)
 
@@ -48,7 +48,7 @@
 ## Done criteria (v1 ship)
 
 - [x] All Phase 1–5 agent done criteria checked
-- [ ] CI green (incl. Task 2)
+- [x] CI green (incl. Task 2 agent items)
 - [ ] Manual QA signed off
 - [x] No DB writes in plan-chat path
 - [x] Sandbox has no upload/context files (`run-plan.test.ts`)

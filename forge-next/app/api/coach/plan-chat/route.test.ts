@@ -26,6 +26,24 @@ describe("POST /api/coach/plan-chat", () => {
     });
   });
 
+  it("returns 403 when athlete role", async () => {
+    mockRequireApiRole.mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+      }),
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/coach/plan-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: "s-1", prompt: "hi" }),
+      }),
+    );
+    expect(response.status).toBe(403);
+  });
+
   it("returns 401 when unauthenticated", async () => {
     mockRequireApiRole.mockResolvedValue({
       ok: false,

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { uploadFileSlug } from "@/lib/uploads/file-utils";
+import { UPLOAD_CSV_MAX_ROWS } from "@/lib/uploads/parse-upload";
 import { makeCsvBuffer, makeXlsxBuffer } from "@/lib/uploads/__tests__/fixtures";
 
 const mockSaveUploadContext = vi.fn();
@@ -80,6 +81,29 @@ describe("normalizeMessageUploads", () => {
         slug: uploadFileSlug("workbook.xlsx", "Summary"),
       }),
     );
+  });
+
+  it("propagates CSV truncation warnings on success", async () => {
+    mockSaveUploadContext.mockResolvedValueOnce({
+      ok: true,
+      contextFileId: "coach-1/session-1/big.txt",
+    });
+
+    const rows = Array.from(
+      { length: UPLOAD_CSV_MAX_ROWS + 5 },
+      (_, i) => `row${i},value`,
+    );
+    const result = await normalizeMessageUploads({
+      coachId: "coach-1",
+      sessionId: "session-1",
+      files: [{ filename: "big.csv", buffer: makeCsvBuffer(rows.join("\n")) }],
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      contextFileIds: ["coach-1/session-1/big.txt"],
+      warnings: [{ code: "CSV_TRUNCATED" }],
+    });
   });
 
   it("rejects a sixth file", async () => {
