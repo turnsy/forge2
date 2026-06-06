@@ -1,6 +1,6 @@
 # Phase 3 — Coach invite modal
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 **Goal:** Coach clicks **Add** on athletes list → modal shows invite code with copy button.
 
@@ -12,13 +12,13 @@
 
 ## Agent actions
 
-- [ ] `InviteCodeModal` client component (open/close, copy to clipboard, feedback)
-- [ ] Wire `AthletesPageHeader` — pass coach `invite_code` from server page
-- [ ] Functional-only styling per product direction
+- [x] `InviteCodeModal` client component (open/close, copy to clipboard, feedback)
+- [x] Wire `AthletesPageHeader` — pass coach `invite_code` from server page
+- [x] Functional-only styling per product direction
 
 ---
 
 ## Done criteria
 
-- [ ] Coach can open modal from Add, see code, copy to clipboard
-- [ ] Modal closes on dismiss / overlay click
+- [x] Coach can open modal from Add, see code, copy to clipboard
+- [x] Modal closes on dismiss / overlay click

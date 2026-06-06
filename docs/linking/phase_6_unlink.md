@@ -1,6 +1,6 @@
 # Phase 6 — Unlink
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 **Goal:** Coach unlinks from athlete detail; athlete unlinks from centered `/athlete` view.
 
@@ -10,14 +10,14 @@
 
 ## Agent actions
 
-- [ ] `/coach/athletes/[athleteId]` — load active relationship, unlink button
-- [ ] Athlete active view — centered unlink button wired to `unlinkCoachAthlete`
-- [ ] Both paths call same repository/action; `revalidatePath` both surfaces
+- [x] `/coach/athletes/[athleteId]` — load active relationship, unlink button
+- [x] Athlete active view — centered unlink button wired to `unlinkCoachAthlete`
+- [x] Both paths call same repository/action; `revalidatePath` both surfaces
 
 ---
 
 ## Done criteria
 
-- [ ] Either party unlink removes athlete from coach active list
-- [ ] Athlete returns to invite code input after unlink
-- [ ] Re-request with same code works
+- [x] Either party unlink removes athlete from coach active list
+- [x] Athlete returns to invite code input after unlink
+- [x] Re-request with same code works

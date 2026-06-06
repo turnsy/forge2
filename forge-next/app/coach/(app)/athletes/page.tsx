@@ -5,6 +5,8 @@ import { ListPrevNext } from "@/components/list/list-prev-next";
 import { ListSearchField } from "@/components/list/list-search-field";
 import { EmptyState, ListSectionSpinner, PageContent } from "@/components/ui";
 import { listCoachAthletes } from "@/lib/athletes/repository";
+import { getProfile, requireRole } from "@/lib/auth/session";
+import { countCoachPendingInvites } from "@/lib/links/repository";
 import { normalizeListQuery } from "@/lib/lists/query";
 import type { ListQuery } from "@/lib/lists/types";
 
@@ -38,6 +40,10 @@ export default async function CoachAthletesPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
+  const user = await requireRole("coach");
+  const profile = await getProfile(user.id);
+  const inviteCode = profile?.invite_code?.trim() ?? "";
+  const pendingCount = await countCoachPendingInvites();
   const params = await searchParams;
   const query = normalizeListQuery({
     q: params.q,
@@ -46,7 +52,7 @@ export default async function CoachAthletesPage({
 
   return (
     <PageContent>
-      <AthletesPageHeader />
+      <AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />
       <div className="mb-4">
         <ListSearchField
           pathname="/coach/athletes"

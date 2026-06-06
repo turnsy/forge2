@@ -1,8 +1,12 @@
+import { AthleteCoachLinkView } from "@/components/athlete-coach-link-view";
+import { AthleteLinkForm } from "@/components/athlete-link-form";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { requireRole } from "@/lib/auth/session";
+import { getAthleteCoachLink } from "@/lib/links/repository";
 
 export default async function AthletePage() {
   const user = await requireRole("athlete");
+  const link = await getAthleteCoachLink();
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-6 p-8">
@@ -15,6 +19,14 @@ export default async function AthletePage() {
         </div>
         <SignOutButton />
       </div>
+
+      {link ? (
+        <AthleteCoachLinkView link={link} />
+      ) : (
+        <div className="flex flex-1 items-center justify-center">
+          <AthleteLinkForm />
+        </div>
+      )}
     </main>
   );
 }

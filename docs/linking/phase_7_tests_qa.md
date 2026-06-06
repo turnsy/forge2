@@ -1,6 +1,6 @@
 # Phase 7 — Tests & QA
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 **Goal:** Unit coverage for domain layer; manual test plan in PR for coach + athlete actors.
 
@@ -10,11 +10,11 @@
 
 ## Agent actions
 
-- [ ] `lib/links/repository.test.ts` complete
-- [ ] `lib/links/errors.test.ts` if non-trivial
-- [ ] Component tests only where behavior warrants (modal copy optional)
-- [ ] Update all `phase_*.md` status to Done
-- [ ] PR description includes manual test plan (two actors)
+- [x] `lib/links/repository.test.ts` complete
+- [x] `lib/links/errors.test.ts` if non-trivial
+- [x] Component tests only where behavior warrants (modal copy optional)
+- [x] Update all `phase_*.md` status to Done
+- [x] PR description includes manual test plan (two actors)
 
 ---
 
@@ -36,6 +36,6 @@
 
 ## Done criteria
 
-- [ ] `pnpm test` passes
-- [ ] All phase docs marked Done
-- [ ] PR open with manual test plan
+- [x] `pnpm test` passes
+- [x] All phase docs marked Done
+- [x] PR open with manual test plan
