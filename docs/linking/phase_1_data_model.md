@@ -1,6 +1,6 @@
 # Phase 1 — Data model & RPCs
 
-**Status:** 🚧 In progress
+**Status:** ✅ Done
 
 **Goal:** Add `pending`/`active` link status, secure RPCs for all link mutations, tighten RLS.
 
@@ -12,7 +12,7 @@
 
 ## Agent actions
 
-- [ ] Migration `supabase/migrations/*_coach_link_pending.sql`:
+- [x] Migration `supabase/migrations/20260606160000_coach_link_pending.sql`:
   - `coach_link_status` enum (`pending`, `active`)
   - `coach_athletes.status` column (backfill existing → `active`)
   - `linked_at` nullable (set on accept)
@@ -21,12 +21,12 @@
   - RPCs: `request_coach_link`, `cancel_coach_link_request`, `accept_coach_link`, `reject_coach_link`, `unlink_coach_athlete`, `get_athlete_coach_link`, `get_coach_pending_invites`, `count_coach_pending_invites`
   - Update `get_coach_athletes` to filter `status = 'active'`
   - Drop open `coach_athletes: athlete insert` policy (mutations via RPC only)
-- [ ] Manually update `forge-next/lib/database.types.ts` for new enum, column, and RPCs
+- [x] Manually update `forge-next/lib/database.types.ts` for new enum, column, and RPCs
 
 ---
 
 ## Done criteria
 
-- [ ] Migration applies cleanly on fresh + existing DB
-- [ ] Athletes cannot insert `coach_athletes` directly
-- [ ] All link lifecycle transitions go through RPCs with role checks
+- [x] Migration applies cleanly on fresh + existing DB
+- [x] Athletes cannot insert `coach_athletes` directly
+- [x] All link lifecycle transitions go through RPCs with role checks

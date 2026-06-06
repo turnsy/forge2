@@ -112,22 +112,28 @@ export type Database = {
         Row: {
           athlete_id: string
           coach_id: string
+          created_at: string
           id: string
-          linked_at: string
+          linked_at: string | null
+          status: Database["public"]["Enums"]["coach_link_status"]
           unlinked_at: string | null
         }
         Insert: {
           athlete_id: string
           coach_id: string
+          created_at?: string
           id?: string
-          linked_at?: string
+          linked_at?: string | null
+          status?: Database["public"]["Enums"]["coach_link_status"]
           unlinked_at?: string | null
         }
         Update: {
           athlete_id?: string
           coach_id?: string
+          created_at?: string
           id?: string
-          linked_at?: string
+          linked_at?: string | null
+          status?: Database["public"]["Enums"]["coach_link_status"]
           unlinked_at?: string | null
         }
         Relationships: [
@@ -293,9 +299,66 @@ export type Database = {
           week_count: number
         }[]
       }
+      accept_coach_link: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
+      cancel_coach_link_request: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
+      count_coach_pending_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_athlete_coach_link: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          coach_id: string
+          coach_name: string
+          linked_at: string
+          relationship_id: string
+          requested_at: string
+          status: Database["public"]["Enums"]["coach_link_status"]
+        }[]
+      }
+      get_coach_athlete_relationship: {
+        Args: { p_athlete_id: string }
+        Returns: {
+          athlete_email: string
+          athlete_id: string
+          athlete_name: string
+          linked_at: string
+          relationship_id: string
+          status: Database["public"]["Enums"]["coach_link_status"]
+        }[]
+      }
+      get_coach_pending_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          athlete_email: string
+          athlete_id: string
+          athlete_name: string
+          relationship_id: string
+          requested_at: string
+        }[]
+      }
+      reject_coach_link: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
+      request_coach_link: {
+        Args: { p_invite_code: string }
+        Returns: string
+      }
+      unlink_coach_athlete: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       assignment_status: "active" | "completed" | "unassigned"
+      coach_link_status: "pending" | "active"
       user_role: "coach" | "athlete"
     }
     CompositeTypes: {
@@ -428,6 +491,7 @@ export const Constants = {
   public: {
     Enums: {
       assignment_status: ["active", "completed", "unassigned"],
+      coach_link_status: ["pending", "active"],
       user_role: ["coach", "athlete"],
     },
   },
