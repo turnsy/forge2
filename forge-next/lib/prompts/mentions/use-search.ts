@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fetchMentionItemGroups } from "@/lib/prompts/fetch-mention-items";
-import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
+import { fetchMentionItemGroups } from "@/lib/prompts/mentions/fetch-items";
+import type { MentionSearchGroups } from "@/lib/prompts/mentions/search";
 
 const EMPTY_GROUPS: MentionSearchGroups = { athletes: [], plans: [] };
-const MENTION_SEARCH_DEBOUNCE_MS = 200;
+const MENTION_SEARCH_DEBOUNCE_MS = 100;
 
 type MentionSearchSnapshot = {
   groups: MentionSearchGroups;

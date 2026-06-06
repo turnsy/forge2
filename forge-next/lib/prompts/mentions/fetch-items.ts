@@ -2,7 +2,14 @@ import type { CoachAthleteListItem } from "@/lib/athletes/types";
 import type { PaginatedResult } from "@/lib/lists/types";
 import { MENTION_LIST_LIMIT } from "@/lib/lists/types";
 import type { CoachPlanListItem } from "@/lib/plans/types";
-import { mergeFetchedMentionGroups, type MentionSearchGroups } from "@/lib/prompts/mention-search";
+import {
+  mapAthleteToMentionItem,
+  mapPlanToMentionItem,
+} from "@/lib/prompts/mentions/options";
+import {
+  mergeFetchedMentionGroups,
+  type MentionSearchGroups,
+} from "@/lib/prompts/mentions/search";
 
 function buildMentionListUrl(path: string, query: string): string {
   const params = new URLSearchParams();
@@ -30,16 +37,8 @@ export async function fetchMentionItemGroups(query: string): Promise<MentionSear
   const plans = (await plansResponse.json()) as PaginatedResult<CoachPlanListItem>;
 
   return mergeFetchedMentionGroups(
-    athletes.items.map((athlete) => ({
-      kind: "athlete",
-      id: athlete.id,
-      label: athlete.name,
-    })),
-    plans.items.map((plan) => ({
-      kind: "plan",
-      id: plan.id,
-      label: plan.title,
-    })),
+    athletes.items.map(mapAthleteToMentionItem),
+    plans.items.map(mapPlanToMentionItem),
     MENTION_LIST_LIMIT,
   );
 }

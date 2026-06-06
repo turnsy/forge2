@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPlanStats } from "@/lib/plans/stats";
+import { formatDaysPerWeek, getPlanStats } from "@/lib/plans/stats";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
@@ -33,6 +33,16 @@ function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
     })) as WorkoutPlan["weeks"],
   };
 }
+
+describe("formatDaysPerWeek", () => {
+  it("returns a number when min and max match", () => {
+    expect(formatDaysPerWeek(4, 4)).toBe(4);
+  });
+
+  it("returns a range when min and max differ", () => {
+    expect(formatDaysPerWeek(3, 4)).toBe("3–4");
+  });
+});
 
 describe("getPlanStats", () => {
   it("returns zero counts for missing plan data", () => {

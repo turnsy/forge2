@@ -3,7 +3,6 @@ import {
   mapCoachPlanDetailRow,
   mapCoachPlanRpcRow,
   mapCoachPlanRow,
-  mapCoachPlanSummaryRow,
 } from "@/lib/plans/repository";
 
 describe("mapCoachPlanRow", () => {
@@ -69,78 +68,36 @@ describe("mapCoachPlanRow", () => {
 });
 
 describe("mapCoachPlanRpcRow", () => {
-  it("maps an rpc row to a list item", () => {
-    const item = mapCoachPlanRpcRow({
-      plan_id: "plan-1",
-      created_at: "2026-01-01T00:00:00.000Z",
-      plan_data: {
-        schemaVersion: "2.0.0",
-        name: "4-Week Strength Block",
-        weeks: [
-          {
-            index: 1,
-            days: [
-              {
-                index: 1,
-                code: "w1d1",
-                exercises: [
-                  {
-                    name: "Back Squat",
-                    sets: [
-                      {
-                        id: "w1d1-bs-1",
-                        planned: {
-                          type: "exact",
-                          reps: 5,
-                          load: { type: "absolute", value: 100, unit: "kg" },
-                        },
-                        actual: null,
-                        status: "planned",
-                        locked: false,
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      total_count: 1,
-    });
-
-    expect(item).toEqual({
-      id: "plan-1",
-      title: "4-Week Strength Block",
-      weekCount: 1,
-      daysPerWeek: 1,
-      createdAt: "2026-01-01T00:00:00.000Z",
-    });
-  });
-});
-
-describe("mapCoachPlanSummaryRow", () => {
-  it("extracts plan title from active version plan_data", () => {
+  it("maps projected rpc columns to a list item", () => {
     expect(
-      mapCoachPlanSummaryRow({
-        id: "plan-1",
-        active_version: {
-          plan_data: { name: "4-Week Strength Block" },
-        },
+      mapCoachPlanRpcRow({
+        plan_id: "plan-1",
+        title: "4-Week Strength Block",
+        week_count: 4,
+        min_days_per_week: 3,
+        max_days_per_week: 4,
+        created_at: "2026-01-01T00:00:00.000Z",
+        total_count: 1,
       }),
     ).toEqual({
       id: "plan-1",
       title: "4-Week Strength Block",
+      weekCount: 4,
+      daysPerWeek: "3–4",
+      createdAt: "2026-01-01T00:00:00.000Z",
     });
   });
 
-  it("returns null when name is missing", () => {
+  it("returns null when title is empty", () => {
     expect(
-      mapCoachPlanSummaryRow({
-        id: "plan-1",
-        active_version: {
-          plan_data: { weeks: [] },
-        },
+      mapCoachPlanRpcRow({
+        plan_id: "plan-1",
+        title: "   ",
+        week_count: 0,
+        min_days_per_week: 0,
+        max_days_per_week: 0,
+        created_at: "2026-01-01T00:00:00.000Z",
+        total_count: 1,
       }),
     ).toBeNull();
   });

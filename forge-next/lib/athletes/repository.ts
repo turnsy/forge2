@@ -6,11 +6,7 @@ import {
 } from "@/lib/lists/query";
 import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
 import { createClient } from "@/utils/supabase/server";
-import type {
-  CoachAthleteListItem,
-  CoachAthleteRow,
-  CoachAthleteSummary,
-} from "@/lib/athletes/types";
+import type { CoachAthleteListItem, CoachAthleteRow } from "@/lib/athletes/types";
 
 type CoachAthleteRowWithCount = CoachAthleteRow & {
   total_count: number;
@@ -23,13 +19,6 @@ export function mapCoachAthleteRow(row: CoachAthleteRow): CoachAthleteListItem {
     email: row.email?.trim() || "",
     currentPlanName: row.current_plan_name?.trim() || null,
     joinedAt: row.linked_at,
-  };
-}
-
-export function mapCoachAthleteSummary(row: CoachAthleteRow): CoachAthleteSummary {
-  return {
-    id: row.athlete_id,
-    name: row.full_name?.trim() || "Unnamed athlete",
   };
 }
 
@@ -55,18 +44,4 @@ export async function listCoachAthletes(
   const items = rows.map(mapCoachAthleteRow);
 
   return toPaginatedResult(items, getTotalCount(rows), query);
-}
-
-export async function listCoachAthleteSummaries(
-  query: ListQuery = normalizeListQuery({}),
-): Promise<PaginatedResult<CoachAthleteSummary>> {
-  const result = await listCoachAthletes(query);
-
-  return {
-    ...result,
-    items: result.items.map((athlete) => ({
-      id: athlete.id,
-      name: athlete.name,
-    })),
-  };
 }

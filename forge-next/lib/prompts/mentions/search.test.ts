@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 import {
   flattenMentionSearchGroups,
   mergeFetchedMentionGroups,
   searchMentionItemGroups,
   searchMentionItems,
-} from "@/lib/prompts/mention-search";
+} from "@/lib/prompts/mentions/search";
 
 const items: PromptMentionItem[] = [
   { kind: "athlete", id: "a1", label: "Jane Smith" },

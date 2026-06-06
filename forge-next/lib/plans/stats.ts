@@ -5,6 +5,14 @@ export type PlanStats = {
   daysPerWeek: number | string;
 };
 
+export function formatDaysPerWeek(min: number, max: number): number | string {
+  if (max === 0) {
+    return 0;
+  }
+
+  return min === max ? min : `${min}–${max}`;
+}
+
 export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStats {
   if (!planData?.weeks?.length) {
     return { weekCount: 0, daysPerWeek: 0 };
@@ -22,6 +30,6 @@ export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStat
 
   return {
     weekCount,
-    daysPerWeek: min === max ? min : `${min}–${max}`,
+    daysPerWeek: formatDaysPerWeek(min, max),
   };
 }

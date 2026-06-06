@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { serializePromptDocument } from "@/lib/prompts/prompt-document";
-import type { PromptSegment } from "@/lib/prompts/mention-types";
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";

@@ -15,9 +15,10 @@ import {
   getCoordinatesAtLinearIndex,
 } from "@/lib/prompts/editor-selection";
 import { parseEditorToSegments, renderSegmentsToEditor } from "@/lib/prompts/editor-dom";
-import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
-import { shouldFlipMenuAbove } from "@/lib/prompts/mention-anchor-position";
-import { flattenMentionSearchGroups } from "@/lib/prompts/mention-search";
+import { shouldFlipMenuAbove } from "@/lib/prompts/mentions/anchor-position";
+import { flattenMentionSearchGroups } from "@/lib/prompts/mentions/search";
+import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mentions/types";
+import { useMentionSearch } from "@/lib/prompts/mentions/use-search";
 import {
   deleteMentionBeforeCaret,
   getActiveMentionQuery,
@@ -25,7 +26,6 @@ import {
   insertMentionChip,
   isEmptyDocument,
 } from "@/lib/prompts/prompt-document";
-import { useMentionSearch } from "@/lib/prompts/use-mention-search";
 
 const MENU_HEIGHT = 180;
 const MENU_OFFSET = 4;

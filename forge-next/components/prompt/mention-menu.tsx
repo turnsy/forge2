@@ -4,8 +4,8 @@ import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
 import { MentionMenuRow } from "@/components/prompt/mention-menu-row";
 import { Separator, Spinner } from "@/components/ui";
-import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { MentionSearchGroups } from "@/lib/prompts/mentions/search";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
 export function MentionMenu({
   groups,

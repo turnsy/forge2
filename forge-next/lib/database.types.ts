@@ -290,9 +290,12 @@ export type Database = {
         }
         Returns: {
           created_at: string
-          plan_data: Json
+          max_days_per_week: number
+          min_days_per_week: number
           plan_id: string
+          title: string
           total_count: number
+          week_count: number
         }[]
       }
     }

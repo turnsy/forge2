@@ -1,4 +1,4 @@
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
+import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
 export type MentionSearchGroups = {
   athletes: PromptMentionItem[];

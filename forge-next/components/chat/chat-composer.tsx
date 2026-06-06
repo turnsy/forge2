@@ -8,7 +8,7 @@ import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import { canSendChat } from "@/lib/chat/workspace-selectors";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
-import type { PromptSegment } from "@/lib/prompts/mention-types";
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
 export function ChatComposer({
   state,
