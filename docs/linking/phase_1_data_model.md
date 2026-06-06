@@ -12,7 +12,7 @@
 
 ## Agent actions
 
-- [x] Migration `supabase/migrations/20260606160000_coach_link_pending.sql`:
+- [x] Migration `supabase/migrations/20260606170000_coach_link_pending.sql`:
   - `coach_link_status` enum (`pending`, `active`)
   - `coach_athletes.status` column (backfill existing → `active`)
   - `linked_at` nullable (set on accept)
