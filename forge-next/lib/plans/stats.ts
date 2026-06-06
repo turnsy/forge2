@@ -1,5 +1,4 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { loadWorkoutPlan } from "@/lib/plans/validate";
 
 export type PlanStats = {
   weekCount: number;
@@ -25,9 +24,4 @@ export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStat
     weekCount,
     daysPerWeek: min === max ? min : `${min}–${max}`,
   };
-}
-
-export function parseWorkoutPlan(value: unknown): WorkoutPlan | null {
-  const result = loadWorkoutPlan(value);
-  return result.ok ? result.plan : null;
 }

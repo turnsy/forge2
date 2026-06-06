@@ -67,9 +67,14 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
 
     submit_plan_code: tool({
       description:
-        "Submit Python source for run.py to create or update the workout plan. Server runs sandbox after this turn.",
+        "Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. Server runs sandbox after this turn.",
       inputSchema: z.object({
-        python: z.string().min(1).describe("Full run.py body."),
+        python: z
+          .string()
+          .min(1)
+          .describe(
+            "Complete run.py body: load seed, build all requested weeks/days/exercises, write output/plan.json.",
+          ),
       }),
       execute: async ({ python }) => {
         ctx.onSubmitPlanCode(python);

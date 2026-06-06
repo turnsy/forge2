@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  attachmentChipClass,
   buttonVariantClass,
   cardClass,
   cardFooterClass,
@@ -45,5 +46,10 @@ describe("surface theme helpers", () => {
   it("returns divider line styling", () => {
     expect(dividerLineClass()).toContain("border-t");
     expect(dividerLineClass()).toContain("border-surface-divider");
+  });
+
+  it("returns attachment chip styling", () => {
+    expect(attachmentChipClass()).toContain("rounded-full");
+    expect(attachmentChipClass("error")).toContain("text-red-200");
   });
 });

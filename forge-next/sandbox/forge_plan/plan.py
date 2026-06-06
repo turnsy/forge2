@@ -9,10 +9,10 @@ from typing import Any
 from forge_plan.builders import (
     build_set_entry,
     empty_plan_template,
+    format_day_code,
     load_seed_from_file,
     move_list_item,
     next_set_id,
-    validate_day_code,
 )
 
 
@@ -57,7 +57,11 @@ class ExerciseRef:
 
 
 class Plan:
-    """Mutable workout plan builder."""
+    """Mutable workout plan builder for workout-plan.schema.json v2.0.0.
+
+    See ``forge_plan.schema_rules.validation_rules_cheat_sheet()`` for field-level
+    constraints (day codes, reps, loads, min array lengths).
+    """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
         self._data = data if data is not None else empty_plan_template()
@@ -87,16 +91,24 @@ class Plan:
     def add_week(
         self,
         *,
-        index: int,
         label: str | None = None,
         name: str | None = None,
+        index: int | None = None,
     ) -> WeekRef:
-        """Add or update a week by schema ``index`` (renumbers array order after)."""
+        """Append a week, or upsert by schema ``index`` when provided.
+
+        Week ``index`` and day ``code`` values are assigned by ``_sync_structure``
+        from array order (1-based). Omit ``index`` to append the next week.
+        """
         weeks = self._ensure_weeks()
-        week = self._find_week_by_schema_index(weeks, index)
-        if week is None:
-            week = {"index": index, "days": []}
+        if index is None:
+            week: dict[str, Any] = {"index": 0, "days": []}
             weeks.append(week)
+        else:
+            week = self._find_week_by_schema_index(weeks, index)
+            if week is None:
+                week = {"index": index, "days": []}
+                weeks.append(week)
 
         if label is not None:
             week["label"] = label
@@ -110,20 +122,24 @@ class Plan:
         self,
         *,
         week_index: int,
-        index: int,
-        code: str,
         name: str | None = None,
+        index: int | None = None,
     ) -> DayRef:
-        """Add or update a day (``week_index`` is schema week index; renumbers after)."""
-        validate_day_code(code)
+        """Append a day to a week, or upsert by schema ``day_index`` when provided.
+
+        Day ``code`` (e.g. ``w1d1``) and ``index`` are derived from week/day
+        array order — do not pass codes manually.
+        """
         week = self._require_week_by_schema_index(week_index)
         days = week.setdefault("days", [])
-        day = self._find_day_by_schema_index(days, index)
-        if day is None:
-            day = {"index": index, "code": code, "exercises": []}
+        if index is None:
+            day: dict[str, Any] = {"index": 0, "code": "w0d0", "exercises": []}
             days.append(day)
         else:
-            day["code"] = code
+            day = self._find_day_by_schema_index(days, index)
+            if day is None:
+                day = {"index": index, "code": "w0d0", "exercises": []}
+                days.append(day)
 
         if name is not None:
             day["name"] = name
@@ -150,23 +166,32 @@ class Plan:
         self,
         week_index: int,
         day_index: int,
-        exercise_index: int,
         *,
         reps: int | str,
-        load_type: str = "absolute",
         load_value: float,
+        load_type: str = "absolute",
         unit: str = "kg",
         operator: str = "exact",
+        notes: str | None = None,
+        exercise_name: str | None = None,
+        exercise_index: int | None = None,
     ) -> None:
-        """Append a planned set (``exercise_index`` is 0-based position in the day)."""
+        """Append a planned exact set to a day.
+
+        Use integer ``reps`` for the count. Put per-side, time, and coaching detail in
+        ``notes`` (e.g. ``notes="per side"``). Set ``id``, ``status``, ``locked``, and
+        ``actual`` are filled automatically. Target the exercise by ``exercise_name``,
+        ``exercise_index`` (0-based), or omit both to use the last exercise on that day.
+        """
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
         day = self._require_day_at(week_pos, day_pos)
-        exercises = day.setdefault("exercises", [])
-        if exercise_index < 0 or exercise_index >= len(exercises):
-            raise ValueError(
-                f"exercise_index {exercise_index} out of range for week {week_index} day {day_index}"
-            )
-        exercise = exercises[exercise_index]
+        exercise = self._resolve_exercise(
+            day,
+            week_index=week_index,
+            day_index=day_index,
+            exercise_name=exercise_name,
+            exercise_index=exercise_index,
+        )
         sets = exercise.setdefault("sets", [])
         set_id = next_set_id(str(day["code"]), str(exercise["name"]), sets)
         sets.append(
@@ -177,6 +202,7 @@ class Plan:
                 load_value=load_value,
                 unit=unit,
                 operator=operator,
+                notes=notes,
             )
         )
         self._sync_structure()
@@ -296,7 +322,39 @@ class Plan:
             for day_pos, day in enumerate(days):
                 day_number = day_pos + 1
                 day["index"] = day_number
-                day["code"] = f"w{week_number}d{day_number}"
+                day["code"] = format_day_code(week_number, day_number)
+
+    def _resolve_exercise(
+        self,
+        day: dict[str, Any],
+        *,
+        week_index: int,
+        day_index: int,
+        exercise_name: str | None,
+        exercise_index: int | None,
+    ) -> dict[str, Any]:
+        exercises = day.setdefault("exercises", [])
+        if len(exercises) == 0:
+            raise ValueError(
+                f"week {week_index} day {day_index} has no exercises; call add_exercise first"
+            )
+
+        if exercise_name is not None:
+            for exercise in exercises:
+                if str(exercise.get("name")) == exercise_name:
+                    return exercise
+            raise ValueError(
+                f'exercise {exercise_name!r} not found on week {week_index} day {day_index}'
+            )
+
+        if exercise_index is not None:
+            if exercise_index < 0 or exercise_index >= len(exercises):
+                raise ValueError(
+                    f"exercise_index {exercise_index} out of range for week {week_index} day {day_index}"
+                )
+            return exercises[exercise_index]
+
+        return exercises[-1]
 
     def _ensure_weeks(self) -> list[dict[str, Any]]:
         weeks = self._data.get("weeks")

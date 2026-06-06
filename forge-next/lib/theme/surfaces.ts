@@ -23,8 +23,12 @@ const messageToneClasses: Record<MessageTone, string> = {
   info: "border-glass-border bg-glass text-surface-muted shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md",
 };
 
-export function controlClass(): string {
-  return `w-full ${radius.control} px-5 py-3.5 font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus`;
+export function controlClass(size: "sm" | "md" = "md"): string {
+  const sizeClass =
+    size === "sm"
+      ? "px-3 py-2 text-base"
+      : "px-5 py-3.5 text-base";
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
 }
 
 export function buttonVariantClass(
@@ -105,4 +109,17 @@ export function accordionContentCardClass(variant: "default" | "nested" = "defau
   const surfaceClass = variant === "nested" ? accordionNestedClass() : accordionClass();
 
   return `${surfaceClass} overflow-hidden p-0`;
+}
+
+export type AttachmentChipTone = "default" | "error";
+
+export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
+  const base =
+    "inline-flex items-center gap-1.5 rounded-full border py-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+
+  if (tone === "error") {
+    return `${base} border-red-500/40 bg-red-500/10 pl-3 pr-1.5 text-red-200`;
+  }
+
+  return `${base} border-glass-border bg-glass pl-3 pr-1.5 text-surface-foreground`;
 }

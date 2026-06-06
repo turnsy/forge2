@@ -14,10 +14,10 @@ from forge_plan import Plan
 plan = Plan.from_json_file("current_plan.json")
 if plan.is_empty():
     plan = Plan.empty("Integration Plan")
-plan.add_week(index=1, label="Week 1")
-plan.add_day(week_index=1, index=1, code="w1d1", name="Lower")
+plan.add_week(label="Week 1")
+plan.add_day(week_index=1, name="Lower")
 plan.add_exercise(week_index=1, day_index=1, name="Back Squat")
-plan.add_set(1, 1, 0, reps=5, load_value=100, unit="kg")
+plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit="kg")
 plan.write_json("output/plan.json")
 `.trim();
 
@@ -61,8 +61,8 @@ describe.runIf(integrationEnabled)("runSandbox integration", () => {
 from forge_plan import Plan
 
 plan = Plan.from_json_file("current_plan.json")
-plan.add_week(index=2, label="Week 2")
-plan.add_day(week_index=2, index=1, code="w2d1")
+plan.add_week(label="Week 2")
+plan.add_day(week_index=2)
 plan.write_json("output/plan.json")
 `.trim();
 

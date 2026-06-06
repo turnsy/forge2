@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from forge_plan import Plan  # noqa: E402
+from forge_plan.schema_rules import validation_rules_cheat_sheet  # noqa: E402
 
 PUBLIC_METHODS = [
     "from_json_file",
@@ -56,21 +57,40 @@ def build_cheat_sheet() -> str:
 
     lines.extend(
         [
-            "load_type for add_set: 'absolute' (value + unit) or 'percentage' (load_value = percent, operator defaults to 'exact'; basis omitted in JSON).",
             "",
-            "move_* / remove_* use 0-based array positions. add_* week_index / day_index use schema indices (renumbered to match array order after every mutation).",
+            validation_rules_cheat_sheet(),
             "",
-            "Example run.py (minimal create):",
+            "Example run.py (multi-week block — preferred pattern when user requests a full program):",
+            "",
+            "  from forge_plan import Plan",
+            "",
+            '  WEEKS = 4',
+            "  DAYS_PER_WEEK = 4",
+            '  DAY_NAMES = ["Lower", "Upper", "Full body", "Accessories"]',
+            '  LIFT = "Back Squat"',
+            "",
+            '  plan = Plan.from_json_file("current_plan.json")',
+            "  if plan.is_empty():",
+            '      plan = Plan.empty("4-Week Strength")',
+            "  for week in range(1, WEEKS + 1):",
+            '      plan.add_week(label=f"Week {week}")',
+            "      for day in range(1, DAYS_PER_WEEK + 1):",
+            '          plan.add_day(week_index=week, name=DAY_NAMES[day - 1])',
+            '          plan.add_exercise(week_index=week, day_index=day, name=LIFT)',
+            "          plan.add_set(week_index=week, day_index=day, reps=5, load_value=100, unit=\"kg\")",
+            '  plan.write_json("output/plan.json")',
+            "",
+            "Example run.py (minimal smoke test — not a full program):",
             "",
             "  from forge_plan import Plan",
             "",
             '  plan = Plan.from_json_file("current_plan.json")',
             "  if plan.is_empty():",
-            '      plan = Plan.empty("4-Week Strength")',
-            '  plan.add_week(index=1, label="Week 1")',
-            '  plan.add_day(week_index=1, index=1, code="w1d1", name="Lower")',
+            '      plan = Plan.empty("Smoke test")',
+            '  plan.add_week(label="Week 1")',
+            '  plan.add_day(week_index=1, name="Day 1")',
             '  plan.add_exercise(week_index=1, day_index=1, name="Back Squat")',
-            '  plan.add_set(1, 1, 0, reps=5, load_type="absolute", load_value=100, unit="kg")',
+            "  plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit=\"kg\")",
             '  plan.write_json("output/plan.json")',
             "",
             "Example run.py (reorder a day):",

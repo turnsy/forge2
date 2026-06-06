@@ -11,6 +11,11 @@ SCHEMA_VERSION = "2.0.0"
 DAY_CODE_PATTERN = re.compile(r"^w[0-9]+d[0-9]+$")
 
 
+def format_day_code(week_number: int, day_number: int) -> str:
+    """Build schema day code from 1-based week and day numbers (e.g. w1d1)."""
+    return f"w{week_number}d{day_number}"
+
+
 def empty_plan_template() -> dict[str, Any]:
     """Return an in-memory empty seed (not valid output until weeks are added)."""
     return {"schemaVersion": SCHEMA_VERSION, "name": "", "weeks": []}
@@ -87,8 +92,13 @@ def build_planned_set(
     load_value: float,
     unit: str = "kg",
     operator: str = "exact",
+    notes: str | None = None,
 ) -> dict[str, Any]:
-    """Build a minimal exact planned set (absolute or percentage load)."""
+    """Build a minimal exact planned set (absolute or percentage load).
+
+    Prefer integer ``reps``. Use ``notes`` for per-side, time, and other qualifiers.
+    Schema also allows rep-complex strings matching ``^[0-9]+(?:\\+[0-9]+)*$``.
+    """
     if load_type == "absolute":
         load = build_absolute_load(load_value, unit)
     elif load_type == "percentage":
@@ -96,11 +106,14 @@ def build_planned_set(
     else:
         raise ValueError("load_type must be 'absolute' or 'percentage'")
 
-    return {
+    planned: dict[str, Any] = {
         "type": "exact",
         "reps": reps,
         "load": load,
     }
+    if notes:
+        planned["notes"] = notes
+    return planned
 
 
 def build_set_entry(
@@ -111,6 +124,7 @@ def build_set_entry(
     load_value: float,
     unit: str = "kg",
     operator: str = "exact",
+    notes: str | None = None,
 ) -> dict[str, Any]:
     """Build a full set entry for the workout plan schema."""
     return {
@@ -121,6 +135,7 @@ def build_set_entry(
             load_value=load_value,
             unit=unit,
             operator=operator,
+            notes=notes,
         ),
         "actual": None,
         "status": "planned",
@@ -129,9 +144,15 @@ def build_set_entry(
 
 
 def validate_day_code(code: str) -> None:
-    """Raise ValueError when day code does not match w{n}d{m}."""
+    """Raise ValueError when day code does not match schema pattern ``^w[0-9]+d[0-9]+$``.
+
+    Codes must use a **lowercase** ``w`` and ``d`` (e.g. ``w1d1``). Uppercase
+    letters such as ``W1D1`` fail validation and JSON Schema checks.
+    """
     if not DAY_CODE_PATTERN.match(code):
-        raise ValueError(f"day code must match w{{n}}d{{m}}, got {code!r}")
+        raise ValueError(
+            f"day code must match w{{n}}d{{m}} (lowercase w and d), got {code!r}"
+        )
 
 
 def move_list_item(items: list[Any], from_index: int, to_index: int) -> None:
