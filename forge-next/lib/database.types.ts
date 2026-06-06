@@ -266,7 +266,11 @@ export type Database = {
         Returns: undefined
       }
       get_coach_athletes: {
-        Args: never
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
         Returns: {
           athlete_id: string
           current_assignment_status: Database["public"]["Enums"]["assignment_status"]
@@ -275,6 +279,20 @@ export type Database = {
           email: string
           full_name: string
           linked_at: string
+          total_count: number
+        }[]
+      }
+      get_coach_plans: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          created_at: string
+          plan_data: Json
+          plan_id: string
+          total_count: number
         }[]
       }
     }

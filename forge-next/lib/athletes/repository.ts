@@ -1,9 +1,20 @@
+import { escapeIlikePattern } from "@/lib/lists/escape-ilike";
+import {
+  getListOffset,
+  normalizeListQuery,
+  toPaginatedResult,
+} from "@/lib/lists/query";
+import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
 import { createClient } from "@/utils/supabase/server";
 import type {
   CoachAthleteListItem,
   CoachAthleteRow,
   CoachAthleteSummary,
 } from "@/lib/athletes/types";
+
+type CoachAthleteRowWithCount = CoachAthleteRow & {
+  total_count: number;
+};
 
 export function mapCoachAthleteRow(row: CoachAthleteRow): CoachAthleteListItem {
   return {
@@ -22,24 +33,40 @@ export function mapCoachAthleteSummary(row: CoachAthleteRow): CoachAthleteSummar
   };
 }
 
-export async function listCoachAthleteSummaries(): Promise<CoachAthleteSummary[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_coach_athletes");
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return ((data as CoachAthleteRow[] | null) ?? []).map(mapCoachAthleteSummary);
+function getTotalCount(rows: CoachAthleteRowWithCount[]): number {
+  return rows.length > 0 ? Number(rows[0].total_count) : 0;
 }
 
-export async function listCoachAthletes(): Promise<CoachAthleteListItem[]> {
+export async function listCoachAthletes(
+  query: ListQuery = normalizeListQuery({}),
+): Promise<PaginatedResult<CoachAthleteListItem>> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_coach_athletes");
+  const { data, error } = await supabase.rpc("get_coach_athletes", {
+    p_search: query.q ? escapeIlikePattern(query.q) : null,
+    p_limit: query.limit,
+    p_offset: getListOffset(query),
+  });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return ((data as CoachAthleteRow[] | null) ?? []).map(mapCoachAthleteRow);
+  const rows = (data as CoachAthleteRowWithCount[] | null) ?? [];
+  const items = rows.map(mapCoachAthleteRow);
+
+  return toPaginatedResult(items, getTotalCount(rows), query);
+}
+
+export async function listCoachAthleteSummaries(
+  query: ListQuery = normalizeListQuery({}),
+): Promise<PaginatedResult<CoachAthleteSummary>> {
+  const result = await listCoachAthletes(query);
+
+  return {
+    ...result,
+    items: result.items.map((athlete) => ({
+      id: athlete.id,
+      name: athlete.name,
+    })),
+  };
 }

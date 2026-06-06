@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   mapCoachPlanDetailRow,
+  mapCoachPlanRpcRow,
   mapCoachPlanRow,
   mapCoachPlanSummaryRow,
 } from "@/lib/plans/repository";
@@ -64,6 +65,57 @@ describe("mapCoachPlanRow", () => {
         active_version: null,
       }),
     ).toBeNull();
+  });
+});
+
+describe("mapCoachPlanRpcRow", () => {
+  it("maps an rpc row to a list item", () => {
+    const item = mapCoachPlanRpcRow({
+      plan_id: "plan-1",
+      created_at: "2026-01-01T00:00:00.000Z",
+      plan_data: {
+        schemaVersion: "2.0.0",
+        name: "4-Week Strength Block",
+        weeks: [
+          {
+            index: 1,
+            days: [
+              {
+                index: 1,
+                code: "w1d1",
+                exercises: [
+                  {
+                    name: "Back Squat",
+                    sets: [
+                      {
+                        id: "w1d1-bs-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 100, unit: "kg" },
+                        },
+                        actual: null,
+                        status: "planned",
+                        locked: false,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      total_count: 1,
+    });
+
+    expect(item).toEqual({
+      id: "plan-1",
+      title: "4-Week Strength Block",
+      weekCount: 1,
+      daysPerWeek: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
   });
 });
 

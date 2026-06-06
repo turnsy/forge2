@@ -1,3 +1,10 @@
+import { escapeIlikePattern } from "@/lib/lists/escape-ilike";
+import {
+  getListOffset,
+  normalizeListQuery,
+  toPaginatedResult,
+} from "@/lib/lists/query";
+import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
 import { createClient } from "@/utils/supabase/server";
 import { parseWorkoutPlan } from "@/lib/plans/parse-workout-plan";
 import { getPlanStats } from "@/lib/plans/stats";
@@ -9,6 +16,13 @@ type PlanRow = {
   id: string;
   created_at: string;
   active_version: { plan_data: unknown } | { plan_data: unknown }[] | null;
+};
+
+type CoachPlanRpcRow = {
+  plan_id: string;
+  created_at: string;
+  plan_data: unknown;
+  total_count: number;
 };
 
 function getActiveVersionPlanData(
@@ -43,6 +57,24 @@ export function mapCoachPlanRow(row: PlanRow): CoachPlanListItem | null {
   };
 }
 
+export function mapCoachPlanRpcRow(row: CoachPlanRpcRow): CoachPlanListItem | null {
+  const planData = parseWorkoutPlan(row.plan_data);
+
+  if (!planData) {
+    return null;
+  }
+
+  const { weekCount, daysPerWeek } = getPlanStats(planData);
+
+  return {
+    id: row.plan_id,
+    title: planData.name,
+    weekCount,
+    daysPerWeek,
+    createdAt: row.created_at,
+  };
+}
+
 type PlanSummaryRow = {
   id: string;
   active_version: { plan_data: unknown } | { plan_data: unknown }[] | null;
@@ -67,55 +99,47 @@ export function mapCoachPlanSummaryRow(row: PlanSummaryRow): CoachPlanSummary | 
   };
 }
 
-export async function listCoachPlanSummaries(
-  coachId: string,
-): Promise<CoachPlanSummary[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("plans")
-    .select(
-      `
-      id,
-      active_version:plan_versions!plans_active_version_id_fkey (
-        plan_data
-      )
-    `,
-    )
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return ((data as PlanSummaryRow[] | null) ?? [])
-    .map(mapCoachPlanSummaryRow)
-    .filter((plan): plan is CoachPlanSummary => plan !== null);
+function getTotalCount(rows: CoachPlanRpcRow[]): number {
+  return rows.length > 0 ? Number(rows[0].total_count) : 0;
 }
 
-export async function listCoachPlans(coachId: string): Promise<CoachPlanListItem[]> {
+export async function listCoachPlans(
+  _coachId: string,
+  query: ListQuery = normalizeListQuery({}),
+): Promise<PaginatedResult<CoachPlanListItem>> {
+
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("plans")
-    .select(
-      `
-      id,
-      created_at,
-      active_version:plan_versions!plans_active_version_id_fkey (
-        plan_data
-      )
-    `,
-    )
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("get_coach_plans", {
+    p_search: query.q ? escapeIlikePattern(query.q) : null,
+    p_limit: query.limit,
+    p_offset: getListOffset(query),
+  });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return ((data as PlanRow[] | null) ?? [])
-    .map(mapCoachPlanRow)
+  const rows = (data as CoachPlanRpcRow[] | null) ?? [];
+  const items = rows
+    .map(mapCoachPlanRpcRow)
     .filter((plan): plan is CoachPlanListItem => plan !== null);
+
+  return toPaginatedResult(items, getTotalCount(rows), query);
+}
+
+export async function listCoachPlanSummaries(
+  coachId: string,
+  query: ListQuery = normalizeListQuery({}),
+): Promise<PaginatedResult<CoachPlanSummary>> {
+  const result = await listCoachPlans(coachId, query);
+
+  return {
+    ...result,
+    items: result.items.map((plan) => ({
+      id: plan.id,
+      title: plan.title,
+    })),
+  };
 }
 
 export type CoachPlanDetail = {

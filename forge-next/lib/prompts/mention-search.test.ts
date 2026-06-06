@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 import {
   flattenMentionSearchGroups,
+  mergeFetchedMentionGroups,
   searchMentionItemGroups,
   searchMentionItems,
 } from "@/lib/prompts/mention-search";
@@ -47,5 +48,25 @@ describe("searchMentionItemGroups", () => {
       "Jamie Lee",
       "Jane Smith",
     ]);
+  });
+});
+
+describe("mergeFetchedMentionGroups", () => {
+  it("fills remaining slots with plans after athletes", () => {
+    const groups = mergeFetchedMentionGroups(
+      [
+        { kind: "athlete", id: "a1", label: "Alex" },
+        { kind: "athlete", id: "a2", label: "Avery" },
+        { kind: "athlete", id: "a3", label: "Ash" },
+      ],
+      [
+        { kind: "plan", id: "p1", label: "Block A" },
+        { kind: "plan", id: "p2", label: "Block B" },
+      ],
+      4,
+    );
+
+    expect(groups.athletes).toHaveLength(3);
+    expect(groups.plans).toHaveLength(1);
   });
 });

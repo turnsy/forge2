@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
 import { MentionMenuRow } from "@/components/prompt/mention-menu-row";
-import { Separator } from "@/components/ui/separator";
+import { Separator, Spinner } from "@/components/ui";
 import type { MentionSearchGroups } from "@/lib/prompts/mention-search";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
@@ -12,6 +12,7 @@ export function MentionMenu({
   highlightedIndex,
   anchor,
   open,
+  loading = false,
   onHighlight,
   onSelect,
   menuId,
@@ -20,6 +21,7 @@ export function MentionMenu({
   highlightedIndex: number;
   anchor: { top: number; left: number } | null;
   open: boolean;
+  loading?: boolean;
   onHighlight: (index: number) => void;
   onSelect: (item: PromptMentionItem) => void;
   menuId: string;
@@ -45,11 +47,16 @@ export function MentionMenu({
       id={menuId}
       role="listbox"
       aria-label="Mention suggestions"
+      aria-busy={loading}
       className="fixed z-50 min-w-56 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
       style={{ top: anchor.top, left: anchor.left }}
       data-mention-menu
     >
-      {!hasResults ? (
+      {loading ? (
+        <div className="flex items-center justify-center px-2 py-3">
+          <Spinner className="h-5 w-5" label="Loading suggestions" />
+        </div>
+      ) : !hasResults ? (
         <div className="px-2 py-2 text-sm font-semibold text-surface-muted">
           No results
         </div>

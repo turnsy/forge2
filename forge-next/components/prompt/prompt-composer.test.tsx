@@ -1,62 +1,99 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
-import type { PromptMentionItem } from "@/lib/prompts/mention-types";
 
-const mentionItems: PromptMentionItem[] = [
-  { kind: "athlete", id: "a1", label: "Jane Smith" },
-  { kind: "athlete", id: "a2", label: "John Adams" },
-  { kind: "plan", id: "p1", label: "Summer Block" },
-  { kind: "plan", id: "p2", label: "Winter Base" },
-  { kind: "athlete", id: "a3", label: "Jamie Lee" },
-];
+const athletesResponse = {
+  items: [
+    { id: "a1", name: "Jane Smith", email: "", currentPlanName: null, joinedAt: "" },
+    { id: "a2", name: "John Adams", email: "", currentPlanName: null, joinedAt: "" },
+    { id: "a3", name: "Jamie Lee", email: "", currentPlanName: null, joinedAt: "" },
+  ],
+  total: 3,
+  page: 1,
+  limit: 4,
+  hasMore: false,
+};
+
+const plansResponse = {
+  items: [
+    { id: "p1", title: "Summer Block", weekCount: 4, daysPerWeek: 3, createdAt: "" },
+    { id: "p2", title: "Winter Base", weekCount: 8, daysPerWeek: 4, createdAt: "" },
+  ],
+  total: 2,
+  page: 1,
+  limit: 4,
+  hasMore: false,
+};
+
+function mockMentionFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.includes("/api/coach/athletes")) {
+        return new Response(JSON.stringify(athletesResponse), { status: 200 });
+      }
+
+      if (url.includes("/api/coach/plans")) {
+        return new Response(JSON.stringify(plansResponse), { status: 200 });
+      }
+
+      return new Response(null, { status: 404 });
+    }),
+  );
+}
 
 describe("PromptComposer", () => {
+  beforeEach(() => {
+    mockMentionFetch();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("opens the mention menu when @ is typed", async () => {
     const user = userEvent.setup();
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@");
 
-    expect(screen.getByRole("listbox", { name: /Mention suggestions/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("listbox", { name: /Mention suggestions/i }),
+      ).toBeInTheDocument();
+    });
   });
 
   it("never shows more than four mention options", async () => {
     const user = userEvent.setup();
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@");
 
-    expect(screen.getAllByRole("option")).toHaveLength(4);
+    await waitFor(() => {
+      expect(screen.getAllByRole("option")).toHaveLength(4);
+    });
   });
 
   it("inserts a mention chip when an option is selected", async () => {
     const user = userEvent.setup();
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@ja");
+
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: /Jane Smith/i })).toBeInTheDocument();
+    });
+
     await user.click(screen.getByRole("option", { name: /Jane Smith/i }));
 
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
@@ -66,35 +103,31 @@ describe("PromptComposer", () => {
 
   it("keeps the menu open when space is typed in the query", async () => {
     const user = userEvent.setup();
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@jane ");
 
-    expect(screen.getByRole("listbox", { name: /Mention suggestions/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("listbox", { name: /Mention suggestions/i }),
+      ).toBeInTheDocument();
+    });
     expect(editor.querySelector("[data-mention-id]")).toBeNull();
   });
 
   it("closes the menu on Escape", async () => {
     const user = userEvent.setup();
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@jane{Escape}");
 
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    });
     expect(editor).toHaveTextContent("@jane");
   });
 
@@ -102,17 +135,17 @@ describe("PromptComposer", () => {
     const user = userEvent.setup();
     const onSend = vi.fn();
 
-    render(
-      <PromptComposer
-        mentionItems={mentionItems}
-        placeholder="Ask Forge..."
-        onSend={onSend}
-      />,
-    );
+    render(<PromptComposer placeholder="Ask Forge..." onSend={onSend} />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
-    await user.type(editor, "@jane{Enter}");
+    await user.type(editor, "@jane");
+
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: /Jane Smith/i })).toBeInTheDocument();
+    });
+
+    await user.keyboard("{Enter}");
 
     expect(onSend).not.toHaveBeenCalled();
     expect(editor.querySelector("[data-mention-id='a1']")).toBeTruthy();

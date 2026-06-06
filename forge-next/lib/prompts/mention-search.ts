@@ -78,3 +78,17 @@ export function searchMentionItems(
 ): PromptMentionItem[] {
   return flattenMentionSearchGroups(searchMentionItemGroups(items, query, limit));
 }
+
+export function mergeFetchedMentionGroups(
+  athletes: PromptMentionItem[],
+  plans: PromptMentionItem[],
+  limit = 4,
+): MentionSearchGroups {
+  const athleteItems = athletes.slice(0, limit);
+  const remaining = Math.max(0, limit - athleteItems.length);
+
+  return {
+    athletes: athleteItems,
+    plans: plans.slice(0, remaining),
+  };
+}

@@ -17,10 +17,7 @@ import {
 import { parseEditorToSegments, renderSegmentsToEditor } from "@/lib/prompts/editor-dom";
 import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mention-types";
 import { shouldFlipMenuAbove } from "@/lib/prompts/mention-anchor-position";
-import {
-  flattenMentionSearchGroups,
-  searchMentionItemGroups,
-} from "@/lib/prompts/mention-search";
+import { flattenMentionSearchGroups } from "@/lib/prompts/mention-search";
 import {
   deleteMentionBeforeCaret,
   getActiveMentionQuery,
@@ -28,6 +25,7 @@ import {
   insertMentionChip,
   isEmptyDocument,
 } from "@/lib/prompts/prompt-document";
+import { useMentionSearch } from "@/lib/prompts/use-mention-search";
 
 const MENU_HEIGHT = 180;
 const MENU_OFFSET = 4;
@@ -38,13 +36,11 @@ type SuppressedMentionRange = {
 };
 
 export function PromptComposer({
-  mentionItems,
   placeholder,
   onDocumentChange,
   onSend,
   compact = false,
 }: {
-  mentionItems: PromptMentionItem[];
   placeholder: string;
   onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
   onSend?: (segments: PromptSegment[]) => void;
@@ -61,17 +57,18 @@ export function PromptComposer({
     useState<SuppressedMentionRange | null>(null);
 
   const activeQuery = getActiveMentionQuery(segments, caretIndex);
-  const mentionGroups = activeQuery
-    ? searchMentionItemGroups(mentionItems, activeQuery.query, 4)
-    : { athletes: [], plans: [] };
-  const menuItems = flattenMentionSearchGroups(mentionGroups);
-  const activeHighlightedIndex =
-    menuItems.length === 0 ? 0 : highlightedIndex % menuItems.length;
   const menuVisible =
     activeQuery !== null &&
     (suppressedRange === null ||
       suppressedRange.start !== activeQuery.start ||
       suppressedRange.end !== activeQuery.end);
+  const { groups: mentionGroups, loading: mentionLoading } = useMentionSearch(
+    activeQuery?.query ?? null,
+    menuVisible,
+  );
+  const menuItems = flattenMentionSearchGroups(mentionGroups);
+  const activeHighlightedIndex =
+    menuItems.length === 0 ? 0 : highlightedIndex % menuItems.length;
 
   const syncDocumentState = useCallback(
     (nextSegments: PromptSegment[], nextCaret?: number) => {
@@ -239,7 +236,7 @@ export function PromptComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (menuVisible && menuItems.length > 0) {
+    if (menuVisible && !mentionLoading && menuItems.length > 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setHighlightedIndex((current) => (current + 1) % menuItems.length);
@@ -328,6 +325,7 @@ export function PromptComposer({
         groups={mentionGroups}
         highlightedIndex={activeHighlightedIndex}
         anchor={anchor}
+        loading={mentionLoading}
         onHighlight={setHighlightedIndex}
         onSelect={selectMention}
       />
