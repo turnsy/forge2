@@ -7,8 +7,11 @@ import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-fi
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export function useCoachPlanWorkspace() {
-  return useChatWorkspace<WorkoutPlan>({
+export function useCoachPlanWorkspace(options?: {
+  initialState?: PlanWorkspaceState;
+}) {
+  return useChatWorkspace<WorkoutPlan>(
+    {
     validateFiles: validateClientFiles,
     uploadFile: uploadContextFile,
     streamChat: async ({ sessionId, prompt, messages, currentArtifact, onEvent }) => {
@@ -28,7 +31,9 @@ export function useCoachPlanWorkspace() {
 
       return { message: error.message };
     },
-  });
+  },
+    { initialState: options?.initialState },
+  );
 }
 
 export type { PlanWorkspaceState };

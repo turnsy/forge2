@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo, useRef, type MouseEvent } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
@@ -11,20 +12,50 @@ import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
+import { createEditWorkspaceState } from "@/lib/plans/create-edit-workspace-state";
+import {
+  createPlanSnapshot,
+  hasUnsavedPlanChanges,
+} from "@/lib/plans/plan-snapshot";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass } from "@/lib/theme";
+
+export type CoachWorkspaceMode = "create" | "edit";
 
 export function CoachWorkspace({
   firstName,
   role,
+  mode = "create",
+  planId,
+  initialPlan,
+  backHref,
 }: {
   firstName: string;
   role: UserRole;
+  mode?: CoachWorkspaceMode;
+  planId?: string;
+  initialPlan?: WorkoutPlan;
+  backHref?: string;
 }) {
   const router = useRouter();
+  const initialState = useMemo(
+    () =>
+      mode === "edit" && initialPlan
+        ? createEditWorkspaceState(initialPlan)
+        : undefined,
+    [initialPlan, mode],
+  );
+  const savedSnapshotRef = useRef<string | null>(
+    mode === "edit" && initialPlan
+      ? createPlanSnapshot(initialPlan, initialPlan.name)
+      : null,
+  );
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
-    useCoachPlanWorkspace();
-  const { isSaving, saveError, savePlan } = useSavePlan(null);
+    useCoachPlanWorkspace(initialState ? { initialState } : undefined);
+  const { isSaving, saveError, savePlan } = useSavePlan(
+    mode === "edit" ? (planId ?? null) : null,
+  );
 
   const handleSave = useCallback(async () => {
     if (!state.currentArtifact || isChatRunning(state)) {
@@ -36,10 +67,39 @@ export function CoachWorkspace({
       title: state.artifactTitle,
     });
 
-    if (result) {
-      router.push(`/coach/plans/${result.planId}`);
+    if (!result) {
+      return;
     }
-  }, [router, savePlan, state]);
+
+    if (mode === "create") {
+      router.push(`/coach/plans/${result.planId}`);
+      return;
+    }
+
+    savedSnapshotRef.current = createPlanSnapshot(
+      state.currentArtifact,
+      state.artifactTitle,
+    );
+  }, [mode, router, savePlan, state]);
+
+  const handleBackClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      if (!savedSnapshotRef.current) {
+        return;
+      }
+
+      if (
+        hasUnsavedPlanChanges(
+          { plan: state.currentArtifact, title: state.artifactTitle },
+          savedSnapshotRef.current,
+        ) &&
+        !window.confirm("You have unsaved changes. Leave without saving?")
+      ) {
+        event.preventDefault();
+      }
+    },
+    [state.artifactTitle, state.currentArtifact],
+  );
 
   if (!state.hasStarted) {
     return (
@@ -63,6 +123,17 @@ export function CoachWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {mode === "edit" && backHref ? (
+        <div className="shrink-0 border-b border-glass-border px-4 py-3 md:px-5">
+          <Link
+            href={backHref}
+            onClick={handleBackClick}
+            className="text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
+          >
+            ← Back to plan
+          </Link>
+        </div>
+      ) : null}
       <ResizableSplitPane
         left={
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">

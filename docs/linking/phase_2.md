@@ -33,7 +33,7 @@ Wire the artifact toolbar Save button in create mode: persist plan, redirect to 
 
 ## Done criteria
 
-- [ ] Save creates plan via API
-- [ ] Redirect to plan detail on success
-- [ ] Save disabled during chat run / without artifact
-- [ ] Tests for toolbar + save hook
+- [x] Save creates plan via API
+- [x] Redirect to plan detail on success
+- [x] Save disabled during chat run / without artifact
+- [x] Tests for toolbar + save hook

@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import { PencilIcon } from "@/components/icons/pencil-icon";
-import { PlanViewer } from "@/components/plan/plan-viewer";
-import { ButtonLink, ErrorState, PageContent, PageHeader } from "@/components/ui";
+import { CoachWorkspace } from "@/components/coach/coach-workspace";
+import { ErrorState, PageContent } from "@/components/ui";
+import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
-import { formatDate } from "@/lib/format/date";
 import { getCoachPlanById } from "@/lib/plans/repository";
 
 function PlanValidationErrors({
@@ -23,7 +22,7 @@ function PlanValidationErrors({
   );
 }
 
-export default async function CoachPlanDetailPage({
+export default async function CoachPlanEditPage({
   params,
 }: {
   params: Promise<{ planId: string }>;
@@ -41,7 +40,6 @@ export default async function CoachPlanDetailPage({
 
     return (
       <PageContent>
-        <PageHeader title="Plan" />
         <ErrorState
           title="Plan validation failed"
           description={
@@ -49,34 +47,26 @@ export default async function CoachPlanDetailPage({
               ? "This plan's data does not match the workout plan schema."
               : "This plan couldn't be loaded."
           }
-          details={isDev ? <PlanValidationErrors errors={result.errors} /> : undefined}
+          details={
+            isDev ? <PlanValidationErrors errors={result.errors} /> : undefined
+          }
         />
       </PageContent>
     );
   }
 
   const { detail } = result;
-  const { plan } = detail;
 
   return (
-    <PageContent>
-      <PageHeader
-        title={plan.name}
-        description={plan.description}
-        actions={
-          <ButtonLink
-            href={`/coach/plans/${planId}/edit`}
-            variant="secondary"
-            size="sm"
-            className="inline-flex items-center gap-2"
-          >
-            <PencilIcon />
-            Edit
-          </ButtonLink>
-        }
+    <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden max-w-none px-0 py-0">
+      <CoachWorkspace
+        mode="edit"
+        planId={detail.id}
+        initialPlan={detail.plan}
+        backHref={`/coach/plans/${detail.id}`}
+        firstName={firstName(user.fullName)}
+        role="coach"
       />
-      <p className="text-sm text-surface-muted">Created {formatDate(detail.createdAt)}</p>
-      <PlanViewer plan={plan} view="coach" />
     </PageContent>
   );
 }

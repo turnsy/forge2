@@ -1,6 +1,6 @@
 # Phase 3 — Edit route + workspace hydration
 
-**Status:** Pending
+**Status:** Done
 
 ## Goal
 
