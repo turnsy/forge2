@@ -49,10 +49,8 @@ export default async function CoachAthletesPage({
       <AthletesPageHeader />
       <div className="mb-4">
         <ListSearchField
-          key={params.q ?? ""}
           pathname="/coach/athletes"
           defaultValue={params.q ?? ""}
-          placeholder="Search athletes by name"
         />
       </div>
       <Suspense

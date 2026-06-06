@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { ButtonLink } from "@/components/ui";
 import { buildListUrl } from "@/lib/lists/query";
 
@@ -23,7 +24,9 @@ export function ListPrevNext({
           href={buildListUrl(pathname, { q, page: page - 1 })}
           variant="secondary"
           size="sm"
+          className="inline-flex items-center gap-1.5"
         >
+          <ArrowRightIcon className="h-4 w-4 rotate-180" />
           Previous
         </ButtonLink>
       ) : (
@@ -34,8 +37,10 @@ export function ListPrevNext({
           href={buildListUrl(pathname, { q, page: page + 1 })}
           variant="secondary"
           size="sm"
+          className="inline-flex items-center gap-1.5"
         >
           Next
+          <ArrowRightIcon className="h-4 w-4" />
         </ButtonLink>
       ) : (
         <span />
