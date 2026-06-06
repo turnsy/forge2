@@ -1,6 +1,6 @@
 # Phase 2 — Save from preview (create mode)
 
-**Status:** Pending
+**Status:** Done
 
 ## Goal
 

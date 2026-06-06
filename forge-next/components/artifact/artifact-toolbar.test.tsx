@@ -25,6 +25,22 @@ describe("ArtifactToolbar", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
+  it("calls onSave when save is clicked", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(
+      <ArtifactToolbar
+        title="Plan"
+        saveDisabled={false}
+        onTitleChange={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
   it("calls onTitleChange when typing", async () => {
     const user = userEvent.setup();
     const onTitleChange = vi.fn();

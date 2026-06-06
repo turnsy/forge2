@@ -7,6 +7,7 @@ export default defineConfig({
     environmentMatchGlobs: [
       ["components/**/*.test.tsx", "jsdom"],
       ["lib/chat/**/*.test.tsx", "jsdom"],
+      ["lib/plans/**/*.test.tsx", "jsdom"],
     ],
     setupFiles: ["./vitest.setup.ts"],
   },

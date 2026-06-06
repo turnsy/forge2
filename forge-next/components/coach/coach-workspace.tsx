@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
@@ -9,6 +11,7 @@ import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
+import { useSavePlan } from "@/lib/plans/use-save-plan";
 import { roleLinkClass } from "@/lib/theme";
 
 export function CoachWorkspace({
@@ -18,8 +21,25 @@ export function CoachWorkspace({
   firstName: string;
   role: UserRole;
 }) {
+  const router = useRouter();
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
     useCoachPlanWorkspace();
+  const { isSaving, saveError, savePlan } = useSavePlan(null);
+
+  const handleSave = useCallback(async () => {
+    if (!state.currentArtifact || isChatRunning(state)) {
+      return;
+    }
+
+    const result = await savePlan({
+      plan: state.currentArtifact,
+      title: state.artifactTitle,
+    });
+
+    if (result) {
+      router.push(`/coach/plans/${result.planId}`);
+    }
+  }, [router, savePlan, state]);
 
   if (!state.hasStarted) {
     return (
@@ -48,9 +68,16 @@ export function CoachWorkspace({
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
             <ArtifactToolbar
               title={state.artifactTitle}
-              saveDisabled={isChatRunning(state)}
+              saveDisabled={isChatRunning(state) || !state.currentArtifact}
+              saveLoading={isSaving}
               onTitleChange={setArtifactTitle}
+              onSave={handleSave}
             />
+            {saveError ? (
+              <p className="px-2 text-sm text-red-400" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <div className="min-h-0 flex-1 overflow-hidden px-2">
               <ArtifactPreview
                 artifact={toArtifactPreviewModel(state.currentArtifact)}

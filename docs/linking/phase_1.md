@@ -1,6 +1,6 @@
 # Phase 1 — Persistence layer
 
-**Status:** In progress
+**Status:** Done
 
 ## Goal
 
@@ -47,7 +47,7 @@ All RPCs use `security definer` + `auth.uid()` ownership checks.
 
 ## Done criteria
 
-- [ ] RPCs migrated
-- [ ] Repository write + list version functions
-- [ ] API routes with coach auth + schema validation
-- [ ] Unit and route tests passing
+- [x] RPCs migrated
+- [x] Repository write + list version functions
+- [x] API routes with coach auth + schema validation
+- [x] Unit and route tests passing

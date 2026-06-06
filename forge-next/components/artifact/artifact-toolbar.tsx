@@ -5,11 +5,15 @@ import { Button, Input } from "@/components/ui";
 export function ArtifactToolbar({
   title,
   saveDisabled,
+  saveLoading = false,
   onTitleChange,
+  onSave,
 }: {
   title: string;
   saveDisabled: boolean;
+  saveLoading?: boolean;
   onTitleChange: (value: string) => void;
+  onSave?: () => void;
 }) {
   return (
     <header className="shrink-0">
@@ -29,9 +33,10 @@ export function ArtifactToolbar({
             variant="secondary"
             size="sm"
             fullWidth={false}
-            disabled={saveDisabled}
+            disabled={saveDisabled || saveLoading}
+            onClick={onSave}
           >
-            Save
+            {saveLoading ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>
