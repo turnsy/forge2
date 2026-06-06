@@ -6,7 +6,7 @@ export function Input({
   className,
   size = "md",
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & {
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   label?: string;
   size?: "sm" | "md";
 }) {

@@ -47,7 +47,7 @@ export function ArtifactPreview({
         />
       );
     default: {
-      const _exhaustive: never = artifact;
+      const _exhaustive: never = artifact.type;
       return _exhaustive;
     }
   }

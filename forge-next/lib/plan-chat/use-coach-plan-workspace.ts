@@ -5,9 +5,10 @@ import { streamPlanChat } from "@/lib/plan-chat/plan-chat-client";
 import { uploadContextFile } from "@/lib/plan-chat/upload-context-client";
 import { validateClientFiles } from "@/lib/plan-chat/validate-client-files";
 import type { PlanWorkspaceState } from "@/lib/plan-chat/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function useCoachPlanWorkspace() {
-  return useChatWorkspace({
+  return useChatWorkspace<WorkoutPlan>({
     validateFiles: validateClientFiles,
     uploadFile: uploadContextFile,
     streamChat: async ({ draftId, prompt, messages, currentArtifact, onEvent }) => {
