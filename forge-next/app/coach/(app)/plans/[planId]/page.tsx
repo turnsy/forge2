@@ -1,10 +1,7 @@
 import { notFound } from "next/navigation";
-import { PencilIcon } from "@/components/icons/pencil-icon";
-import { PlanVersionHistory } from "@/components/plan/plan-version-history";
-import { PlanViewer } from "@/components/plan/plan-viewer";
-import { ButtonLink, ErrorState, PageContent, PageHeader } from "@/components/ui";
+import { CoachPlanDetailView } from "@/components/plan/coach-plan-detail-view";
+import { ErrorState, PageContent, PageHeader } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
-import { formatDate } from "@/lib/format/date";
 import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
 
 function PlanValidationErrors({
@@ -62,24 +59,12 @@ export default async function CoachPlanDetailPage({
 
   return (
     <PageContent>
-      <PageHeader
-        title={plan.name}
-        description={plan.description}
-        actions={
-          <ButtonLink
-            href={`/coach/plans/${planId}/edit`}
-            variant="secondary"
-            size="sm"
-            className="inline-flex items-center gap-2"
-          >
-            <PencilIcon />
-            Edit
-          </ButtonLink>
-        }
+      <CoachPlanDetailView
+        planId={planId}
+        plan={plan}
+        createdAt={detail.createdAt}
+        versions={versions}
       />
-      <p className="text-sm text-surface-muted">Created {formatDate(detail.createdAt)}</p>
-      <PlanVersionHistory versions={versions} />
-      <PlanViewer plan={plan} view="coach" />
     </PageContent>
   );
 }

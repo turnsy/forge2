@@ -7,8 +7,10 @@ import {
 } from "@/lib/plans/save-plan-client";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
+export type SavePlanStatus = "idle" | "saving" | "saved";
+
 export function useSavePlan(planId: string | null) {
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SavePlanStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const savePlan = useCallback(
@@ -16,7 +18,7 @@ export function useSavePlan(planId: string | null) {
       plan: WorkoutPlan;
       title: string;
     }): Promise<{ planId: string; versionId: string } | null> => {
-      setIsSaving(true);
+      setSaveStatus("saving");
       setSaveError(null);
 
       const result = planId
@@ -30,12 +32,13 @@ export function useSavePlan(planId: string | null) {
             title: input.title,
           });
 
-      setIsSaving(false);
-
       if (!result.ok) {
+        setSaveStatus("idle");
         setSaveError(result.message);
         return null;
       }
+
+      setSaveStatus(planId ? "saved" : "saving");
 
       return {
         planId: result.planId,
@@ -45,10 +48,15 @@ export function useSavePlan(planId: string | null) {
     [planId],
   );
 
+  const resetSaveStatus = useCallback(() => {
+    setSaveStatus("idle");
+    setSaveError(null);
+  }, []);
+
   return {
-    isSaving,
+    saveStatus,
     saveError,
     savePlan,
-    clearSaveError: useCallback(() => setSaveError(null), []),
+    resetSaveStatus,
   };
 }

@@ -25,6 +25,28 @@ describe("ArtifactToolbar", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
+  it("shows saving and saved states", () => {
+    const { rerender } = render(
+      <ArtifactToolbar
+        title="Plan"
+        saveDisabled={false}
+        saveStatus="saving"
+        onTitleChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
+
+    rerender(
+      <ArtifactToolbar
+        title="Plan"
+        saveDisabled={false}
+        saveStatus="saved"
+        onTitleChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Saved" })).toBeDisabled();
+  });
+
   it("calls onSave when save is clicked", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();

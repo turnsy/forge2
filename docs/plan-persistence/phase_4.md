@@ -10,9 +10,9 @@ Display version history on the plan detail page (list only).
 
 ### UI
 
-- `PlanVersionHistory` component on detail page
-- Each row: created date, change summary (or "—" if null), active badge
-- Newest first
+- `CoachPlanDetailView` toggles between plan and history views
+- **History** button beside **Edit** — version list hidden until toggled
+- `PlanVersionHistory` — each row: created date, change summary (or "—" if null), active badge; newest first
 
 ### Data
 
@@ -24,7 +24,8 @@ Display version history on the plan detail page (list only).
 | File | Action |
 | --- | --- |
 | `forge-next/components/plan/plan-version-history.tsx` | New |
-| `forge-next/app/coach/(app)/plans/[planId]/page.tsx` | Add history section |
+| `forge-next/components/plan/coach-plan-detail-view.tsx` | New |
+| `forge-next/app/coach/(app)/plans/[planId]/page.tsx` | Wire detail view |
 
 ## Done criteria
 

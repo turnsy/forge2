@@ -53,8 +53,19 @@ export function CoachWorkspace({
   );
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
     useCoachPlanWorkspace(initialState ? { initialState } : undefined);
-  const { isSaving, saveError, savePlan } = useSavePlan(
+  const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
     mode === "edit" ? (planId ?? null) : null,
+  );
+
+  const handleSendMessage = useCallback(
+    async (...args: Parameters<typeof sendMessage>) => {
+      if (mode === "edit") {
+        resetSaveStatus();
+      }
+
+      await sendMessage(...args);
+    },
+    [mode, resetSaveStatus, sendMessage],
   );
 
   const handleSave = useCallback(async () => {
@@ -115,7 +126,7 @@ export function CoachWorkspace({
           state={state}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
-          onSend={sendMessage}
+          onSend={handleSendMessage}
         />
       </div>
     );
@@ -140,7 +151,7 @@ export function CoachWorkspace({
             <ArtifactToolbar
               title={state.artifactTitle}
               saveDisabled={isChatRunning(state) || !state.currentArtifact}
-              saveLoading={isSaving}
+              saveStatus={saveStatus}
               onTitleChange={setArtifactTitle}
               onSave={handleSave}
             />
@@ -175,7 +186,7 @@ export function CoachWorkspace({
                 state={state}
                 composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
-                onSend={sendMessage}
+                onSend={handleSendMessage}
               />
             </div>
           </div>

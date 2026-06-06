@@ -43,6 +43,7 @@ describe("useSavePlan", () => {
 
     expect(saved).toEqual({ planId: "plan-1", versionId: "version-1" });
     expect(mockCreateCoachPlanClient).toHaveBeenCalled();
+    expect(result.current.saveStatus).toBe("saving");
   });
 
   it("saves a version when planId is set", async () => {
@@ -60,6 +61,24 @@ describe("useSavePlan", () => {
       plan: minimalWorkoutPlan,
       title: "Plan",
     });
+    expect(result.current.saveStatus).toBe("saved");
+  });
+
+  it("resets save status after edit save", async () => {
+    const { result } = renderHook(() => useSavePlan("plan-1"));
+
+    await act(async () => {
+      await result.current.savePlan({
+        plan: minimalWorkoutPlan,
+        title: "Plan",
+      });
+    });
+
+    act(() => {
+      result.current.resetSaveStatus();
+    });
+
+    expect(result.current.saveStatus).toBe("idle");
   });
 
   it("surfaces save errors", async () => {
@@ -79,6 +98,7 @@ describe("useSavePlan", () => {
 
     await waitFor(() => {
       expect(result.current.saveError).toBe("Failed to save plan");
+      expect(result.current.saveStatus).toBe("idle");
     });
   });
 });

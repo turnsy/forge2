@@ -1,20 +1,34 @@
 "use client";
 
 import { Button, Input } from "@/components/ui";
+import type { SavePlanStatus } from "@/lib/plans/use-save-plan";
+
+function getSaveButtonLabel(saveStatus: SavePlanStatus): string {
+  switch (saveStatus) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "Saved";
+    default:
+      return "Save";
+  }
+}
 
 export function ArtifactToolbar({
   title,
   saveDisabled,
-  saveLoading = false,
+  saveStatus = "idle",
   onTitleChange,
   onSave,
 }: {
   title: string;
   saveDisabled: boolean;
-  saveLoading?: boolean;
+  saveStatus?: SavePlanStatus;
   onTitleChange: (value: string) => void;
   onSave?: () => void;
 }) {
+  const saveButtonDisabled =
+    saveDisabled || saveStatus === "saving" || saveStatus === "saved";
   return (
     <header className="shrink-0">
       <div className="flex items-center justify-between gap-3">
@@ -33,10 +47,10 @@ export function ArtifactToolbar({
             variant="secondary"
             size="sm"
             fullWidth={false}
-            disabled={saveDisabled || saveLoading}
+            disabled={saveButtonDisabled}
             onClick={onSave}
           >
-            {saveLoading ? "Saving…" : "Save"}
+            {getSaveButtonLabel(saveStatus)}
           </Button>
         </div>
       </div>
