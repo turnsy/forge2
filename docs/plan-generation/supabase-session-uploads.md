@@ -10,7 +10,7 @@ Coach chat sessions store **normalized upload text** in Supabase Storage. Object
 | Visibility | **Private** (server reads via authenticated Supabase client + RLS) |
 | Max object size | Enforced at API layer per [overview.md](./overview.md) |
 
-Create via `supabase/migrations/20260602120000_session_uploads_storage.sql`.
+Create via `supabase/migrations/20260606120000_session_uploads_bucket.sql` (replaces legacy `draft-uploads` from `20260602120000_draft_uploads_storage.sql`).
 
 ## Object key layout
 

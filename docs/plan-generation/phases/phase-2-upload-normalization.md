@@ -35,7 +35,7 @@
 ## Developer actions
 
 - [ ] Review cap values in [overview.md](../overview.md)
-- [ ] Apply `supabase/migrations/20260602120000_session_uploads_storage.sql` on hosted Supabase
+- [ ] Apply `supabase/migrations/20260606120000_session_uploads_bucket.sql` on hosted Supabase (`supabase db push`)
 - [ ] Manual QA: CSV, PDF, multi-sheet XLSX → multiple `contextFileIds` under one `sessionId`
 
 ---
