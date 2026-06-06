@@ -37,7 +37,7 @@ Edit existing plans at `/coach/plans/[planId]/edit` with the same split-pane exp
 | `forge-next/app/coach/(app)/plans/[planId]/edit/page.tsx` | New |
 | `forge-next/lib/chat/adapters/plan/initial-state.ts` | New |
 | `forge-next/lib/chat/use-save-artifact.ts` | New |
-| `forge-next/lib/plans/utils.ts` | Snapshot helpers |
+| `forge-next/lib/plans/snapshot.ts` | Client-safe snapshot helpers |
 | `forge-next/components/ui/back-ref-button.tsx` | New |
 | `forge-next/components/coach/coach-workspace.tsx` | Edit mode |
 | `forge-next/app/coach/(app)/plans/[planId]/page.tsx` | Edit link |

@@ -16,7 +16,7 @@ import { useSavePlan } from "@/lib/plans/use-save-plan";
 import {
   createPlanSnapshot,
   hasUnsavedPlanChanges,
-} from "@/lib/plans/utils";
+} from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass } from "@/lib/theme";
 

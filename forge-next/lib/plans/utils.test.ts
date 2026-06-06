@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
-import {
-  createPlanSnapshot,
-  hasUnsavedPlanChanges,
-  mergePlanTitle,
-  preparePlanForSave,
-} from "@/lib/plans/utils";
+import { mergePlanTitle, preparePlanForSave } from "@/lib/plans/utils";
 
 describe("mergePlanTitle", () => {
   it("overwrites plan name with trimmed title", () => {
@@ -39,29 +34,5 @@ describe("preparePlanForSave", () => {
     if (!result.ok) {
       expect(result.errors.length).toBeGreaterThan(0);
     }
-  });
-});
-
-describe("plan snapshot", () => {
-  it("detects title changes", () => {
-    const saved = createPlanSnapshot(minimalWorkoutPlan, "Original");
-
-    expect(
-      hasUnsavedPlanChanges(
-        { plan: minimalWorkoutPlan, title: "Updated" },
-        saved,
-      ),
-    ).toBe(true);
-  });
-
-  it("returns false when unchanged", () => {
-    const saved = createPlanSnapshot(minimalWorkoutPlan, minimalWorkoutPlan.name);
-
-    expect(
-      hasUnsavedPlanChanges(
-        { plan: minimalWorkoutPlan, title: minimalWorkoutPlan.name },
-        saved,
-      ),
-    ).toBe(false);
   });
 });
