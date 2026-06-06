@@ -77,11 +77,8 @@ begin
   end if;
 end $$;
 
--- Retire legacy draft-uploads bucket (ephemeral; no data migration).
+-- Retire legacy draft-uploads RLS only (bucket/objects removed via Dashboard or Storage API).
 drop policy if exists "Coaches insert own draft uploads" on storage.objects;
 drop policy if exists "Coaches read own draft uploads" on storage.objects;
 drop policy if exists "Coaches delete own draft uploads" on storage.objects;
 drop policy if exists "Coaches update own draft uploads" on storage.objects;
-
-delete from storage.objects where bucket_id = 'draft-uploads';
-delete from storage.buckets where id = 'draft-uploads';
