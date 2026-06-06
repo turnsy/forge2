@@ -22,6 +22,7 @@ export { useCoachPlanWorkspace } from "@/lib/plan-chat/use-coach-plan-workspace"
 export {
   toArtifactPreviewModel,
   type ArtifactPreviewModel,
+  type WorkoutPlanArtifactPreview,
 } from "@/lib/plan-chat/artifact-preview";
 export type { PlanWorkspaceState } from "@/lib/plan-chat/types";
 

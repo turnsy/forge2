@@ -1,11 +1,8 @@
-import { PlanViewer } from "@/components/plan/plan-viewer";
+import { WorkoutPlanArtifactPreview } from "@/components/artifact/workout-plan-artifact-preview";
 import { Spinner } from "@/components/ui";
-import {
-  getRunStatusLabel,
-  shouldShowPreviewSpinner,
-} from "@/lib/chat/run-status-copy";
+import { getRunStatusLabel } from "@/lib/chat/run-status-copy";
 import type { ChatStatus } from "@/lib/chat/types";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { ArtifactPreviewModel } from "@/lib/plan-chat/artifact-preview";
 
 function PreviewLoadingState({ label }: { label: string }) {
   return (
@@ -16,19 +13,16 @@ function PreviewLoadingState({ label }: { label: string }) {
   );
 }
 
-/** @deprecated Use ArtifactPreview — kept briefly for plan workspace during migration */
-export function PlanWorkspacePreview({
-  plan,
+export function ArtifactPreview({
+  artifact,
   runStatus,
   isAwaitingArtifact,
 }: {
-  plan: WorkoutPlan | null;
+  artifact: ArtifactPreviewModel;
   runStatus: ChatStatus | null;
   isAwaitingArtifact: boolean;
 }) {
-  const showOverlaySpinner = plan !== null && shouldShowPreviewSpinner(runStatus);
-
-  if (!plan) {
+  if (!artifact) {
     if (isAwaitingArtifact) {
       const label =
         runStatus && runStatus !== "done" && runStatus !== "error"
@@ -44,14 +38,17 @@ export function PlanWorkspacePreview({
     );
   }
 
-  return (
-    <div className="relative h-full min-h-0 overflow-y-auto">
-      {showOverlaySpinner ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
-          <Spinner label="Working…" />
-        </div>
-      ) : null}
-      <PlanViewer plan={plan} view="coach" />
-    </div>
-  );
+  switch (artifact.type) {
+    case "workout-plan":
+      return (
+        <WorkoutPlanArtifactPreview
+          plan={artifact.plan}
+          runStatus={runStatus}
+        />
+      );
+    default: {
+      const _exhaustive: never = artifact;
+      return _exhaustive;
+    }
+  }
 }

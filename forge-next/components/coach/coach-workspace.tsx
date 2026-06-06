@@ -1,11 +1,12 @@
 "use client";
 
+import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { PlanWorkspacePreview } from "@/components/coach/plan-chat/plan-workspace-preview";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
+import { toArtifactPreviewModel } from "@/lib/plan-chat/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/plan-chat/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
 import type { PromptMentionItem } from "@/lib/prompts/mention-types";
@@ -55,8 +56,8 @@ export function CoachWorkspace({
               onTitleChange={setArtifactTitle}
             />
             <div className="min-h-0 flex-1 overflow-hidden px-2">
-              <PlanWorkspacePreview
-                plan={state.currentArtifact}
+              <ArtifactPreview
+                artifact={toArtifactPreviewModel(state.currentArtifact)}
                 runStatus={state.runStatus}
                 isAwaitingArtifact={isAwaitingFirstArtifact(state)}
               />
