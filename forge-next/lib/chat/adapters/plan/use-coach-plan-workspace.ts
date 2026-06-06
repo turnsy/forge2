@@ -10,12 +10,11 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function useCoachPlanWorkspace(options?: { initialPlan?: WorkoutPlan }) {
+  const initialPlan = options?.initialPlan;
   const initialState = useMemo(
     () =>
-      options?.initialPlan
-        ? createEditPlanWorkspaceState(options.initialPlan)
-        : undefined,
-    [options?.initialPlan],
+      initialPlan ? createEditPlanWorkspaceState(initialPlan) : undefined,
+    [initialPlan],
   );
 
   return useChatWorkspace<WorkoutPlan>(
