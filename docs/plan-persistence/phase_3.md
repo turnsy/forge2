@@ -41,7 +41,7 @@ Edit existing plans at `/coach/plans/[planId]/edit` with the same split-pane exp
 
 ## Done criteria
 
-- [ ] Edit route loads plan into workspace
-- [ ] Save appends version without leaving workspace
-- [ ] Back link warns on unsaved changes only
-- [ ] Detail Edit button navigates to edit route
+- [x] Edit route loads plan into workspace
+- [x] Save appends version without leaving workspace
+- [x] Back link warns on unsaved changes only
+- [x] Detail Edit button navigates to edit route

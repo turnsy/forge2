@@ -1,6 +1,6 @@
-# Plan persistence & linking
+# Plan persistence
 
-Phased implementation for saving plans from the coach workspace, editing existing plans, version history, and navigation.
+Phased implementation for persisting coach workout plans: save from preview, edit existing plans, version history, and navigation.
 
 ## Decisions
 

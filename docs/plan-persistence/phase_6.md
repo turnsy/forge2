@@ -4,14 +4,14 @@
 
 ## Goal
 
-End-to-end verification; docs updated; all phases complete.
+End-to-end verification; `docs/plan-persistence/` docs complete; all phases shipped.
 
 ## Checklist
 
 - [x] All phase 1–5 done criteria checked
 - [x] `pnpm test:forge-plan` green
 - [x] `pnpm build` green
-- [x] Phase docs status updated to **Done**
+- [x] Phase docs in `docs/plan-persistence/` updated to **Done**
 - [x] Manual test plan in PR description
 
 ## Manual test plan (summary)

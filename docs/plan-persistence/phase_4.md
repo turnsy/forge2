@@ -17,7 +17,7 @@ Display version history on the plan detail page (list only).
 ### Data
 
 - Server: `listCoachPlanVersions` in detail page loader
-- Or client fetch from `GET /api/coach/plans/[planId]/versions`
+- `GET /api/coach/plans/[planId]/versions` also available for client fetch
 
 ## Files
 
