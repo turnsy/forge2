@@ -1,25 +1,110 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useCallback, useRef, type MouseEvent } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { BackRefButton } from "@/components/ui";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
+import { useSavePlan } from "@/lib/plans/use-save-plan";
+import {
+  createPlanSnapshot,
+  hasUnsavedPlanChanges,
+} from "@/lib/plans/snapshot";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass } from "@/lib/theme";
+
+export type CoachWorkspaceMode = "create" | "edit";
 
 export function CoachWorkspace({
   firstName,
   role,
+  mode = "create",
+  planId,
+  initialPlan,
+  backHref,
 }: {
   firstName: string;
   role: UserRole;
+  mode?: CoachWorkspaceMode;
+  planId?: string;
+  initialPlan?: WorkoutPlan;
+  backHref?: string;
 }) {
+  const router = useRouter();
+  const savedSnapshotRef = useRef<string | null>(
+    mode === "edit" && initialPlan
+      ? createPlanSnapshot(initialPlan, initialPlan.name)
+      : null,
+  );
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
-    useCoachPlanWorkspace();
+    useCoachPlanWorkspace(
+      mode === "edit" && initialPlan ? { initialPlan } : undefined,
+    );
+  const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
+    mode === "edit" ? (planId ?? null) : null,
+  );
+
+  const handleSendMessage = useCallback(
+    async (...args: Parameters<typeof sendMessage>) => {
+      if (mode === "edit") {
+        resetSaveStatus();
+      }
+
+      await sendMessage(...args);
+    },
+    [mode, resetSaveStatus, sendMessage],
+  );
+
+  const handleSave = useCallback(async () => {
+    if (!state.currentArtifact || isChatRunning(state)) {
+      return;
+    }
+
+    const result = await savePlan({
+      plan: state.currentArtifact,
+      title: state.artifactTitle,
+    });
+
+    if (!result) {
+      return;
+    }
+
+    if (mode === "create") {
+      router.push(`/coach/plans/${result.planId}`);
+      return;
+    }
+
+    savedSnapshotRef.current = createPlanSnapshot(
+      state.currentArtifact,
+      state.artifactTitle,
+    );
+  }, [mode, router, savePlan, state]);
+
+  const handleBackClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      if (!savedSnapshotRef.current) {
+        return;
+      }
+
+      if (
+        hasUnsavedPlanChanges(
+          { plan: state.currentArtifact, title: state.artifactTitle },
+          savedSnapshotRef.current,
+        ) &&
+        !window.confirm("You have unsaved changes. Leave without saving?")
+      ) {
+        event.preventDefault();
+      }
+    },
+    [state.artifactTitle, state.currentArtifact],
+  );
 
   if (!state.hasStarted) {
     return (
@@ -35,7 +120,7 @@ export function CoachWorkspace({
           state={state}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
-          onSend={sendMessage}
+          onSend={handleSendMessage}
         />
       </div>
     );
@@ -43,14 +128,28 @@ export function CoachWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {mode === "edit" && backHref ? (
+        <div className="shrink-0 border-b border-glass-border px-4 py-3 md:px-5">
+          <BackRefButton href={backHref} onClick={handleBackClick}>
+            ← Back to plan
+          </BackRefButton>
+        </div>
+      ) : null}
       <ResizableSplitPane
         left={
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
             <ArtifactToolbar
               title={state.artifactTitle}
-              saveDisabled={isChatRunning(state)}
+              saveDisabled={isChatRunning(state) || !state.currentArtifact}
+              saveStatus={saveStatus}
               onTitleChange={setArtifactTitle}
+              onSave={handleSave}
             />
+            {saveError ? (
+              <p className="px-2 text-sm text-red-400" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <div className="min-h-0 flex-1 overflow-hidden px-2">
               <ArtifactPreview
                 artifact={toArtifactPreviewModel(state.currentArtifact)}
@@ -77,7 +176,7 @@ export function CoachWorkspace({
                 state={state}
                 composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
-                onSend={sendMessage}
+                onSend={handleSendMessage}
               />
             </div>
           </div>

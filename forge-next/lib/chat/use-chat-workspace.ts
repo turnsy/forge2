@@ -30,13 +30,18 @@ export type UseChatWorkspaceConfig<TArtifact> = {
   ) => { ok: true } | { ok: false; message: string };
 };
 
+export type UseChatWorkspaceOptions<TArtifact> = {
+  initialState?: ChatWorkspaceState<TArtifact>;
+};
+
 export function useChatWorkspace<TArtifact>(
   config: UseChatWorkspaceConfig<TArtifact>,
+  options: UseChatWorkspaceOptions<TArtifact> = {},
 ) {
   const [state, dispatch] = useReducer(
     chatWorkspaceReducer<TArtifact>,
     undefined,
-    () => createInitialChatWorkspaceState<TArtifact>(),
+    () => options.initialState ?? createInitialChatWorkspaceState<TArtifact>(),
   );
   const stateRef = useRef(state);
   useEffect(() => {

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { CoachPlanDetailView } from "@/components/plan/coach-plan-detail-view";
-import { ErrorState, PageContent, PageHeader } from "@/components/ui";
+import { CoachWorkspace } from "@/components/coach/coach-workspace";
+import { ErrorState, PageContent } from "@/components/ui";
+import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
-import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
+import { getCoachPlanById } from "@/lib/plans/repository";
 
 function PlanValidationErrors({
   errors,
@@ -21,7 +22,7 @@ function PlanValidationErrors({
   );
 }
 
-export default async function CoachPlanDetailPage({
+export default async function CoachPlanEditPage({
   params,
 }: {
   params: Promise<{ planId: string }>;
@@ -39,7 +40,6 @@ export default async function CoachPlanDetailPage({
 
     return (
       <PageContent>
-        <PageHeader title="Plan" />
         <ErrorState
           title="Plan validation failed"
           description={
@@ -47,23 +47,25 @@ export default async function CoachPlanDetailPage({
               ? "This plan's data does not match the workout plan schema."
               : "This plan couldn't be loaded."
           }
-          details={isDev ? <PlanValidationErrors errors={result.errors} /> : undefined}
+          details={
+            isDev ? <PlanValidationErrors errors={result.errors} /> : undefined
+          }
         />
       </PageContent>
     );
   }
 
   const { detail } = result;
-  const { plan } = detail;
-  const versions = await listCoachPlanVersions(user.id, planId);
 
   return (
-    <PageContent>
-      <CoachPlanDetailView
-        planId={planId}
-        plan={plan}
-        createdAt={detail.createdAt}
-        versions={versions}
+    <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden max-w-none px-0 py-0">
+      <CoachWorkspace
+        mode="edit"
+        planId={detail.id}
+        initialPlan={detail.plan}
+        backHref={`/coach/plans/${detail.id}`}
+        firstName={firstName(user.fullName)}
+        role="coach"
       />
     </PageContent>
   );

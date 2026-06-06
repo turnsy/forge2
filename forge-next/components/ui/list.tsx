@@ -31,23 +31,23 @@ export function ListRow({
   appearIndex = 0,
 }: {
   href?: string;
-  leading: ReactNode;
-  meta: ReactNode;
+  leading?: ReactNode;
+  meta?: ReactNode;
   metaColumns?: 2 | 3;
   actions?: ReactNode;
   appearIndex?: number;
 }) {
-  const metaContent = (
+  const metaContent = meta ? (
     <dl
       className={`grid shrink-0 gap-x-6 gap-y-4 ${metaGridClass[metaColumns]} ${metaWidthClass[metaColumns]}`}
     >
       {meta}
     </dl>
-  );
+  ) : null;
 
   const mainContent = (
     <>
-      <div className="min-w-0">{leading}</div>
+      {leading ? <div className="min-w-0">{leading}</div> : null}
       {metaContent}
     </>
   );

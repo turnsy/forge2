@@ -1,16 +1,34 @@
 "use client";
 
 import { Button, Input } from "@/components/ui";
+import type { SaveArtifactStatus } from "@/lib/chat/use-save-artifact";
+
+function getSaveButtonLabel(saveStatus: SaveArtifactStatus): string {
+  switch (saveStatus) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "Saved";
+    default:
+      return "Save";
+  }
+}
 
 export function ArtifactToolbar({
   title,
   saveDisabled,
+  saveStatus = "idle",
   onTitleChange,
+  onSave,
 }: {
   title: string;
   saveDisabled: boolean;
+  saveStatus?: SaveArtifactStatus;
   onTitleChange: (value: string) => void;
+  onSave?: () => void;
 }) {
+  const saveButtonDisabled =
+    saveDisabled || saveStatus === "saving" || saveStatus === "saved";
   return (
     <header className="shrink-0">
       <div className="flex items-center justify-between gap-3">
@@ -29,9 +47,10 @@ export function ArtifactToolbar({
             variant="secondary"
             size="sm"
             fullWidth={false}
-            disabled={saveDisabled}
+            disabled={saveButtonDisabled}
+            onClick={onSave}
           >
-            Save
+            {getSaveButtonLabel(saveStatus)}
           </Button>
         </div>
       </div>
