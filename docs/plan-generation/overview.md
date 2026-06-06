@@ -71,8 +71,8 @@ flowchart LR
 | Codegen | Gateway produces **Python**; server writes it to sandbox and executes |
 | Local dev | **Real sandbox** connected (no mock runner) |
 | LLM routing | **Vercel AI Gateway** |
-| Uploads | **Multiple files**; server-side parse; normalized text to **`draft-uploads/{coachId}/{sessionId}/`**; attach returns **`contextFileIds[]`** (one per sheet for XLSX) |
-| Upload → model | Phase 3 **tools** `list_draft_files` / `read_draft_file` on the draft prefix — not a full-text dump on attach |
+| Uploads | **Multiple files**; server-side parse; normalized text to **`session-uploads/{coachId}/{sessionId}/`**; attach returns **`contextFileIds[]`** (one per sheet for XLSX) |
+| Upload → model | Phase 3 **tools** `list_session_files` / `read_session_file` on the session prefix — not a full-text dump on attach |
 | Formats | CSV, PDF, XLSX ( **all sheets** → separate `.txt` objects, `{stem}__{sheet-slug}.txt`) |
 | XLSX ambiguity | **Upload always succeeds**; agent **lists draft files** and asks in chat if unclear — before sandbox |
 | Artifact seed | Server writes **`current_plan.json`** in sandbox from client `currentArtifact` (empty seed if none) — **never** sent as full JSON to the LLM |
@@ -101,7 +101,7 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 
 `POST /api/coach/upload-context` — multipart `sessionId` (required), `files` / `files[]`:
 
-- Normalize server-side → write under `draft-uploads/{coachId}/{sessionId}/` (one object per XLSX sheet)
+- Normalize server-side → write under `session-uploads/{coachId}/{sessionId}/` (one object per XLSX sheet)
 - Return `{ ok: true, contextFileIds: string[], warnings?: UploadWarning[] }` — never blocked for multi-sheet workbooks
 - Upload `warnings` are HTTP-only in v1 (not forwarded on plan-chat SSE)
 
@@ -113,7 +113,7 @@ Adjust caps in `lib/uploads/limits.ts` when implemented.
 - `prompt` — serialized prompt document (segments → text)
 - `messages` — optional prior turns
 - `currentArtifact` — optional — **sandbox seed only**, not passed to LLM
-- Upload paths are discovered via `list_draft_files` for the `sessionId` prefix (upload-context still returns `contextFileIds` for the client UI)
+- Upload paths are discovered via `list_session_files` for the `sessionId` prefix (upload-context still returns `contextFileIds` for the client UI)
 
 ### Response
 
@@ -163,7 +163,8 @@ See **[code-map.md](./code-map.md)** for the authoritative file layout.
 | Upload limits, parsers, list | `forge-next/lib/uploads/` (`list-session-uploads.ts`) |
 | Draft file tools (Phase 3) | `forge-next/lib/ai/plan-chat/tools/` |
 | Chat orchestration | `forge-next/lib/ai/plan-chat/` |
-| Client adapters | `forge-next/lib/plan-chat/`, `forge-next/lib/chat/` |
+| Plan client adapter | `forge-next/lib/chat/adapters/plan/` |
+| Generic chat | `forge-next/lib/chat/` |
 | Sandbox runner | `forge-next/lib/sandbox/` (stub in `stub.ts` for CI/tests only) |
 | Python builder | `forge-next/sandbox/forge_plan/` |
 | Cheat sheet generator | `forge-next/sandbox/scripts/generate_api_cheat_sheet.py` |

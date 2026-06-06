@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import {
-  DRAFT_UPLOADS_BUCKET,
+  SESSION_UPLOADS_BUCKET,
   sessionUploadPrefix,
 } from "@/lib/uploads/storage-paths";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -16,7 +16,7 @@ type StorageSupabaseClient = SupabaseClient;
 
 /**
  * List normalized upload objects for a coach workspace session.
- * Used by plan-chat tools; not exposed to the browser directly.
+ * Used by chat session file tools; not exposed to the browser directly.
  */
 export async function listSessionUploads(
   coachId: string,
@@ -27,7 +27,7 @@ export async function listSessionUploads(
   const prefix = sessionUploadPrefix(coachId, sessionId);
 
   const { data, error } = await supabase.storage
-    .from(DRAFT_UPLOADS_BUCKET)
+    .from(SESSION_UPLOADS_BUCKET)
     .list(prefix, { limit: 100, sortBy: { column: "name", order: "asc" } });
 
   if (error || !data) {

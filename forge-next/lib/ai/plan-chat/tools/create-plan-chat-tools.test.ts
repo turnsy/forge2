@@ -31,7 +31,7 @@ describe("createPlanChatTools", () => {
       onSubmitPlanCode: () => {},
     });
 
-    const result = await tools.list_draft_files.execute!(
+    const result = await tools.list_session_files.execute!(
       {},
       { messages: [], toolCallId: "1" },
     );
@@ -57,7 +57,7 @@ describe("createPlanChatTools", () => {
 
     expect(captured).toBe("print('hi')");
 
-    const listed = await tools.list_draft_files.execute!(
+    const listed = await tools.list_session_files.execute!(
       {},
       { messages: [], toolCallId: "3" },
     );

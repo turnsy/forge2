@@ -18,8 +18,8 @@
   - `messages` (optional thread)
 - [x] Implement `lib/plans/summarize-plan.ts` — short text for iterations
 - [x] **Three model tools** (model chooses order; no server-forced turns):
-  - `list_draft_files` — returns `paths[]` under `{coachId}/{sessionId}/`
-  - `read_draft_file` — `loadUploadContextById()` for one normalized `.txt`
+  - `list_session_files` — returns `paths[]` under `{coachId}/{sessionId}/`
+  - `read_session_file` — `loadUploadContextById()` for one normalized `.txt`
   - `submit_plan_code` — Python for `run.py`; sandbox runs **only if** this tool was called
 - [x] Prompts under `lib/ai/plan-chat/prompts/`
 - [x] **Do not** preload full upload text into the first message
@@ -32,9 +32,9 @@
 
 Handled by the **model** via tools, not upload blocking:
 
-1. `list_draft_files` returns paths for all sheets
+1. `list_session_files` returns paths for all sheets
 2. Model may ask which sheet and **omit** `submit_plan_code` → `done`, no `artifact`
-3. Next message: `read_draft_file` + `submit_plan_code` when ready
+3. Next message: `read_session_file` + `submit_plan_code` when ready
 
 ---
 
@@ -42,6 +42,6 @@ Handled by the **model** via tools, not upload blocking:
 
 - [x] Unauthenticated → 401; athlete → 403 (auth layer; route tests in Task 2)
 - [x] Prompt-only → `artifact` when model submits code
-- [x] Multi-sheet XLSX → `list_draft_files` lists all paths; agent can clarify
+- [x] Multi-sheet XLSX → `list_session_files` lists all paths; agent can clarify
 - [x] `currentArtifact` seeds sandbox only — not full JSON in system prompt (unit test)
 - [x] Sandbox filesystem has no upload copies — asserted in `lib/sandbox/run-plan.test.ts`

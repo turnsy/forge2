@@ -78,7 +78,7 @@ export async function runPlanChat(
   const hasSessionUploads = sessionFiles.length > 0;
   const system = buildPlanChatSystemPrompt({
     currentArtifact: input.currentArtifact,
-    hasDraftUploads: hasSessionUploads,
+    hasSessionUploads,
   });
 
   let submittedPython: string | null = null;

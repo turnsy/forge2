@@ -12,7 +12,7 @@
 - [x] Shared primitives in `components/ui/` (`ChatBubble`, `ResizableSplitPane`, …)
 - [x] Chat composition in `components/chat/` + `components/artifact/`:
   - `ChatThread`, inline run status, `ArtifactPreview` → `PlanViewer`
-- [x] Client state in `lib/chat/` + `lib/plan-chat/use-coach-plan-workspace.ts`:
+- [x] Client state in `lib/chat/` + `lib/chat/adapters/plan/use-coach-plan-workspace.ts`:
   - `messages`, `currentArtifact`, `runStatus`, `warnings`, `errors`
   - **`sessionId`** — client UUID per workspace session (required on API)
   - `contextFileIds[]` — ids returned from upload (may exceed file count for XLSX)

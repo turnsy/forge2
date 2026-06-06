@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { encodePlanChatSseEvent } from "@/lib/ai/plan-chat/events";
-import { mapPlanChatEvent } from "@/lib/plan-chat/map-plan-chat-event";
+import { mapPlanWireEvent } from "@/lib/chat/adapters/plan/map-plan-wire-event";
 import { extractSseEventsFromBuffer } from "@/lib/chat/parse-sse";
 
-describe("mapPlanChatEvent", () => {
+describe("mapPlanWireEvent", () => {
   it("maps plan artifact events to chat artifact events", () => {
     const plan = { schemaVersion: "2.0.0" as const, name: "Block", weeks: [] };
     expect(
-      mapPlanChatEvent({
+      mapPlanWireEvent({
         type: "artifact",
         plan,
       }),

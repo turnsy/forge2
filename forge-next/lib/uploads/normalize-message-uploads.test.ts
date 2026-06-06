@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { draftUploadSlug } from "@/lib/uploads/file-utils";
+import { uploadFileSlug } from "@/lib/uploads/file-utils";
 import { makeCsvBuffer, makeXlsxBuffer } from "@/lib/uploads/__tests__/fixtures";
 
 const mockSaveUploadContext = vi.fn();
@@ -37,7 +37,7 @@ describe("normalizeMessageUploads", () => {
     });
     expect(mockSaveUploadContext).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: draftUploadSlug("plan.csv"),
+        slug: uploadFileSlug("plan.csv"),
       }),
     );
   });
@@ -77,7 +77,7 @@ describe("normalizeMessageUploads", () => {
     expect(mockSaveUploadContext).toHaveBeenCalledTimes(2);
     expect(mockSaveUploadContext).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: draftUploadSlug("workbook.xlsx", "Summary"),
+        slug: uploadFileSlug("workbook.xlsx", "Summary"),
       }),
     );
   });

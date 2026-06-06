@@ -1,6 +1,6 @@
 import type { PlanChatEvent } from "@/lib/ai/plan-chat/types";
 import { parseSseJsonLine, readSseStream } from "@/lib/chat/parse-sse";
-import { mapPlanChatEvent } from "@/lib/plan-chat/map-plan-chat-event";
+import { mapPlanWireEvent } from "@/lib/chat/adapters/plan/map-plan-wire-event";
 import type { ChatEvent } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -30,6 +30,6 @@ export async function readPlanChatSseStream(
   onEvent: (event: ChatEvent<WorkoutPlan>) => void,
 ): Promise<void> {
   await readSseStream(body, parsePlanChatSseDataLine, (event) => {
-    onEvent(mapPlanChatEvent(event));
+    onEvent(mapPlanWireEvent(event));
   });
 }

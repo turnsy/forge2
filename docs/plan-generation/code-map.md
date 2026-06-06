@@ -7,7 +7,7 @@ Authoritative layout for the coach plan-chat pipeline (v1). See [overview.md](./
 | Layer | Path | Role |
 | --- | --- | --- |
 | Server orchestration | `forge-next/lib/ai/plan-chat/` | Gateway, tools, SSE encode, sandbox handoff |
-| Client adapters | `forge-next/lib/plan-chat/` | Fetch clients, SSE decode/map, coach workspace hook |
+| Plan client adapter | `forge-next/lib/chat/adapters/plan/` | Fetch clients, SSE wire mapping, coach plan workspace hook |
 | Generic chat state | `forge-next/lib/chat/` | Workspace reducer, selectors, shared SSE helpers |
 | Uploads | `forge-next/lib/uploads/` | Parsers, Storage I/O, batch validation |
 | Sandbox | `forge-next/lib/sandbox/` | Vercel Sandbox executor (+ test stub in `stub.ts`) |
@@ -38,8 +38,9 @@ Both require coach auth. **`sessionId` is required** on every request (workspace
 
 | Concern | Path |
 | --- | --- |
+| Wire event mapper | `lib/chat/adapters/plan/map-plan-wire-event.ts` |
 | List session uploads (tools) | `lib/uploads/list-session-uploads.ts` |
-| Storage paths | `lib/uploads/storage-paths.ts` (`sessionUploadPrefix`, bucket `draft-uploads`) |
+| Storage paths | `lib/uploads/storage-paths.ts` (`sessionUploadPrefix`, bucket `session-uploads`) |
 | Model tools | `lib/ai/plan-chat/tools/create-plan-chat-tools.ts` |
 | Cheat sheet (generated) | `lib/ai/plan-chat/prompts/forge_plan_api_cheat_sheet.generated.ts` |
 | Cheat sheet script | `sandbox/scripts/generate_api_cheat_sheet.py` |
@@ -52,11 +53,12 @@ Both require coach auth. **`sessionId` is required** on every request (workspace
 | --- | --- |
 | Phase 6 integration (Task 2) | `lib/ai/plan-chat/plan-generation.integration.test.ts` (planned) |
 | Orchestrator | `lib/ai/plan-chat/orchestrator.test.ts` |
+| Wire mapper | `lib/chat/adapters/plan/map-plan-wire-event.ts` (via `parse-plan-chat-sse.test.ts`) |
 | Sandbox file whitelist | `lib/sandbox/run-plan.test.ts` |
 | Live sandbox (opt-in) | `lib/sandbox/integration.test.ts` (`RUN_SANDBOX_INTEGRATION=1`) |
 
 ## Naming notes
 
 - **`sessionId`** — client workspace / conversation id (required on upload + plan-chat). Not every session builds a plan artifact.
-- **`draft-uploads` bucket** — Supabase Storage bucket name (historical); objects keyed by `{coachId}/{sessionId}/`.
-- **Tool names** — `list_draft_files` / `read_draft_file` refer to normalized upload files in Storage, not saved plan drafts.
+- **`session-uploads` bucket** — Supabase Storage for normalized upload text; objects keyed by `{coachId}/{sessionId}/`.
+- **Tool names** — `list_session_files` / `read_session_file` read normalized uploads for the current session.

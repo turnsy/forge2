@@ -1,21 +1,21 @@
-# Supabase Storage — ephemeral draft uploads
+# Supabase Storage — ephemeral session uploads
 
-Plan generation v1 stores **normalized upload text** in Supabase Storage for the coach plan-chat flow. Objects are ephemeral (deleted after a run or by TTL janitor).
+Coach chat sessions store **normalized upload text** in Supabase Storage. Objects are ephemeral (deleted after a run or by TTL janitor).
 
 ## Bucket
 
 | Setting | Value |
 | --- | --- |
-| Bucket name | `draft-uploads` |
+| Bucket name | `session-uploads` |
 | Visibility | **Private** (server reads via authenticated Supabase client + RLS) |
 | Max object size | Enforced at API layer per [overview.md](./overview.md) |
 
-Create via `supabase/migrations/20260602120000_draft_uploads_storage.sql`.
+Create via `supabase/migrations/20260602120000_session_uploads_storage.sql`.
 
 ## Object key layout
 
 ```text
-draft-uploads/{coachId}/{sessionId}/{slug}.txt
+session-uploads/{coachId}/{sessionId}/{slug}.txt
 ```
 
 - `coachId` — authenticated coach user id
@@ -34,7 +34,7 @@ One physical `.xlsx` with three sheets → **three** objects under the same `{se
 Helpers:
 
 - `sessionUploadObjectPath()`, `sessionUploadPrefix()` — `lib/uploads/storage-paths.ts`
-- `draftUploadSlug()` — `lib/uploads/file-utils.ts` (file/sheet slug only)
+- `uploadFileSlug()` — `lib/uploads/file-utils.ts` (file/sheet slug only)
 - `listSessionUploads(coachId, sessionId)` — `lib/uploads/list-session-uploads.ts`
 
 ## RLS
@@ -44,7 +44,7 @@ Coach-scoped policies in the migration: read/write/delete only under `{auth.uid(
 ## Lifecycle
 
 - **Write:** `POST /api/coach/upload-context` — multipart `sessionId` + files
-- **List / read:** plan-chat tools (`list_draft_files`, `read_draft_file`)
+- **List / read:** plan-chat tools (`list_session_files`, `read_session_file`)
 - **Never** copied into Vercel Sandbox
 - **Delete:** after plan-chat run or TTL janitor (TBD)
 
@@ -55,3 +55,8 @@ Coach-scoped policies in the migration: read/write/delete only under `{auth.uid(
 | `lib/uploads/context-storage.ts` | save / load / delete |
 | `lib/uploads/list-session-uploads.ts` | list prefix for tools |
 | `app/api/coach/upload-context/route.ts` | attach API |
+| `lib/chat/adapters/plan/` | plan-mode client adapter |
+
+## Migration note
+
+If you previously applied `draft-uploads` storage migration locally, reset Supabase or manually create the `session-uploads` bucket and policies before testing uploads.

@@ -1,10 +1,10 @@
 "use client";
 
 import { useChatWorkspace } from "@/lib/chat/use-chat-workspace";
-import { streamPlanChat } from "@/lib/plan-chat/plan-chat-client";
-import { uploadContextFile } from "@/lib/plan-chat/upload-context-client";
-import { validateClientFiles } from "@/lib/plan-chat/validate-client-files";
-import type { PlanWorkspaceState } from "@/lib/plan-chat/types";
+import { streamPlanChat } from "@/lib/chat/adapters/plan/plan-chat-client";
+import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
+import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
+import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function useCoachPlanWorkspace() {

@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import {
-  DRAFT_UPLOADS_BUCKET,
+  SESSION_UPLOADS_BUCKET,
   sessionUploadObjectPath,
 } from "@/lib/uploads/storage-paths";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -42,7 +42,7 @@ export async function saveUploadContext(
 
   const body = Buffer.from(input.normalizedText, "utf8");
   const { error } = await supabase.storage
-    .from(DRAFT_UPLOADS_BUCKET)
+    .from(SESSION_UPLOADS_BUCKET)
     .upload(objectPath, body, {
       contentType: "text/plain; charset=utf-8",
       upsert: true,
@@ -70,7 +70,7 @@ export async function loadUploadContextById(
 
   const supabase = client ?? (await createClient());
   const { data, error } = await supabase.storage
-    .from(DRAFT_UPLOADS_BUCKET)
+    .from(SESSION_UPLOADS_BUCKET)
     .download(contextFileId);
 
   if (error || !data) {
@@ -93,5 +93,5 @@ export async function deleteUploadContext(
   }
 
   const supabase = client ?? (await createClient());
-  await supabase.storage.from(DRAFT_UPLOADS_BUCKET).remove(paths);
+  await supabase.storage.from(SESSION_UPLOADS_BUCKET).remove(paths);
 }

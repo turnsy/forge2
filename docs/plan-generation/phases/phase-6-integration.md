@@ -8,7 +8,8 @@
 
 ## Task 1 — Janitorial (consolidation, cleanup, docs) ✅
 
-- [x] Dead code removed (`coach-home-prompt`, `attached-file-list`, `run-status-badge`, unused `lib/plan-chat/index.ts`)
+- [x] Dead code removed (`coach-home-prompt`, `attached-file-list`, `run-status-badge`, unused plan-chat barrel)
+- [x] Plan client adapter at `lib/chat/adapters/plan/`; upload naming generalized (`session-uploads`, `list_session_files`)
 - [x] SSE parsing consolidated (`readSseStream` + shared `parseSseJsonLine` in `lib/chat/parse-sse.ts`)
 - [x] `draftId` → **`sessionId`** (required on upload + plan-chat)
 - [x] Sandbox stub comments updated (CI/test harness only)
@@ -20,7 +21,7 @@
 ## Task 2 — Edge case testing ([spec](../task-2-edge-case-testing.md))
 
 - [ ] Integration test: attach → multi-sheet → plan-chat clarify + generate paths
-- [ ] Unit: `read_draft_file`, validation gate, sandbox failure
+- [ ] Unit: `read_session_file`, validation gate, sandbox failure
 - [ ] Route tests: athlete 403, upload handler edge cases
 - [ ] CI: `pnpm test:forge-plan`
 
@@ -30,7 +31,7 @@
 
 - [x] Happy path wired (real sandbox in prod; stub for CI/tests only)
 - [ ] Integration test (Task 2)
-- [x] Unit coverage: uploads multi-sheet, `list_draft_files` (partial — `read_draft_file` in Task 2)
+- [x] Unit coverage: uploads multi-sheet, `list_session_files` (partial — `read_session_file` in Task 2)
 - [x] `docs/plan-generation/QA.md` manual checklist (exists)
 - [x] CI: `pnpm test` + `pnpm build` (mock sandbox; no secrets)
 

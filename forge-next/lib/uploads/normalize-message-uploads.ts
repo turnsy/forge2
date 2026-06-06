@@ -1,4 +1,4 @@
-import { draftUploadSlug } from "@/lib/uploads/file-utils";
+import { uploadFileSlug } from "@/lib/uploads/file-utils";
 import {
   normalizedUploadToText,
   parseUploadFile,
@@ -59,8 +59,8 @@ export async function normalizeMessageUploads(
       const normalizedText = normalizedUploadToText(parsed.upload);
       const slug =
         parsed.upload.kind === "xlsx"
-          ? draftUploadSlug(parsed.upload.filename, parsed.upload.sheetName)
-          : draftUploadSlug(parsed.upload.filename);
+          ? uploadFileSlug(parsed.upload.filename, parsed.upload.sheetName)
+          : uploadFileSlug(parsed.upload.filename);
 
       if (input.persist !== false) {
         const stored = await saveUploadContext({

@@ -14,16 +14,16 @@ Single Vitest file, **no HTTP**, mocked Gateway + mocked sandbox + mocked Storag
 
 | Case | Flow | Assert |
 | --- | --- | --- |
-| **Clarify path** | Multi-sheet XLSX via `normalizeMessageUploads` → 2+ `contextFileIds` → `runPlanChat` with matching `sessionId` → mocked Gateway calls `list_draft_files`, assistant text only, **no** `submit_plan_code` | `runSandbox` not called; no `artifact`; final `runStatus: done` |
-| **Generate path** | Same upload setup → Gateway calls `read_draft_file` + `submit_plan_code` → mocked sandbox returns valid plan | Event sequence includes `sandbox` → `validating` → `artifact` → `done` |
+| **Clarify path** | Multi-sheet XLSX via `normalizeMessageUploads` → 2+ `contextFileIds` → `runPlanChat` with matching `sessionId` → mocked Gateway calls `list_session_files`, assistant text only, **no** `submit_plan_code` | `runSandbox` not called; no `artifact`; final `runStatus: done` |
+| **Generate path** | Same upload setup → Gateway calls `read_session_file` + `submit_plan_code` → mocked sandbox returns valid plan | Event sequence includes `sandbox` → `validating` → `artifact` → `done` |
 
 ### Unit gaps
 
 | File | Cases |
 | --- | --- |
-| `lib/ai/plan-chat/tools/create-plan-chat-tools.test.ts` | `read_draft_file`: success, truncation, `FILE_NOT_FOUND` |
+| `lib/ai/plan-chat/tools/create-plan-chat-tools.test.ts` | `read_session_file`: success, truncation, `FILE_NOT_FOUND` |
 | `lib/ai/plan-chat/orchestrator.test.ts` | Post-sandbox `loadWorkoutPlan` failure → `errors`, no `artifact`; sandbox `{ ok: false }` → same |
-| `lib/plan-chat/parse-plan-chat-sse.test.ts` | `readPlanChatSseStream` end-to-end with encoded chunks |
+| `lib/chat/adapters/plan/parse-plan-chat-sse.test.ts` | `readPlanChatSseStream` end-to-end with encoded chunks |
 
 ---
 

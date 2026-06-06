@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 import { loadUploadContextById } from "@/lib/uploads/context-storage";
-import { PLAN_CHAT_DRAFT_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
+import { SESSION_UPLOAD_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
 
 export type PlanChatToolsContext = {
   coachId: string;
@@ -10,20 +10,22 @@ export type PlanChatToolsContext = {
   onSubmitPlanCode: (python: string) => void;
 };
 
-function truncateDraftText(text: string): { content: string; truncated: boolean } {
-  if (text.length <= PLAN_CHAT_DRAFT_READ_MAX_CHARS) {
+function truncateSessionUploadText(
+  text: string,
+): { content: string; truncated: boolean } {
+  if (text.length <= SESSION_UPLOAD_READ_MAX_CHARS) {
     return { content: text, truncated: false };
   }
 
   return {
-    content: `${text.slice(0, PLAN_CHAT_DRAFT_READ_MAX_CHARS)}\n\n[truncated]`,
+    content: `${text.slice(0, SESSION_UPLOAD_READ_MAX_CHARS)}\n\n[truncated]`,
     truncated: true,
   };
 }
 
 export function createPlanChatTools(ctx: PlanChatToolsContext) {
   return {
-    list_draft_files: tool({
+    list_session_files: tool({
       description:
         "List storage paths for normalized upload files in this session (one .txt per CSV/PDF or per XLSX sheet).",
       inputSchema: z.object({}),
@@ -35,9 +37,9 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
       },
     }),
 
-    read_draft_file: tool({
+    read_session_file: tool({
       description:
-        "Read normalized upload text for one path from list_draft_files.",
+        "Read normalized upload text for one path from list_session_files.",
       inputSchema: z.object({
         path: z.string().min(1).describe("Storage object path."),
       }),
@@ -47,7 +49,7 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
           return { ok: false as const, error: "FILE_NOT_FOUND" };
         }
 
-        const { content, truncated } = truncateDraftText(text);
+        const { content, truncated } = truncateSessionUploadText(text);
         return {
           ok: true as const,
           path,
