@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { PencilIcon } from "@/components/icons/pencil-icon";
+import { PlanVersionHistory } from "@/components/plan/plan-version-history";
 import { PlanViewer } from "@/components/plan/plan-viewer";
 import { ButtonLink, ErrorState, PageContent, PageHeader } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format/date";
-import { getCoachPlanById } from "@/lib/plans/repository";
+import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
 
 function PlanValidationErrors({
   errors,
@@ -57,6 +58,7 @@ export default async function CoachPlanDetailPage({
 
   const { detail } = result;
   const { plan } = detail;
+  const versions = await listCoachPlanVersions(user.id, planId);
 
   return (
     <PageContent>
@@ -76,6 +78,7 @@ export default async function CoachPlanDetailPage({
         }
       />
       <p className="text-sm text-surface-muted">Created {formatDate(detail.createdAt)}</p>
+      <PlanVersionHistory versions={versions} />
       <PlanViewer plan={plan} view="coach" />
     </PageContent>
   );

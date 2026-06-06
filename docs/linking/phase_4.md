@@ -1,6 +1,6 @@
 # Phase 4 — Version history list
 
-**Status:** Pending
+**Status:** Done
 
 ## Goal
 
@@ -28,6 +28,6 @@ Display version history on the plan detail page (list only).
 
 ## Done criteria
 
-- [ ] Versions listed on detail page
-- [ ] Active version indicated
-- [ ] Empty state when only one version (still shows it)
+- [x] Versions listed on detail page
+- [x] Active version indicated
+- [x] Empty state when only one version (still shows it)
