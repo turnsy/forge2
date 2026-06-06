@@ -1,6 +1,6 @@
 # Phase 5 — New button redirect
 
-**Status:** Pending
+**Status:** Done
 
 ## Goal
 
@@ -18,4 +18,4 @@ Plans list "New" button navigates to `/coach` (home prompt).
 
 ## Done criteria
 
-- [ ] New button opens coach home workspace
+- [x] New button opens coach home workspace

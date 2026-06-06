@@ -1,6 +1,6 @@
 # Phase 6 — Integration & QA
 
-**Status:** Pending
+**Status:** Done
 
 ## Goal
 
@@ -8,11 +8,11 @@ End-to-end verification; docs updated; all phases complete.
 
 ## Checklist
 
-- [ ] All phase 1–5 done criteria checked
-- [ ] `pnpm test:forge-plan` green
-- [ ] `pnpm build` green
-- [ ] Phase docs status updated to **Done**
-- [ ] Manual test plan in PR description
+- [x] All phase 1–5 done criteria checked
+- [x] `pnpm test:forge-plan` green
+- [x] `pnpm build` green
+- [x] Phase docs status updated to **Done**
+- [x] Manual test plan in PR description
 
 ## Manual test plan (summary)
 
