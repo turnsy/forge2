@@ -14,8 +14,9 @@ Edit existing plans at `/coach/plans/[planId]/edit` with the same split-pane exp
 
 ### Workspace
 
-- `useChatWorkspace` accepts optional `initialState`
+- `useCoachPlanWorkspace({ initialPlan })` hydrates edit state
 - `CoachWorkspace` props: `mode`, `planId`, `initialPlan`, `backHref`
+- `useSaveArtifact` generic hook; `useSavePlan` plan adapter
 - Edit mode: `hasStarted: true`, artifact pre-loaded, empty chat
 - Save calls version endpoint; **stays in workspace** after save
 - Back link to `/coach/plans/[planId]` with unsaved-changes confirm
@@ -34,8 +35,10 @@ Edit existing plans at `/coach/plans/[planId]/edit` with the same split-pane exp
 | File | Action |
 | --- | --- |
 | `forge-next/app/coach/(app)/plans/[planId]/edit/page.tsx` | New |
-| `forge-next/lib/chat/use-chat-workspace.ts` | Extend |
-| `forge-next/lib/plans/plan-snapshot.ts` | New |
+| `forge-next/lib/chat/adapters/plan/initial-state.ts` | New |
+| `forge-next/lib/chat/use-save-artifact.ts` | New |
+| `forge-next/lib/plans/utils.ts` | Snapshot helpers |
+| `forge-next/components/ui/back-ref-button.tsx` | New |
 | `forge-next/components/coach/coach-workspace.tsx` | Edit mode |
 | `forge-next/app/coach/(app)/plans/[planId]/page.tsx` | Edit link |
 

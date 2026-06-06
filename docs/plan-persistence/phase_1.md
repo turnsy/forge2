@@ -20,8 +20,7 @@ All RPCs use `security definer` + `auth.uid()` ownership checks.
 
 - `mutations.ts` — `createCoachPlan`, `saveCoachPlanVersion`
 - Extend `repository.ts` — `listCoachPlanVersions`
-- `mergePlanTitle(plan, title)` — apply toolbar title to `plan_data.name`
-- `preparePlanForSave(plan, title)` — validate + merge title
+- `lib/plans/utils.ts` — `mergePlanTitle`, `preparePlanForSave`, plan snapshots
 
 ### API routes
 
@@ -40,7 +39,8 @@ All RPCs use `security definer` + `auth.uid()` ownership checks.
 | --- | --- |
 | `supabase/migrations/*_coach_plan_mutations.sql` | New |
 | `forge-next/lib/plans/mutations.ts` | New |
-| `forge-next/lib/plans/prepare-plan-for-save.ts` | New |
+| `forge-next/lib/plans/utils.ts` | New |
+| `forge-next/lib/errors/service-error.ts` | New |
 | `forge-next/lib/plans/repository.ts` | Extend |
 | `forge-next/app/api/coach/plans/route.ts` | Add POST |
 | `forge-next/app/api/coach/plans/[planId]/versions/route.ts` | New |
