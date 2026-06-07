@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, type MouseEvent } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
+import { CenteredChatLayout } from "@/components/coach/centered-chat-layout";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { PageBackGutter } from "@/components/ui";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
-import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
+import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { UserRole } from "@/lib/auth/types";
@@ -52,6 +53,8 @@ export function CoachWorkspace({
   const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
     mode === "edit" ? (planId ?? null) : null,
   );
+
+  const showSplitPane = Boolean(state.currentArtifact);
 
   const handleSendMessage = useCallback(
     async (...args: Parameters<typeof sendMessage>) => {
@@ -128,6 +131,19 @@ export function CoachWorkspace({
     );
   }
 
+  if (!showSplitPane) {
+    return (
+      <div className="flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-hidden">
+        <CenteredChatLayout
+          state={state}
+          onAttach={attachFiles}
+          onSend={handleSendMessage}
+          onRestart={restart}
+        />
+      </div>
+    );
+  }
+
   const previewPane = (
     <>
       <ArtifactToolbar
@@ -146,14 +162,14 @@ export function CoachWorkspace({
         <ArtifactPreview
           artifact={toArtifactPreviewModel(state.currentArtifact)}
           runStatus={state.runStatus}
-          isAwaitingArtifact={isAwaitingFirstArtifact(state)}
+          isAwaitingArtifact={false}
         />
       </div>
     </>
   );
 
   return (
-    <div className="flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
+    <div className="flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden transition-[padding] duration-300">
       <ResizableSplitPane
         left={
           mode === "edit" && backHref ? (
