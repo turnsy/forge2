@@ -55,7 +55,7 @@ export function Sidebar({
         ].join(" ")}
       >
         {collapsed ? null : (
-          <span className="truncate text-lg font-semibold tracking-tight text-surface-foreground">
+          <span className="truncate text-lg font-semibold tracking-tight text-surface-foreground px-2">
             Forge
           </span>
         )}
