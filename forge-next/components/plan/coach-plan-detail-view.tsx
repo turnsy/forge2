@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { PlanVersionHistory } from "@/components/plan/plan-version-history";
 import { PlanViewer } from "@/components/plan/plan-viewer";
+import { PlanDetailActions } from "@/components/plan-detail-actions";
 import { Button, ButtonLink, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachPlanVersionListItem } from "@/lib/plans/repository";
@@ -38,6 +39,7 @@ export function CoachPlanDetailView({
             >
               History
             </Button>
+            <PlanDetailActions planId={planId} planTitle={plan.name} />
             <ButtonLink
               href={`/coach/plans/${planId}/edit`}
               variant="secondary"

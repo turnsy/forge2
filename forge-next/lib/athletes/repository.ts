@@ -17,6 +17,7 @@ export function mapCoachAthleteRow(row: CoachAthleteRow): CoachAthleteListItem {
     id: row.athlete_id,
     name: row.full_name?.trim() || "Unnamed athlete",
     email: row.email?.trim() || "",
+    currentPlanId: row.current_plan_id ?? null,
     currentPlanName: row.current_plan_name?.trim() || null,
     joinedAt: row.linked_at,
   };

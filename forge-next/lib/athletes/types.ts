@@ -2,6 +2,7 @@ export type CoachAthleteListItem = {
   id: string;
   name: string;
   email: string;
+  currentPlanId: string | null;
   currentPlanName: string | null;
   joinedAt: string;
 };

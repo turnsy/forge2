@@ -24,6 +24,8 @@ export type CoachAthleteRelationship = {
   athleteName: string;
   athleteEmail: string;
   linkedAt: string | null;
+  currentPlanId: string | null;
+  currentPlanName: string | null;
 };
 
 export type LinkActionResult =

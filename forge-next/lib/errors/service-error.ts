@@ -47,5 +47,13 @@ export function mapRpcErrorMessage(message: string): ServiceError {
     return serviceError(ServiceErrorCode.NOT_FOUND, message);
   }
 
+  if (lower.includes("athlete not linked")) {
+    return serviceError(ServiceErrorCode.VALIDATION_ERROR, message);
+  }
+
+  if (lower.includes("no athletes provided")) {
+    return serviceError(ServiceErrorCode.VALIDATION_ERROR, message);
+  }
+
   return serviceError(ServiceErrorCode.DB_ERROR, message);
 }

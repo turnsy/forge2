@@ -20,7 +20,7 @@ export function CoachAthleteDetailActions({
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       {error ? <Message tone="error">{error}</Message> : null}
       <Button
         type="button"

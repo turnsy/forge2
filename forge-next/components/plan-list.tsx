@@ -1,12 +1,5 @@
-import {
-  ActionGroup,
-  Button,
-  EmptyState,
-  List,
-  ListRow,
-  MetaGroup,
-  MetaItem,
-} from "@/components/ui";
+import { PlanListRowActions } from "@/components/plan-list-row-actions";
+import { EmptyState, List, ListRow, MetaGroup, MetaItem } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachPlanListItem } from "@/lib/plans/types";
 
@@ -33,16 +26,7 @@ export function PlanListRow({
           <MetaItem label="Created" value={formatDate(plan.createdAt)} />
         </MetaGroup>
       }
-      actions={
-        <ActionGroup>
-          <Button type="button" variant="secondary" size="sm" fullWidth={false}>
-            Assign
-          </Button>
-          <Button type="button" variant="danger" size="sm" fullWidth={false}>
-            Delete
-          </Button>
-        </ActionGroup>
-      }
+      actions={<PlanListRowActions plan={plan} />}
     />
   );
 }

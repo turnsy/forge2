@@ -1,8 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CoachPlanDetailView } from "@/components/plan/coach-plan-detail-view";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
 
 describe("CoachPlanDetailView", () => {
   it("shows plan by default and toggles version history", async () => {
