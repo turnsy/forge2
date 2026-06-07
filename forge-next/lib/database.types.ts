@@ -8,11 +8,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -60,8 +55,8 @@ export type Database = {
           completed_at?: string | null
           id?: string
           plan_data: Json
-          plan_id: string | null
-          plan_version_id: string | null
+          plan_id?: string | null
+          plan_version_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status"]
           unassigned_at?: string | null
         }
@@ -269,6 +264,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_coach_link: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
+      assign_plan_to_athletes: {
+        Args: { p_athlete_ids: string[]; p_plan_id: string }
+        Returns: undefined
+      }
+      cancel_coach_link_request: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
       complete_profile_role: {
         Args: {
           target_full_name?: string
@@ -276,43 +283,17 @@ export type Database = {
         }
         Returns: undefined
       }
-      get_coach_athletes: {
-        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+      count_coach_pending_invites: { Args: never; Returns: number }
+      create_coach_plan: {
+        Args: { p_change_summary?: string; p_plan_data: Json }
         Returns: {
-          athlete_id: string
-          current_assignment_status: Database["public"]["Enums"]["assignment_status"]
-          current_plan_id: string
-          current_plan_name: string
-          email: string
-          full_name: string
-          linked_at: string
-          total_count: number
-        }[]
-      }
-      get_coach_plans: {
-        Args: { p_limit?: number; p_offset?: number; p_search?: string }
-        Returns: {
-          created_at: string
           plan_id: string
-          title: string
-          total_count: number
-          week_count: number
+          version_id: string
         }[]
       }
-      accept_coach_link: {
-        Args: { p_relationship_id: string }
-        Returns: undefined
-      }
-      cancel_coach_link_request: {
-        Args: { p_relationship_id: string }
-        Returns: undefined
-      }
-      count_coach_pending_invites: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      delete_coach_plan: { Args: { p_plan_id: string }; Returns: undefined }
       get_athlete_coach_link: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           coach_id: string
           coach_name: string
@@ -328,30 +309,28 @@ export type Database = {
           athlete_email: string
           athlete_id: string
           athlete_name: string
-          current_plan_id: string | null
-          current_plan_name: string | null
+          current_plan_id: string
+          current_plan_name: string
           linked_at: string
           relationship_id: string
           status: Database["public"]["Enums"]["coach_link_status"]
         }[]
       }
-      assign_plan_to_athletes: {
-        Args: { p_athlete_ids: string[]; p_plan_id: string }
-        Returns: undefined
-      }
-      delete_coach_plan: {
-        Args: { p_plan_id: string }
-        Returns: undefined
-      }
-      get_coach_plan_delete_info: {
-        Args: { p_plan_id: string }
+      get_coach_athletes: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: {
-          active_assignment_count: number
-          plan_title: string | null
+          athlete_id: string
+          current_assignment_status: Database["public"]["Enums"]["assignment_status"]
+          current_plan_id: string
+          current_plan_name: string
+          email: string
+          full_name: string
+          linked_at: string
+          total_count: number
         }[]
       }
       get_coach_pending_invites: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           athlete_email: string
           athlete_id: string
@@ -360,13 +339,48 @@ export type Database = {
           requested_at: string
         }[]
       }
+      get_coach_plan_delete_info: {
+        Args: { p_plan_id: string }
+        Returns: {
+          active_assignment_count: number
+          plan_title: string
+        }[]
+      }
+      get_coach_plans: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: {
+          created_at: string
+          plan_id: string
+          title: string
+          total_count: number
+          week_count: number
+        }[]
+      }
+      list_coach_plan_versions: {
+        Args: { p_plan_id: string }
+        Returns: {
+          change_summary: string
+          created_at: string
+          created_by: string
+          is_active: boolean
+          version_id: string
+        }[]
+      }
+      normalize_invite_code: { Args: { p_code: string }; Returns: string }
       reject_coach_link: {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
-      request_coach_link: {
-        Args: { p_invite_code: string }
-        Returns: string
+      request_coach_link: { Args: { p_invite_code: string }; Returns: string }
+      save_coach_plan_version: {
+        Args: {
+          p_change_summary?: string
+          p_plan_data: Json
+          p_plan_id: string
+        }
+        Returns: {
+          version_id: string
+        }[]
       }
       unlink_coach_athlete: {
         Args: { p_relationship_id: string }
@@ -513,3 +527,4 @@ export const Constants = {
     },
   },
 } as const
+

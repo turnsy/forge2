@@ -92,9 +92,9 @@ export async function saveCoachPlanVersion(
   };
 }
 
-export type AssignPlanToAthletesResult = ServiceResult<Record<string, never>>;
+export type AssignPlanToAthletesResult = ServiceResult<Record<never, never>>;
 
-export type DeleteCoachPlanResult = ServiceResult<Record<string, never>>;
+export type DeleteCoachPlanResult = ServiceResult<Record<never, never>>;
 
 export type CoachPlanDeleteInfoResult = ServiceResult<{
   planTitle: string;
