@@ -1,93 +1,50 @@
 import { describe, expect, it } from "vitest";
-import { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
+import { buildCoachAgentSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
 
-const samplePlan = {
-  schemaVersion: "2.0.0" as const,
-  name: "Unique Plan Name XYZ",
-  weeks: [
-    {
-      index: 1,
-      days: [
-        {
-          index: 1,
-          code: "w1d1",
-          exercises: [
-            {
-              name: "Back Squat",
-              sets: [
-                {
-                  id: "w1d1-bs-1",
-                  planned: {
-                    type: "exact" as const,
-                    reps: 5,
-                    load: { type: "absolute" as const, value: 100, unit: "kg" as const },
-                  },
-                  actual: null,
-                  status: "planned" as const,
-                  locked: false,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-describe("buildPlanChatSystemPrompt", () => {
-  it("includes summarize text but not full artifact JSON", () => {
-    const system = buildPlanChatSystemPrompt({
-      currentArtifact: samplePlan,
+describe("buildCoachAgentSystemPrompt", () => {
+  it("is a high-level routing guide without inline codegen or plan summary", () => {
+    const system = buildCoachAgentSystemPrompt({
       hasSessionUploads: true,
     });
-    expect(system).toContain("Unique Plan Name XYZ");
-    expect(system).not.toContain('"weeks":');
-    expect(system).not.toContain(JSON.stringify(samplePlan));
+    expect(system).toContain("Tool routing:");
+    expect(system).toContain("get_plan_codegen_guide");
+    expect(system).toContain("summarize_current_artifact");
+    expect(system).toContain("set_current_artifact");
+    expect(system).not.toContain("Existing plan summary:");
+    expect(system).not.toContain("Cheat sheet:");
+    expect(system).not.toContain("^w[0-9]+d[0-9]+$");
   });
 
-  it("documents forge_plan validation rules including day codes", () => {
-    const system = buildPlanChatSystemPrompt({
-      currentArtifact: null,
+  it("requires codegen guide before submit_plan_code", () => {
+    const system = buildCoachAgentSystemPrompt({
       hasSessionUploads: false,
     });
-    expect(system).toContain("w1d1");
-    expect(system).toContain("W1D1");
-    expect(system).toContain("^w[0-9]+d[0-9]+$");
+    expect(system).toContain(
+      "You MUST call get_plan_codegen_guide before any submit_plan_code",
+    );
   });
 
-  it("requires full program scope in one submit_plan_code when user specifies weeks", () => {
-    const system = buildPlanChatSystemPrompt({
-      currentArtifact: null,
+  it("documents set_current_artifact for saved-plan edit only", () => {
+    const system = buildCoachAgentSystemPrompt({
       hasSessionUploads: false,
     });
-    expect(system).toContain("full requested structure");
-    expect(system).not.toContain("Stay short");
-    expect(system).toContain("multi-week block");
-  });
-
-  it("documents integer reps and notes for coaching qualifiers", () => {
-    const system = buildPlanChatSystemPrompt({
-      currentArtifact: null,
-      hasSessionUploads: false,
-    });
-    expect(system).toContain("Reps and notes");
-    expect(system).toContain("plain integer count");
-    expect(system).toContain('add_set(notes=...)');
-    expect(system).toContain("3/side");
+    expect(system).toContain("set_current_artifact is NOT used for fresh plan creation");
+    expect(system).toContain("get_plan and assign_plan do NOT set the preview");
   });
 
   it("constrains assistant replies to one short sentence without implementation jargon", () => {
-    const system = buildPlanChatSystemPrompt({
-      currentArtifact: null,
+    const system = buildCoachAgentSystemPrompt({
       hasSessionUploads: false,
     });
     expect(system).toContain("Assistant reply style");
     expect(system).toContain("one short plain-language sentence");
-    expect(system).toContain("no markdown headings or bullet lists");
     expect(system).toContain("Do not mention workspace, sandbox, JSON");
-    expect(system).toContain(
-      "Do not recap program structure, weekly splits, progression",
-    );
+  });
+
+  it("notes when no session uploads exist", () => {
+    const system = buildCoachAgentSystemPrompt({
+      hasSessionUploads: false,
+    });
+    expect(system).toContain("No session uploads are registered");
   });
 });
