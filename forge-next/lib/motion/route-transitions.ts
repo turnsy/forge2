@@ -1,0 +1,5 @@
+export const ROUTE_TRANSITION_FORWARD = "nav-forward";
+export const ROUTE_TRANSITION_BACK = "nav-back";
+
+export const ROUTE_TRANSITION_FORWARD_TYPES = [ROUTE_TRANSITION_FORWARD] as const;
+export const ROUTE_TRANSITION_BACK_TYPES = [ROUTE_TRANSITION_BACK] as const;

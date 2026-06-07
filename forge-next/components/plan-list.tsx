@@ -8,6 +8,7 @@ import {
   MetaItem,
 } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
+import { ROUTE_TRANSITION_FORWARD_TYPES } from "@/lib/motion/route-transitions";
 import type { CoachPlanListItem } from "@/lib/plans/types";
 
 export function PlanListRow({
@@ -20,6 +21,7 @@ export function PlanListRow({
   return (
     <ListRow
       href={`/coach/plans/${plan.id}`}
+      transitionTypes={[...ROUTE_TRANSITION_FORWARD_TYPES]}
       metaColumns={2}
       appearIndex={appearIndex}
       leading={
