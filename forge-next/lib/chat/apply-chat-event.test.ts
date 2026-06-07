@@ -33,6 +33,17 @@ describe("applyChatEvent", () => {
     expect(state.artifactTitle).toBe("Test");
   });
 
+  it("updates artifact and planId on setArtifact event", () => {
+    const state = applyChatEvent(createInitialChatWorkspaceState<WorkoutPlan>(), {
+      type: "setArtifact",
+      artifact: samplePlan,
+      title: "Test",
+      planId: "plan-1",
+    });
+    expect(state.currentArtifact).toEqual(samplePlan);
+    expect(state.planId).toBe("plan-1");
+  });
+
   it("accumulates warnings events", () => {
     let state = createInitialChatWorkspaceState<WorkoutPlan>();
     state = applyChatEvent(state, {

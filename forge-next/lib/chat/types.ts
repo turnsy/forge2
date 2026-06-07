@@ -34,6 +34,7 @@ export type ChatWorkspaceState<TArtifact = unknown> = {
   sessionId: string;
   hasStarted: boolean;
   artifactTitle: string;
+  planId: string | null;
   messages: ChatMessage[];
   currentArtifact: TArtifact | null;
   contextFileIds: string[];
@@ -61,6 +62,13 @@ export type ChatArtifactEvent<TArtifact = unknown> = {
   title?: string;
 };
 
+export type ChatSetArtifactEvent<TArtifact = unknown> = {
+  type: "setArtifact";
+  artifact: TArtifact;
+  title: string;
+  planId: string;
+};
+
 export type ChatWarningsEvent = {
   type: "warnings";
   warnings: string[];
@@ -77,6 +85,7 @@ export type ChatEvent<TArtifact = unknown> =
   | ChatAssistantTextDeltaEvent
   | ChatRunStatusEvent
   | ChatArtifactEvent<TArtifact>
+  | ChatSetArtifactEvent<TArtifact>
   | ChatWarningsEvent
   | ChatErrorsEvent;
 

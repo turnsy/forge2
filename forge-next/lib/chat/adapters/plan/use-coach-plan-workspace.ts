@@ -9,12 +9,18 @@ import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-fi
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export function useCoachPlanWorkspace(options?: { initialPlan?: WorkoutPlan }) {
+export function useCoachPlanWorkspace(options?: {
+  initialPlan?: WorkoutPlan;
+  planId?: string;
+}) {
   const initialPlan = options?.initialPlan;
+  const planId = options?.planId;
   const initialState = useMemo(
     () =>
-      initialPlan ? createEditPlanWorkspaceState(initialPlan) : undefined,
-    [initialPlan],
+      initialPlan
+        ? createEditPlanWorkspaceState(initialPlan, planId)
+        : undefined,
+    [initialPlan, planId],
   );
 
   return useChatWorkspace<WorkoutPlan>(

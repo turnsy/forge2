@@ -92,6 +92,14 @@ export async function runPlanChat(
         sessionId: input.sessionId,
       });
     },
+    onSetCurrentArtifact: ({ planId, plan, title }) => {
+      input.emit({
+        type: "setArtifact",
+        planId,
+        plan,
+        title,
+      });
+    },
   });
 
   input.emit({ type: "runStatus", status: "generating" });

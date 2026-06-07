@@ -22,6 +22,13 @@ export function applyChatEvent<TArtifact>(
         currentArtifact: event.artifact,
         artifactTitle: event.title ?? state.artifactTitle,
       };
+    case "setArtifact":
+      return {
+        ...state,
+        currentArtifact: event.artifact,
+        artifactTitle: event.title,
+        planId: event.planId,
+      };
     case "warnings":
       return {
         ...state,

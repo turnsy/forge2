@@ -45,7 +45,9 @@ export function CoachWorkspace({
   );
   const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
     useCoachPlanWorkspace(
-      mode === "edit" && initialPlan ? { initialPlan } : undefined,
+      mode === "edit" && initialPlan
+        ? { initialPlan, planId }
+        : undefined,
     );
   const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
     mode === "edit" ? (planId ?? null) : null,

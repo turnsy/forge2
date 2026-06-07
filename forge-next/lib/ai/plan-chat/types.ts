@@ -40,6 +40,13 @@ export type PlanChatArtifactEvent = {
   plan: WorkoutPlan;
 };
 
+export type PlanChatSetArtifactEvent = {
+  type: "setArtifact";
+  planId: string;
+  plan: WorkoutPlan;
+  title: string;
+};
+
 export type PlanChatWarningsEvent = {
   type: "warnings";
   warnings: string[];
@@ -54,6 +61,7 @@ export type PlanChatEvent =
   | PlanChatAssistantTextDeltaEvent
   | PlanChatRunStatusEvent
   | PlanChatArtifactEvent
+  | PlanChatSetArtifactEvent
   | PlanChatWarningsEvent
   | PlanChatErrorsEvent;
 

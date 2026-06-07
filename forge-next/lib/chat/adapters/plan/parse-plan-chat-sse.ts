@@ -8,6 +8,7 @@ const PLAN_EVENT_TYPES = new Set([
   "assistantTextDelta",
   "runStatus",
   "artifact",
+  "setArtifact",
   "warnings",
   "errors",
 ]);

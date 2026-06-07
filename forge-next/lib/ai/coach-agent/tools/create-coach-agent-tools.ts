@@ -1,4 +1,5 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { createArtifactTools } from "@/lib/ai/coach-agent/tools/artifact-tools";
 import { createFoundationTools } from "@/lib/ai/coach-agent/tools/foundation-tools";
 import { createMutateTools } from "@/lib/ai/coach-agent/tools/mutate-tools";
 import { createReadTools } from "@/lib/ai/coach-agent/tools/read-tools";
@@ -9,6 +10,11 @@ import {
 
 export type CoachAgentToolsContext = PlanChatToolsContext & {
   currentArtifact: WorkoutPlan | null;
+  onSetCurrentArtifact: (input: {
+    planId: string;
+    plan: WorkoutPlan;
+    title: string;
+  }) => void;
 };
 
 export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
@@ -17,5 +23,9 @@ export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
     ...createFoundationTools({ currentArtifact: ctx.currentArtifact }),
     ...createReadTools({ coachId: ctx.coachId }),
     ...createMutateTools({ coachId: ctx.coachId }),
+    ...createArtifactTools({
+      coachId: ctx.coachId,
+      onSetCurrentArtifact: ctx.onSetCurrentArtifact,
+    }),
   };
 }

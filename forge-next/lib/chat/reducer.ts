@@ -26,6 +26,7 @@ export function chatWorkspaceReducer<TArtifact>(
         sessionId: action.sessionId,
         hasStarted: false,
         messages: [],
+        planId: null,
         currentArtifact: null,
         contextFileIds: [],
         attachments: [],
