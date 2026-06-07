@@ -49,6 +49,19 @@ describe("applyChatEvent", () => {
     ]);
   });
 
+  it("clears artifact and planId on clearArtifact", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState<WorkoutPlan>(),
+      currentArtifact: samplePlan,
+      artifactTitle: "Test",
+      planId: "plan-1",
+    };
+    const state = applyChatEvent(initial, { type: "clearArtifact" });
+    expect(state.currentArtifact).toBeNull();
+    expect(state.artifactTitle).toBe("");
+    expect(state.planId).toBeNull();
+  });
+
   it("does not clear currentArtifact on errors", () => {
     const initial = {
       ...createInitialChatWorkspaceState<WorkoutPlan>(),

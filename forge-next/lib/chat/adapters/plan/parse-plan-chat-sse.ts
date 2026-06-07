@@ -10,6 +10,7 @@ const PLAN_EVENT_TYPES = new Set([
   "artifact",
   "warnings",
   "errors",
+  "clearArtifact",
 ]);
 
 function isPlanChatSsePayload(value: unknown): value is PlanChatEvent {

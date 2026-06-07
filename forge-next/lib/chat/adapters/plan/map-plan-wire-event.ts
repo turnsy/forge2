@@ -19,5 +19,7 @@ export function mapPlanWireEvent(event: PlanChatEvent): ChatEvent<WorkoutPlan> {
       return event;
     case "errors":
       return event;
+    case "clearArtifact":
+      return event;
   }
 }

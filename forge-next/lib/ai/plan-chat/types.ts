@@ -50,11 +50,16 @@ export type PlanChatErrorsEvent = {
   errors: PlanChatValidationError[] | { code: string; message: string }[];
 };
 
+export type PlanChatClearArtifactEvent = {
+  type: "clearArtifact";
+};
+
 export type PlanChatEvent =
   | PlanChatAssistantTextDeltaEvent
   | PlanChatRunStatusEvent
   | PlanChatArtifactEvent
   | PlanChatWarningsEvent
-  | PlanChatErrorsEvent;
+  | PlanChatErrorsEvent
+  | PlanChatClearArtifactEvent;
 
 export type PlanChatEmit = (event: PlanChatEvent) => void;

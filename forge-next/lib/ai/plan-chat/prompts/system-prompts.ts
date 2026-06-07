@@ -15,6 +15,7 @@ export function buildPlanChatSystemPrompt(input: {
     "- Ask clarifying questions only when required information is missing or uploads are ambiguous (e.g. multiple XLSX sheets, contradictory instructions). Do not ask to continue week-by-week when the user already stated scope (weeks, days per week, etc.).",
     "- Call submit_plan_code only when you are ready to create or update the plan artifact.",
     "- Do not call submit_plan_code if you only need clarification.",
+    "- Call clear_current_artifact only when the user explicitly wants a brand-new plan; do not clear when iterating on the current plan.",
     "",
     "Plan generation scope:",
     "- When the user requests a program with clear scope (e.g. 4 weeks, 4 days per week), implement the full requested structure in a single submit_plan_code — use loops in run.py for repeated weeks/days/exercises.",

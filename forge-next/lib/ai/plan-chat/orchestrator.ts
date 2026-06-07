@@ -82,6 +82,7 @@ export async function runPlanChat(
   });
 
   let submittedPython: string | null = null;
+  let clearedArtifact = false;
   const tools = createPlanChatTools({
     coachId: input.coachId,
     sessionId: input.sessionId,
@@ -91,6 +92,9 @@ export async function runPlanChat(
         coachId: input.coachId,
         sessionId: input.sessionId,
       });
+    },
+    onClearArtifact: () => {
+      clearedArtifact = true;
     },
   });
 
@@ -121,6 +125,10 @@ export async function runPlanChat(
   }
 
   await result;
+
+  if (clearedArtifact) {
+    input.emit({ type: "clearArtifact" });
+  }
 
   if (!submittedPython) {
     input.emit({ type: "runStatus", status: "done" });

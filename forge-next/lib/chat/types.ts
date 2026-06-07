@@ -36,6 +36,7 @@ export type ChatWorkspaceState<TArtifact = unknown> = {
   artifactTitle: string;
   messages: ChatMessage[];
   currentArtifact: TArtifact | null;
+  planId: string | null;
   contextFileIds: string[];
   attachments: ChatAttachment[];
   runStatus: ChatStatus | null;
@@ -73,15 +74,21 @@ export type ChatErrorsEvent = {
     | { code: string; message: string }[];
 };
 
+export type ChatClearArtifactEvent = {
+  type: "clearArtifact";
+};
+
 export type ChatEvent<TArtifact = unknown> =
   | ChatAssistantTextDeltaEvent
   | ChatRunStatusEvent
   | ChatArtifactEvent<TArtifact>
   | ChatWarningsEvent
-  | ChatErrorsEvent;
+  | ChatErrorsEvent
+  | ChatClearArtifactEvent;
 
 export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "RESTART"; sessionId: string }
+  | { type: "SET_PLAN_ID"; planId: string }
   | { type: "SET_ARTIFACT_TITLE"; artifactTitle: string }
   | { type: "ATTACH_FILES"; attachments: ChatAttachment[] }
   | { type: "ATTACH_UPLOAD_START"; localIds: string[] }

@@ -32,6 +32,7 @@ describe("createPlanChatTools", () => {
       coachId: "c",
       sessionId: "s",
       onSubmitPlanCode: () => {},
+      onClearArtifact: () => {},
     });
 
     const result = await tools.list_session_files.execute!({}, toolCtx);
@@ -48,6 +49,7 @@ describe("createPlanChatTools", () => {
       onSubmitPlanCode: (python) => {
         captured = python;
       },
+      onClearArtifact: () => {},
     });
 
     await tools.submit_plan_code.execute!({ python: "print('hi')" }, toolCtx);
@@ -64,6 +66,7 @@ describe("createPlanChatTools", () => {
       coachId: "c",
       sessionId: "s",
       onSubmitPlanCode: () => {},
+      onClearArtifact: () => {},
     });
 
     const result = await tools.read_session_file.execute!(
@@ -85,6 +88,7 @@ describe("createPlanChatTools", () => {
       coachId: "c",
       sessionId: "s",
       onSubmitPlanCode: () => {},
+      onClearArtifact: () => {},
     });
 
     const result = await tools.read_session_file.execute!(
@@ -102,12 +106,33 @@ describe("createPlanChatTools", () => {
     }
   });
 
+  it("clears artifact on clear_current_artifact", async () => {
+    let cleared = false;
+    const tools = createPlanChatTools({
+      coachId: "c",
+      sessionId: "s",
+      onSubmitPlanCode: () => {},
+      onClearArtifact: () => {
+        cleared = true;
+      },
+    });
+
+    const result = await tools.clear_current_artifact.execute!({}, toolCtx);
+
+    expect(cleared).toBe(true);
+    expect(result).toEqual({
+      ok: true,
+      message: "Current plan cleared. Ready for a new plan.",
+    });
+  });
+
   it("read_session_file returns FILE_NOT_FOUND when load fails", async () => {
     mockLoad.mockResolvedValue(null);
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
       onSubmitPlanCode: () => {},
+      onClearArtifact: () => {},
     });
 
     const result = await tools.read_session_file.execute!(

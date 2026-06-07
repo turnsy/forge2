@@ -49,12 +49,22 @@ describe("chatWorkspaceReducer", () => {
       {
         ...createInitialChatWorkspaceState("old-id"),
         hasStarted: true,
+        planId: "plan-1",
         messages: [{ role: "user", content: "Hi" }],
       },
       { type: "RESTART", sessionId: "new-id" },
     );
     expect(state.sessionId).toBe("new-id");
     expect(state.hasStarted).toBe(false);
+    expect(state.planId).toBeNull();
     expect(state.messages).toHaveLength(0);
+  });
+
+  it("sets planId on SET_PLAN_ID", () => {
+    const state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "SET_PLAN_ID",
+      planId: "plan-1",
+    });
+    expect(state.planId).toBe("plan-1");
   });
 });

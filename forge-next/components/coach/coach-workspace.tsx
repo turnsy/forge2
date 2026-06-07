@@ -20,46 +20,65 @@ import {
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { pageBackGutterReserveClass, roleLinkClass } from "@/lib/theme";
 
-export type CoachWorkspaceMode = "create" | "edit";
-
 export function CoachWorkspace({
   firstName,
   role,
-  mode = "create",
-  planId,
+  planId: initialPlanId,
   initialPlan,
-  backHref,
+  stripPlanIdOnClear = false,
 }: {
   firstName: string;
   role: UserRole;
-  mode?: CoachWorkspaceMode;
   planId?: string;
   initialPlan?: WorkoutPlan;
-  backHref?: string;
+  stripPlanIdOnClear?: boolean;
 }) {
   const router = useRouter();
   const savedSnapshotRef = useRef<string | null>(
-    mode === "edit" && initialPlan
-      ? createPlanSnapshot(initialPlan, initialPlan.name)
-      : null,
+    initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
   );
-  const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
-    useCoachPlanWorkspace(
-      mode === "edit" && initialPlan ? { initialPlan } : undefined,
-    );
-  const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
-    mode === "edit" ? (planId ?? null) : null,
+
+  const handleArtifactCleared = useCallback(() => {
+    savedSnapshotRef.current = null;
+    if (stripPlanIdOnClear) {
+      router.replace("/coach");
+    }
+  }, [router, stripPlanIdOnClear]);
+
+  const {
+    state,
+    attachFiles,
+    sendMessage,
+    setArtifactTitle,
+    setPlanId,
+    restart,
+  } = useCoachPlanWorkspace(
+    initialPlan && initialPlanId
+      ? {
+          initialPlan,
+          planId: initialPlanId,
+          onArtifactCleared: handleArtifactCleared,
+        }
+      : { onArtifactCleared: handleArtifactCleared },
   );
+
+  const activePlanId = state.planId;
+  const resolvedBackHref = activePlanId
+    ? `/coach/plans/${activePlanId}`
+    : undefined;
+
+  const { saveStatus, saveError, savePlan, resetSaveStatus } =
+    useSavePlan(activePlanId);
 
   const handleSendMessage = useCallback(
     async (...args: Parameters<typeof sendMessage>) => {
-      if (mode === "edit") {
+      if (activePlanId) {
         resetSaveStatus();
       }
 
       await sendMessage(...args);
     },
-    [mode, resetSaveStatus, sendMessage],
+    [activePlanId, resetSaveStatus, sendMessage],
   );
 
   const handleSave = useCallback(async () => {
@@ -76,16 +95,16 @@ export function CoachWorkspace({
       return;
     }
 
-    if (mode === "create") {
-      router.push(`/coach/plans/${result.planId}`);
-      return;
+    if (!activePlanId) {
+      setPlanId(result.planId);
+      router.replace(`/coach?planId=${result.planId}`);
     }
 
     savedSnapshotRef.current = createPlanSnapshot(
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [mode, router, savePlan, state]);
+  }, [activePlanId, router, savePlan, setPlanId, state]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -151,16 +170,16 @@ export function CoachWorkspace({
   );
 
   return (
-    <div className="flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
+    <div className="mx-4 mt-2 flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
       <ResizableSplitPane
         left={
-          mode === "edit" && backHref ? (
+          resolvedBackHref ? (
             <div
               className={`flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden ${pageBackGutterReserveClass()} pr-2 pb-4 pt-4 md:pr-5 md:pb-5 md:pt-5`}
             >
               <PageBackGutter
                 back={{
-                  href: backHref,
+                  href: resolvedBackHref,
                   ariaLabel: "Back to plan",
                   onClick: handleBackClick,
                 }}

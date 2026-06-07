@@ -10,6 +10,7 @@ export function createInitialChatWorkspaceState<TArtifact = unknown>(
     artifactTitle: "",
     messages: [],
     currentArtifact: null,
+    planId: null,
     contextFileIds: [],
     attachments: [],
     runStatus: null,

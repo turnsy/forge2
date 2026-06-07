@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("@/lib/plans/use-save-plan", () => ({
@@ -23,6 +23,7 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
       artifactTitle: minimalWorkoutPlan.name,
       messages: [],
       currentArtifact: minimalWorkoutPlan,
+      planId: "plan-1",
       contextFileIds: [],
       attachments: [],
       runStatus: null,
@@ -34,6 +35,7 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
     attachFiles: vi.fn(),
     sendMessage: vi.fn(),
     setArtifactTitle: vi.fn(),
+    setPlanId: vi.fn(),
     restart: vi.fn(),
   }),
 }));
@@ -41,15 +43,14 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 
 describe("CoachWorkspace", () => {
-  it("shows the back link outside the preview pane when backHref is set", () => {
+  it("shows the back link when a saved plan is loaded", () => {
     render(
       <CoachWorkspace
         firstName="Alex"
         role="coach"
-        mode="edit"
         planId="plan-1"
         initialPlan={minimalWorkoutPlan}
-        backHref="/coach/plans/plan-1"
+        stripPlanIdOnClear
       />,
     );
 

@@ -27,6 +27,7 @@ export function chatWorkspaceReducer<TArtifact>(
         hasStarted: false,
         messages: [],
         currentArtifact: null,
+        planId: null,
         contextFileIds: [],
         attachments: [],
         runStatus: null,
@@ -36,6 +37,8 @@ export function chatWorkspaceReducer<TArtifact>(
         streamingAssistantText: "",
         artifactTitle: "",
       };
+    case "SET_PLAN_ID":
+      return { ...state, planId: action.planId };
     case "SET_ARTIFACT_TITLE":
       return { ...state, artifactTitle: action.artifactTitle };
     case "ATTACH_FILES":
