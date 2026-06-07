@@ -9,17 +9,16 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
   useCoachPlanWorkspace: (...args: unknown[]) => mockUseCoachPlanWorkspace(...args),
 }));
 
+const mockSavePlan = vi.fn();
+const mockSetPlanId = vi.fn();
+
 vi.mock("@/lib/plans/use-save-plan", () => ({
   useSavePlan: () => ({
     saveStatus: "idle",
     saveError: null,
-    savePlan: vi.fn(),
+    savePlan: mockSavePlan,
     resetSaveStatus: vi.fn(),
   }),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
 }));
 
 const samplePlan = {
@@ -56,6 +55,7 @@ describe("CoachWorkspace layout", () => {
       attachFiles: vi.fn(),
       sendMessage: vi.fn(),
       setArtifactTitle: vi.fn(),
+      setPlanId: mockSetPlanId,
       restart: vi.fn(),
     });
 
@@ -75,6 +75,7 @@ describe("CoachWorkspace layout", () => {
       attachFiles: vi.fn(),
       sendMessage: vi.fn(),
       setArtifactTitle: vi.fn(),
+      setPlanId: mockSetPlanId,
       restart: vi.fn(),
     });
 
@@ -96,6 +97,7 @@ describe("CoachWorkspace layout", () => {
       attachFiles: vi.fn(),
       sendMessage: vi.fn(),
       setArtifactTitle: vi.fn(),
+      setPlanId: mockSetPlanId,
       restart: vi.fn(),
     });
 

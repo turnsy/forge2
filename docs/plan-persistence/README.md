@@ -11,7 +11,7 @@ Phased implementation for persisting coach workout plans: save from preview, edi
 | Version history v1 | List only (no restore / preview) |
 | `change_summary` | Null on save for now |
 | Save trigger | Explicit Save click only |
-| After save (create) | Redirect to `/coach/plans/[planId]` |
+| After save (create) | Stay on `/coach` with internal `planId`; back link to plan detail |
 | After save (edit) | Stay in workspace |
 | Unsaved changes | Confirm only when using edit-mode back link |
 | Title on save | Toolbar title overwrites `plan_data.name` |

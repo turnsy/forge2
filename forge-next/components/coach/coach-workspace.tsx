@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useRef, type MouseEvent } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
@@ -38,33 +37,42 @@ export function CoachWorkspace({
   initialPlan?: WorkoutPlan;
   backHref?: string;
 }) {
-  const router = useRouter();
   const savedSnapshotRef = useRef<string | null>(
     mode === "edit" && initialPlan
       ? createPlanSnapshot(initialPlan, initialPlan.name)
       : null,
   );
-  const { state, attachFiles, sendMessage, setArtifactTitle, restart } =
-    useCoachPlanWorkspace(
-      mode === "edit" && initialPlan
-        ? { initialPlan, planId }
-        : undefined,
-    );
-  const { saveStatus, saveError, savePlan, resetSaveStatus } = useSavePlan(
-    mode === "edit" ? (planId ?? null) : null,
+  const {
+    state,
+    attachFiles,
+    sendMessage,
+    setArtifactTitle,
+    setPlanId,
+    restart,
+  } = useCoachPlanWorkspace(
+    mode === "edit" && initialPlan
+      ? { initialPlan, planId }
+      : undefined,
   );
+
+  const activePlanId = state.planId ?? planId ?? null;
+  const resolvedBackHref =
+    backHref ?? (activePlanId ? `/coach/plans/${activePlanId}` : undefined);
+
+  const { saveStatus, saveError, savePlan, resetSaveStatus } =
+    useSavePlan(activePlanId);
 
   const showSplitPane = Boolean(state.currentArtifact);
 
   const handleSendMessage = useCallback(
     async (...args: Parameters<typeof sendMessage>) => {
-      if (mode === "edit") {
+      if (activePlanId) {
         resetSaveStatus();
       }
 
       await sendMessage(...args);
     },
-    [mode, resetSaveStatus, sendMessage],
+    [activePlanId, resetSaveStatus, sendMessage],
   );
 
   const handleSave = useCallback(async () => {
@@ -81,16 +89,15 @@ export function CoachWorkspace({
       return;
     }
 
-    if (mode === "create") {
-      router.push(`/coach/plans/${result.planId}`);
-      return;
+    if (!activePlanId) {
+      setPlanId(result.planId);
     }
 
     savedSnapshotRef.current = createPlanSnapshot(
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [mode, router, savePlan, state]);
+  }, [activePlanId, savePlan, setPlanId, state]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -168,32 +175,32 @@ export function CoachWorkspace({
     </>
   );
 
+  const previewWithOptionalBack = resolvedBackHref ? (
+    <PageBackGutter
+      back={{
+        href: resolvedBackHref,
+        ariaLabel: "Back to plan",
+        onClick: handleBackClick,
+      }}
+      backAlignClassName="top-0 h-10 items-center"
+      className="min-h-0 flex-1"
+      contentClassName="flex h-full min-h-0 flex-col gap-4 overflow-hidden"
+    >
+      {previewPane}
+    </PageBackGutter>
+  ) : (
+    previewPane
+  );
+
   return (
-    <div className="flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden transition-[padding] duration-300">
+    <div
+      className={`flex mt-2 mx-4 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden transition-[padding] duration-300${resolvedBackHref ? ` ${pageBackGutterReserveClass()}` : ""}`}
+    >
       <ResizableSplitPane
         left={
-          mode === "edit" && backHref ? (
-            <div
-              className={`flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden ${pageBackGutterReserveClass()} pr-2 pb-4 pt-4 md:pr-5 md:pb-5 md:pt-5`}
-            >
-              <PageBackGutter
-                back={{
-                  href: backHref,
-                  ariaLabel: "Back to plan",
-                  onClick: handleBackClick,
-                }}
-                backAlignClassName="top-0 h-10 items-center"
-                className="min-h-0 flex-1"
-                contentClassName="flex h-full min-h-0 flex-col gap-4 overflow-hidden"
-              >
-                {previewPane}
-              </PageBackGutter>
-            </div>
-          ) : (
-            <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
-              {previewPane}
-            </div>
-          )
+          <div className="flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden pr-2 pb-4 pt-4 md:pr-5 md:pb-5 md:pt-5">
+            {previewWithOptionalBack}
+          </div>
         }
         right={
           <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">
