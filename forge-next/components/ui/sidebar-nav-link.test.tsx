@@ -12,12 +12,16 @@ vi.mock("next/link", () => ({
     href,
     children,
     className,
+    "aria-label": ariaLabel,
+    title,
   }: {
     href: string;
     children: React.ReactNode;
     className?: string;
+    "aria-label"?: string;
+    title?: string;
   }) => (
-    <a href={href} className={className}>
+    <a href={href} className={className} aria-label={ariaLabel} title={title}>
       {children}
     </a>
   ),
@@ -53,5 +57,20 @@ describe("SidebarNavLink", () => {
 
     expect(plansClasses).toContain("bg-glass");
     expect(plansClasses).toContain("text-surface-foreground");
+  });
+
+  it("hides visible label and exposes aria-label when collapsed", () => {
+    usePathname.mockReturnValue("/coach");
+
+    render(
+      <SidebarNavLink href="/coach/plans" collapsed>
+        Plans
+      </SidebarNavLink>,
+    );
+
+    const link = screen.getByRole("link", { name: "Plans" });
+    expect(link).toHaveAttribute("aria-label", "Plans");
+    expect(link).toHaveClass("justify-center");
+    expect(screen.queryByText("Plans", { selector: "span:not(.sr-only)" })).toBeNull();
   });
 });
