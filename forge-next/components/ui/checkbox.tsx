@@ -25,11 +25,11 @@ export function Checkbox({
       />
       <span
         aria-hidden="true"
-        className={`${boxClass} ${radius.control} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary`}
+        className={`${boxClass} ${radius.control} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary peer-checked:text-zinc-900`}
       >
         {checked ? (
           <svg
-            className="h-3 w-3 text-surface-foreground"
+            className="h-3 w-3 text-current"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
