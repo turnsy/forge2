@@ -208,7 +208,7 @@ export function CoachWorkspace({
     activePlanId ?? state.sessionId + (state.artifactTitle || "artifact");
 
   return (
-    <div className="relative mx-4 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative mx-4 mt-2 flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
       <WorkspaceCloseButton
         className="absolute right-0 top-0 z-20"
         disabled={isChatRunning(state)}
@@ -228,7 +228,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? `min-h-0 min-w-0 overflow-hidden pb-4 pt-0 md:pb-5${resolvedBackHref ? ` ${pageBackGutterReserveClass()}` : ""}`
+              ? `min-h-0 min-w-0 overflow-x-visible overflow-y-hidden pb-4 pt-0 md:pb-5${resolvedBackHref ? ` ${pageBackGutterReserveClass()}` : ""}`
               : "hidden"
           }
         >

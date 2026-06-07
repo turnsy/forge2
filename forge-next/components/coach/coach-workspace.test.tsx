@@ -12,7 +12,7 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
 }));
 
 const mockSavePlan = vi.fn();
@@ -132,6 +132,25 @@ describe("CoachWorkspace layout", () => {
 
     expect(mockRestart).toHaveBeenCalledOnce();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("shows the back link when a saved plan is in workspace state", () => {
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          planId: "plan-1",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    const backLink = screen.getByRole("link", { name: "Back to plan" });
+    expect(backLink).toBeVisible();
+    expect(backLink.closest(".overflow-x-visible")).not.toBeNull();
   });
 
   it("navigates to plan detail on close from edit route", async () => {
