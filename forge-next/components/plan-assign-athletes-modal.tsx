@@ -4,8 +4,9 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
 import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
+import { ModalListLoading } from "@/components/list/modal-list-loading";
 import { Modal } from "@/components/ui/modal";
-import { Input, Message } from "@/components/ui";
+import { Checkbox, Input, Message } from "@/components/ui";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
 import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
@@ -45,8 +46,8 @@ export function PlanAssignAthletesModal({
     error,
     hasMore,
     loadMore,
-    isInitialLoading,
     isLoadingMore,
+    isListLoading,
   } = useInfiniteList({
     fetchPage: fetchAthletes,
   });
@@ -156,37 +157,38 @@ export function PlanAssignAthletesModal({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
-        {isInitialLoading ? (
-          <p className="p-4 text-sm text-zinc-500">Loading athletes…</p>
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+        {isListLoading ? (
+          <ModalListLoading />
         ) : error ? (
-          <Message tone="error">{error}</Message>
+          <div className="p-4">
+            <Message tone="error">{error}</Message>
+          </div>
         ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-zinc-500">No athletes found.</p>
+          <p className="p-4 text-sm text-surface-muted">No athletes found.</p>
         ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
+          <ul className="divide-y divide-glass-border">
             {items.map((athlete) => {
               const checked = selectedIds.has(athlete.id);
 
               return (
                 <li key={athlete.id}>
-                  <label className="flex cursor-pointer items-start gap-3 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
-                    <input
-                      type="checkbox"
-                      className="mt-1"
+                  <label className="flex cursor-pointer items-start gap-3 p-3 transition hover:bg-glass-focus/40">
+                    <Checkbox
+                      className="mt-0.5"
                       checked={checked}
                       onChange={() => toggleAthlete(athlete)}
                     />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      <span className="block truncate text-sm font-medium text-surface-foreground">
                         {athlete.name}
                       </span>
                       {athlete.email ? (
-                        <span className="block truncate text-xs text-zinc-500">
+                        <span className="block truncate text-xs text-surface-muted">
                           {athlete.email}
                         </span>
                       ) : null}
-                      <span className="mt-1 block text-xs text-zinc-500">
+                      <span className="mt-1 block text-xs text-surface-muted">
                         Current plan: {athlete.currentPlanName ?? "No plan"}
                       </span>
                     </span>

@@ -65,6 +65,10 @@ export function PlanDeleteModal({
 
   const displayTitle = deleteInfo?.planTitle ?? planTitle;
   const activeCount = deleteInfo?.activeAssignmentCount ?? 0;
+  const deleteMessage =
+    activeCount > 0
+      ? `This will permanently delete the plan and its version history. ${activeCount} athlete${activeCount === 1 ? " is" : "s are"} currently assigned — they will be unassigned, but their workout history will be kept?`
+      : "This will permanently delete the plan and its version history. This action cannot be undone?";
 
   function handleDelete() {
     setActionError(null);
@@ -120,12 +124,7 @@ export function PlanDeleteModal({
       ) : loadError ? (
         <Message tone="error">{loadError}</Message>
       ) : (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          This will permanently delete the plan and its version history.
-          {activeCount > 0
-            ? ` ${activeCount} athlete${activeCount === 1 ? " is" : "s are"} currently assigned — they will be unassigned, but their workout history will be kept.`
-            : " This action cannot be undone."}
-        </p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{deleteMessage}</p>
       )}
 
       {actionError ? <Message tone="error">{actionError}</Message> : null}

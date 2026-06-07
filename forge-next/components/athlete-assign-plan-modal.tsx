@@ -4,8 +4,9 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
 import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
+import { ModalListLoading } from "@/components/list/modal-list-loading";
 import { Modal } from "@/components/ui/modal";
-import { Input, Message } from "@/components/ui";
+import { Input, Message, Radio } from "@/components/ui";
 import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
 import { assignPlanToAthleteAction } from "@/lib/plans/actions";
@@ -42,8 +43,8 @@ export function AthleteAssignPlanModal({
     error,
     hasMore,
     loadMore,
-    isInitialLoading,
     isLoadingMore,
+    isListLoading,
   } = useInfiniteList({
     fetchPage: fetchPlans,
   });
@@ -105,30 +106,31 @@ export function AthleteAssignPlanModal({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
-        {isInitialLoading ? (
-          <p className="p-4 text-sm text-zinc-500">Loading plans…</p>
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+        {isListLoading ? (
+          <ModalListLoading />
         ) : error ? (
-          <Message tone="error">{error}</Message>
+          <div className="p-4">
+            <Message tone="error">{error}</Message>
+          </div>
         ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-zinc-500">No plans found.</p>
+          <p className="p-4 text-sm text-surface-muted">No plans found.</p>
         ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
+          <ul className="divide-y divide-glass-border">
             {items.map((plan) => (
               <li key={plan.id}>
-                <label className="flex cursor-pointer items-start gap-3 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
-                  <input
-                    type="radio"
+                <label className="flex cursor-pointer items-start gap-3 p-3 transition hover:bg-glass-focus/40">
+                  <Radio
+                    className="mt-0.5"
                     name={`assign-plan-${athleteId}`}
-                    className="mt-1"
                     checked={selectedPlanId === plan.id}
                     onChange={() => setSelectedPlanId(plan.id)}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    <span className="block truncate text-sm font-medium text-surface-foreground">
                       {plan.title}
                     </span>
-                    <span className="mt-1 block text-xs text-zinc-500">
+                    <span className="mt-1 block text-xs text-surface-muted">
                       {plan.weekCount} week{plan.weekCount === 1 ? "" : "s"}
                     </span>
                   </span>

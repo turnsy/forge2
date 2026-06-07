@@ -101,6 +101,8 @@ export function useInfiniteList<T>({
     setPage((current) => current + 1);
   }, [hasMore, loading]);
 
+  const isSearchPending = search.trim() !== debouncedSearch;
+
   return {
     items,
     search,
@@ -111,5 +113,7 @@ export function useInfiniteList<T>({
     loadMore,
     isInitialLoading: loading && page === 1,
     isLoadingMore: loading && page > 1,
+    isSearchPending,
+    isListLoading: isSearchPending || (loading && page === 1),
   };
 }

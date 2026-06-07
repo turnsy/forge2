@@ -5,6 +5,8 @@ export { ButtonLink } from "./button-link";
 export { IconButton } from "./icon-button";
 export { SubmitButton } from "./submit-button";
 export { Input } from "./input";
+export { Checkbox } from "./checkbox";
+export { Radio } from "./radio";
 export { Message } from "./message";
 export { Divider } from "./divider";
 export { Separator } from "./separator";
