@@ -8,6 +8,7 @@ import {
   PlansIcon,
 } from "@/components/icons/sidebar-nav-icons";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
+import { IconButton } from "@/components/ui";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
 import type { UserRole } from "@/lib/auth/types";
 import {
@@ -25,9 +26,6 @@ function navIcon(icon: SidebarNavIcon) {
       return <AthletesIcon />;
   }
 }
-
-const toggleButtonClass =
-  "flex shrink-0 items-center justify-center rounded-xl p-2 text-surface-muted transition hover:bg-glass hover:text-surface-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 export function Sidebar({
   role,
@@ -59,15 +57,14 @@ export function Sidebar({
             Forge
           </span>
         )}
-        <button
-          type="button"
-          aria-expanded={!collapsed}
+        <IconButton
+          variant="ghost"
+          size="sm"
+          icon={<SidebarToggleIcon />}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={toggleButtonClass}
+          aria-expanded={!collapsed}
           onClick={() => setCollapsed((current) => !current)}
-        >
-          <SidebarToggleIcon />
-        </button>
+        />
       </div>
 
       <nav
