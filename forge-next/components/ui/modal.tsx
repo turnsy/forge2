@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 const sizeClass = {
   md: "max-w-md",
@@ -38,28 +39,34 @@ export function Modal({
       }
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open, onClose]);
 
-  if (!open) {
+  if (!open || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] overflow-y-auto p-4 sm:p-6">
       <button
         type="button"
         aria-label="Close dialog"
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="flex min-h-full items-center justify-center">
+      <div className="relative z-[201] flex min-h-full items-center justify-center">
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          className={`relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${sizeClass[size]} flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-900`}
+          className={`flex max-h-[calc(100dvh-2rem)] w-full ${sizeClass[size]} flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900`}
         >
           <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
             <h2 id="modal-title" className="text-lg font-semibold">
@@ -96,6 +103,7 @@ export function Modal({
           {footer ? <div className="mt-4 shrink-0">{footer}</div> : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
