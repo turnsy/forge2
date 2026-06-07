@@ -86,7 +86,7 @@ export function pageBackLinkClass(): string {
 }
 
 export function pageBackGutterGapClass(): string {
-  return "gap-x-1";
+  return "gap-x-2";
 }
 
 export function listRowClass(): string {

@@ -151,7 +151,7 @@ export function CoachWorkspace({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex mt-2 min-h-0 flex-1 flex-col overflow-hidden">
       <ResizableSplitPane
         left={
           mode === "edit" && backHref ? (
