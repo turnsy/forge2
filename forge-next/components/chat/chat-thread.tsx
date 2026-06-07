@@ -1,6 +1,5 @@
-import { RotateIcon } from "@/components/icons/rotate-icon";
 import { ChatBubble } from "@/components/ui/chat-bubble";
-import { IconButton, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 import {
   getRunStatusLabel,
   isActiveRunStatus,
@@ -18,16 +17,12 @@ export function ChatThread({
   runStatus,
   errors,
   phase,
-  onRestart,
-  restartDisabled = false,
 }: {
   messages: ChatMessage[];
   streamingAssistantText: string;
   runStatus: ChatStatus | null;
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
-  onRestart?: () => void;
-  restartDisabled?: boolean;
 }) {
   const showStreaming =
     streamingAssistantText.length > 0 &&
@@ -53,18 +48,6 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {onRestart ? (
-        <div className="flex shrink-0 items-center justify-end px-1 pb-2">
-          <IconButton
-            variant="ghost"
-            size="sm"
-            icon={<RotateIcon />}
-            aria-label="Restart workspace"
-            disabled={restartDisabled}
-            onClick={onRestart}
-          />
-        </div>
-      ) : null}
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
         {messages.map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>

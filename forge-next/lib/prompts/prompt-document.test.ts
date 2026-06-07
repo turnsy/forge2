@@ -92,7 +92,7 @@ describe("serializePromptDocument", () => {
   });
 });
 
-describe("serializePromptForAgent", () => {
+describe("serializePromptForAgent (inline mentions)", () => {
   it("inlines mention kind and id while preserving sentence structure", () => {
     const segments = insertMentionChip(
       createTextDocument("Update @Summer"),
