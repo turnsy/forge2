@@ -84,15 +84,43 @@ export function PlanDeleteModal({
   }
 
   return (
-    <Modal open title={`Delete “${displayTitle}”`} onClose={onClose}>
+    <Modal
+      open
+      title={`Delete “${displayTitle}”`}
+      onClose={onClose}
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            disabled={pending}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            fullWidth={false}
+            disabled={pending || loadingInfo || Boolean(loadError)}
+            onClick={handleDelete}
+          >
+            {pending ? "Deleting…" : "Delete plan"}
+          </Button>
+        </div>
+      }
+    >
       {loadingInfo ? (
-        <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Loading plan details…
         </p>
       ) : loadError ? (
         <Message tone="error">{loadError}</Message>
       ) : (
-        <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
           This will permanently delete the plan and its version history.
           {activeCount > 0
             ? ` ${activeCount} athlete${activeCount === 1 ? " is" : "s are"} currently assigned — they will be unassigned, but their workout history will be kept.`
@@ -100,34 +128,7 @@ export function PlanDeleteModal({
         </p>
       )}
 
-      {actionError ? (
-        <div className="mt-4">
-          <Message tone="error">{actionError}</Message>
-        </div>
-      ) : null}
-
-      <div className="mt-4 flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          disabled={pending}
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="danger"
-          size="sm"
-          fullWidth={false}
-          disabled={pending || loadingInfo || Boolean(loadError)}
-          onClick={handleDelete}
-        >
-          {pending ? "Deleting…" : "Delete plan"}
-        </Button>
-      </div>
+      {actionError ? <Message tone="error">{actionError}</Message> : null}
     </Modal>
   );
 }

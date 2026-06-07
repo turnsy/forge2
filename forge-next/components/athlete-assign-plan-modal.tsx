@@ -2,9 +2,10 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
 import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
 import { Modal } from "@/components/ui/modal";
-import { Button, Input, Message } from "@/components/ui";
+import { Input, Message } from "@/components/ui";
 import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
 import { assignPlanToAthleteAction } from "@/lib/plans/actions";
@@ -73,12 +74,28 @@ export function AthleteAssignPlanModal({
   }
 
   return (
-    <Modal open title={modalTitle} onClose={onClose} size="lg">
-      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+    <Modal
+      open
+      title={modalTitle}
+      onClose={onClose}
+      size="large"
+      bodyClassName="flex min-h-0 flex-col gap-4 overflow-hidden"
+      footer={
+        <AssignmentModalFooter
+          pending={pending}
+          loading={loading}
+          onCancel={onClose}
+          onConfirm={handleAssign}
+          confirmLabel="Assign"
+          pendingLabel="Assigning…"
+        />
+      }
+    >
+      <p className="shrink-0 text-sm text-zinc-600 dark:text-zinc-400">
         Select a plan to assign to this athlete.
       </p>
 
-      <div className="mb-4">
+      <div className="shrink-0">
         <Input
           type="search"
           value={search}
@@ -88,7 +105,7 @@ export function AthleteAssignPlanModal({
         />
       </div>
 
-      <div className="max-h-72 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
         {isInitialLoading ? (
           <p className="p-4 text-sm text-zinc-500">Loading plans…</p>
         ) : error ? (
@@ -129,7 +146,7 @@ export function AthleteAssignPlanModal({
       </div>
 
       {shouldShowAthleteReassignWarning(currentPlanName) ? (
-        <div className="mt-4">
+        <div className="shrink-0">
           <Message tone="info">
             {athleteName} is currently assigned to {currentPlanName}. Assigning a
             new plan will replace their current assignment with a fresh copy.
@@ -138,32 +155,10 @@ export function AthleteAssignPlanModal({
       ) : null}
 
       {actionError ? (
-        <div className="mt-4">
+        <div className="shrink-0">
           <Message tone="error">{actionError}</Message>
         </div>
       ) : null}
-
-      <div className="mt-4 flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          disabled={pending}
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          fullWidth={false}
-          disabled={pending || loading}
-          onClick={handleAssign}
-        >
-          {pending ? "Assigning…" : "Assign"}
-        </Button>
-      </div>
     </Modal>
   );
 }

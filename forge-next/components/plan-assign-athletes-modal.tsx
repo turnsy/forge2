@@ -2,9 +2,10 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
 import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
 import { Modal } from "@/components/ui/modal";
-import { Button, Input, Message } from "@/components/ui";
+import { Input, Message } from "@/components/ui";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
 import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
@@ -127,14 +128,25 @@ export function PlanAssignAthletesModal({
       open
       title={`Assign “${planTitle}”`}
       onClose={onClose}
-      size="lg"
+      size="large"
+      bodyClassName="flex min-h-0 flex-col gap-4 overflow-hidden"
+      footer={
+        <AssignmentModalFooter
+          pending={pending}
+          loading={loading}
+          onCancel={onClose}
+          onConfirm={handleAssign}
+          confirmLabel="Assign"
+          pendingLabel="Assigning…"
+        />
+      }
     >
-      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="shrink-0 text-sm text-zinc-600 dark:text-zinc-400">
         Select athletes to assign this plan. Athletes already on this plan are
         pre-selected.
       </p>
 
-      <div className="mb-4">
+      <div className="shrink-0">
         <Input
           type="search"
           value={search}
@@ -144,7 +156,7 @@ export function PlanAssignAthletesModal({
         />
       </div>
 
-      <div className="max-h-72 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
         {isInitialLoading ? (
           <p className="p-4 text-sm text-zinc-500">Loading athletes…</p>
         ) : error ? (
@@ -193,7 +205,7 @@ export function PlanAssignAthletesModal({
       </div>
 
       {showReassignWarning ? (
-        <div className="mt-4">
+        <div className="shrink-0">
           <Message tone="info">
             Some selected athletes already have a different active plan. Assigning
             will replace their current assignment with a fresh copy of this plan.
@@ -202,32 +214,10 @@ export function PlanAssignAthletesModal({
       ) : null}
 
       {actionError ? (
-        <div className="mt-4">
+        <div className="shrink-0">
           <Message tone="error">{actionError}</Message>
         </div>
       ) : null}
-
-      <div className="mt-4 flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          disabled={pending}
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          fullWidth={false}
-          disabled={pending || loading}
-          onClick={handleAssign}
-        >
-          {pending ? "Assigning…" : "Assign"}
-        </Button>
-      </div>
     </Modal>
   );
 }
