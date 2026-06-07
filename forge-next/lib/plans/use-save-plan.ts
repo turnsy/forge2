@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useSaveArtifact } from "@/lib/chat/use-save-artifact";
 import {
   createCoachPlanClient,
@@ -11,16 +10,11 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 export type { SaveArtifactStatus as SavePlanStatus } from "@/lib/chat/use-save-artifact";
 
 export function useSavePlan(planId: string | null) {
-  const successStatus = useMemo(
-    () => (planId ? ("saved" as const) : ("saving" as const)),
-    [planId],
-  );
-
   const { save, ...rest } = useSaveArtifact<
     { plan: WorkoutPlan; title: string },
     { planId: string; versionId: string }
   >({
-    successStatus,
+    successStatus: "saved",
     save: async (input) => {
       const result = planId
         ? await saveCoachPlanVersionClient({
