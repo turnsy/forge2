@@ -8,12 +8,10 @@ export function CoachConversationPanel({
   state,
   onAttach,
   onSend,
-  layout = "split",
 }: {
   state: PlanWorkspaceState;
   onAttach: (files: File[]) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
-  layout?: "split" | "single";
 }) {
   return (
     <>
@@ -23,7 +21,6 @@ export function CoachConversationPanel({
         runStatus={state.runStatus}
         errors={state.errors}
         phase={state.phase}
-        layout={layout}
       />
       <div className="shrink-0 py-2">
         <ChatComposer

@@ -114,7 +114,11 @@ export function useChatWorkspace<TArtifact>(
       }
 
       const snapshot = stateRef.current;
-      dispatch({ type: "SEND_START", userMessage: displayPrompt });
+      dispatch({
+        type: "SEND_START",
+        userMessage: displayPrompt,
+        userSegments: segments,
+      });
 
       const error = await config.streamChat({
         sessionId: snapshot.sessionId,

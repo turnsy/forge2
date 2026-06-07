@@ -43,6 +43,7 @@ describe("buildCoachAgentSystemPrompt", () => {
     expect(system).toContain(
       "Silently use tools as needed, then respond only with your final answer",
     );
+    expect(system).toContain("Respond in plain text only");
     expect(system).toContain("one short plain-language sentence");
     expect(system).toContain("Do not mention workspace, sandbox, JSON");
   });

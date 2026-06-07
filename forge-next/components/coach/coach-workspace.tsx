@@ -224,7 +224,7 @@ export function CoachWorkspace({
                     {saveError}
                   </p>
                 ) : null}
-                <div className="min-h-0 flex-1 overflow-hidden px-2">
+                <div className="min-h-0 flex-1 overflow-hidden px-2 pt-3">
                   <ArtifactPreview
                     artifact={toArtifactPreviewModel(state.currentArtifact)}
                     runStatus={state.runStatus}
@@ -237,10 +237,10 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden pb-4 md:pb-5 ${
+          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
             showSplitPane
-              ? "animate-chat-panel-slide border-l border-glass-border px-2 md:px-3"
-              : "w-full px-4 md:px-6"
+              ? "animate-chat-panel-slide border-l border-glass-border"
+              : "w-full"
           }`}
         >
           <WorkspaceCloseButton
@@ -248,12 +248,9 @@ export function CoachWorkspace({
             disabled={isChatRunning(state)}
             onClick={handleClose}
           />
-          <div
-            className={`flex min-h-0 flex-1 flex-col${showSplitPane ? " pt-10" : ""}`}
-          >
+          <div className="flex min-h-0 flex-1 flex-col pt-10">
             <CoachConversationPanel
               state={state}
-              layout={showSplitPane ? "split" : "single"}
               onAttach={attachFiles}
               onSend={handleSendMessage}
             />

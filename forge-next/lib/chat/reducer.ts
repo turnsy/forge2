@@ -105,7 +105,13 @@ export function chatWorkspaceReducer<TArtifact>(
         streamingAssistantText: "",
         messages: [
           ...state.messages,
-          { role: "user", content: action.userMessage },
+          {
+            role: "user",
+            content: action.userMessage,
+            ...(action.userSegments?.length
+              ? { segments: action.userSegments }
+              : {}),
+          },
         ],
       };
     case "APPLY_EVENT":

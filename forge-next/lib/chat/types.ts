@@ -1,3 +1,5 @@
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
+
 export type ChatStatus =
   | "parsing"
   | "generating"
@@ -9,6 +11,8 @@ export type ChatStatus =
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  /** Present on user messages sent with @ mention chips. */
+  segments?: PromptSegment[];
 };
 
 export type ChatWorkspacePhase = "idle" | "uploading" | "streaming" | "error";
@@ -107,7 +111,7 @@ export type ChatWorkspaceAction<TArtifact = unknown> =
       displayLabel: string;
     }
   | { type: "ATTACH_UPLOAD_FAILURE"; localId: string; errorMessage: string }
-  | { type: "SEND_START"; userMessage: string }
+  | { type: "SEND_START"; userMessage: string; userSegments?: PromptSegment[] }
   | { type: "APPLY_EVENT"; event: ChatEvent<TArtifact> }
   | { type: "STREAM_END" }
   | { type: "STREAM_CLIENT_ERROR"; message: string };
