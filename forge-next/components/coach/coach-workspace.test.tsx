@@ -153,7 +153,7 @@ describe("CoachWorkspace layout", () => {
     expect(backLink.closest(".overflow-x-visible")).not.toBeNull();
   });
 
-  it("navigates to plan detail on close from edit route", async () => {
+  it("navigates to plan detail on close when a saved plan is loaded", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -166,16 +166,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(
-      <CoachWorkspace
-        firstName="Alex"
-        role="coach"
-        mode="edit"
-        planId="plan-1"
-        initialPlan={samplePlan}
-        backHref="/coach/plans/plan-1"
-      />,
-    );
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
     await user.click(screen.getByRole("button", { name: "Close workspace" }));
 
     expect(mockPush).toHaveBeenCalledWith("/coach/plans/plan-1");

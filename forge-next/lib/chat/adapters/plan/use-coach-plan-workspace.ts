@@ -12,12 +12,14 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 export function useCoachPlanWorkspace(options?: {
   initialPlan?: WorkoutPlan;
   planId?: string;
+  onArtifactCleared?: () => void;
 }) {
   const initialPlan = options?.initialPlan;
   const planId = options?.planId;
+  const onArtifactCleared = options?.onArtifactCleared;
   const initialState = useMemo(
     () =>
-      initialPlan
+      initialPlan && planId
         ? createEditPlanWorkspaceState(initialPlan, planId)
         : undefined,
     [initialPlan, planId],
@@ -41,7 +43,12 @@ export function useCoachPlanWorkspace(options?: {
             messages,
             currentArtifact,
           },
-          onEvent,
+          onEvent: (event) => {
+            onEvent(event);
+            if (event.type === "clearArtifact") {
+              onArtifactCleared?.();
+            }
+          },
         });
 
         if (!error) {

@@ -12,6 +12,7 @@ export type ArtifactToolsContext = {
     plan: WorkoutPlan;
     title: string;
   }) => void;
+  onClearCurrentArtifact: () => void;
 };
 
 export function createArtifactTools(ctx: ArtifactToolsContext) {
@@ -51,6 +52,19 @@ export function createArtifactTools(ctx: ArtifactToolsContext) {
           planId: detail.id,
           name: title,
           summary: toPlanToolSummary(detail.plan),
+        };
+      },
+    }),
+
+    clear_current_artifact: tool({
+      description:
+        "Clear the current plan artifact so a brand-new plan can be created from scratch. Use only when the user explicitly asks for a new plan — not when iterating on the current plan.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        ctx.onClearCurrentArtifact();
+        return {
+          ok: true as const,
+          message: "Current plan cleared. Ready for a new plan.",
         };
       },
     }),

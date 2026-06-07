@@ -81,13 +81,18 @@ export type ChatErrorsEvent = {
     | { code: string; message: string }[];
 };
 
+export type ChatClearArtifactEvent = {
+  type: "clearArtifact";
+};
+
 export type ChatEvent<TArtifact = unknown> =
   | ChatAssistantTextDeltaEvent
   | ChatRunStatusEvent
   | ChatArtifactEvent<TArtifact>
   | ChatSetArtifactEvent<TArtifact>
   | ChatWarningsEvent
-  | ChatErrorsEvent;
+  | ChatErrorsEvent
+  | ChatClearArtifactEvent;
 
 export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "RESTART"; sessionId: string }

@@ -15,6 +15,7 @@ export type CoachAgentToolsContext = PlanChatToolsContext & {
     plan: WorkoutPlan;
     title: string;
   }) => void;
+  onClearCurrentArtifact: () => void;
 };
 
 export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
@@ -26,6 +27,7 @@ export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
     ...createArtifactTools({
       coachId: ctx.coachId,
       onSetCurrentArtifact: ctx.onSetCurrentArtifact,
+      onClearCurrentArtifact: ctx.onClearCurrentArtifact,
     }),
   };
 }

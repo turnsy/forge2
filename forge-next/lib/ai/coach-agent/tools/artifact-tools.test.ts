@@ -63,6 +63,7 @@ describe("createArtifactTools", () => {
     const tools = createArtifactTools({
       coachId: "coach-1",
       onSetCurrentArtifact,
+      onClearCurrentArtifact: () => {},
     });
     const result = await tools.set_current_artifact.execute!(
       { planId: "plan-1" },
@@ -83,5 +84,22 @@ describe("createArtifactTools", () => {
       expect(result.summary).toContain("Summer Block");
       expect(result.summary).not.toContain('"weeks"');
     }
+  });
+
+  it("clears artifact on clear_current_artifact", async () => {
+    const onClearCurrentArtifact = vi.fn();
+    const tools = createArtifactTools({
+      coachId: "coach-1",
+      onSetCurrentArtifact: () => {},
+      onClearCurrentArtifact,
+    });
+
+    const result = await tools.clear_current_artifact.execute!({}, toolCtx);
+
+    expect(onClearCurrentArtifact).toHaveBeenCalledOnce();
+    expect(result).toEqual({
+      ok: true,
+      message: "Current plan cleared. Ready for a new plan.",
+    });
   });
 });

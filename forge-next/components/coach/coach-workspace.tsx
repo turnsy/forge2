@@ -20,29 +20,31 @@ import {
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { pageBackGutterReserveClass, roleLinkClass } from "@/lib/theme";
 
-export type CoachWorkspaceMode = "create" | "edit";
-
 export function CoachWorkspace({
   firstName,
   role,
-  mode = "create",
-  planId,
+  planId: initialPlanId,
   initialPlan,
-  backHref,
+  stripPlanIdOnClear = false,
 }: {
   firstName: string;
   role: UserRole;
-  mode?: CoachWorkspaceMode;
   planId?: string;
   initialPlan?: WorkoutPlan;
-  backHref?: string;
+  stripPlanIdOnClear?: boolean;
 }) {
   const router = useRouter();
   const savedSnapshotRef = useRef<string | null>(
-    mode === "edit" && initialPlan
-      ? createPlanSnapshot(initialPlan, initialPlan.name)
-      : null,
+    initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
   );
+
+  const handleArtifactCleared = useCallback(() => {
+    savedSnapshotRef.current = null;
+    if (stripPlanIdOnClear) {
+      router.replace("/coach");
+    }
+  }, [router, stripPlanIdOnClear]);
+
   const {
     state,
     attachFiles,
@@ -51,14 +53,19 @@ export function CoachWorkspace({
     setPlanId,
     restart,
   } = useCoachPlanWorkspace(
-    mode === "edit" && initialPlan
-      ? { initialPlan, planId }
-      : undefined,
+    initialPlan && initialPlanId
+      ? {
+          initialPlan,
+          planId: initialPlanId,
+          onArtifactCleared: handleArtifactCleared,
+        }
+      : { onArtifactCleared: handleArtifactCleared },
   );
 
-  const activePlanId = state.planId ?? planId ?? null;
-  const resolvedBackHref =
-    backHref ?? (activePlanId ? `/coach/plans/${activePlanId}` : undefined);
+  const activePlanId = state.planId;
+  const resolvedBackHref = activePlanId
+    ? `/coach/plans/${activePlanId}`
+    : undefined;
 
   const { saveStatus, saveError, savePlan, resetSaveStatus } =
     useSavePlan(activePlanId);
@@ -92,13 +99,14 @@ export function CoachWorkspace({
 
     if (!activePlanId) {
       setPlanId(result.planId);
+      router.replace(`/coach?planId=${result.planId}`);
     }
 
     savedSnapshotRef.current = createPlanSnapshot(
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [activePlanId, savePlan, setPlanId, state]);
+  }, [activePlanId, router, savePlan, setPlanId, state]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -135,13 +143,13 @@ export function CoachWorkspace({
       return;
     }
 
-    if (mode === "edit" && activePlanId) {
+    if (activePlanId) {
       router.push(`/coach/plans/${activePlanId}`);
       return;
     }
 
     restart();
-  }, [activePlanId, mode, restart, router, state]);
+  }, [activePlanId, restart, router, state]);
 
   if (!state.hasStarted) {
     return (

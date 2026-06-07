@@ -10,6 +10,7 @@ export function buildCoachAgentSystemPrompt(input: {
     "- Read context: list_athletes, get_athlete, list_plans, get_plan, list_plan_versions, list_pending_invites, list_session_files, read_session_file",
     "- Mutations: accept_coach_link, reject_coach_link, assign_plan",
     "- Open a saved plan for editing (not already in preview): set_current_artifact(planId) — e.g. \"edit Summer Block\", \"add a week to this plan\"",
+    "- Start a brand-new plan (user explicitly asks): clear_current_artifact — not when iterating on the current plan",
     "- Inspect the in-preview plan: summarize_current_artifact",
     "- Create or change the in-preview plan: get_plan_codegen_guide, then submit_plan_code",
     "",

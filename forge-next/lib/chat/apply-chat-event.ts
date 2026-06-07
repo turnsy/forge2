@@ -44,6 +44,13 @@ export function applyChatEvent<TArtifact>(
         ),
         phase: "error",
       };
+    case "clearArtifact":
+      return {
+        ...state,
+        currentArtifact: null,
+        artifactTitle: "",
+        planId: null,
+      };
     default:
       return state;
   }

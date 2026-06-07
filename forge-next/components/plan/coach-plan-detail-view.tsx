@@ -41,7 +41,7 @@ export function CoachPlanDetailView({
             </Button>
             <PlanDetailActions planId={planId} planTitle={plan.name} />
             <ButtonLink
-              href={`/coach/plans/${planId}/edit`}
+              href={`/coach?planId=${planId}`}
               variant="secondary"
               size="sm"
               className="inline-flex items-center gap-2"
