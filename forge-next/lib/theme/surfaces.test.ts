@@ -3,6 +3,7 @@ import {
   attachmentChipClass,
   buttonVariantClass,
   pageBackLinkClass,
+  pageBackGutterReserveClass,
   pillClass,
   cardClass,
   cardFooterClass,
@@ -31,6 +32,10 @@ describe("surface theme helpers", () => {
   it("returns borderless back link styling", () => {
     expect(pageBackLinkClass()).toContain("outline-none");
     expect(pageBackLinkClass()).not.toContain("border");
+  });
+
+  it("reserves left padding for the overlay back control", () => {
+    expect(pageBackGutterReserveClass()).toBe("pl-12");
   });
 
   it("returns shared control styling", () => {

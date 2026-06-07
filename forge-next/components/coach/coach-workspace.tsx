@@ -18,7 +18,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass } from "@/lib/theme";
+import { pageBackGutterReserveClass, roleLinkClass } from "@/lib/theme";
 
 export type CoachWorkspaceMode = "create" | "edit";
 
@@ -151,11 +151,13 @@ export function CoachWorkspace({
   );
 
   return (
-    <div className="flex mt-2 min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex mt-2 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
       <ResizableSplitPane
         left={
           mode === "edit" && backHref ? (
-            <div className="flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden px-2 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
+            <div
+              className={`flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden ${pageBackGutterReserveClass()} pr-2 pb-4 pt-4 md:pr-5 md:pb-5 md:pt-5`}
+            >
               <PageBackGutter
                 back={{
                   href: backHref,

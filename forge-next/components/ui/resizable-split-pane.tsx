@@ -61,7 +61,7 @@ export function ResizableSplitPane({
   return (
     <div
       ref={containerRef}
-      className="flex min-h-0 flex-1 overflow-hidden"
+      className="flex min-h-0 flex-1 overflow-x-visible overflow-y-hidden"
     >
       <div
         className="min-h-0 min-w-0 overflow-x-visible overflow-y-hidden"

@@ -93,6 +93,11 @@ export function pageBackGutterAlignClass(): string {
   return "top-0 h-8 items-center";
 }
 
+/** Left padding that reserves space for the overlay back control (40px button + 8px gap). */
+export function pageBackGutterReserveClass(): string {
+  return "pl-12";
+}
+
 export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }
