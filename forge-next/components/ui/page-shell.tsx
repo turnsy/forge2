@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
-import { PageBackLink } from "@/components/ui/page-back-link";
+import { PageBackGutter, type PageBackConfig } from "@/components/ui/page-back-gutter";
 import { pageContentClass, pageShellClass } from "@/lib/theme";
 
 export function PageShell({
@@ -7,11 +7,7 @@ export function PageShell({
   className,
   children,
 }: {
-  back?: {
-    href: string;
-    ariaLabel: string;
-    onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
-  };
+  back?: PageBackConfig;
   className?: string;
   children: ReactNode;
 }) {
@@ -24,15 +20,10 @@ export function PageShell({
   }
 
   return (
-    <div className={`relative ${pageShellClass()}${className ? ` ${className}` : ""}`}>
-      <div className="absolute top-8 right-full mr-2 sm:mr-3">
-        <PageBackLink
-          href={back.href}
-          ariaLabel={back.ariaLabel}
-          onClick={back.onClick}
-        />
-      </div>
-      <main className="flex min-h-full flex-col gap-6">{children}</main>
+    <div className={`${pageShellClass()}${className ? ` ${className}` : ""}`}>
+      <PageBackGutter back={back}>
+        <main className="flex min-h-full flex-col gap-6">{children}</main>
+      </PageBackGutter>
     </div>
   );
 }

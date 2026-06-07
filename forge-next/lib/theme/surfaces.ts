@@ -85,6 +85,10 @@ export function pageBackLinkClass(): string {
   return "inline-flex shrink-0 items-center justify-center rounded-full h-10 w-10 text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
 }
 
+export function pageBackGutterGapClass(): string {
+  return "gap-x-1";
+}
+
 export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }

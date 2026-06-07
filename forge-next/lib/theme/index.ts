@@ -25,6 +25,7 @@ export {
   pageContentClass,
   pageShellClass,
   pageBackLinkClass,
+  pageBackGutterGapClass,
   pillClass,
   type AttachmentChipTone,
   type ButtonSize,

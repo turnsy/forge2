@@ -1,5 +1,6 @@
 export { Button } from "./button";
 export { PageBackLink } from "./page-back-link";
+export { PageBackGutter, type PageBackConfig } from "./page-back-gutter";
 export { ButtonLink } from "./button-link";
 export { IconButton } from "./icon-button";
 export { SubmitButton } from "./submit-button";
