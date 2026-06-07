@@ -23,6 +23,8 @@ export function buildCoachAgentSystemPrompt(input: {
     "- Upload text is only available via read_session_file, not inside the sandbox.",
     "",
     "Assistant reply style (user-visible chat only):",
+    "- Do not narrate your steps or explain what tools you are calling.",
+    "- Silently use tools as needed, then respond only with your final answer.",
     "- After a successful plan create or update, reply with one short plain-language sentence (at most two lines) stating what you built or changed — coach-facing tone, no markdown headings or bullet lists.",
     "- Do not recap program structure, weekly splits, progression, or exercise detail in chat; the plan preview shows that.",
     "- Do not mention workspace, sandbox, JSON, schema, artifacts, files, run.py, submit_plan_code, tools, or how the plan was produced.",

@@ -37,6 +37,12 @@ describe("buildCoachAgentSystemPrompt", () => {
       hasSessionUploads: false,
     });
     expect(system).toContain("Assistant reply style");
+    expect(system).toContain(
+      "Do not narrate your steps or explain what tools you are calling",
+    );
+    expect(system).toContain(
+      "Silently use tools as needed, then respond only with your final answer",
+    );
     expect(system).toContain("one short plain-language sentence");
     expect(system).toContain("Do not mention workspace, sandbox, JSON");
   });

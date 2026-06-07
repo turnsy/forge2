@@ -82,6 +82,21 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses wider horizontal padding in single-pane chat", () => {
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(container.querySelector(".px-4.md\\:px-6")).toBeTruthy();
+  });
+
   it("shows centered chat without split when started but no artifact", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(

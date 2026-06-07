@@ -237,10 +237,10 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
+          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden pb-4 md:pb-5 ${
             showSplitPane
-              ? "animate-chat-panel-slide border-l border-glass-border"
-              : "w-full"
+              ? "animate-chat-panel-slide border-l border-glass-border px-2 md:px-3"
+              : "w-full px-4 md:px-6"
           }`}
         >
           <WorkspaceCloseButton
@@ -253,6 +253,7 @@ export function CoachWorkspace({
           >
             <CoachConversationPanel
               state={state}
+              layout={showSplitPane ? "split" : "single"}
               onAttach={attachFiles}
               onSend={handleSendMessage}
             />

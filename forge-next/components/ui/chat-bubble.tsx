@@ -24,9 +24,6 @@ export function ChatBubble({
         aria-live={isStreaming ? "polite" : undefined}
       >
         {children}
-        {isStreaming ? (
-          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-surface-muted align-middle" />
-        ) : null}
       </div>
     </div>
   );

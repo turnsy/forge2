@@ -17,12 +17,14 @@ export function ChatThread({
   runStatus,
   errors,
   phase,
+  layout = "split",
 }: {
   messages: ChatMessage[];
   streamingAssistantText: string;
   runStatus: ChatStatus | null;
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
+  layout?: "split" | "single";
 }) {
   const showStreaming =
     streamingAssistantText.length > 0 &&
@@ -48,7 +50,11 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-2${
+          layout === "single" ? " px-1 md:px-2" : " px-1"
+        }`}
+      >
         {messages.map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>
             <p className="whitespace-pre-wrap">{message.content}</p>
