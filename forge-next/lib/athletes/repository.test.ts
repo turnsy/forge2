@@ -17,6 +17,7 @@ describe("mapCoachAthleteRow", () => {
       id: "athlete-1",
       name: "Alex Rivera",
       email: "alex@example.com",
+      currentPlanId: "plan-1",
       currentPlanName: "4-Week Strength Block",
       joinedAt: "2026-01-10T00:00:00.000Z",
     });
@@ -37,6 +38,7 @@ describe("mapCoachAthleteRow", () => {
       id: "athlete-2",
       name: "Unnamed athlete",
       email: "",
+      currentPlanId: null,
       currentPlanName: null,
       joinedAt: "2026-01-10T00:00:00.000Z",
     });

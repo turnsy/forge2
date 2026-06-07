@@ -1,0 +1,169 @@
+"use client";
+
+import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
+import { Modal } from "@/components/ui/modal";
+import { Button, Input, Message } from "@/components/ui";
+import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
+import { useInfiniteList } from "@/lib/lists/use-infinite-list";
+import { assignPlanToAthleteAction } from "@/lib/plans/actions";
+import { shouldShowAthleteReassignWarning } from "@/lib/plans/assignment";
+import type { CoachPlanListItem } from "@/lib/plans/types";
+
+export function AthleteAssignPlanModal({
+  athleteId,
+  athleteName,
+  currentPlanName,
+  onClose,
+}: {
+  athleteId: string;
+  athleteName: string;
+  currentPlanName: string | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  const fetchPlans = useCallback(
+    (query: { q?: string; page: number; limit: number }) =>
+      fetchPaginatedJson<CoachPlanListItem>("/api/coach/plans", query),
+    [],
+  );
+
+  const {
+    items,
+    search,
+    setSearch,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    isInitialLoading,
+    isLoadingMore,
+  } = useInfiniteList({
+    fetchPage: fetchPlans,
+  });
+
+  const modalTitle = shouldShowAthleteReassignWarning(currentPlanName)
+    ? `Change plan for ${athleteName}`
+    : `Assign plan to ${athleteName}`;
+
+  function handleAssign() {
+    setActionError(null);
+
+    if (!selectedPlanId) {
+      setActionError("Select a plan.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await assignPlanToAthleteAction(selectedPlanId, athleteId);
+
+      if (!result.ok) {
+        setActionError(result.error ?? "Could not assign plan.");
+        return;
+      }
+
+      onClose();
+      router.refresh();
+    });
+  }
+
+  return (
+    <Modal open title={modalTitle} onClose={onClose} size="lg">
+      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+        Select a plan to assign to this athlete.
+      </p>
+
+      <div className="mb-4">
+        <Input
+          type="search"
+          value={search}
+          placeholder="Search plans"
+          aria-label="Search plans"
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </div>
+
+      <div className="max-h-72 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+        {isInitialLoading ? (
+          <p className="p-4 text-sm text-zinc-500">Loading plans…</p>
+        ) : error ? (
+          <Message tone="error">{error}</Message>
+        ) : items.length === 0 ? (
+          <p className="p-4 text-sm text-zinc-500">No plans found.</p>
+        ) : (
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-700">
+            {items.map((plan) => (
+              <li key={plan.id}>
+                <label className="flex cursor-pointer items-start gap-3 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
+                  <input
+                    type="radio"
+                    name={`assign-plan-${athleteId}`}
+                    className="mt-1"
+                    checked={selectedPlanId === plan.id}
+                    onChange={() => setSelectedPlanId(plan.id)}
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {plan.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-zinc-500">
+                      {plan.weekCount} week{plan.weekCount === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <InfiniteScrollSentinel
+          hasMore={hasMore}
+          loading={isLoadingMore}
+          onLoadMore={loadMore}
+        />
+      </div>
+
+      {shouldShowAthleteReassignWarning(currentPlanName) ? (
+        <div className="mt-4">
+          <Message tone="info">
+            {athleteName} is currently assigned to {currentPlanName}. Assigning a
+            new plan will replace their current assignment with a fresh copy.
+          </Message>
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div className="mt-4">
+          <Message tone="error">{actionError}</Message>
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex justify-end gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          disabled={pending}
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          fullWidth={false}
+          disabled={pending || loading}
+          onClick={handleAssign}
+        >
+          {pending ? "Assigning…" : "Assign"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}

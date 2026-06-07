@@ -48,8 +48,8 @@ export type Database = {
           completed_at: string | null
           id: string
           plan_data: Json
-          plan_id: string
-          plan_version_id: string
+          plan_id: string | null
+          plan_version_id: string | null
           status: Database["public"]["Enums"]["assignment_status"]
           unassigned_at: string | null
         }
@@ -60,8 +60,8 @@ export type Database = {
           completed_at?: string | null
           id?: string
           plan_data: Json
-          plan_id: string
-          plan_version_id: string
+          plan_id: string | null
+          plan_version_id: string | null
           status?: Database["public"]["Enums"]["assignment_status"]
           unassigned_at?: string | null
         }
@@ -72,8 +72,8 @@ export type Database = {
           completed_at?: string | null
           id?: string
           plan_data?: Json
-          plan_id?: string
-          plan_version_id?: string
+          plan_id?: string | null
+          plan_version_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status"]
           unassigned_at?: string | null
         }
@@ -328,9 +328,26 @@ export type Database = {
           athlete_email: string
           athlete_id: string
           athlete_name: string
+          current_plan_id: string | null
+          current_plan_name: string | null
           linked_at: string
           relationship_id: string
           status: Database["public"]["Enums"]["coach_link_status"]
+        }[]
+      }
+      assign_plan_to_athletes: {
+        Args: { p_athlete_ids: string[]; p_plan_id: string }
+        Returns: undefined
+      }
+      delete_coach_plan: {
+        Args: { p_plan_id: string }
+        Returns: undefined
+      }
+      get_coach_plan_delete_info: {
+        Args: { p_plan_id: string }
+        Returns: {
+          active_assignment_count: number
+          plan_title: string | null
         }[]
       }
       get_coach_pending_invites: {

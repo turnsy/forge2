@@ -1,12 +1,5 @@
-import {
-  ActionGroup,
-  Button,
-  EmptyState,
-  List,
-  ListRow,
-  MetaGroup,
-  MetaItem,
-} from "@/components/ui";
+import { AthleteListRowActions } from "@/components/athlete-list-row-actions";
+import { EmptyState, List, ListRow, MetaGroup, MetaItem } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
 
@@ -17,8 +10,6 @@ export function AthleteListRow({
   athlete: CoachAthleteListItem;
   appearIndex: number;
 }) {
-  const planActionLabel = athlete.currentPlanName ? "Change plan" : "Assign plan";
-
   return (
     <ListRow
       href={`/coach/athletes/${athlete.id}`}
@@ -42,13 +33,7 @@ export function AthleteListRow({
           <MetaItem label="Joined" value={formatDate(athlete.joinedAt)} />
         </MetaGroup>
       }
-      actions={
-        <ActionGroup>
-          <Button type="button" variant="secondary" size="sm" fullWidth={false}>
-            {planActionLabel}
-          </Button>
-        </ActionGroup>
-      }
+      actions={<AthleteListRowActions athlete={athlete} />}
     />
   );
 }

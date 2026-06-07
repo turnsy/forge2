@@ -183,6 +183,8 @@ describe("mapCoachAthleteRelationshipRow", () => {
         athlete_name: "Sam Chen",
         athlete_email: "sam@example.com",
         linked_at: "2026-06-02T00:00:00.000Z",
+        current_plan_id: "plan-1",
+        current_plan_name: "4-Week Block",
       }),
     ).toEqual({
       relationshipId: "rel-4",
@@ -191,6 +193,8 @@ describe("mapCoachAthleteRelationshipRow", () => {
       athleteName: "Sam Chen",
       athleteEmail: "sam@example.com",
       linkedAt: "2026-06-02T00:00:00.000Z",
+      currentPlanId: "plan-1",
+      currentPlanName: "4-Week Block",
     });
   });
 });

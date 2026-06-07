@@ -31,6 +31,8 @@ type CoachAthleteRelationshipRow = {
   athlete_name: string | null;
   athlete_email: string | null;
   linked_at: string | null;
+  current_plan_id: string | null;
+  current_plan_name: string | null;
 };
 
 async function resolveClient(client?: LinksClient): Promise<LinksClient> {
@@ -68,6 +70,8 @@ export function mapCoachAthleteRelationshipRow(
     athleteName: row.athlete_name?.trim() || "Unnamed athlete",
     athleteEmail: row.athlete_email?.trim() || "",
     linkedAt: row.linked_at,
+    currentPlanId: row.current_plan_id ?? null,
+    currentPlanName: row.current_plan_name?.trim() || null,
   };
 }
 

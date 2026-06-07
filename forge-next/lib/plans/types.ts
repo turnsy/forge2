@@ -4,3 +4,12 @@ export type CoachPlanListItem = {
   weekCount: number;
   createdAt: string;
 };
+
+export type PlanActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export type CoachPlanDeleteInfo = {
+  planTitle: string;
+  activeAssignmentCount: number;
+};

@@ -84,4 +84,80 @@ export async function saveCoachPlanVersion(
   };
 }
 
+export type AssignPlanToAthletesResult = ServiceResult<Record<string, never>>;
+
+export type DeleteCoachPlanResult = ServiceResult<Record<string, never>>;
+
+export type CoachPlanDeleteInfoResult = ServiceResult<{
+  planTitle: string;
+  activeAssignmentCount: number;
+}>;
+
+type CoachPlanDeleteInfoRpcRow = {
+  plan_title: string | null;
+  active_assignment_count: number | string | null;
+};
+
+export async function assignPlanToAthletes(
+  planId: string,
+  athleteIds: string[],
+): Promise<AssignPlanToAthletesResult> {
+  if (athleteIds.length === 0) {
+    return serviceError(
+      ServiceErrorCode.VALIDATION_ERROR,
+      "Select at least one athlete",
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_plan_to_athletes", {
+    p_plan_id: planId,
+    p_athlete_ids: athleteIds,
+  });
+
+  if (error) {
+    return mapRpcErrorMessage(error.message);
+  }
+
+  return { ok: true };
+}
+
+export async function deleteCoachPlan(planId: string): Promise<DeleteCoachPlanResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_coach_plan", {
+    p_plan_id: planId,
+  });
+
+  if (error) {
+    return mapRpcErrorMessage(error.message);
+  }
+
+  return { ok: true };
+}
+
+export async function getCoachPlanDeleteInfo(
+  planId: string,
+): Promise<CoachPlanDeleteInfoResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_coach_plan_delete_info", {
+    p_plan_id: planId,
+  });
+
+  if (error) {
+    return mapRpcErrorMessage(error.message);
+  }
+
+  const row = (data as CoachPlanDeleteInfoRpcRow[] | null)?.[0];
+
+  if (!row) {
+    return serviceError(ServiceErrorCode.NOT_FOUND, "Plan not found");
+  }
+
+  return {
+    ok: true,
+    planTitle: row.plan_title?.trim() || "Untitled plan",
+    activeAssignmentCount: Number(row.active_assignment_count ?? 0),
+  };
+}
+
 export type { ServiceError };

@@ -44,7 +44,7 @@ describe("GET /api/coach/athletes", () => {
       user: { id: "coach-1", role: "coach", email: "c@x.com", fullName: null },
     });
     mockListCoachAthletes.mockResolvedValue({
-      items: [{ id: "a1", name: "Alex", email: "", currentPlanName: null, joinedAt: "" }],
+      items: [{ id: "a1", name: "Alex", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" }],
       total: 1,
       page: 2,
       limit: 10,
@@ -57,7 +57,7 @@ describe("GET /api/coach/athletes", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      items: [{ id: "a1", name: "Alex", email: "", currentPlanName: null, joinedAt: "" }],
+      items: [{ id: "a1", name: "Alex", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" }],
       total: 1,
       page: 2,
       limit: 10,
