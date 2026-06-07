@@ -198,7 +198,7 @@ export function CoachWorkspace({
               key={artifactFadeKey}
               className="flex h-full min-h-0 flex-col gap-4 overflow-hidden pr-2 md:pr-3"
             >
-              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden pt-3 md:pt-4">
                 <div className="flex shrink-0 items-center gap-2">
                   {resolvedBackHref ? (
                     <PageBackLink
