@@ -35,14 +35,13 @@ export function InviteCodeModal({
       </p>
       {inviteCode ? (
         <>
-          <div className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 font-mono text-lg tracking-widest dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-5 text-center font-mono text-3xl tracking-[0.2em] dark:border-zinc-700 dark:bg-zinc-800">
             {inviteCode}
           </div>
-          {copied ? <Message tone="success">Copied to clipboard.</Message> : null}
           {copyError ? <Message tone="error">{copyError}</Message> : null}
-          <div className="mt-4">
-            <Button type="button" onClick={handleCopy}>
-              Copy invite code
+          <div className="mt-4 flex justify-center">
+            <Button type="button" fullWidth={false} onClick={handleCopy}>
+              {copied ? "Copied" : "Copy invite code"}
             </Button>
           </div>
         </>

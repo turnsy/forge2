@@ -19,20 +19,18 @@ export function AthletesPageHeader({
     <>
       <PageHeader
         title="Athletes"
+        titleAddon={<PendingInvitesPill count={pendingCount} />}
         actions={
-          <div className="flex items-center gap-2">
-            <PendingInvitesPill count={pendingCount} />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              fullWidth={false}
-              icon={<PlusIcon />}
-              onClick={() => setOpen(true)}
-            >
-              Add
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            icon={<PlusIcon />}
+            onClick={() => setOpen(true)}
+          >
+            Add
+          </Button>
         }
       />
       <InviteCodeModal

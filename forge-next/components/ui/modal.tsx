@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 
 export function Modal({
   open,
@@ -45,15 +44,32 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative z-10 w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id="modal-title" className="text-lg font-semibold">
             {title}
           </h2>
-          <Button type="button" variant="secondary" size="sm" fullWidth={false} onClick={onClose}>
-            Close
-          </Button>
+          <button
+            type="button"
+            aria-label="Close"
+            className="rounded-full p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            onClick={onClose}
+          >
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.75}
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         {children}
       </div>
