@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { serializePromptDocument } from "@/lib/prompts/prompt-document";
+import {
+  serializePromptDocument,
+  serializePromptForAgent,
+} from "@/lib/prompts/prompt-document";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
@@ -104,17 +107,18 @@ export function useChatWorkspace<TArtifact>(
 
   const sendMessage = useCallback(
     async (segments: PromptSegment[]) => {
-      const prompt = serializePromptDocument(segments).trim();
-      if (prompt.length === 0) {
+      const displayPrompt = serializePromptDocument(segments).trim();
+      const agentPrompt = serializePromptForAgent(segments).trim();
+      if (displayPrompt.length === 0) {
         return;
       }
 
       const snapshot = stateRef.current;
-      dispatch({ type: "SEND_START", userMessage: prompt });
+      dispatch({ type: "SEND_START", userMessage: displayPrompt });
 
       const error = await config.streamChat({
         sessionId: snapshot.sessionId,
-        prompt,
+        prompt: agentPrompt,
         messages: snapshot.messages,
         currentArtifact: snapshot.currentArtifact,
         onEvent: (event) => {

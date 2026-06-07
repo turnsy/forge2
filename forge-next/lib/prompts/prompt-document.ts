@@ -184,6 +184,24 @@ export function deleteMentionBeforeCaret(
   return null;
 }
 
+export function serializeMentionForAgent(
+  segment: Extract<PromptSegment, { type: "mention" }>,
+): string {
+  return `@${segment.label} {"kind":"${segment.kind}","id":"${segment.id}"}`;
+}
+
+export function serializePromptForAgent(segments: PromptSegment[]): string {
+  return normalizePromptText(
+    segments
+      .map((segment) =>
+        segment.type === "text"
+          ? segment.value
+          : serializeMentionForAgent(segment),
+      )
+      .join(""),
+  );
+}
+
 export function serializePromptDocument(segments: PromptSegment[]): string {
   return normalizePromptText(getLinearText(segments));
 }

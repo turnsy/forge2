@@ -7,6 +7,7 @@ import {
   insertMentionChip,
   isEmptyDocument,
   serializePromptDocument,
+  serializePromptForAgent,
   updateTextAtRange,
 } from "@/lib/prompts/prompt-document";
 
@@ -87,6 +88,21 @@ describe("serializePromptDocument", () => {
       items[2]!,
     );
 
+    expect(serializePromptDocument(segments)).toBe("Update @Summer Block ");
+  });
+});
+
+describe("serializePromptForAgent", () => {
+  it("inlines mention kind and id while preserving sentence structure", () => {
+    const segments = insertMentionChip(
+      createTextDocument("Update @Summer"),
+      { start: 7, end: 14 },
+      items[2]!,
+    );
+
+    expect(serializePromptForAgent(segments)).toBe(
+      'Update @Summer Block {"kind":"plan","id":"p1"} ',
+    );
     expect(serializePromptDocument(segments)).toBe("Update @Summer Block ");
   });
 });
