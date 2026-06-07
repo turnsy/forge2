@@ -5,6 +5,8 @@ import type {
   PendingInvite,
 } from "@/lib/links/types";
 
+type LinksClient = Awaited<ReturnType<typeof createClient>>;
+
 type AthleteCoachLinkRow = {
   relationship_id: string;
   status: "pending" | "active";
@@ -30,6 +32,10 @@ type CoachAthleteRelationshipRow = {
   athlete_email: string | null;
   linked_at: string | null;
 };
+
+async function resolveClient(client?: LinksClient): Promise<LinksClient> {
+  return client ?? (await createClient());
+}
 
 export function mapAthleteCoachLinkRow(row: AthleteCoachLinkRow): AthleteCoachLink {
   return {
@@ -65,8 +71,10 @@ export function mapCoachAthleteRelationshipRow(
   };
 }
 
-export async function getAthleteCoachLink(): Promise<AthleteCoachLink | null> {
-  const supabase = await createClient();
+export async function getAthleteCoachLink(
+  client?: LinksClient,
+): Promise<AthleteCoachLink | null> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("get_athlete_coach_link");
 
   if (error) {
@@ -77,8 +85,10 @@ export async function getAthleteCoachLink(): Promise<AthleteCoachLink | null> {
   return row ? mapAthleteCoachLinkRow(row) : null;
 }
 
-export async function listCoachPendingInvites(): Promise<PendingInvite[]> {
-  const supabase = await createClient();
+export async function listCoachPendingInvites(
+  client?: LinksClient,
+): Promise<PendingInvite[]> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("get_coach_pending_invites");
 
   if (error) {
@@ -88,8 +98,8 @@ export async function listCoachPendingInvites(): Promise<PendingInvite[]> {
   return ((data as PendingInviteRow[] | null) ?? []).map(mapPendingInviteRow);
 }
 
-export async function countCoachPendingInvites(): Promise<number> {
-  const supabase = await createClient();
+export async function countCoachPendingInvites(client?: LinksClient): Promise<number> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("count_coach_pending_invites");
 
   if (error) {
@@ -101,8 +111,9 @@ export async function countCoachPendingInvites(): Promise<number> {
 
 export async function getCoachAthleteRelationship(
   athleteId: string,
+  client?: LinksClient,
 ): Promise<CoachAthleteRelationship | null> {
-  const supabase = await createClient();
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("get_coach_athlete_relationship", {
     p_athlete_id: athleteId,
   });
@@ -115,8 +126,11 @@ export async function getCoachAthleteRelationship(
   return row ? mapCoachAthleteRelationshipRow(row) : null;
 }
 
-export async function requestCoachLink(inviteCode: string): Promise<string> {
-  const supabase = await createClient();
+export async function requestCoachLink(
+  inviteCode: string,
+  client?: LinksClient,
+): Promise<string> {
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("request_coach_link", {
     p_invite_code: inviteCode.trim(),
   });
@@ -128,8 +142,11 @@ export async function requestCoachLink(inviteCode: string): Promise<string> {
   return String(data);
 }
 
-export async function cancelCoachLinkRequest(relationshipId: string): Promise<void> {
-  const supabase = await createClient();
+export async function cancelCoachLinkRequest(
+  relationshipId: string,
+  client?: LinksClient,
+): Promise<void> {
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("cancel_coach_link_request", {
     p_relationship_id: relationshipId,
   });
@@ -139,8 +156,11 @@ export async function cancelCoachLinkRequest(relationshipId: string): Promise<vo
   }
 }
 
-export async function acceptCoachLink(relationshipId: string): Promise<void> {
-  const supabase = await createClient();
+export async function acceptCoachLink(
+  relationshipId: string,
+  client?: LinksClient,
+): Promise<void> {
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("accept_coach_link", {
     p_relationship_id: relationshipId,
   });
@@ -150,8 +170,11 @@ export async function acceptCoachLink(relationshipId: string): Promise<void> {
   }
 }
 
-export async function rejectCoachLink(relationshipId: string): Promise<void> {
-  const supabase = await createClient();
+export async function rejectCoachLink(
+  relationshipId: string,
+  client?: LinksClient,
+): Promise<void> {
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("reject_coach_link", {
     p_relationship_id: relationshipId,
   });
@@ -161,8 +184,11 @@ export async function rejectCoachLink(relationshipId: string): Promise<void> {
   }
 }
 
-export async function unlinkCoachAthlete(relationshipId: string): Promise<void> {
-  const supabase = await createClient();
+export async function unlinkCoachAthlete(
+  relationshipId: string,
+  client?: LinksClient,
+): Promise<void> {
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("unlink_coach_athlete", {
     p_relationship_id: relationshipId,
   });

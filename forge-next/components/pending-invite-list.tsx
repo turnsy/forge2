@@ -71,7 +71,7 @@ function PendingInviteRow({
           </Button>
           <Button
             type="button"
-            variant="secondary"
+            variant="danger"
             size="sm"
             fullWidth={false}
             disabled={pending}

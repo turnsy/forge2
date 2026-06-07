@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Pill } from "@/components/ui/pill";
 
 export function PendingInvitesPill({ count }: { count: number }) {
   if (count <= 0) {
@@ -6,11 +6,8 @@ export function PendingInvitesPill({ count }: { count: number }) {
   }
 
   return (
-    <Link
-      href="/coach/athletes/pending"
-      className="inline-flex items-center rounded-full bg-red-600 px-3 py-1 text-sm font-medium text-white hover:bg-red-700"
-    >
+    <Pill href="/coach/athletes/pending" tone="danger">
       Pending ({count})
-    </Link>
+    </Pill>
   );
 }

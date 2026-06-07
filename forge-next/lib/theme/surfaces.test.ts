@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentChipClass,
   buttonVariantClass,
+  pillClass,
   cardClass,
   cardFooterClass,
   controlClass,
@@ -51,5 +52,10 @@ describe("surface theme helpers", () => {
   it("returns attachment chip styling", () => {
     expect(attachmentChipClass()).toContain("rounded-full");
     expect(attachmentChipClass("error")).toContain("text-red-200");
+  });
+
+  it("returns pill styling", () => {
+    expect(pillClass()).toContain("rounded-full");
+    expect(pillClass("danger")).toContain("bg-red-600");
   });
 });

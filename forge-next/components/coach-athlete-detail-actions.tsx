@@ -24,7 +24,9 @@ export function CoachAthleteDetailActions({
       {error ? <Message tone="error">{error}</Message> : null}
       <Button
         type="button"
-        variant="secondary"
+        variant="danger"
+        size="sm"
+        fullWidth={false}
         disabled={pending}
         onClick={() => {
           setError(null);

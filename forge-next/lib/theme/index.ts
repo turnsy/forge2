@@ -23,8 +23,10 @@ export {
   attachmentChipClass,
   messageToneClass,
   pageContentClass,
+  pillClass,
   type AttachmentChipTone,
   type ButtonSize,
   type ButtonVariant,
   type MessageTone,
+  type PillTone,
 } from "@/lib/theme/surfaces";
