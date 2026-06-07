@@ -8,6 +8,12 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
+type PlansClient = Awaited<ReturnType<typeof createClient>>;
+
+async function resolveClient(client?: PlansClient): Promise<PlansClient> {
+  return client ?? (await createClient());
+}
+
 export type CreateCoachPlanResult = ServiceResult<{
   planId: string;
   versionId: string;
@@ -29,8 +35,9 @@ type SaveCoachPlanVersionRpcRow = {
 export async function createCoachPlan(
   plan: WorkoutPlan,
   changeSummary: string | null = null,
+  client?: PlansClient,
 ): Promise<CreateCoachPlanResult> {
-  const supabase = await createClient();
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("create_coach_plan", {
     p_plan_data: plan,
     p_change_summary: changeSummary,
@@ -57,8 +64,9 @@ export async function saveCoachPlanVersion(
   planId: string,
   plan: WorkoutPlan,
   changeSummary: string | null = null,
+  client?: PlansClient,
 ): Promise<SaveCoachPlanVersionResult> {
-  const supabase = await createClient();
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("save_coach_plan_version", {
     p_plan_id: planId,
     p_plan_data: plan,
@@ -101,6 +109,7 @@ type CoachPlanDeleteInfoRpcRow = {
 export async function assignPlanToAthletes(
   planId: string,
   athleteIds: string[],
+  client?: PlansClient,
 ): Promise<AssignPlanToAthletesResult> {
   if (athleteIds.length === 0) {
     return serviceError(
@@ -109,7 +118,7 @@ export async function assignPlanToAthletes(
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("assign_plan_to_athletes", {
     p_plan_id: planId,
     p_athlete_ids: athleteIds,
@@ -122,8 +131,11 @@ export async function assignPlanToAthletes(
   return { ok: true };
 }
 
-export async function deleteCoachPlan(planId: string): Promise<DeleteCoachPlanResult> {
-  const supabase = await createClient();
+export async function deleteCoachPlan(
+  planId: string,
+  client?: PlansClient,
+): Promise<DeleteCoachPlanResult> {
+  const supabase = await resolveClient(client);
   const { error } = await supabase.rpc("delete_coach_plan", {
     p_plan_id: planId,
   });
@@ -137,8 +149,9 @@ export async function deleteCoachPlan(planId: string): Promise<DeleteCoachPlanRe
 
 export async function getCoachPlanDeleteInfo(
   planId: string,
+  client?: PlansClient,
 ): Promise<CoachPlanDeleteInfoResult> {
-  const supabase = await createClient();
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase.rpc("get_coach_plan_delete_info", {
     p_plan_id: planId,
   });

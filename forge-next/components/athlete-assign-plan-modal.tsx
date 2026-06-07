@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
-import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
-import { ModalListLoading } from "@/components/list/modal-list-loading";
+import { AssignmentModalListPanel } from "@/components/list/assignment-modal-list-panel";
+import { PlanPickerList } from "@/components/plan-picker-list";
 import { Modal } from "@/components/ui/modal";
-import { Input, Message, Radio } from "@/components/ui";
-import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
+import { Input, Message } from "@/components/ui";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
 import { assignPlanToAthleteAction } from "@/lib/plans/actions";
 import { shouldShowAthleteReassignWarning } from "@/lib/plans/assignment";
@@ -29,24 +28,8 @@ export function AthleteAssignPlanModal({
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  const fetchPlans = useCallback(
-    (query: { q?: string; page: number; limit: number }) =>
-      fetchPaginatedJson<CoachPlanListItem>("/api/coach/plans", query),
-    [],
-  );
-
-  const {
-    items,
-    search,
-    setSearch,
-    loading,
-    error,
-    hasMore,
-    loadMore,
-    isLoadingMore,
-    isListLoading,
-  } = useInfiniteList({
-    fetchPage: fetchPlans,
+  const list = useInfiniteList<CoachPlanListItem>({
+    apiPath: "/api/coach/plans",
   });
 
   const modalTitle = shouldShowAthleteReassignWarning(currentPlanName)
@@ -84,7 +67,7 @@ export function AthleteAssignPlanModal({
       footer={
         <AssignmentModalFooter
           pending={pending}
-          loading={loading}
+          loading={list.loading}
           onCancel={onClose}
           onConfirm={handleAssign}
           confirmLabel="Assign"
@@ -95,52 +78,29 @@ export function AthleteAssignPlanModal({
       <div className="shrink-0">
         <Input
           type="search"
-          value={search}
+          value={list.search}
           placeholder="Search"
           aria-label="Search plans"
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => list.setSearch(event.target.value)}
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
-        {isListLoading ? (
-          <ModalListLoading />
-        ) : error ? (
-          <div className="p-4">
-            <Message tone="error">{error}</Message>
-          </div>
-        ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-surface-muted">No plans found.</p>
-        ) : (
-          <ul className="divide-y divide-glass-border">
-            {items.map((plan) => (
-              <li key={plan.id}>
-                <label className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-glass-focus/40">
-                  <Radio
-                    name={`assign-plan-${athleteId}`}
-                    checked={selectedPlanId === plan.id}
-                    onChange={() => setSelectedPlanId(plan.id)}
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-surface-foreground">
-                      {plan.title}
-                    </span>
-                    <span className="mt-1 block text-xs text-surface-muted">
-                      {plan.weekCount} week{plan.weekCount === 1 ? "" : "s"}
-                    </span>
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <InfiniteScrollSentinel
-          hasMore={hasMore}
-          loading={isLoadingMore}
-          onLoadMore={loadMore}
+      <AssignmentModalListPanel
+        isListLoading={list.isListLoading}
+        error={list.error}
+        isEmpty={!list.isListLoading && !list.error && list.items.length === 0}
+        emptyMessage="No plans found."
+        hasMore={list.hasMore}
+        isLoadingMore={list.isLoadingMore}
+        onLoadMore={list.loadMore}
+      >
+        <PlanPickerList
+          plans={list.items}
+          athleteId={athleteId}
+          selectedPlanId={selectedPlanId}
+          onSelect={setSelectedPlanId}
         />
-      </div>
+      </AssignmentModalListPanel>
 
       {shouldShowAthleteReassignWarning(currentPlanName) ? (
         <div className="shrink-0">

@@ -8,6 +8,7 @@ export default defineConfig({
       ["components/**/*.test.tsx", "jsdom"],
       ["lib/chat/**/*.test.tsx", "jsdom"],
       ["lib/plans/**/*.test.tsx", "jsdom"],
+      ["lib/lists/**/*.test.tsx", "jsdom"],
     ],
     setupFiles: ["./vitest.setup.ts"],
   },

@@ -1,22 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_LIST_LIMIT, type PaginatedResult } from "@/lib/lists/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+type ListQuery = {
+  q?: string;
+  page: number;
+  limit: number;
+};
+
+async function fetchPaginatedApi<T>(
+  apiPath: string,
+  query: ListQuery,
+): Promise<PaginatedResult<T>> {
+  const params = new URLSearchParams();
+
+  if (query.q) {
+    params.set("q", query.q);
+  }
+
+  params.set("page", String(query.page));
+  params.set("limit", String(query.limit));
+
+  const response = await fetch(`${apiPath}?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error("Could not load items.");
+  }
+
+  return (await response.json()) as PaginatedResult<T>;
+}
+
 type UseInfiniteListOptions<T> = {
-  fetchPage: (query: {
-    q?: string;
-    page: number;
-    limit: number;
-  }) => Promise<PaginatedResult<T>>;
+  apiPath: string;
   limit?: number;
+  fetchPage?: (query: ListQuery) => Promise<PaginatedResult<T>>;
 };
 
 export function useInfiniteList<T>({
-  fetchPage,
+  apiPath,
   limit = DEFAULT_LIST_LIMIT,
+  fetchPage,
 }: UseInfiniteListOptions<T>) {
   const [items, setItems] = useState<T[]>([]);
   const [search, setSearch] = useState("");
@@ -27,6 +53,11 @@ export function useInfiniteList<T>({
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const debouncedSearchRef = useRef(debouncedSearch);
+
+  const loadPageData = useMemo(
+    () => fetchPage ?? ((query: ListQuery) => fetchPaginatedApi<T>(apiPath, query)),
+    [apiPath, fetchPage],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -55,7 +86,7 @@ export function useInfiniteList<T>({
       setError(null);
 
       try {
-        const result = await fetchPage({
+        const result = await loadPageData({
           q: debouncedSearch || undefined,
           page: targetPage,
           limit,
@@ -85,7 +116,7 @@ export function useInfiniteList<T>({
         }
       }
     },
-    [debouncedSearch, fetchPage, limit],
+    [debouncedSearch, limit, loadPageData],
   );
 
   useEffect(() => {

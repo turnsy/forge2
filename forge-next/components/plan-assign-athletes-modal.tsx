@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AthletePickerList } from "@/components/athlete-picker-list";
 import { AssignmentModalFooter } from "@/components/assignment-modal-footer";
-import { InfiniteScrollSentinel } from "@/components/list/infinite-scroll-sentinel";
-import { ModalListLoading } from "@/components/list/modal-list-loading";
+import { AssignmentModalListPanel } from "@/components/list/assignment-modal-list-panel";
 import { Modal } from "@/components/ui/modal";
-import { Checkbox, Input, Message } from "@/components/ui";
+import { Input, Message } from "@/components/ui";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
-import { fetchPaginatedJson } from "@/lib/lists/fetch-paginated";
 import { useInfiniteList } from "@/lib/lists/use-infinite-list";
 import { assignPlanToAthletesAction } from "@/lib/plans/actions";
 import { hasAthletesWithDifferentActivePlan } from "@/lib/plans/assignment";
+import { usePlanAthleteSelection } from "@/lib/plans/use-plan-athlete-selection";
 
 export function PlanAssignAthletesModal({
   planId,
@@ -25,80 +25,21 @@ export function PlanAssignAthletesModal({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
-  const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [manualDeselectedIds, setManualDeselectedIds] = useState<Set<string>>(
-    new Set(),
-  );
 
-  const fetchAthletes = useCallback(
-    (query: { q?: string; page: number; limit: number }) =>
-      fetchPaginatedJson<CoachAthleteListItem>("/api/coach/athletes", query),
-    [],
-  );
-
-  const {
-    items,
-    search,
-    setSearch,
-    loading,
-    error,
-    hasMore,
-    loadMore,
-    isLoadingMore,
-    isListLoading,
-  } = useInfiniteList({
-    fetchPage: fetchAthletes,
+  const list = useInfiniteList<CoachAthleteListItem>({
+    apiPath: "/api/coach/athletes",
   });
 
-  const selectedIds = useMemo(() => {
-    const ids = new Set(manualSelectedIds);
-
-    for (const athlete of items) {
-      if (
-        athlete.currentPlanId === planId &&
-        !manualDeselectedIds.has(athlete.id)
-      ) {
-        ids.add(athlete.id);
-      }
-    }
-
-    return ids;
-  }, [items, manualDeselectedIds, manualSelectedIds, planId]);
-
-  const showReassignWarning = useMemo(
-    () => hasAthletesWithDifferentActivePlan(items, selectedIds, planId),
-    [items, planId, selectedIds],
+  const { selectedIds, toggleAthlete } = usePlanAthleteSelection(
+    planId,
+    list.items,
   );
 
-  function toggleAthlete(athlete: CoachAthleteListItem) {
-    const isSelected = selectedIds.has(athlete.id);
-
-    if (isSelected) {
-      if (athlete.currentPlanId === planId) {
-        setManualDeselectedIds((current) => new Set(current).add(athlete.id));
-      }
-
-      setManualSelectedIds((current) => {
-        const next = new Set(current);
-        next.delete(athlete.id);
-        return next;
-      });
-      return;
-    }
-
-    setManualDeselectedIds((current) => {
-      if (!current.has(athlete.id)) {
-        return current;
-      }
-
-      const next = new Set(current);
-      next.delete(athlete.id);
-      return next;
-    });
-    setManualSelectedIds((current) => new Set(current).add(athlete.id));
-  }
+  const showReassignWarning = useMemo(
+    () =>
+      hasAthletesWithDifferentActivePlan(list.items, selectedIds, planId),
+    [list.items, planId, selectedIds],
+  );
 
   function handleAssign() {
     setActionError(null);
@@ -134,7 +75,7 @@ export function PlanAssignAthletesModal({
       footer={
         <AssignmentModalFooter
           pending={pending}
-          loading={loading}
+          loading={list.loading}
           onCancel={onClose}
           onConfirm={handleAssign}
           confirmLabel="Assign"
@@ -145,60 +86,28 @@ export function PlanAssignAthletesModal({
       <div className="shrink-0">
         <Input
           type="search"
-          value={search}
+          value={list.search}
           placeholder="Search"
           aria-label="Search athletes"
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => list.setSearch(event.target.value)}
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
-        {isListLoading ? (
-          <ModalListLoading />
-        ) : error ? (
-          <div className="p-4">
-            <Message tone="error">{error}</Message>
-          </div>
-        ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-surface-muted">No athletes found.</p>
-        ) : (
-          <ul className="divide-y divide-glass-border">
-            {items.map((athlete) => {
-              const checked = selectedIds.has(athlete.id);
-
-              return (
-                <li key={athlete.id}>
-                  <label className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-glass-focus/40">
-                    <Checkbox
-                      checked={checked}
-                      onChange={() => toggleAthlete(athlete)}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-surface-foreground">
-                        {athlete.name}
-                      </span>
-                      {athlete.email ? (
-                        <span className="block truncate text-xs text-surface-muted">
-                          {athlete.email}
-                        </span>
-                      ) : null}
-                      <span className="mt-1 block text-xs text-surface-muted">
-                        Current plan: {athlete.currentPlanName ?? "No plan"}
-                      </span>
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <InfiniteScrollSentinel
-          hasMore={hasMore}
-          loading={isLoadingMore}
-          onLoadMore={loadMore}
+      <AssignmentModalListPanel
+        isListLoading={list.isListLoading}
+        error={list.error}
+        isEmpty={!list.isListLoading && !list.error && list.items.length === 0}
+        emptyMessage="No athletes found."
+        hasMore={list.hasMore}
+        isLoadingMore={list.isLoadingMore}
+        onLoadMore={list.loadMore}
+      >
+        <AthletePickerList
+          athletes={list.items}
+          selectedIds={selectedIds}
+          onToggle={toggleAthlete}
         />
-      </div>
+      </AssignmentModalListPanel>
 
       {showReassignWarning ? (
         <div className="shrink-0">
