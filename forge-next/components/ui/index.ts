@@ -12,6 +12,7 @@ export { SidebarNavLink } from "./sidebar-nav-link";
 export { PagePlaceholder } from "./page-placeholder";
 export { PageContent } from "./page-content";
 export { PageHeader } from "./page-header";
+export { Pill } from "./pill";
 export { EmptyState } from "./empty-state";
 export { ErrorState } from "./error-state";
 export { Accordion, AccordionItem, type AccordionVariant } from "./accordion";

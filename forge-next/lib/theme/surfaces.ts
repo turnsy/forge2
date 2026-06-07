@@ -5,6 +5,7 @@ import { roleBorderClass } from "@/lib/theme/roles";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
+export type PillTone = "default" | "danger";
 
 const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary: "glass-button-primary",
@@ -112,6 +113,16 @@ export function accordionContentCardClass(variant: "default" | "nested" = "defau
 }
 
 export type AttachmentChipTone = "default" | "error";
+
+const pillToneClasses: Record<PillTone, string> = {
+  default:
+    "border border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus",
+  danger: "bg-red-600 text-white hover:bg-red-700",
+};
+
+export function pillClass(tone: PillTone = "default"): string {
+  return `inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition ${pillToneClasses[tone]}`;
+}
 
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
   const base =
