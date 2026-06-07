@@ -20,7 +20,10 @@ export default async function CoachAthleteDetailPage({
 
   return (
     <PageContent>
-      <PageHeader title={relationship.athleteName} />
+      <PageHeader
+        title={relationship.athleteName}
+        back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}
+      />
       <MetaGroup>
         {relationship.athleteEmail ? (
           <MetaItem label="Email" value={relationship.athleteEmail} />

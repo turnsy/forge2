@@ -6,7 +6,7 @@ import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { BackRefButton } from "@/components/ui";
+import { PageBackLink } from "@/components/ui";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
@@ -129,10 +129,12 @@ export function CoachWorkspace({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {mode === "edit" && backHref ? (
-        <div className="shrink-0 border-b border-glass-border px-4 py-3 md:px-5">
-          <BackRefButton href={backHref} onClick={handleBackClick}>
-            ← Back to plan
-          </BackRefButton>
+        <div className="flex shrink-0 items-center border-b border-glass-border px-4 py-2 md:px-5">
+          <PageBackLink
+            href={backHref}
+            ariaLabel="Back to plan"
+            onClick={handleBackClick}
+          />
         </div>
       ) : null}
       <ResizableSplitPane

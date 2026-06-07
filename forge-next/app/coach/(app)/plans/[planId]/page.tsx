@@ -39,7 +39,10 @@ export default async function CoachPlanDetailPage({
 
     return (
       <PageContent>
-        <PageHeader title="Plan" />
+        <PageHeader
+          title="Plan"
+          back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}
+        />
         <ErrorState
           title="Plan validation failed"
           description={
