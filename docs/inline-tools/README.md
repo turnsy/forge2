@@ -1,5 +1,7 @@
 # Inline tools — coach agent expansion
 
+**Implementation status:** All phases complete (see individual `phase_*.md` files).
+
 Expand the coach prompt workspace from a plan-codegen specialist into a **generalized coach agent** with database tools, functional `@` mentions, artifact-gated split layout, and edit-mode drop-in from chat.
 
 **Surface:** Coach only (`/coach`, `/coach/plans/[planId]/edit`). No athlete agent.

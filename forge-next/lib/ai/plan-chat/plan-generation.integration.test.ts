@@ -180,6 +180,7 @@ describe("plan generation integration", () => {
         streamTextFn: mockStreamTextWithTools(async (tools) => {
           await tools.list_session_files.execute({}, toolCtx);
           await tools.read_session_file.execute({ path: summaryPath }, toolCtx);
+          await tools.get_plan_codegen_guide.execute({}, toolCtx);
           await tools.submit_plan_code.execute(
             { python: "print('plan')" },
             toolCtx,
