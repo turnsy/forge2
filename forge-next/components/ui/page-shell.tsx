@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { PageBackGutter, type PageBackConfig } from "@/components/ui/page-back-gutter";
 import { pageContentClass, pageShellClass } from "@/lib/theme";
 

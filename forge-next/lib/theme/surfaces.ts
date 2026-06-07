@@ -85,8 +85,12 @@ export function pageBackLinkClass(): string {
   return "inline-flex shrink-0 items-center justify-center rounded-full h-10 w-10 text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
 }
 
-export function pageBackGutterGapClass(): string {
-  return "gap-x-2";
+export function pageBackGutterOffsetClass(): string {
+  return "mr-2";
+}
+
+export function pageBackGutterAlignClass(): string {
+  return "top-0 h-8 items-center";
 }
 
 export function listRowClass(): string {

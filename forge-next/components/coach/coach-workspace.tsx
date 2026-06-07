@@ -155,13 +155,14 @@ export function CoachWorkspace({
       <ResizableSplitPane
         left={
           mode === "edit" && backHref ? (
-            <div className="flex h-full min-h-0 flex-col overflow-hidden px-2 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
+            <div className="flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden px-2 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
               <PageBackGutter
                 back={{
                   href: backHref,
                   ariaLabel: "Back to plan",
                   onClick: handleBackClick,
                 }}
+                backAlignClassName="top-0 h-10 items-center"
                 className="min-h-0 flex-1"
                 contentClassName="flex h-full min-h-0 flex-col gap-4 overflow-hidden"
               >
