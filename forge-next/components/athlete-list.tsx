@@ -8,7 +8,6 @@ import {
   MetaItem,
 } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
-import { ROUTE_TRANSITION_FORWARD_TYPES } from "@/lib/motion/route-transitions";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
 
 export function AthleteListRow({
@@ -23,7 +22,6 @@ export function AthleteListRow({
   return (
     <ListRow
       href={`/coach/athletes/${athlete.id}`}
-      transitionTypes={[...ROUTE_TRANSITION_FORWARD_TYPES]}
       appearIndex={appearIndex}
       leading={
         <div className="min-w-0 space-y-1">

@@ -54,9 +54,6 @@
   --animate-auth-panel-forward: auth-panel-enter-forward 320ms ease-out both;
   --animate-auth-panel-back: auth-panel-enter-back 320ms ease-out both;
 
-  --duration-route-exit: 150ms;
-  --duration-route-enter: 210ms;
-
   /* Auth hero greyscale sweep */
   --color-auth-sweep-1: #09090b;
   --color-auth-sweep-2: #27272a;
@@ -110,26 +107,6 @@
 
   50% {
     background-position: 100% 50%;
-  }
-}
-
-@keyframes route-fade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes route-slide {
-  from {
-    translate: var(--route-slide-offset);
-  }
-
-  to {
-    translate: 0;
   }
 }
 
@@ -221,34 +198,6 @@ body {
   animation: var(--animate-auth-sweep);
 }
 
-::view-transition-old(.nav-forward) {
-  --route-slide-offset: -48px;
-  animation:
-    var(--duration-route-exit) ease-in both route-fade reverse,
-    320ms ease-in-out both route-slide reverse;
-}
-
-::view-transition-new(.nav-forward) {
-  --route-slide-offset: 48px;
-  animation:
-    var(--duration-route-enter) ease-out var(--duration-route-exit) both route-fade,
-    320ms ease-in-out both route-slide;
-}
-
-::view-transition-old(.nav-back) {
-  --route-slide-offset: 48px;
-  animation:
-    var(--duration-route-exit) ease-in both route-fade reverse,
-    320ms ease-in-out both route-slide reverse;
-}
-
-::view-transition-new(.nav-back) {
-  --route-slide-offset: -48px;
-  animation:
-    var(--duration-route-enter) ease-out var(--duration-route-exit) both route-fade,
-    320ms ease-in-out both route-slide;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-auth-panel-forward,
@@ -261,12 +210,5 @@ body {
   .auth-hero-background {
     animation: none;
     background-size: 100% 100%;
-  }
-
-  ::view-transition-old(*),
-  ::view-transition-new(*),
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
   }
 }

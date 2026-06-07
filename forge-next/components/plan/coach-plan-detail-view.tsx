@@ -6,7 +6,6 @@ import { PlanVersionHistory } from "@/components/plan/plan-version-history";
 import { PlanViewer } from "@/components/plan/plan-viewer";
 import { Button, ButtonLink, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
-import { ROUTE_TRANSITION_FORWARD_TYPES } from "@/lib/motion/route-transitions";
 import type { CoachPlanVersionListItem } from "@/lib/plans/repository";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -41,7 +40,6 @@ export function CoachPlanDetailView({
             </Button>
             <ButtonLink
               href={`/coach/plans/${planId}/edit`}
-              transitionTypes={[...ROUTE_TRANSITION_FORWARD_TYPES]}
               variant="secondary"
               size="sm"
               className="inline-flex items-center gap-2"

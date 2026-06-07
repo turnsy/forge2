@@ -29,7 +29,6 @@ export function ListRow({
   metaColumns = 2,
   actions,
   appearIndex = 0,
-  transitionTypes,
 }: {
   href?: string;
   leading?: ReactNode;
@@ -37,7 +36,6 @@ export function ListRow({
   metaColumns?: 2 | 3;
   actions?: ReactNode;
   appearIndex?: number;
-  transitionTypes?: string[];
 }) {
   const metaContent = meta ? (
     <dl
@@ -65,11 +63,7 @@ export function ListRow({
         }`}
       >
         {href ? (
-          <Link
-            href={href}
-            transitionTypes={transitionTypes}
-            className={`${mainContentClass} ${interactiveClass}`}
-          >
+          <Link href={href} className={`${mainContentClass} ${interactiveClass}`}>
             {mainContent}
           </Link>
         ) : (
