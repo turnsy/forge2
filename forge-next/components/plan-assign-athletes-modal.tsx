@@ -142,16 +142,11 @@ export function PlanAssignAthletesModal({
         />
       }
     >
-      <p className="shrink-0 text-sm text-zinc-600 dark:text-zinc-400">
-        Select athletes to assign this plan. Athletes already on this plan are
-        pre-selected.
-      </p>
-
       <div className="shrink-0">
         <Input
           type="search"
           value={search}
-          placeholder="Search athletes"
+          placeholder="Search"
           aria-label="Search athletes"
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -173,9 +168,8 @@ export function PlanAssignAthletesModal({
 
               return (
                 <li key={athlete.id}>
-                  <label className="flex cursor-pointer items-start gap-3 p-3 transition hover:bg-glass-focus/40">
+                  <label className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-glass-focus/40">
                     <Checkbox
-                      className="mt-0.5"
                       checked={checked}
                       onChange={() => toggleAthlete(athlete)}
                     />

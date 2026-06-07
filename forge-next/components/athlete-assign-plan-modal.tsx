@@ -92,15 +92,11 @@ export function AthleteAssignPlanModal({
         />
       }
     >
-      <p className="shrink-0 text-sm text-zinc-600 dark:text-zinc-400">
-        Select a plan to assign to this athlete.
-      </p>
-
       <div className="shrink-0">
         <Input
           type="search"
           value={search}
-          placeholder="Search plans"
+          placeholder="Search"
           aria-label="Search plans"
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -119,9 +115,8 @@ export function AthleteAssignPlanModal({
           <ul className="divide-y divide-glass-border">
             {items.map((plan) => (
               <li key={plan.id}>
-                <label className="flex cursor-pointer items-start gap-3 p-3 transition hover:bg-glass-focus/40">
+                <label className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-glass-focus/40">
                   <Radio
-                    className="mt-0.5"
                     name={`assign-plan-${athleteId}`}
                     checked={selectedPlanId === plan.id}
                     onChange={() => setSelectedPlanId(plan.id)}

@@ -67,8 +67,8 @@ export function PlanDeleteModal({
   const activeCount = deleteInfo?.activeAssignmentCount ?? 0;
   const deleteMessage =
     activeCount > 0
-      ? `This will permanently delete the plan and its version history. ${activeCount} athlete${activeCount === 1 ? " is" : "s are"} currently assigned — they will be unassigned, but their workout history will be kept?`
-      : "This will permanently delete the plan and its version history. This action cannot be undone?";
+      ? `This will permanently delete the plan and its version history. ${activeCount} athlete${activeCount === 1 ? " is" : "s are"} currently assigned — they will be unassigned, but their workout history will be kept.`
+      : "This will permanently delete the plan and its version history. This action cannot be undone.";
 
   function handleDelete() {
     setActionError(null);
@@ -90,7 +90,7 @@ export function PlanDeleteModal({
   return (
     <Modal
       open
-      title={`Delete “${displayTitle}”`}
+      title={`Delete “${displayTitle}”?`}
       onClose={onClose}
       footer={
         <div className="flex justify-end gap-3">

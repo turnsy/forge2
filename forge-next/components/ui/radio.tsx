@@ -24,10 +24,10 @@ export function Radio({
       />
       <span
         aria-hidden="true"
-        className={`${ringClass} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary`}
+        className={`${ringClass} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-surface-foreground`}
       >
         {checked ? (
-          <span className="h-2 w-2 rounded-full bg-surface-foreground" />
+          <span className="h-2.5 w-2.5 rounded-full bg-surface-foreground" />
         ) : null}
       </span>
     </span>
