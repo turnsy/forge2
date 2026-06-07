@@ -7,7 +7,7 @@ import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
-import { FadeIn, PageBackGutter } from "@/components/ui";
+import { FadeIn, PageBackLink } from "@/components/ui";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
@@ -18,7 +18,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { pageBackGutterReserveClass, roleLinkClass } from "@/lib/theme";
+import { roleLinkClass } from "@/lib/theme";
 
 export function CoachWorkspace({
   firstName,
@@ -171,60 +171,13 @@ export function CoachWorkspace({
     );
   }
 
-  const previewPane = (
-    <>
-      <ArtifactToolbar
-        title={state.artifactTitle}
-        saveDisabled={isChatRunning(state) || !state.currentArtifact}
-        saveStatus={saveStatus}
-        onTitleChange={setArtifactTitle}
-        onSave={handleSave}
-      />
-      {saveError ? (
-        <p className="px-2 text-sm text-red-400" role="alert">
-          {saveError}
-        </p>
-      ) : null}
-      <div className="min-h-0 flex-1 overflow-hidden px-2">
-        <ArtifactPreview
-          artifact={toArtifactPreviewModel(state.currentArtifact)}
-          runStatus={state.runStatus}
-          isAwaitingArtifact={false}
-        />
-      </div>
-    </>
-  );
-
-  const previewWithOptionalBack = resolvedBackHref ? (
-    <PageBackGutter
-      back={{
-        href: resolvedBackHref,
-        ariaLabel: "Back to plan",
-        onClick: handleBackClick,
-      }}
-      backAlignClassName="top-0 h-10 items-center"
-      className="min-h-0 flex-1"
-      contentClassName="flex h-full min-h-0 flex-col gap-4 overflow-hidden"
-    >
-      {previewPane}
-    </PageBackGutter>
-  ) : (
-    previewPane
-  );
-
   const artifactFadeKey =
     activePlanId ?? state.sessionId + (state.artifactTitle || "artifact");
 
   return (
-    <div className="relative mx-4 mt-2 flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
-      <WorkspaceCloseButton
-        className="absolute right-0 top-0 z-20"
-        disabled={isChatRunning(state)}
-        onClick={handleClose}
-      />
-
+    <div className="mx-4 flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
-        className={`grid min-h-0 flex-1 overflow-hidden pt-12 transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
+        className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
@@ -236,7 +189,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? `min-h-0 min-w-0 overflow-x-visible overflow-y-hidden pb-4 pt-0 md:pb-5${resolvedBackHref ? ` ${pageBackGutterReserveClass()}` : ""}`
+              ? "min-h-0 min-w-0 overflow-hidden pb-4 md:pb-5"
               : "hidden"
           }
         >
@@ -245,23 +198,65 @@ export function CoachWorkspace({
               key={artifactFadeKey}
               className="flex h-full min-h-0 flex-col gap-4 overflow-hidden pr-2 md:pr-3"
             >
-              {previewWithOptionalBack}
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+                <div className="flex shrink-0 items-center gap-2">
+                  {resolvedBackHref ? (
+                    <PageBackLink
+                      href={resolvedBackHref}
+                      ariaLabel="Back to plan"
+                      onClick={handleBackClick}
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <ArtifactToolbar
+                      title={state.artifactTitle}
+                      saveDisabled={
+                        isChatRunning(state) || !state.currentArtifact
+                      }
+                      saveStatus={saveStatus}
+                      onTitleChange={setArtifactTitle}
+                      onSave={handleSave}
+                    />
+                  </div>
+                </div>
+                {saveError ? (
+                  <p className="px-2 text-sm text-red-400" role="alert">
+                    {saveError}
+                  </p>
+                ) : null}
+                <div className="min-h-0 flex-1 overflow-hidden px-2">
+                  <ArtifactPreview
+                    artifact={toArtifactPreviewModel(state.currentArtifact)}
+                    runStatus={state.runStatus}
+                    isAwaitingArtifact={false}
+                  />
+                </div>
+              </div>
             </FadeIn>
           ) : null}
         </div>
 
         <div
-          className={`flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
+          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
             showSplitPane
               ? "animate-chat-panel-slide border-l border-glass-border"
               : "w-full"
           }`}
         >
-          <CoachConversationPanel
-            state={state}
-            onAttach={attachFiles}
-            onSend={handleSendMessage}
+          <WorkspaceCloseButton
+            className="absolute right-0 top-0 z-20"
+            disabled={isChatRunning(state)}
+            onClick={handleClose}
           />
+          <div
+            className={`flex min-h-0 flex-1 flex-col${showSplitPane ? " pt-10" : ""}`}
+          >
+            <CoachConversationPanel
+              state={state}
+              onAttach={attachFiles}
+              onSend={handleSendMessage}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -150,7 +150,25 @@ describe("CoachWorkspace layout", () => {
 
     const backLink = screen.getByRole("link", { name: "Back to plan" });
     expect(backLink).toBeVisible();
-    expect(backLink.closest(".overflow-x-visible")).not.toBeNull();
+    expect(backLink).toHaveAttribute("href", "/coach/plans/plan-1");
+  });
+
+  it("does not show back link before a plan is saved", () => {
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(
+      screen.queryByRole("link", { name: "Back to plan" }),
+    ).not.toBeInTheDocument();
   });
 
   it("navigates to plan detail on close when a saved plan is loaded", async () => {
