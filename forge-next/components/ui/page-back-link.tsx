@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps, MouseEvent } from "react";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { ROUTE_TRANSITION_BACK_TYPES } from "@/lib/motion/route-transitions";
-import { iconButtonVariantClass } from "@/lib/theme";
+import { pageBackLinkClass } from "@/lib/theme";
 
 export function PageBackLink({
   href,
@@ -24,9 +24,9 @@ export function PageBackLink({
       aria-label={ariaLabel}
       onClick={onClick}
       transitionTypes={[...ROUTE_TRANSITION_BACK_TYPES]}
-      className={`${iconButtonVariantClass("ghost", "sm")}${className ? ` ${className}` : ""}`}
+      className={`${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
     >
-      <ArrowRightIcon className="h-4 w-4 rotate-180" />
+      <ArrowRightIcon className="h-6 w-6 rotate-180" />
     </Link>
   );
 }

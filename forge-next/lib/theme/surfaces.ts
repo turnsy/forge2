@@ -77,6 +77,14 @@ export function pageContentClass(): string {
   return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-8";
 }
 
+export function pageShellClass(): string {
+  return "mx-auto w-full max-w-5xl p-8";
+}
+
+export function pageBackLinkClass(): string {
+  return "inline-flex shrink-0 items-center justify-center rounded-full h-10 w-10 text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
+}
+
 export function listRowClass(): string {
   return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }

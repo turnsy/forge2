@@ -23,6 +23,8 @@ export {
   attachmentChipClass,
   messageToneClass,
   pageContentClass,
+  pageShellClass,
+  pageBackLinkClass,
   pillClass,
   type AttachmentChipTone,
   type ButtonSize,

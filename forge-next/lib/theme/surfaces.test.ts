@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentChipClass,
   buttonVariantClass,
+  pageBackLinkClass,
   pillClass,
   cardClass,
   cardFooterClass,
@@ -25,6 +26,11 @@ describe("surface theme helpers", () => {
     expect(cardClass("coach")).toContain("border-coach-border");
     expect(cardClass("athlete")).toContain("border-athlete-border");
     expect(cardClass()).toContain("border-surface-divider");
+  });
+
+  it("returns borderless back link styling", () => {
+    expect(pageBackLinkClass()).toContain("outline-none");
+    expect(pageBackLinkClass()).not.toContain("border");
   });
 
   it("returns shared control styling", () => {

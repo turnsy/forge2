@@ -28,7 +28,6 @@ export function CoachPlanDetailView({
       <PageHeader
         title={plan.name}
         description={plan.description}
-        back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}
         actions={
           <>
             <Button
