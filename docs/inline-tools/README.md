@@ -11,29 +11,30 @@ Expand the coach prompt workspace from a plan-codegen specialist into a **genera
 | Agent scope | Coach home + edit workspace; general coaching assistant with plan tools |
 | Intent routing | **No classifier** — single agent, general system prompt + tool descriptions |
 | Codegen guide | **`get_plan_codegen_guide` tool** — not in system prompt; agent must call before `submit_plan_code` |
+| Artifact summary | **`summarize_current_artifact` tool** — replaces inline `summarizePlan(currentArtifact)` in system prompt |
 | System prompt | High-level “what to call when”; detailed behavior lives in tool descriptions |
 | Tool step budget | `PLAN_CHAT_MAX_TOOL_STEPS = 50` (was 12) |
 | Plan JSON in tools | **Never return full `plan_data` blob** — summaries/metadata only |
-| Artifact boundary | `currentArtifact` set only for plan create/edit flows — `get_plan` / `assign_plan` do **not** set preview |
-| Edit drop-in | `set_current_artifact` tool loads a saved plan into preview + edit semantics from chat |
-| Read tools | List + read athletes, plans, pending invites, plan versions (metadata) |
+| Artifact boundary | `currentArtifact` set only by `submit_plan_code` success or `set_current_artifact` — `get_plan` / `assign_plan` do **not** set preview |
+| Edit drop-in | `set_current_artifact` only when user wants to **open a saved plan for editing** (e.g. “edit Summer Block”, “add a week to this plan”) |
+| Read tools | List + read athletes, plans, pending invites, plan versions (metadata); list tools expose `q` search |
 | Mutating tools | Accept/reject link requests; assign/reassign plans to athletes |
 | Delete tools | **Out of scope** until confirmation UX exists |
-| `@` mentions | Send `{ kind, id }[]` per message; **lazy** resolution via tools (IDs may suffice) |
-| Mention payload | `kind` + `id` only — no eager hydration in system prompt |
+| `@` mentions | **Inline** in `prompt` string at mention sites: `@Label {"kind":"…","id":"…"}` — no separate API field |
+| Mention resolution | **Lazy** — inline ids may suffice; agent calls `get_athlete` / `get_plan` when more detail needed |
 | Split layout | Show split pane **only when `currentArtifact` is set**; chat stays centered until then |
 | Layout transition | When artifact appears, chat column **shifts right** to make room for preview |
-| Save (create) | After first save, **redirect** to `/coach/plans/[planId]/edit` and **retain conversation** |
-| Save (edit) | Unchanged — stay on page, back link, unsaved guard |
+| Save (create) | After first save, **stay on `/coach`** with internal `planId`; no redirect; conversation retained |
+| Save (edit route) | Unchanged — stay on page, back link, unsaved guard |
 
-## Data boundaries (unchanged)
+## Data boundaries
 
 | Data | LLM (Gateway) | Sandbox |
 | --- | --- | --- |
 | User prompt + thread | Yes | No |
-| `@` mention `{kind, id}` | Yes (metadata only) | No |
+| Inline `@` mention `{"kind","id"}` in prompt | Yes | No |
 | Normalized upload text | Yes (via `read_session_file`) | No |
-| `summarizePlan(currentArtifact)` | Yes (when artifact active) | No |
+| Current artifact summary | Yes (**via `summarize_current_artifact` tool only**) | No |
 | `forge_plan` cheat sheet | Yes (**via `get_plan_codegen_guide` tool only**) | No (library in VM) |
 | Full `currentArtifact` JSON | **No** | Yes → `current_plan.json` |
 | Full saved plan JSON from DB | **No** (tools return summaries) | No |
@@ -43,13 +44,13 @@ Expand the coach prompt workspace from a plan-codegen specialist into a **genera
 
 Build in order. Each phase doc uses checkboxes for iterative progress.
 
-1. [phase_1.md](./phase_1.md) — Agent foundation (general prompt, codegen guide tool, step budget)
+1. [phase_1.md](./phase_1.md) — Agent foundation (general prompt, codegen + artifact summary tools, step budget)
 2. [phase_2.md](./phase_2.md) — Read tools (athletes, plans, invites — no blobs)
 3. [phase_3.md](./phase_3.md) — Mutating tools (link accept/reject, plan assign/reassign)
 4. [phase_4.md](./phase_4.md) — `set_current_artifact` + edit-mode drop-in from chat
-5. [phase_5.md](./phase_5.md) — `@` mentions (`{kind, id}` payload, lazy resolution)
+5. [phase_5.md](./phase_5.md) — `@` mentions (inline serialization in prompt)
 6. [phase_6.md](./phase_6.md) — Workspace UI (artifact-gated split, chat shift)
-7. [phase_7.md](./phase_7.md) — Save redirect with conversation retention
+7. [phase_7.md](./phase_7.md) — Post-create save (stay on `/coach`, internal `planId`)
 8. [phase_8.md](./phase_8.md) — Integration tests & QA
 
 ## Architecture
@@ -57,13 +58,13 @@ Build in order. Each phase doc uses checkboxes for iterative progress.
 ```mermaid
 flowchart TB
   subgraph client [Coach client]
-    Composer["Prompt + @mentions + attachments"]
+    Composer["Prompt + inline @mentions + attachments"]
     Thread[Message thread]
     Preview[PlanViewer preview]
   end
 
   subgraph server [Next.js — POST /api/coach/plan-chat]
-    Parse[Parse body + mentions]
+    Parse[Parse body]
     Orch[runPlanChat orchestrator]
     Tools[Coach agent tools]
     GW[Vercel AI Gateway]
@@ -99,17 +100,18 @@ flowchart TB
 | --- | --- | --- |
 | `list_session_files` | Read | Existing — session uploads |
 | `read_session_file` | Read | Existing — session uploads |
-| `get_plan_codegen_guide` | Read | **New** — `forge_plan` cheat sheet + Python rules |
-| `list_athletes` | Read | Paginated/search; no PII beyond list row |
+| `get_plan_codegen_guide` | Read | **New** — `forge_plan` cheat sheet + Python rules; call before `submit_plan_code` |
+| `summarize_current_artifact` | Read | **New** — compact summary of in-preview plan; replaces system-prompt injection |
+| `list_athletes` | Read | Paginated; optional `q` search (same as list API) |
 | `get_athlete` | Read | Relationship + current assignment metadata |
-| `list_plans` | Read | Paginated/search |
+| `list_plans` | Read | Paginated; optional `q` search (same as list API) |
 | `get_plan` | Read | Metadata + `summarizePlan()` — **no full blob** |
 | `list_plan_versions` | Read | Version history metadata |
 | `list_pending_invites` | Read | Pending link requests |
 | `accept_coach_link` | Mutate | Accept pending athlete link |
 | `reject_coach_link` | Mutate | Reject pending athlete link |
 | `assign_plan` | Mutate | Assign/reassign plan to athlete(s) |
-| `set_current_artifact` | Workspace | Load saved plan into preview; enables edit/split UI |
+| `set_current_artifact` | Workspace | Load saved plan into preview; for “edit this plan” intents only |
 | `submit_plan_code` | Artifact | Existing — queue Python for sandbox |
 
 ## Related docs

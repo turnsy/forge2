@@ -1,10 +1,10 @@
-# Phase 7 — Save redirect with conversation retention
+# Phase 7 — Post-create save (stay on `/coach`)
 
 **Status:** Not started
 
-**Goal:** After first save in create flow, redirect to `/coach/plans/[planId]/edit` while preserving the current chat thread and artifact state.
+**Goal:** After first save in create flow, **stay on `/coach`** with internal `planId` set. Conversation and artifact are untouched. Subsequent saves use the version API.
 
-**Depends on:** [phase_4.md](./phase_4.md) (`planId` tracking), [phase_6.md](./phase_6.md) (split layout)
+**Depends on:** [phase_4.md](./phase_4.md) (`planId` tracking pattern), [phase_6.md](./phase_6.md) (split layout)
 
 **Blocks:** Phase 8 QA
 
@@ -18,57 +18,44 @@
 
 ### Target behavior
 
-- First save (create) → `router.replace('/coach/plans/[planId]/edit', { state? })` or equivalent
-- User lands on edit route with:
+- First save (create) → **no navigation**; remain on `/coach`
+- After save:
   - [ ] Same `currentArtifact` and `artifactTitle`
   - [ ] Same `messages` thread
   - [ ] Same `sessionId` (upload tools keep working)
-  - [ ] `planId` set for subsequent version saves
-  - [ ] Back link to `/coach/plans/[planId]`
+  - [ ] `planId` set in workspace state from create response
+  - [ ] `useSavePlan(planId)` switches to version API for subsequent saves
+  - [ ] Back link to `/coach/plans/[planId]` appears
   - [ ] `savedSnapshotRef` initialized post-save
-
-### Implementation options (pick one)
-
-**Option A — Client state via sessionStorage**
-
-- [ ] Before redirect, write workspace snapshot to `sessionStorage` keyed by `planId`
-- [ ] Edit page `CoachWorkspace` hydrates from snapshot if present, then clears key
-- [ ] Pros: simple, no API changes
-- [ ] Cons: refresh after redirect still works only if snapshot read on mount
-
-**Option B — URL search param + sessionStorage**
-
-- [ ] `router.replace('/coach/plans/[id]/edit?continued=1')`
-- [ ] Edit page detects param, restores chat from sessionStorage
-
-**Option C — Keep user on `/coach` with internal planId (rejected)**
-
-- User chose redirect to edit route
+  - [ ] Unsaved-changes confirm on back link (same as edit mode)
 
 ### Save hook changes
 
-- [ ] `useSavePlan`: after create success, return `{ planId, versionId }` without assuming redirect
+- [ ] `useSavePlan`: after create success, return `{ planId, versionId }` without redirecting
 - [ ] `CoachWorkspace.handleSave`:
-  - [ ] Create mode first save: persist chat state → `router.replace` to edit
-  - [ ] Edit mode: unchanged (stay, update snapshot)
-- [ ] `useSavePlan(planId)` switches to version API after `planId` known
+  - [ ] Create mode first save: set `planId` in state, update `savedSnapshotRef`, show back link — **no `router.push`**
+  - [ ] Subsequent saves on `/coach`: version API via `useSavePlan(planId)`
+  - [ ] Edit route (`/coach/plans/[id]/edit`): unchanged
+- [ ] `resetSaveStatus` on send still applies when in edit-like state on `/coach`
 
-### Edit page hydration
+### Workspace state
 
-- [ ] `createEditPlanWorkspaceState` extended to accept optional `messages`, `sessionId` from continued session
-- [ ] Default: empty chat + preloaded plan (current behavior)
-- [ ] Continued: merge preloaded plan with restored messages
+- [ ] Extend plan workspace state with optional `planId: string | null`
+- [ ] `planId` also set by `set_current_artifact` (Phase 4) — same semantics
+- [ ] Create mode promotes to “persisted edit” semantics without route change
 
-### Unsaved changes
+### Tradeoffs (accepted)
 
-- [ ] After redirect + hydrate, `savedSnapshotRef` matches saved state
-- [ ] Back link confirm works on continued session
+- URL stays `/coach` — does not reflect which plan is being edited
+- Page refresh mid-session loses in-memory chat/artifact (no sessionStorage snapshot)
+- Direct entry to edit a saved plan remains `/coach/plans/[id]/edit` with empty chat + preloaded plan
 
 ### Tests
 
-- [ ] Unit: snapshot serialize/deserialize round-trip
-- [ ] `handleSave` create path: mocks router.replace, asserts storage write
-- [ ] Edit hydration: continued state restores messages
+- [ ] `handleSave` create path: no router navigation; `planId` set in state
+- [ ] Second save on `/coach` calls version API not create API
+- [ ] Back link renders after first save
+- [ ] `savedSnapshotRef` + unsaved guard work post-save
 
 ---
 
@@ -76,23 +63,22 @@
 
 | File | Action |
 | --- | --- |
-| `forge-next/lib/chat/workspace-snapshot.ts` | New — serialize/deserialize for redirect |
-| `forge-next/components/coach/coach-workspace.tsx` | Save + redirect logic |
+| `forge-next/components/coach/coach-workspace.tsx` | Save logic, back link on `/coach`, remove redirect |
 | `forge-next/lib/plans/use-save-plan.ts` | Return planId on create |
-| `forge-next/lib/chat/adapters/plan/initial-state.ts` | Continued session hydration |
-| `forge-next/app/coach/(app)/plans/[planId]/edit/page.tsx` | Read continued snapshot |
-| `forge-next/lib/chat/workspace-snapshot.test.ts` | New |
+| `forge-next/lib/chat/adapters/plan/use-coach-plan-workspace.ts` | Track `planId` in state |
+| `forge-next/lib/chat/types.ts` | Optional `planId` on workspace state |
+| `forge-next/components/coach/coach-workspace.test.tsx` | New/extend |
 
 ---
 
 ## Done criteria
 
-- [ ] First save redirects to `/coach/plans/[planId]/edit`
-- [ ] Chat thread preserved across redirect
+- [ ] First save stays on `/coach` with conversation retained
+- [ ] `planId` set internally after first save
 - [ ] Subsequent saves use version API
-- [ ] Back link + unsaved guard work on continued session
-- [ ] `docs/plan-persistence/README.md` decision table updated (create redirect target)
+- [ ] Back link + unsaved guard work on `/coach` post-save
+- [ ] `docs/plan-persistence/README.md` decision table updated (create save stays on `/coach`)
 
 ### Docs update
 
-- [ ] Update plan-persistence README: create save → redirect to **edit** (not detail), retain chat
+- [ ] Update plan-persistence README: create save → stay on `/coach`, set internal `planId` (not redirect to detail or edit)

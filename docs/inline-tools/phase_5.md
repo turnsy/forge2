@@ -1,53 +1,71 @@
-# Phase 5 — `@` mentions (`{kind, id}`)
+# Phase 5 — `@` mentions (inline in prompt)
 
 **Status:** Not started
 
-**Goal:** Send structured mention metadata with each message so the agent can resolve context lazily via read tools. No eager hydration in the system prompt.
+**Goal:** Serialize mention metadata **inline** in the user `prompt` string where mentions appear, preserving sentence semantics. No separate API field or system-prompt injection.
 
-**Depends on:** [phase_2.md](./phase_2.md) (lazy resolution uses read tools)
+**Depends on:** [phase_2.md](./phase_2.md) (agent resolves ids lazily via `get_athlete` / `get_plan` when needed)
 
 **Blocks:** None (can ship independently of Phase 4/6)
 
 ---
 
+## Approach
+
+Mention segments in the composer become inline machine-readable refs in the agent-facing prompt. Display text in the chat thread stays human-readable (`@Label` only).
+
+**Composer display:**
+
+```
+Add a deload week to @Summer Block for @Jane Smith
+```
+
+**Serialized `prompt` sent to API:**
+
+```
+Add a deload week to @Summer Block {"kind":"plan","id":"…"} for @Jane Smith {"kind":"athlete","id":"…"}
+```
+
+- Payload is tiny (~50 bytes per mention).
+- Sentence structure is preserved — no appendix block in the system prompt.
+- Agent may call `get_plan` / `get_athlete` lazily when it needs more than the id.
+- Inline ids alone may suffice for some requests (e.g. `assign_plan`).
+
+Use `kind` (matches existing `PromptMentionSegment`), not `type`.
+
+---
+
 ## Scope
 
-### Request contract
+### Serialization
 
-- [ ] Extend `PlanChatRequestBody` with optional `mentions: { kind: 'athlete' | 'plan'; id: string }[]`
-- [ ] Parse and validate in `parsePlanChatRequestBody`
-- [ ] Dedupe mentions by `kind+id` per request
-- [ ] **No** server-side pre-fetch of mention targets (lazy only)
+- [ ] Add `serializePromptForAgent(segments: PromptSegment[]): string` in `lib/prompts/prompt-document.ts`
+- [ ] Mention segments → `@${label} {"kind":"${kind}","id":"${id}"}`
+- [ ] Text segments unchanged; strip zero-width spaces as today
+- [ ] Keep existing `serializePromptDocument` / `getLinearText` for **display** (`@Label` only)
 
 ### Client send path
 
-- [ ] `useChatWorkspace.sendMessage` extracts mention segments from `PromptSegment[]`
-- [ ] Map `PromptMentionSegment` → `{ kind, id }` (drop `label` from API payload)
-- [ ] `streamPlanChat` / plan-chat client sends `mentions` alongside `prompt`
-- [ ] Chat message history stores linear text (`@Label`) for display — mentions metadata optional in stored messages
+- [ ] `useChatWorkspace.sendMessage` uses `serializePromptForAgent` for the API `prompt` field
+- [ ] Message history stores display text (`getLinearText`) in `messages` — not the inline JSON
+- [ ] No new fields on `PlanChatRequestBody` — single `prompt` string only
 
-### Orchestrator / prompt injection
+### Server
 
-- [ ] When `mentions.length > 0`, append compact block to system prompt:
-  ```
-  User referenced in this message:
-  - athlete: <uuid>
-  - plan: <uuid>
-  Use get_athlete / get_plan tools to resolve details as needed.
-  ```
-- [ ] Do **not** inline athlete names or plan summaries (lazy tools only)
+- [ ] No mention parsing required in `parsePlanChatRequestBody` (prompt is opaque text)
+- [ ] No orchestrator system-prompt injection for mentions
 
 ### Security
 
-- [ ] Mention IDs are hints only — tools enforce ownership via RPCs
-- [ ] Reject malformed mention kinds at parse time
+- [ ] Inline ids are hints — `get_athlete` / `get_plan` / `assign_plan` enforce ownership via RPCs
+- [ ] Client can only insert ids from `@` menu selections (existing search APIs)
 
 ### Tests
 
-- [ ] `prompt-document` / segment extraction: mention segments → `{kind, id}[]`
-- [ ] Parse request: valid/invalid mentions
-- [ ] Orchestrator: mention block appended when present, omitted when empty
-- [ ] End-to-end: `@athlete` in composer → API receives id
+- [ ] `serializePromptForAgent`: text + mention + text → correct inline format
+- [ ] Multiple mentions in one prompt preserve order and spacing
+- [ ] Display serialization unchanged (`@Label` without JSON in thread)
+- [ ] End-to-end: composer mention → API prompt contains inline `{"kind","id"}`
 
 ---
 
@@ -55,21 +73,16 @@
 
 | File | Action |
 | --- | --- |
-| `forge-next/lib/ai/plan-chat/types.ts` | Add `MentionRef` type |
-| `forge-next/lib/ai/plan-chat/parse-request.ts` | Parse mentions |
-| `forge-next/lib/prompts/mentions/extract-mentions.ts` | New — segments → refs |
-| `forge-next/lib/chat/use-chat-workspace.ts` | Send mentions |
-| `forge-next/lib/chat/adapters/plan/plan-chat-client.ts` | Include in fetch body |
-| `forge-next/lib/ai/plan-chat/orchestrator.ts` | Inject mention index |
-| `forge-next/lib/ai/plan-chat/parse-request.test.ts` | Extend |
-| `forge-next/lib/prompts/mentions/extract-mentions.test.ts` | New |
+| `forge-next/lib/prompts/prompt-document.ts` | Add `serializePromptForAgent` |
+| `forge-next/lib/prompts/prompt-document.test.ts` | Extend |
+| `forge-next/lib/chat/use-chat-workspace.ts` | Use agent serializer for API |
 
 ---
 
 ## Done criteria
 
-- [ ] `@` menu selections send `{kind, id}` to API
-- [ ] System prompt lists mention refs only — no eager DB reads
-- [ ] Agent can resolve via `get_athlete` / `get_plan` on demand
-- [ ] Display text unchanged (`@Athlete Name` in thread)
-- [ ] Tests cover extract, parse, and orchestrator injection
+- [ ] `@` menu selections appear inline in agent-facing `prompt`
+- [ ] Chat thread display unchanged (`@Athlete Name` without JSON)
+- [ ] No separate `mentions` API field
+- [ ] No system-prompt mention block
+- [ ] Tests cover inline serialization

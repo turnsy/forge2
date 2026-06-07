@@ -14,17 +14,24 @@
 
 ### Tool definitions
 
-- [ ] `list_athletes` — wraps `listCoachAthletes`; supports optional search query
-  - Returns: `{ id, name, currentPlanId, currentPlanName, joinedAt }[]` + pagination hint
+- [ ] `list_athletes` — wraps `listCoachAthletes`
+  - Input: `{ q?: string, page?: number, limit?: number }` — mirrors `GET /api/coach/athletes?q=…&page=…&limit=…`
+  - `q` passed through to RPC `p_search` (same as list pages and `@` mention search)
+  - Returns: `{ items: { id, name, currentPlanId, currentPlanName, joinedAt }[], total, hasMore }`
 - [ ] `get_athlete` — wraps `getCoachAthleteRelationship`
+  - Input: `{ athleteId: string }`
   - Returns: relationship status, athlete name, current assignment metadata (plan id/name/status)
   - **No** full `plan_data`
 - [ ] `list_plans` — wraps `listCoachPlans`
-  - Returns: `{ id, name, updatedAt, athleteCount? }[]` + pagination hint
+  - Input: `{ q?: string, page?: number, limit?: number }` — mirrors `GET /api/coach/plans?q=…&page=…&limit=…`
+  - `q` passed through to RPC search (plan name)
+  - Returns: `{ items: { id, name, updatedAt }[], total, hasMore }`
 - [ ] `get_plan` — wraps `getCoachPlanById` but **strips `plan_data`**
+  - Input: `{ planId: string }`
   - Returns: `{ id, name, activeVersionId, changeSummary, updatedAt, summary: summarizePlan(plan) }`
   - **Never** include raw `plan_data` JSON
 - [ ] `list_plan_versions` — wraps `listCoachPlanVersions`
+  - Input: `{ planId: string, page?: number, limit?: number }`
   - Returns: version metadata only (id, createdAt, changeSummary) — no `plan_data`
 - [ ] `list_pending_invites` — wraps `listCoachPendingInvites`
   - Returns: `{ relationshipId, athleteName, requestedAt }[]`
@@ -43,6 +50,7 @@
 ### Tests
 
 - [ ] Unit tests per tool with mocked repositories
+- [ ] `list_athletes` / `list_plans` pass `q` to repository
 - [ ] Assert `get_plan` response never contains `plan_data` or week/exercise arrays
 - [ ] Assert `get_athlete` returns assignment metadata without workout content
 
@@ -63,6 +71,7 @@
 ## Done criteria
 
 - [ ] All six read tools registered in orchestrator
+- [ ] `list_athletes` and `list_plans` expose search via `q`
 - [ ] `get_plan` returns summary only — verified by test
 - [ ] Tools handle not-found and permission errors gracefully
 - [ ] No new Supabase migrations required (uses existing RPCs)
