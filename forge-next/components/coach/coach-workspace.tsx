@@ -6,7 +6,7 @@ import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { BackRefButton } from "@/components/ui";
+import { PageBackGutter } from "@/components/ui";
 import { ResizableSplitPane } from "@/components/ui/resizable-split-pane";
 import { isAwaitingFirstArtifact, isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
@@ -18,7 +18,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass } from "@/lib/theme";
+import { pageBackGutterReserveClass, roleLinkClass } from "@/lib/theme";
 
 export type CoachWorkspaceMode = "create" | "edit";
 
@@ -126,38 +126,56 @@ export function CoachWorkspace({
     );
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {mode === "edit" && backHref ? (
-        <div className="shrink-0 border-b border-glass-border px-4 py-3 md:px-5">
-          <BackRefButton href={backHref} onClick={handleBackClick}>
-            ← Back to plan
-          </BackRefButton>
-        </div>
+  const previewPane = (
+    <>
+      <ArtifactToolbar
+        title={state.artifactTitle}
+        saveDisabled={isChatRunning(state) || !state.currentArtifact}
+        saveStatus={saveStatus}
+        onTitleChange={setArtifactTitle}
+        onSave={handleSave}
+      />
+      {saveError ? (
+        <p className="px-2 text-sm text-red-400" role="alert">
+          {saveError}
+        </p>
       ) : null}
+      <div className="min-h-0 flex-1 overflow-hidden px-2">
+        <ArtifactPreview
+          artifact={toArtifactPreviewModel(state.currentArtifact)}
+          runStatus={state.runStatus}
+          isAwaitingArtifact={isAwaitingFirstArtifact(state)}
+        />
+      </div>
+    </>
+  );
+
+  return (
+    <div className="flex mt-2 min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
       <ResizableSplitPane
         left={
-          <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pt-4 pb-4 md:px-5 md:pt-5">
-            <ArtifactToolbar
-              title={state.artifactTitle}
-              saveDisabled={isChatRunning(state) || !state.currentArtifact}
-              saveStatus={saveStatus}
-              onTitleChange={setArtifactTitle}
-              onSave={handleSave}
-            />
-            {saveError ? (
-              <p className="px-2 text-sm text-red-400" role="alert">
-                {saveError}
-              </p>
-            ) : null}
-            <div className="min-h-0 flex-1 overflow-hidden px-2">
-              <ArtifactPreview
-                artifact={toArtifactPreviewModel(state.currentArtifact)}
-                runStatus={state.runStatus}
-                isAwaitingArtifact={isAwaitingFirstArtifact(state)}
-              />
+          mode === "edit" && backHref ? (
+            <div
+              className={`flex h-full min-h-0 flex-col overflow-x-visible overflow-y-hidden ${pageBackGutterReserveClass()} pr-2 pb-4 pt-4 md:pr-5 md:pb-5 md:pt-5`}
+            >
+              <PageBackGutter
+                back={{
+                  href: backHref,
+                  ariaLabel: "Back to plan",
+                  onClick: handleBackClick,
+                }}
+                backAlignClassName="top-0 h-10 items-center"
+                className="min-h-0 flex-1"
+                contentClassName="flex h-full min-h-0 flex-col gap-4 overflow-hidden"
+              >
+                {previewPane}
+              </PageBackGutter>
             </div>
-          </div>
+          ) : (
+            <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden px-2 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
+              {previewPane}
+            </div>
+          )
         }
         right={
           <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 pt-4 pb-4 md:px-5 md:pt-5">

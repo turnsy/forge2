@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CoachPlanDetailView } from "@/components/plan/coach-plan-detail-view";
-import { ErrorState, PageContent, PageHeader } from "@/components/ui";
+import { ErrorState, PageHeader, PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
 
@@ -38,7 +38,7 @@ export default async function CoachPlanDetailPage({
     const isDev = process.env.NODE_ENV === "development";
 
     return (
-      <PageContent>
+      <PageShell back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
         <PageHeader title="Plan" />
         <ErrorState
           title="Plan validation failed"
@@ -49,7 +49,7 @@ export default async function CoachPlanDetailPage({
           }
           details={isDev ? <PlanValidationErrors errors={result.errors} /> : undefined}
         />
-      </PageContent>
+      </PageShell>
     );
   }
 
@@ -58,13 +58,13 @@ export default async function CoachPlanDetailPage({
   const versions = await listCoachPlanVersions(user.id, planId);
 
   return (
-    <PageContent>
+    <PageShell back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
       <CoachPlanDetailView
         planId={planId}
         plan={plan}
         createdAt={detail.createdAt}
         versions={versions}
       />
-    </PageContent>
+    </PageShell>
   );
 }

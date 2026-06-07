@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-actions";
-import { MetaGroup, MetaItem, PageContent, PageHeader } from "@/components/ui";
+import { MetaGroup, MetaItem, PageHeader, PageShell } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import { requireRole } from "@/lib/auth/session";
 import { getCoachAthleteRelationship } from "@/lib/links/repository";
@@ -19,7 +19,7 @@ export default async function CoachAthleteDetailPage({
   }
 
   return (
-    <PageContent>
+    <PageShell back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}>
       <PageHeader title={relationship.athleteName} />
       <MetaGroup>
         {relationship.athleteEmail ? (
@@ -30,6 +30,6 @@ export default async function CoachAthleteDetailPage({
         ) : null}
       </MetaGroup>
       <CoachAthleteDetailActions relationship={relationship} />
-    </PageContent>
+    </PageShell>
   );
 }

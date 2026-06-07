@@ -1,5 +1,5 @@
 import { PendingInviteList } from "@/components/pending-invite-list";
-import { BackRefButton, PageContent, PageHeader } from "@/components/ui";
+import { PageHeader, PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 import { listCoachPendingInvites } from "@/lib/links/repository";
 
@@ -8,14 +8,9 @@ export default async function CoachPendingInvitesPage() {
   const invites = await listCoachPendingInvites();
 
   return (
-    <PageContent>
-      <PageHeader
-        title="Pending invites"
-        actions={
-          <BackRefButton href="/coach/athletes">← Back to athletes</BackRefButton>
-        }
-      />
+    <PageShell back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}>
+      <PageHeader title="Pending invites" />
       <PendingInviteList invites={invites} />
-    </PageContent>
+    </PageShell>
   );
 }

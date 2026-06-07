@@ -1,5 +1,6 @@
 export { Button } from "./button";
-export { BackRefButton } from "./back-ref-button";
+export { PageBackLink } from "./page-back-link";
+export { PageBackGutter, type PageBackConfig } from "./page-back-gutter";
 export { ButtonLink } from "./button-link";
 export { IconButton } from "./icon-button";
 export { SubmitButton } from "./submit-button";
@@ -12,6 +13,7 @@ export { SidebarNavLink } from "./sidebar-nav-link";
 export { PagePlaceholder } from "./page-placeholder";
 export { PageContent } from "./page-content";
 export { PageHeader } from "./page-header";
+export { PageShell } from "./page-shell";
 export { Pill } from "./pill";
 export { EmptyState } from "./empty-state";
 export { ErrorState } from "./error-state";
