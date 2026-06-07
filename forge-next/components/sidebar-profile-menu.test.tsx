@@ -71,6 +71,44 @@ describe("SidebarProfileMenu", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("renders chevron-only toggle when collapsed", () => {
+    render(
+      <SidebarProfileMenu
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+        collapsed
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /Open profile menu/i });
+    expect(screen.queryByText("Coach User")).not.toBeInTheDocument();
+    expect(screen.queryByText("coach@example.com")).not.toBeInTheDocument();
+    expect(trigger.className).not.toContain("!border-coach-muted");
+    expect(trigger.className).toContain("justify-center");
+  });
+
+  it("opens menu from collapsed chevron toggle", async () => {
+    const user = userEvent.setup();
+    render(
+      <SidebarProfileMenu
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+        collapsed
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /Open profile menu/i });
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("menuitem", { name: /Settings/i })).toHaveAttribute(
+      "href",
+      "/coach/settings",
+    );
+  });
+
   it("closes on outside click", async () => {
     const user = userEvent.setup();
     render(

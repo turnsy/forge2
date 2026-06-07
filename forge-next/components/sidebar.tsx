@@ -89,11 +89,16 @@ export function Sidebar({
         ))}
       </nav>
 
-      {collapsed ? null : (
-        <div className="mt-auto px-3 py-3">
-          <SidebarProfileMenu role={role} fullName={fullName} email={email} />
-        </div>
-      )}
+      <div
+        className={["mt-auto py-3", collapsed ? "px-2" : "px-3"].join(" ")}
+      >
+        <SidebarProfileMenu
+          role={role}
+          fullName={fullName}
+          email={email}
+          collapsed={collapsed}
+        />
+      </div>
     </aside>
   );
 }
