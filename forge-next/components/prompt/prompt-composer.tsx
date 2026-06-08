@@ -15,7 +15,7 @@ import {
   getCoordinatesAtLinearIndex,
 } from "@/lib/prompts/editor-selection";
 import { parseEditorToSegments, renderSegmentsToEditor } from "@/lib/prompts/editor-dom";
-import { shouldFlipMenuAbove } from "@/lib/prompts/mentions/anchor-position";
+import { buildMentionMenuAnchor } from "@/lib/prompts/mentions/anchor-position";
 import { flattenMentionSearchGroups } from "@/lib/prompts/mentions/search";
 import type { PromptMentionItem, PromptSegment } from "@/lib/prompts/mentions/types";
 import { useMentionSearch } from "@/lib/prompts/mentions/use-search";
@@ -52,7 +52,9 @@ export function PromptComposer({
   const [segments, setSegments] = useState<PromptSegment[]>([]);
   const [caretIndex, setCaretIndexState] = useState(0);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [anchor, setAnchor] = useState<ReturnType<
+    typeof buildMentionMenuAnchor
+  > | null>(null);
   const [suppressedRange, setSuppressedRange] =
     useState<SuppressedMentionRange | null>(null);
 
@@ -148,21 +150,18 @@ export function PromptComposer({
       editorRef.current,
       activeQuery.start,
     );
-    const flip = shouldFlipMenuAbove(
-      point.bottom + MENU_OFFSET,
-      MENU_HEIGHT,
-      window.innerHeight,
-    );
-    const nextAnchor = {
-      top: flip ? point.top - MENU_HEIGHT - MENU_OFFSET : point.bottom + MENU_OFFSET,
-      left: point.left,
-    };
+    const nextAnchor = buildMentionMenuAnchor(point, {
+      maxMenuHeight: MENU_HEIGHT,
+      offset: MENU_OFFSET,
+      viewportHeight: window.innerHeight,
+    });
 
     setAnchor((current) => {
       if (
         current &&
         current.top === nextAnchor.top &&
-        current.left === nextAnchor.left
+        current.left === nextAnchor.left &&
+        current.placement === nextAnchor.placement
       ) {
         return current;
       }

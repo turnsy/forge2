@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
 import { MentionMenuRow } from "@/components/prompt/mention-menu-row";
 import { Separator, Spinner } from "@/components/ui";
+import type { MentionMenuAnchor } from "@/lib/prompts/mentions/anchor-position";
+import { mentionMenuAnchorStyle } from "@/lib/prompts/mentions/anchor-position";
 import type { MentionSearchGroups } from "@/lib/prompts/mentions/search";
 import type { PromptMentionItem } from "@/lib/prompts/mentions/types";
 
@@ -19,7 +21,7 @@ export function MentionMenu({
 }: {
   groups: MentionSearchGroups;
   highlightedIndex: number;
-  anchor: { top: number; left: number } | null;
+  anchor: MentionMenuAnchor | null;
   open: boolean;
   loading?: boolean;
   onHighlight: (index: number) => void;
@@ -49,7 +51,7 @@ export function MentionMenu({
       aria-label="Mention suggestions"
       aria-busy={loading}
       className="fixed z-50 min-w-56 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
-      style={{ top: anchor.top, left: anchor.left }}
+      style={mentionMenuAnchorStyle(anchor)}
       data-mention-menu
     >
       {loading ? (
