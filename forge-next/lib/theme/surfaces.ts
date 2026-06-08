@@ -2,16 +2,20 @@ import type { UserRole } from "@/lib/auth/types";
 import { radius } from "@/lib/theme/tokens";
 import { roleBorderClass } from "@/lib/theme/roles";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "plain" | "danger";
 export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
 export type PillTone = "default" | "danger";
+
+const plainIconControlClasses =
+  "text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
 
 const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary: "glass-button-primary",
   secondary:
     "border border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus",
   ghost: "glass-button-ghost",
+  plain: plainIconControlClasses,
   danger:
     "border border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md hover:bg-danger-muted/80",
 };
@@ -82,7 +86,7 @@ export function pageShellClass(): string {
 }
 
 export function pageBackLinkClass(): string {
-  return "inline-flex shrink-0 items-center justify-center rounded-full h-10 w-10 text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
+  return `inline-flex shrink-0 items-center justify-center rounded-full h-10 w-10 ${plainIconControlClasses}`;
 }
 
 export function pageBackGutterOffsetClass(): string {

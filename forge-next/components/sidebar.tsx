@@ -58,7 +58,7 @@ export function Sidebar({
           </span>
         )}
         <IconButton
-          variant="ghost"
+          variant="plain"
           size="sm"
           icon={<SidebarToggleIcon />}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
