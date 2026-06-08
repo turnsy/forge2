@@ -108,7 +108,7 @@ export function chatWorkspaceReducer<TArtifact>(
           {
             role: "user",
             content: action.userMessage,
-            ...(action.userSegments?.length
+            ...(action.userSegments?.some((segment) => segment.type === "mention")
               ? { segments: action.userSegments }
               : {}),
           },
