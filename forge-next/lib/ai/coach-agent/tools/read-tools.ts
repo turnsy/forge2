@@ -31,8 +31,8 @@ const listInputSchema = z.object({
 function toListQuery(input: z.infer<typeof listInputSchema>) {
   return normalizeListQuery({
     q: input.q,
-    page: input.page,
-    limit: input.limit,
+    page: input.page!.toString(),
+    limit: input.limit!.toString(),
   });
 }
 
