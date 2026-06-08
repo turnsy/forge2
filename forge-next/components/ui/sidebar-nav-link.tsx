@@ -19,24 +19,40 @@ export function SidebarNavLink({
   icon,
   trailingIcon,
   exact = false,
+  collapsed = false,
 }: {
   href: string;
   children: ReactNode;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
   exact?: boolean;
+  collapsed?: boolean;
 }) {
   const pathname = usePathname();
   const active = isNavItemActive(pathname, href, exact);
+  const label =
+    typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : undefined;
 
   return (
     <Link
       href={href}
-      className={`${baseClass} ${active ? activeClass : inactiveClass}`}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
+      className={[
+        baseClass,
+        active ? activeClass : inactiveClass,
+        collapsed ? "justify-center px-2" : "",
+      ].join(" ")}
     >
       {icon}
-      <span className="flex-1">{children}</span>
-      {trailingIcon}
+      {collapsed ? (
+        <span className="sr-only">{children}</span>
+      ) : (
+        <span className="flex-1">{children}</span>
+      )}
+      {collapsed ? null : trailingIcon}
     </Link>
   );
 }

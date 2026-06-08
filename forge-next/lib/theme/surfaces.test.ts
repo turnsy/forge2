@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentChipClass,
   buttonVariantClass,
+  iconButtonVariantClass,
   pageBackLinkClass,
   pageBackGutterReserveClass,
   pillClass,
@@ -32,6 +33,13 @@ describe("surface theme helpers", () => {
   it("returns borderless back link styling", () => {
     expect(pageBackLinkClass()).toContain("outline-none");
     expect(pageBackLinkClass()).not.toContain("border");
+  });
+
+  it("returns borderless plain icon button styling", () => {
+    expect(iconButtonVariantClass("plain", "sm")).toContain("outline-none");
+    expect(iconButtonVariantClass("plain", "sm")).not.toContain(
+      "glass-button-ghost",
+    );
   });
 
   it("reserves left padding for the overlay back control", () => {
