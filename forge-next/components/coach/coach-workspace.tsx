@@ -55,10 +55,10 @@ export function CoachWorkspace({
   } = useCoachPlanWorkspace(
     initialPlan && initialPlanId
       ? {
-          initialPlan,
-          planId: initialPlanId,
-          onArtifactCleared: handleArtifactCleared,
-        }
+        initialPlan,
+        planId: initialPlanId,
+        onArtifactCleared: handleArtifactCleared,
+      }
       : { onArtifactCleared: handleArtifactCleared },
   );
 
@@ -177,9 +177,8 @@ export function CoachWorkspace({
   return (
     <div className="mx-4 flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
-        className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
-          showSplitPane ? "" : " mx-auto w-full max-w-3xl"
-        }`}
+        className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${showSplitPane ? "" : " mx-auto w-full max-w-3xl"
+          }`}
         style={{
           gridTemplateColumns: showSplitPane
             ? "minmax(320px, 1fr) minmax(280px, 33%)"
@@ -237,18 +236,17 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
-            showSplitPane
+          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${showSplitPane
               ? "animate-chat-panel-slide border-l border-glass-border"
               : "w-full"
-          }`}
+            }`}
         >
           <WorkspaceCloseButton
-            className="absolute right-0 top-0 z-20"
+            className="absolute right-0 top-2 z-20"
             disabled={isChatRunning(state)}
             onClick={handleClose}
           />
-          <div className="flex min-h-0 flex-1 flex-col pt-10">
+          <div className="flex min-h-0 flex-1 flex-col pt-14">
             <CoachConversationPanel
               state={state}
               onAttach={attachFiles}
