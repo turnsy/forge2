@@ -224,7 +224,7 @@ export function CoachWorkspace({
                     {saveError}
                   </p>
                 ) : null}
-                <div className="min-h-0 flex-1 overflow-hidden px-2 pt-3">
+                <div className="min-h-0 flex-1 overflow-hidden px-2">
                   <ArtifactPreview
                     artifact={toArtifactPreviewModel(state.currentArtifact)}
                     runStatus={state.runStatus}
