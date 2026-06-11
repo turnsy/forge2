@@ -10,9 +10,10 @@ describe("safe area layout classes", () => {
     expect(SAFE_AREA_TOP_CLASS).toContain("env(safe-area-inset-top,0px)");
   });
 
-  it("includes horizontal inset env() values", () => {
+  it("uses only safe-area insets for horizontal shell padding", () => {
     expect(SAFE_AREA_X_CLASS).toContain("env(safe-area-inset-left,0px)");
     expect(SAFE_AREA_X_CLASS).toContain("env(safe-area-inset-right,0px)");
+    expect(SAFE_AREA_X_CLASS).not.toContain("max(1rem");
   });
 
   it("includes padding on all sides for standalone screens", () => {

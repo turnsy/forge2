@@ -5,6 +5,7 @@ import {
   iconButtonVariantClass,
   pageBackLinkClass,
   pageBackGutterReserveClass,
+  pageContentClass,
   pillClass,
   cardClass,
   cardFooterClass,
@@ -76,5 +77,10 @@ describe("surface theme helpers", () => {
   it("returns pill styling", () => {
     expect(pillClass()).toContain("rounded-full");
     expect(pillClass("danger")).toContain("bg-red-600");
+  });
+
+  it("uses tighter page padding on small screens", () => {
+    expect(pageContentClass()).toContain("p-4");
+    expect(pageContentClass()).toContain("md:p-8");
   });
 });

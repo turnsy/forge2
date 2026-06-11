@@ -78,11 +78,11 @@ export function dividerLineClass(): string {
 }
 
 export function pageContentClass(): string {
-  return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-8";
+  return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-4 md:p-8";
 }
 
 export function pageShellClass(): string {
-  return "mx-auto w-full max-w-5xl p-8";
+  return "mx-auto w-full max-w-5xl p-4 md:p-8";
 }
 
 export function pageBackLinkClass(): string {
