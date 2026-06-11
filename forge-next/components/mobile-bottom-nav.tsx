@@ -2,11 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { GearIcon } from "@/components/icons/gear-icon";
 import { LogOutIcon } from "@/components/icons/log-out-icon";
 import type { UserRole } from "@/lib/auth/types";
 import { isNavItemActive } from "@/lib/navigation/active-path";
+import {
+  MOBILE_BOTTOM_NAV_SELECTION_CLASS,
+  MOBILE_BOTTOM_NAV_TRAY_CLASS,
+  MOBILE_BOTTOM_NAV_WIDTH_CLASS,
+} from "@/lib/navigation/mobile-bottom-nav-layout";
 import { renderNavIcon } from "@/lib/navigation/nav-icon";
 import { profileLabels } from "@/lib/navigation/profile-labels";
 import {
@@ -19,14 +31,18 @@ import { roleFocusRingClass } from "@/lib/theme/roles";
 const DRAG_THRESHOLD_PX = 10;
 
 const slotClass =
-  "relative flex h-11 w-11 items-center justify-center rounded-2xl text-surface-muted transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20";
+  "relative z-10 flex h-11 w-11 items-center justify-center rounded-2xl text-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20";
 
-const slotActiveClass = "bg-glass text-surface-foreground";
-const slotDropTargetClass = "bg-glass-focus text-surface-foreground ring-1 ring-white/15";
-const slotDraggingClass = "z-10 scale-110 bg-glass text-surface-foreground shadow-lg";
+const slotActiveClass = "text-surface-foreground";
 
 const menuItemClass =
   "flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-surface-muted transition hover:bg-glass hover:text-surface-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+
+type SlotMetrics = {
+  left: number;
+  width: number;
+  centerX: number;
+};
 
 function setPageAnchored(anchored: boolean) {
   if (anchored) {
@@ -85,7 +101,7 @@ function MobileBottomProfileButton({
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative shrink-0">
       {open ? (
         <div
           id={menuId}
@@ -117,11 +133,9 @@ function MobileBottomProfileButton({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Open profile menu"
-        className={[
-          slotClass,
-          roleFocusRingClass(role),
-          open ? slotActiveClass : "",
-        ].join(" ")}
+        className={[slotClass, roleFocusRingClass(role), open ? slotActiveClass : ""]
+          .filter(Boolean)
+          .join(" ")}
         onClick={() => setOpen((current) => !current)}
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full border border-glass-border bg-glass-nested text-xs font-semibold text-surface-foreground">
@@ -136,8 +150,6 @@ function BottomNavSlot({
   item,
   pathname,
   slotRef,
-  isDragging,
-  isDropTarget,
   onActivePointerDown,
   onActivePointerMove,
   onActivePointerUp,
@@ -146,20 +158,13 @@ function BottomNavSlot({
   item: RoleNavItem;
   pathname: string;
   slotRef: (node: HTMLButtonElement | HTMLAnchorElement | null) => void;
-  isDragging: boolean;
-  isDropTarget: boolean;
   onActivePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerCancel: (event: React.PointerEvent<HTMLButtonElement>) => void;
 }) {
   const active = isNavItemActive(pathname, item.href, item.exact);
-  const className = [
-    slotClass,
-    active && isDragging ? slotDraggingClass : "",
-    active && !isDragging ? slotActiveClass : "",
-    !active && isDropTarget ? slotDropTargetClass : "",
-  ]
+  const className = [slotClass, active ? slotActiveClass : ""]
     .filter(Boolean)
     .join(" ");
 
@@ -186,9 +191,7 @@ function BottomNavSlot({
       ref={slotRef}
       href={item.href}
       aria-label={item.label}
-      className={[slotClass, isDropTarget ? slotDropTargetClass : ""]
-        .filter(Boolean)
-        .join(" ")}
+      className={className}
     >
       {renderNavIcon(item.icon)}
     </Link>
@@ -207,7 +210,7 @@ export function MobileBottomNav({
   const router = useRouter();
   const pathname = usePathname();
   const navItems = roleNavItems[role];
-  const navRef = useRef<HTMLElement>(null);
+  const trayRef = useRef<HTMLDivElement>(null);
   const slotRefs = useRef(new Map<string, HTMLElement>());
   const dragRef = useRef<{
     pointerId: number;
@@ -216,36 +219,149 @@ export function MobileBottomNav({
     startY: number;
     isDragging: boolean;
   } | null>(null);
-  const [draggingHref, setDraggingHref] = useState<string | null>(null);
-  const [dropTargetHref, setDropTargetHref] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
 
-  const resolveDropTarget = useCallback((clientX: number, clientY: number) => {
-    for (const item of navItems) {
-      const node = slotRefs.current.get(item.href);
-      if (!node) {
-        continue;
+  const getSlotMetrics = useCallback((href: string): SlotMetrics | null => {
+    const node = slotRefs.current.get(href);
+    const tray = trayRef.current;
+    if (!node || !tray) {
+      return null;
+    }
+
+    const nodeRect = node.getBoundingClientRect();
+    const trayRect = tray.getBoundingClientRect();
+
+    return {
+      left: nodeRect.left - trayRect.left,
+      width: nodeRect.width,
+      centerX: nodeRect.left - trayRect.left + nodeRect.width / 2,
+    };
+  }, []);
+
+  const getActiveItem = useCallback(
+    () =>
+      navItems.find((item) => isNavItemActive(pathname, item.href, item.exact)) ??
+      null,
+    [navItems, pathname],
+  );
+
+  const syncIndicatorToHref = useCallback(
+    (href: string) => {
+      const metrics = getSlotMetrics(href);
+      if (metrics) {
+        setIndicator({ left: metrics.left, width: metrics.width });
+      }
+    },
+    [getSlotMetrics],
+  );
+
+  const syncIndicatorToActive = useCallback(() => {
+    const activeItem = getActiveItem();
+    if (activeItem) {
+      syncIndicatorToHref(activeItem.href);
+    }
+  }, [getActiveItem, syncIndicatorToHref]);
+
+  const getNavSlotCenterBounds = useCallback(() => {
+    const centers = navItems
+      .map((item) => getSlotMetrics(item.href)?.centerX)
+      .filter((value): value is number => value !== undefined);
+
+    if (centers.length === 0) {
+      return null;
+    }
+
+    return {
+      min: Math.min(...centers),
+      max: Math.max(...centers),
+    };
+  }, [getSlotMetrics, navItems]);
+
+  const findNearestSlotHref = useCallback(
+    (clientX: number) => {
+      const tray = trayRef.current;
+      if (!tray) {
+        return null;
       }
 
-      const rect = node.getBoundingClientRect();
-      if (
-        clientX >= rect.left &&
-        clientX <= rect.right &&
-        clientY >= rect.top &&
-        clientY <= rect.bottom
-      ) {
-        return item.href;
+      const trayRect = tray.getBoundingClientRect();
+      const pointerX = clientX - trayRect.left;
+      let nearestHref: string | null = null;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      for (const item of navItems) {
+        const metrics = getSlotMetrics(item.href);
+        if (!metrics) {
+          continue;
+        }
+
+        const distance = Math.abs(metrics.centerX - pointerX);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestHref = item.href;
+        }
+      }
+
+      return nearestHref;
+    },
+    [getSlotMetrics, navItems],
+  );
+
+  const setIndicatorToPointer = useCallback(
+    (clientX: number, sourceHref: string) => {
+      const sourceMetrics = getSlotMetrics(sourceHref);
+      const bounds = getNavSlotCenterBounds();
+      if (!sourceMetrics || !bounds) {
+        return;
+      }
+
+      const tray = trayRef.current;
+      if (!tray) {
+        return;
+      }
+
+      const trayRect = tray.getBoundingClientRect();
+      const pointerX = clientX - trayRect.left;
+      const centerX = Math.max(
+        bounds.min,
+        Math.min(bounds.max, pointerX),
+      );
+
+      setIndicator({
+        left: centerX - sourceMetrics.width / 2,
+        width: sourceMetrics.width,
+      });
+    },
+    [getNavSlotCenterBounds, getSlotMetrics],
+  );
+
+  useLayoutEffect(() => {
+    if (!isDragging) {
+      syncIndicatorToActive();
+    }
+  }, [isDragging, syncIndicatorToActive]);
+
+  useEffect(() => {
+    function handleResize() {
+      if (!isDragging) {
+        syncIndicatorToActive();
       }
     }
 
-    return null;
-  }, [navItems]);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isDragging, syncIndicatorToActive]);
 
   const resetDrag = useCallback(() => {
     dragRef.current = null;
-    setDraggingHref(null);
-    setDropTargetHref(null);
+    setIsDragging(false);
     setPageAnchored(false);
-  }, []);
+    syncIndicatorToActive();
+  }, [syncIndicatorToActive]);
 
   useEffect(() => {
     return () => {
@@ -254,10 +370,10 @@ export function MobileBottomNav({
   }, []);
 
   const handleActivePointerDown = useCallback(
-    (item: RoleNavItem, event: React.PointerEvent<HTMLButtonElement>) => {
+    (_item: RoleNavItem, event: React.PointerEvent<HTMLButtonElement>) => {
       dragRef.current = {
         pointerId: event.pointerId,
-        sourceHref: item.href,
+        sourceHref: _item.href,
         startX: event.clientX,
         startY: event.clientY,
         isDragging: false,
@@ -279,7 +395,7 @@ export function MobileBottomNav({
 
       if (!drag.isDragging && distance >= DRAG_THRESHOLD_PX) {
         drag.isDragging = true;
-        setDraggingHref(drag.sourceHref);
+        setIsDragging(true);
         setPageAnchored(true);
         event.currentTarget.setPointerCapture?.(event.pointerId);
       }
@@ -289,9 +405,9 @@ export function MobileBottomNav({
       }
 
       event.preventDefault();
-      setDropTargetHref(resolveDropTarget(event.clientX, event.clientY));
+      setIndicatorToPointer(event.clientX, drag.sourceHref);
     },
-    [resolveDropTarget],
+    [setIndicatorToPointer],
   );
 
   const handleActivePointerEnd = useCallback(
@@ -303,7 +419,13 @@ export function MobileBottomNav({
 
       if (drag.isDragging) {
         event.preventDefault();
-        const targetHref = resolveDropTarget(event.clientX, event.clientY);
+        const targetHref =
+          findNearestSlotHref(event.clientX) ?? drag.sourceHref;
+
+        if (targetHref) {
+          syncIndicatorToHref(targetHref);
+        }
+
         if (targetHref && targetHref !== drag.sourceHref) {
           router.push(targetHref);
         }
@@ -315,46 +437,62 @@ export function MobileBottomNav({
 
       resetDrag();
     },
-    [resetDrag, resolveDropTarget, router],
+    [findNearestSlotHref, resetDrag, router, syncIndicatorToHref],
   );
 
   return (
     <nav
-      ref={navRef}
       aria-label="Main navigation"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-8 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
     >
       <div
-        className="pointer-events-auto flex w-full max-w-md touch-none items-center justify-between gap-2 py-1.5"
+        className={`pointer-events-auto flex items-center gap-3 ${MOBILE_BOTTOM_NAV_WIDTH_CLASS}`}
         onPointerMove={(event) => {
           if (dragRef.current?.isDragging) {
             event.preventDefault();
           }
         }}
       >
-        {navItems.map((item) => (
-          <BottomNavSlot
-            key={item.href}
-            item={item}
-            pathname={pathname}
-            slotRef={(node) => {
-              if (node) {
-                slotRefs.current.set(item.href, node);
-                return;
-              }
+        <div ref={trayRef} className={MOBILE_BOTTOM_NAV_TRAY_CLASS}>
+          {indicator ? (
+            <div
+              aria-hidden="true"
+              data-testid="nav-selection-indicator"
+              className={`${MOBILE_BOTTOM_NAV_SELECTION_CLASS} ${
+                isDragging
+                  ? "transition-none"
+                  : "transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+              }`}
+              style={{
+                left: indicator.left,
+                width: indicator.width,
+              }}
+            />
+          ) : null}
+          <div className="relative z-10 flex w-full items-center justify-around">
+            {navItems.map((item) => (
+              <BottomNavSlot
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                slotRef={(node) => {
+                  if (node) {
+                    slotRefs.current.set(item.href, node);
+                    return;
+                  }
 
-              slotRefs.current.delete(item.href);
-            }}
-            isDragging={draggingHref === item.href}
-            isDropTarget={
-              dropTargetHref === item.href && dropTargetHref !== draggingHref
-            }
-            onActivePointerDown={(event) => handleActivePointerDown(item, event)}
-            onActivePointerMove={handleActivePointerMove}
-            onActivePointerUp={handleActivePointerEnd}
-            onActivePointerCancel={handleActivePointerEnd}
-          />
-        ))}
+                  slotRefs.current.delete(item.href);
+                }}
+                onActivePointerDown={(event) =>
+                  handleActivePointerDown(item, event)
+                }
+                onActivePointerMove={handleActivePointerMove}
+                onActivePointerUp={handleActivePointerEnd}
+                onActivePointerCancel={handleActivePointerEnd}
+              />
+            ))}
+          </div>
+        </div>
         <MobileBottomProfileButton
           role={role}
           fullName={fullName}

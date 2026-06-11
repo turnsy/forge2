@@ -37,6 +37,46 @@ vi.mock("next/link", () => ({
 
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
+function mockSlotRects(
+  homeButton: HTMLElement,
+  plansLink: HTMLElement,
+  tray: HTMLElement,
+) {
+  vi.spyOn(tray, "getBoundingClientRect").mockReturnValue({
+    left: 20,
+    top: 500,
+    right: 280,
+    bottom: 556,
+    width: 260,
+    height: 56,
+    x: 20,
+    y: 500,
+    toJSON: () => ({}),
+  });
+  vi.spyOn(homeButton, "getBoundingClientRect").mockReturnValue({
+    left: 40,
+    top: 502,
+    right: 84,
+    bottom: 546,
+    width: 44,
+    height: 44,
+    x: 40,
+    y: 502,
+    toJSON: () => ({}),
+  });
+  vi.spyOn(plansLink, "getBoundingClientRect").mockReturnValue({
+    left: 120,
+    top: 502,
+    right: 164,
+    bottom: 546,
+    width: 44,
+    height: 44,
+    x: 120,
+    y: 502,
+    toJSON: () => ({}),
+  });
+}
+
 describe("MobileBottomNav", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,7 +85,7 @@ describe("MobileBottomNav", () => {
     document.body.style.touchAction = "";
   });
 
-  it("uses a transparent nav bar container", () => {
+  it("renders a glass tray at roughly three quarters width", () => {
     const { container } = render(
       <MobileBottomNav
         role="coach"
@@ -54,10 +94,10 @@ describe("MobileBottomNav", () => {
       />,
     );
 
-    const bar = container.querySelector(".pointer-events-auto");
-    expect(bar?.className).not.toContain("bg-surface");
-    expect(bar?.className).not.toContain("glass-surface");
-    expect(bar?.className).toContain("justify-between");
+    const cluster = container.querySelector(".pointer-events-auto");
+    expect(cluster?.className).toContain("w-3/4");
+    expect(container.querySelector(".backdrop-blur-md")).toBeTruthy();
+    expect(container.querySelector(".bg-surface\\/70")).toBeTruthy();
   });
 
   it("renders coach navigation slots and profile menu", () => {
@@ -87,9 +127,9 @@ describe("MobileBottomNav", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates when dragging the active tab onto another tab", () => {
+  it("pans the selection indicator while dragging", () => {
     usePathname.mockReturnValue("/coach");
-    render(
+    const { container } = render(
       <MobileBottomNav
         role="coach"
         fullName="Coach User"
@@ -99,34 +139,38 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
+    const tray = container.querySelector(".backdrop-blur-md") as HTMLElement;
 
-    vi.spyOn(homeButton, "getBoundingClientRect").mockReturnValue({
-      left: 40,
-      top: 500,
-      right: 90,
-      bottom: 550,
-      width: 50,
-      height: 50,
-      x: 40,
-      y: 500,
-      toJSON: () => ({}),
-    });
-    vi.spyOn(plansLink, "getBoundingClientRect").mockReturnValue({
-      left: 100,
-      top: 500,
-      right: 150,
-      bottom: 550,
-      width: 50,
-      height: 50,
-      x: 100,
-      y: 500,
-      toJSON: () => ({}),
-    });
+    mockSlotRects(homeButton, plansLink, tray);
 
-    fireEvent.pointerDown(homeButton, { clientX: 65, clientY: 525, pointerId: 1 });
+    fireEvent.pointerDown(homeButton, { clientX: 62, clientY: 525, pointerId: 1 });
     fireEvent.pointerMove(homeButton, { clientX: 80, clientY: 525, pointerId: 1 });
-    fireEvent.pointerMove(homeButton, { clientX: 125, clientY: 525, pointerId: 1 });
-    fireEvent.pointerUp(homeButton, { clientX: 125, clientY: 525, pointerId: 1 });
+    fireEvent.pointerMove(homeButton, { clientX: 142, clientY: 525, pointerId: 1 });
+
+    const indicator = screen.getByTestId("nav-selection-indicator");
+    expect(Number.parseFloat(indicator.style.left)).toBeGreaterThan(20);
+  });
+
+  it("navigates when dragging the active tab onto another tab", () => {
+    usePathname.mockReturnValue("/coach");
+    const { container } = render(
+      <MobileBottomNav
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+      />,
+    );
+
+    const homeButton = screen.getByRole("button", { name: "Home" });
+    const plansLink = screen.getByRole("link", { name: "Plans" });
+    const tray = container.querySelector(".backdrop-blur-md") as HTMLElement;
+
+    mockSlotRects(homeButton, plansLink, tray);
+
+    fireEvent.pointerDown(homeButton, { clientX: 62, clientY: 525, pointerId: 1 });
+    fireEvent.pointerMove(homeButton, { clientX: 80, clientY: 525, pointerId: 1 });
+    fireEvent.pointerMove(homeButton, { clientX: 142, clientY: 525, pointerId: 1 });
+    fireEvent.pointerUp(homeButton, { clientX: 142, clientY: 525, pointerId: 1 });
 
     expect(mockPush).toHaveBeenCalledWith("/coach/plans");
     expect(document.body.style.overflow).toBe("");
