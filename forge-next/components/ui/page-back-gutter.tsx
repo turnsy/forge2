@@ -26,36 +26,31 @@ export function PageBackGutter({
   backAlignClassName?: string;
   offsetClassName?: string;
 }) {
-  const backLink = (
-    <PageBackLink
-      href={back.href}
-      ariaLabel={back.ariaLabel}
-      onClick={back.onClick}
-    />
-  );
-
   return (
-    <div className={`relative${className ? ` ${className}` : ""}`}>
+    <div
+      className={`relative [&_[data-page-header]]:max-md:pl-12${className ? ` ${className}` : ""}`}
+    >
       <div
         className={`absolute right-full hidden md:flex ${backAlignClassName} ${offsetClassName}`}
       >
-        {backLink}
-      </div>
-      <div className="flex min-w-0 items-start gap-2 md:block">
         <PageBackLink
           href={back.href}
           ariaLabel={back.ariaLabel}
           onClick={back.onClick}
-          className="shrink-0 md:hidden"
         />
-        {contentClassName ? (
-          <div className={`min-w-0 flex-1 md:w-full ${contentClassName}`}>
-            {children}
-          </div>
-        ) : (
-          <div className="min-w-0 flex-1 md:contents">{children}</div>
-        )}
       </div>
+      <div className="absolute left-0 top-0 z-10 md:hidden">
+        <PageBackLink
+          href={back.href}
+          ariaLabel={back.ariaLabel}
+          onClick={back.onClick}
+        />
+      </div>
+      {contentClassName ? (
+        <div className={contentClassName}>{children}</div>
+      ) : (
+        children
+      )}
     </div>
   );
 }
