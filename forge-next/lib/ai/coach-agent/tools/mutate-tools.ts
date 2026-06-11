@@ -8,7 +8,9 @@ export type MutateToolsContext = {
   coachId: string;
 };
 
-export function createMutateTools(_ctx: MutateToolsContext) {
+export function createMutateTools(ctx: MutateToolsContext) {
+  void ctx;
+
   return {
     accept_coach_link: tool({
       description:

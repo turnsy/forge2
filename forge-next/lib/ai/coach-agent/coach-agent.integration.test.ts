@@ -43,10 +43,15 @@ vi.mock("@/lib/uploads/list-session-uploads", () => ({
 
 type ToolExecuteContext = { messages: unknown[]; toolCallId: string };
 
+type ToolExecute = (
+  input: unknown,
+  context: ToolExecuteContext,
+) => Promise<unknown>;
+
 function mockStreamTextWithTools(
-  runTools: (tools: Record<string, { execute?: Function }>) => Promise<void>,
+  runTools: (tools: Record<string, { execute?: ToolExecute }>) => Promise<void>,
 ) {
-  return (opts: { tools: Record<string, { execute?: Function }> }) => ({
+  return (opts: { tools: Record<string, { execute?: ToolExecute }> }) => ({
     textStream: (async function* () {
       yield "";
     })(),
