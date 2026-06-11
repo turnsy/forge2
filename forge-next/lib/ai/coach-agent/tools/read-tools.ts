@@ -18,21 +18,30 @@ export type ReadToolsContext = {
 
 const listInputSchema = z.object({
   q: z.string().optional().describe("Optional search query."),
-  page: z.number().int().min(1).optional().describe("Page number (default 1)."),
+  page: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .default(1)
+    .describe("Page number (default 1)."),
   limit: z
     .number()
     .int()
     .min(1)
     .max(100)
     .optional()
+    .default(10)
     .describe("Page size (default 10)."),
 });
 
 function toListQuery(input: z.infer<typeof listInputSchema>) {
+  const parsed = listInputSchema.parse(input);
+
   return normalizeListQuery({
-    q: input.q,
-    page: input.page!.toString(),
-    limit: input.limit!.toString(),
+    q: parsed.q,
+    page: String(parsed.page),
+    limit: String(parsed.limit),
   });
 }
 

@@ -79,7 +79,7 @@ describe("createReadTools", () => {
     await tools.list_athletes.execute!({ q: "Jane" }, toolCtx);
 
     expect(mockListAthletes).toHaveBeenCalledWith(
-      expect.objectContaining({ q: "Jane" }),
+      expect.objectContaining({ q: "Jane", page: 1, limit: 10 }),
     );
   });
 
@@ -97,7 +97,7 @@ describe("createReadTools", () => {
 
     expect(mockListPlans).toHaveBeenCalledWith(
       coachId,
-      expect.objectContaining({ q: "Summer" }),
+      expect.objectContaining({ q: "Summer", page: 1, limit: 10 }),
     );
   });
 
