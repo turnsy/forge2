@@ -82,7 +82,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("uses top padding for the close button in single-pane chat", () => {
+  it("reserves top padding for the close button in single-pane chat", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -94,7 +94,7 @@ describe("CoachWorkspace layout", () => {
 
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
-    expect(container.querySelector(".pt-10")).toBeTruthy();
+    expect(container.querySelector(".pt-14")).toBeTruthy();
   });
 
   it("shows centered chat without split when started but no artifact", () => {
