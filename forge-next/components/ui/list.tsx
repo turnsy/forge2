@@ -69,7 +69,11 @@ export function ListRow({
         ) : (
           <div className={mainContentClass}>{mainContent}</div>
         )}
-        {actions ? <div className="relative z-10 shrink-0 md:justify-self-end">{actions}</div> : null}
+        {actions ? (
+          <div className="relative z-10 w-full shrink-0 md:w-auto md:justify-self-end">
+            {actions}
+          </div>
+        ) : null}
       </article>
     </li>
   );
