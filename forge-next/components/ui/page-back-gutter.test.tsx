@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PageBackGutter } from "@/components/ui/page-back-gutter";
 
 describe("PageBackGutter", () => {
-  it("positions the back link outside content without narrowing it", () => {
+  it("positions the back link outside content on desktop without narrowing it", () => {
     render(
       <PageBackGutter back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
         <main data-testid="content">Plan detail</main>
@@ -11,14 +11,35 @@ describe("PageBackGutter", () => {
     );
 
     const content = screen.getByTestId("content");
-    const shell = content.parentElement;
-    const backLink = screen.getByRole("link", { name: "Back to plans" });
-    const backSlot = backLink.parentElement;
+    const shell = content.parentElement?.parentElement?.parentElement;
+    const desktopBackSlot = screen
+      .getAllByRole("link", { name: "Back to plans" })
+      .find((link) => !link.className.includes("md:hidden"))?.parentElement;
 
     expect(shell).toHaveClass("relative");
-    expect(backSlot).toHaveClass("absolute", "right-full");
-    expect(shell?.contains(backLink)).toBe(true);
-    expect(content.contains(backLink)).toBe(false);
-    expect(content.parentElement).toBe(shell);
+    expect(desktopBackSlot).toHaveClass("absolute", "right-full", "hidden", "md:flex");
+    expect(
+      content.contains(
+        screen
+          .getAllByRole("link", { name: "Back to plans" })
+          .find((link) => !link.className.includes("md:hidden"))!,
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps the back link in-flow beside content on mobile", () => {
+    render(
+      <PageBackGutter back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
+        <main data-testid="content">Plan detail</main>
+      </PageBackGutter>,
+    );
+
+    const mobileBackLink = screen
+      .getAllByRole("link", { name: "Back to plans" })
+      .find((link) => link.className.includes("md:hidden"));
+
+    expect(mobileBackLink).toBeTruthy();
+    expect(mobileBackLink?.parentElement).toHaveClass("flex", "min-w-0", "items-start");
+    expect(mobileBackLink?.parentElement?.querySelector('[data-testid="content"]')).toBeTruthy();
   });
 });

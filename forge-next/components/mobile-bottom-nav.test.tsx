@@ -95,7 +95,7 @@ describe("MobileBottomNav", () => {
       />,
     );
 
-    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md");
+    const tray = container.querySelector(".w-3\\/4.overflow-visible");
     expect(tray).toBeTruthy();
     expect(tray?.querySelector('[aria-label="Open profile menu"]')).toBeTruthy();
   });
@@ -138,7 +138,7 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
-    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
+    const tray = container.querySelector(".w-3\\/4.overflow-visible") as HTMLElement;
 
     mockSlotRects(homeButton, plansLink, tray);
     window.dispatchEvent(new Event("resize"));
@@ -164,7 +164,7 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
-    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
+    const tray = container.querySelector(".w-3\\/4.overflow-visible") as HTMLElement;
 
     mockSlotRects(homeButton, plansLink, tray);
 
@@ -188,7 +188,7 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
-    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
+    const tray = container.querySelector(".w-3\\/4.overflow-visible") as HTMLElement;
 
     mockSlotRects(homeButton, plansLink, tray);
 

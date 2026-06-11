@@ -18,6 +18,7 @@ import {
   MOBILE_BOTTOM_NAV_SELECTION_CLASS,
   MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX,
   MOBILE_BOTTOM_NAV_TRAY_CLASS,
+  MOBILE_BOTTOM_NAV_TRAY_SURFACE_CLASS,
   MOBILE_BOTTOM_NAV_WIDTH_CLASS,
 } from "@/lib/navigation/mobile-bottom-nav-layout";
 import { renderNavIcon } from "@/lib/navigation/nav-icon";
@@ -96,7 +97,7 @@ function MobileBottomProfileButton({
       return;
     }
 
-    function handlePointerDown(event: MouseEvent) {
+    function handlePointerDown(event: PointerEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
@@ -111,11 +112,11 @@ function MobileBottomProfileButton({
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
@@ -127,7 +128,7 @@ function MobileBottomProfileButton({
           id={menuId}
           role="menu"
           aria-label="Profile menu"
-          className="absolute bottom-full right-0 mb-2 flex w-48 flex-col gap-1 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
+          className="absolute bottom-full right-0 z-50 mb-2 flex w-48 flex-col gap-1 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
         >
           <Link
             href={settingsPath}
@@ -157,6 +158,7 @@ function MobileBottomProfileButton({
           .filter(Boolean)
           .join(" ")}
         onClick={() => setOpen((current) => !current)}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full border border-glass-border bg-glass-nested text-xs font-semibold text-surface-foreground">
           {initial}
@@ -474,13 +476,14 @@ export function MobileBottomNav({
     >
       <div
         ref={trayRef}
-        className={`pointer-events-auto ${MOBILE_BOTTOM_NAV_WIDTH_CLASS} ${MOBILE_BOTTOM_NAV_TRAY_CLASS}`}
+        className={`pointer-events-auto overflow-visible ${MOBILE_BOTTOM_NAV_WIDTH_CLASS} ${MOBILE_BOTTOM_NAV_TRAY_CLASS}`}
         onPointerMove={(event) => {
           if (dragRef.current?.isDragging) {
             event.preventDefault();
           }
         }}
       >
+        <div aria-hidden className={MOBILE_BOTTOM_NAV_TRAY_SURFACE_CLASS} />
         {indicator ? (
           <div
             aria-hidden="true"
