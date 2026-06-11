@@ -322,10 +322,10 @@ export function MobileBottomNav({
     <nav
       ref={navRef}
       aria-label="Main navigation"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-8 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
     >
       <div
-        className="pointer-events-auto flex touch-none items-center gap-1 rounded-full border border-glass-border bg-surface/90 px-2 py-1.5 shadow-lg glass-surface backdrop-blur-md"
+        className="pointer-events-auto flex w-full max-w-md touch-none items-center justify-between gap-2 py-1.5"
         onPointerMove={(event) => {
           if (dragRef.current?.isDragging) {
             event.preventDefault();

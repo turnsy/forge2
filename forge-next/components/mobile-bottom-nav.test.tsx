@@ -45,6 +45,21 @@ describe("MobileBottomNav", () => {
     document.body.style.touchAction = "";
   });
 
+  it("uses a transparent nav bar container", () => {
+    const { container } = render(
+      <MobileBottomNav
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+      />,
+    );
+
+    const bar = container.querySelector(".pointer-events-auto");
+    expect(bar?.className).not.toContain("bg-surface");
+    expect(bar?.className).not.toContain("glass-surface");
+    expect(bar?.className).toContain("justify-between");
+  });
+
   it("renders coach navigation slots and profile menu", () => {
     render(
       <MobileBottomNav
