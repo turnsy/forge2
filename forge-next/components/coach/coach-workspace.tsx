@@ -8,8 +8,11 @@ import { CoachConversationPanel } from "@/components/coach/coach-conversation-pa
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
-import { XIcon } from "@/components/icons/x-icon";
-import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
+import { Button, FadeIn, PageBackLink } from "@/components/ui";
+import {
+  MOBILE_OVERLAY_CLOSE_CLASS,
+  MOBILE_OVERLAY_CONTENT_CLASS,
+} from "@/lib/coach/mobile-workspace-layout";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
@@ -45,9 +48,9 @@ function ArtifactPanel({
   return (
     <FadeIn
       key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-4 overflow-hidden pr-2 md:pr-3"
+      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden pr-2 md:gap-4 md:pr-3"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden pt-3 md:pt-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden md:gap-4 md:pt-4">
         <div className="flex shrink-0 items-center gap-2">
           {resolvedBackHref ? (
             <PageBackLink
@@ -263,18 +266,17 @@ export function CoachWorkspace({
 
   if (isMobile && showSplitPane) {
     return (
-      <div className="relative mx-2 flex min-h-0 flex-1 flex-col overflow-hidden md:mx-4">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
-            <IconButton
-              variant="secondary"
-              size="sm"
-              className="absolute right-2 top-2 z-20"
-              icon={<XIcon />}
-              aria-label="Close artifact"
+            <WorkspaceCloseButton
+              className={MOBILE_OVERLAY_CLOSE_CLASS}
+              ariaLabel="Close artifact"
               onClick={() => setShowArtifact(false)}
             />
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-14">
+            <div
+              className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_OVERLAY_CONTENT_CLASS}`}
+            >
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
@@ -290,11 +292,13 @@ export function CoachWorkspace({
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <WorkspaceCloseButton
-              className="absolute right-2 top-2 z-20"
+              className={MOBILE_OVERLAY_CLOSE_CLASS}
               disabled={isChatRunning(state)}
               onClick={handleClose}
             />
-            <div className="flex min-h-0 flex-1 flex-col px-2 pt-14">
+            <div
+              className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS}`}
+            >
               <CoachConversationPanel
                 state={state}
                 onAttach={attachFiles}
@@ -367,7 +371,7 @@ export function CoachWorkspace({
             disabled={isChatRunning(state)}
             onClick={handleClose}
           />
-          <div className="flex min-h-0 flex-1 flex-col pt-14">
+          <div className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS}`}>
             <CoachConversationPanel
               state={state}
               onAttach={attachFiles}

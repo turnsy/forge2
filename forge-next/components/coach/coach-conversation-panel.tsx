@@ -25,7 +25,7 @@ export function CoachConversationPanel({
         errors={state.errors}
         phase={state.phase}
       />
-      <div className="shrink-0 py-2">
+      <div className="shrink-0 py-3 md:py-2">
         {composerHeader}
         <ChatComposer
           compact

@@ -100,7 +100,7 @@ describe("CoachWorkspace layout", () => {
 
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
-    expect(container.querySelector(".pt-14")).toBeTruthy();
+    expect(container.querySelector(".md\\:pt-14")).toBeTruthy();
   });
 
   it("shows centered chat without split when started but no artifact", () => {
