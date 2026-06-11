@@ -10,11 +10,13 @@ export function CoachConversationPanel({
   onAttach,
   onSend,
   composerHeader,
+  composerClassName = "",
 }: {
   state: PlanWorkspaceState;
   onAttach: (files: File[]) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
   composerHeader?: ReactNode;
+  composerClassName?: string;
 }) {
   return (
     <>
@@ -25,7 +27,7 @@ export function CoachConversationPanel({
         errors={state.errors}
         phase={state.phase}
       />
-      <div className="shrink-0 py-3 md:py-2">
+      <div className={`shrink-0 py-3 md:py-2${composerClassName ? ` ${composerClassName}` : ""}`}>
         {composerHeader}
         <ChatComposer
           compact

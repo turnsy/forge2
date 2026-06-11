@@ -39,7 +39,7 @@ describe("AppShell", () => {
     expect(mainColumn?.className).not.toContain("pb-[calc(4.5rem");
   });
 
-  it("reserves bottom space on the coach prompt page", () => {
+  it("does not reserve bottom space on the coach prompt page", () => {
     mockUsePathname.mockReturnValue("/coach");
 
     const { container } = render(
@@ -49,6 +49,6 @@ describe("AppShell", () => {
     );
 
     const mainColumn = container.querySelector(".flex.min-h-0.flex-1.flex-col");
-    expect(mainColumn?.className).toContain("pb-[calc(4.5rem");
+    expect(mainColumn?.className).not.toContain("pb-[calc(4.5rem");
   });
 });

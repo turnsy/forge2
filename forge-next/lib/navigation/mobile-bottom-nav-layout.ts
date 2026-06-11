@@ -22,10 +22,10 @@ export const MOBILE_BOTTOM_NAV_SELECTION_CLASS =
 /** Extra width added to the selection pill beyond each slot. */
 export const MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX = 12;
 
-/** Only the coach workspace prompt keeps content above the bottom nav. */
+/** Coach workspace handles composer inset locally; pages scroll beneath the nav. */
 export function shouldReserveMobileBottomNavSpace(
-  role: UserRole,
-  pathname: string,
+  _role: UserRole,
+  _pathname: string,
 ): boolean {
-  return role === "coach" && pathname === "/coach";
+  return false;
 }

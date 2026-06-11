@@ -10,8 +10,11 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
+  MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
+  MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
+  MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
@@ -48,7 +51,7 @@ function ArtifactPanel({
   return (
     <FadeIn
       key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden pr-2 md:gap-4 md:pr-3"
+      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden md:gap-4 md:pr-3"
     >
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden md:gap-4 md:pt-4">
         <div className="flex shrink-0 items-center gap-2">
@@ -74,7 +77,9 @@ function ArtifactPanel({
             {saveError}
           </p>
         ) : null}
-        <div className="min-h-0 flex-1 overflow-hidden px-2">
+        <div
+          className={`min-h-0 flex-1 md:overflow-hidden md:px-2 ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS} max-md:overflow-y-auto max-md:px-0`}
+        >
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
             runStatus={state.runStatus}
@@ -230,7 +235,9 @@ export function CoachWorkspace({
               <span className={roleLinkClass(role)}>{firstName}</span>
             </h1>
           </div>
-          <div className="shrink-0 px-4 pb-3 pt-2">
+          <div
+            className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
+          >
             <ChatComposer
               state={state}
               composerKey={`${state.sessionId}-${state.messages.length}`}
@@ -268,14 +275,14 @@ export function CoachWorkspace({
     return (
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <WorkspaceCloseButton
               className={MOBILE_OVERLAY_CLOSE_CLASS}
               ariaLabel="Close artifact"
               onClick={() => setShowArtifact(false)}
             />
             <div
-              className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_OVERLAY_CONTENT_CLASS}`}
+              className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
             >
               <ArtifactPanel
                 state={state}
@@ -297,12 +304,13 @@ export function CoachWorkspace({
               onClick={handleClose}
             />
             <div
-              className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS}`}
+              className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
             >
               <CoachConversationPanel
                 state={state}
                 onAttach={attachFiles}
                 onSend={handleSendMessage}
+                composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
                 composerHeader={
                   <div className="flex justify-end pb-1">
                     <Button

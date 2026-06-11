@@ -192,6 +192,25 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("adds mobile chat padding and composer inset when chatting with an artifact", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(container.innerHTML).toContain("px-4");
+    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+  });
+
   it("shows View above the composer on mobile when an artifact exists", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);

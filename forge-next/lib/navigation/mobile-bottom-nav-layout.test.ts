@@ -20,9 +20,8 @@ describe("mobile bottom nav layout", () => {
 });
 
 describe("shouldReserveMobileBottomNavSpace", () => {
-  it("reserves space on the coach prompt page only", () => {
-    expect(shouldReserveMobileBottomNavSpace("coach", "/coach")).toBe(true);
+  it("never reserves shell space; coach workspace handles composer inset", () => {
+    expect(shouldReserveMobileBottomNavSpace("coach", "/coach")).toBe(false);
     expect(shouldReserveMobileBottomNavSpace("coach", "/coach/plans")).toBe(false);
-    expect(shouldReserveMobileBottomNavSpace("athlete", "/athlete")).toBe(false);
   });
 });
