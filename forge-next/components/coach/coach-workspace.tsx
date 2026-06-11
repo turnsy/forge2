@@ -272,7 +272,29 @@ export function CoachWorkspace({
   const artifactFadeKey =
     activePlanId ?? state.sessionId + (state.artifactTitle || "artifact");
 
-  if (isMobile && showSplitPane) {
+  if (isMobile) {
+    if (!showSplitPane) {
+      return (
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <WorkspaceCloseButton
+            className={MOBILE_OVERLAY_CLOSE_CLASS}
+            disabled={isChatRunning(state)}
+            onClick={handleClose}
+          />
+          <div
+            className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
+          >
+            <CoachConversationPanel
+              state={state}
+              onAttach={attachFiles}
+              onSend={handleSendMessage}
+              composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (

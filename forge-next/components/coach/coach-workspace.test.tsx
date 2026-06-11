@@ -192,6 +192,24 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("adds mobile chat padding and composer inset before an artifact exists", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(container.innerHTML).toContain("px-4");
+    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+    expect(screen.getByRole("button", { name: "Close workspace" })).toBeVisible();
+  });
+
   it("adds mobile chat padding and composer inset when chatting with an artifact", () => {
     mockUseIsMobile.mockReturnValue(true);
     mockUseCoachPlanWorkspace.mockReturnValue(
