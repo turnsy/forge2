@@ -4,16 +4,19 @@ import type { UserRole } from "@/lib/auth/types";
 export const MOBILE_BOTTOM_NAV_OFFSET_CLASS =
   "pb-[calc(4.5rem+0.75rem+env(safe-area-inset-bottom,0px))]";
 
-/** Width of the bottom nav cluster (tray + profile). */
+/** Width of the bottom nav tray. */
 export const MOBILE_BOTTOM_NAV_WIDTH_CLASS = "w-3/4";
 
-/** Glass tray behind nav icons; darker than the selection pill. */
+/** Glass tray behind nav icons and profile; darker than the selection pill. */
 export const MOBILE_BOTTOM_NAV_TRAY_CLASS =
-  "relative flex flex-1 touch-none items-center overflow-hidden rounded-full border border-glass-border bg-surface/70 px-2 py-1.5 shadow-lg backdrop-blur-md";
+  "relative flex touch-none items-center overflow-hidden rounded-full border border-glass-border bg-surface/70 px-2 py-1.5 shadow-lg backdrop-blur-md";
 
 /** Sliding highlight for the active nav icon. */
 export const MOBILE_BOTTOM_NAV_SELECTION_CLASS =
-  "absolute top-1/2 z-0 h-11 -translate-y-1/2 rounded-2xl bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+  "absolute inset-y-1 z-0 rounded-full bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+
+/** Extra width added to the selection pill beyond each slot. */
+export const MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX = 12;
 
 /** Only the coach workspace prompt keeps content above the bottom nav. */
 export function shouldReserveMobileBottomNavSpace(

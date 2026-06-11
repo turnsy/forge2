@@ -16,6 +16,7 @@ import type { UserRole } from "@/lib/auth/types";
 import { isNavItemActive } from "@/lib/navigation/active-path";
 import {
   MOBILE_BOTTOM_NAV_SELECTION_CLASS,
+  MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX,
   MOBILE_BOTTOM_NAV_TRAY_CLASS,
   MOBILE_BOTTOM_NAV_WIDTH_CLASS,
 } from "@/lib/navigation/mobile-bottom-nav-layout";
@@ -31,7 +32,7 @@ import { roleFocusRingClass } from "@/lib/theme/roles";
 const DRAG_THRESHOLD_PX = 10;
 
 const slotClass =
-  "relative z-10 flex h-11 w-11 items-center justify-center rounded-2xl text-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20";
+  "relative z-10 flex h-11 w-11 items-center justify-center rounded-full text-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20";
 
 const slotActiveClass = "text-surface-foreground";
 
@@ -44,6 +45,11 @@ type SlotMetrics = {
   centerX: number;
 };
 
+type IndicatorPosition = {
+  left: number;
+  width: number;
+};
+
 function setPageAnchored(anchored: boolean) {
   if (anchored) {
     document.body.style.overflow = "hidden";
@@ -53,6 +59,20 @@ function setPageAnchored(anchored: boolean) {
 
   document.body.style.overflow = "";
   document.body.style.touchAction = "";
+}
+
+function metricsToIndicator(metrics: SlotMetrics): IndicatorPosition {
+  return {
+    left: metrics.left - MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX / 2,
+    width: metrics.width + MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX,
+  };
+}
+
+function centerToIndicator(centerX: number, slotWidth: number): IndicatorPosition {
+  return {
+    left: centerX - (slotWidth + MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX) / 2,
+    width: slotWidth + MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX,
+  };
 }
 
 function MobileBottomProfileButton({
@@ -220,10 +240,8 @@ export function MobileBottomNav({
     isDragging: boolean;
   } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [indicator, setIndicator] = useState<{
-    left: number;
-    width: number;
-  } | null>(null);
+  const [committedHref, setCommittedHref] = useState<string | null>(null);
+  const [indicator, setIndicator] = useState<IndicatorPosition | null>(null);
 
   const getSlotMetrics = useCallback((href: string): SlotMetrics | null => {
     const node = slotRefs.current.get(href);
@@ -249,22 +267,30 @@ export function MobileBottomNav({
     [navItems, pathname],
   );
 
+  const resolveIndicatorHref = useCallback(() => {
+    if (committedHref) {
+      return committedHref;
+    }
+
+    return getActiveItem()?.href ?? null;
+  }, [committedHref, getActiveItem]);
+
   const syncIndicatorToHref = useCallback(
     (href: string) => {
       const metrics = getSlotMetrics(href);
       if (metrics) {
-        setIndicator({ left: metrics.left, width: metrics.width });
+        setIndicator(metricsToIndicator(metrics));
       }
     },
     [getSlotMetrics],
   );
 
-  const syncIndicatorToActive = useCallback(() => {
-    const activeItem = getActiveItem();
-    if (activeItem) {
-      syncIndicatorToHref(activeItem.href);
+  const syncIndicatorToResolved = useCallback(() => {
+    const href = resolveIndicatorHref();
+    if (href) {
+      syncIndicatorToHref(href);
     }
-  }, [getActiveItem, syncIndicatorToHref]);
+  }, [resolveIndicatorHref, syncIndicatorToHref]);
 
   const getNavSlotCenterBounds = useCallback(() => {
     const centers = navItems
@@ -326,42 +352,42 @@ export function MobileBottomNav({
 
       const trayRect = tray.getBoundingClientRect();
       const pointerX = clientX - trayRect.left;
-      const centerX = Math.max(
-        bounds.min,
-        Math.min(bounds.max, pointerX),
-      );
+      const centerX = Math.max(bounds.min, Math.min(bounds.max, pointerX));
 
-      setIndicator({
-        left: centerX - sourceMetrics.width / 2,
-        width: sourceMetrics.width,
-      });
+      setIndicator(centerToIndicator(centerX, sourceMetrics.width));
     },
     [getNavSlotCenterBounds, getSlotMetrics],
   );
 
   useLayoutEffect(() => {
-    if (!isDragging) {
-      syncIndicatorToActive();
+    const activeItem = getActiveItem();
+    if (committedHref && activeItem?.href === committedHref) {
+      setCommittedHref(null);
     }
-  }, [isDragging, syncIndicatorToActive]);
+  }, [committedHref, getActiveItem, pathname]);
+
+  useLayoutEffect(() => {
+    if (!isDragging) {
+      syncIndicatorToResolved();
+    }
+  }, [isDragging, syncIndicatorToResolved, pathname, committedHref]);
 
   useEffect(() => {
     function handleResize() {
       if (!isDragging) {
-        syncIndicatorToActive();
+        syncIndicatorToResolved();
       }
     }
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isDragging, syncIndicatorToActive]);
+  }, [isDragging, syncIndicatorToResolved]);
 
   const resetDrag = useCallback(() => {
     dragRef.current = null;
     setIsDragging(false);
     setPageAnchored(false);
-    syncIndicatorToActive();
-  }, [syncIndicatorToActive]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -424,10 +450,11 @@ export function MobileBottomNav({
 
         if (targetHref) {
           syncIndicatorToHref(targetHref);
-        }
 
-        if (targetHref && targetHref !== drag.sourceHref) {
-          router.push(targetHref);
+          if (targetHref !== drag.sourceHref) {
+            setCommittedHref(targetHref);
+            router.push(targetHref);
+          }
         }
 
         if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
@@ -446,58 +473,57 @@ export function MobileBottomNav({
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
     >
       <div
-        className={`pointer-events-auto flex items-center gap-3 ${MOBILE_BOTTOM_NAV_WIDTH_CLASS}`}
+        ref={trayRef}
+        className={`pointer-events-auto ${MOBILE_BOTTOM_NAV_WIDTH_CLASS} ${MOBILE_BOTTOM_NAV_TRAY_CLASS}`}
         onPointerMove={(event) => {
           if (dragRef.current?.isDragging) {
             event.preventDefault();
           }
         }}
       >
-        <div ref={trayRef} className={MOBILE_BOTTOM_NAV_TRAY_CLASS}>
-          {indicator ? (
-            <div
-              aria-hidden="true"
-              data-testid="nav-selection-indicator"
-              className={`${MOBILE_BOTTOM_NAV_SELECTION_CLASS} ${
-                isDragging
-                  ? "transition-none"
-                  : "transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
-              }`}
-              style={{
-                left: indicator.left,
-                width: indicator.width,
-              }}
-            />
-          ) : null}
-          <div className="relative z-10 flex w-full items-center justify-around">
-            {navItems.map((item) => (
-              <BottomNavSlot
-                key={item.href}
-                item={item}
-                pathname={pathname}
-                slotRef={(node) => {
-                  if (node) {
-                    slotRefs.current.set(item.href, node);
-                    return;
-                  }
-
-                  slotRefs.current.delete(item.href);
-                }}
-                onActivePointerDown={(event) =>
-                  handleActivePointerDown(item, event)
+        {indicator ? (
+          <div
+            aria-hidden="true"
+            data-testid="nav-selection-indicator"
+            className={`${MOBILE_BOTTOM_NAV_SELECTION_CLASS} ${
+              isDragging
+                ? "transition-none"
+                : "transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+            }`}
+            style={{
+              left: indicator.left,
+              width: indicator.width,
+            }}
+          />
+        ) : null}
+        <div className="relative z-10 flex w-full items-center justify-around">
+          {navItems.map((item) => (
+            <BottomNavSlot
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              slotRef={(node) => {
+                if (node) {
+                  slotRefs.current.set(item.href, node);
+                  return;
                 }
-                onActivePointerMove={handleActivePointerMove}
-                onActivePointerUp={handleActivePointerEnd}
-                onActivePointerCancel={handleActivePointerEnd}
-              />
-            ))}
-          </div>
+
+                slotRefs.current.delete(item.href);
+              }}
+              onActivePointerDown={(event) =>
+                handleActivePointerDown(item, event)
+              }
+              onActivePointerMove={handleActivePointerMove}
+              onActivePointerUp={handleActivePointerEnd}
+              onActivePointerCancel={handleActivePointerEnd}
+            />
+          ))}
+          <MobileBottomProfileButton
+            role={role}
+            fullName={fullName}
+            email={email}
+          />
         </div>
-        <MobileBottomProfileButton
-          role={role}
-          fullName={fullName}
-          email={email}
-        />
       </div>
     </nav>
   );

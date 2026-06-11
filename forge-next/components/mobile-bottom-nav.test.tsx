@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +36,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 function mockSlotRects(
   homeButton: HTMLElement,
@@ -85,7 +86,7 @@ describe("MobileBottomNav", () => {
     document.body.style.touchAction = "";
   });
 
-  it("renders a glass tray at roughly three quarters width", () => {
+  it("renders a glass tray at roughly three quarters width with profile inside", () => {
     const { container } = render(
       <MobileBottomNav
         role="coach"
@@ -94,10 +95,9 @@ describe("MobileBottomNav", () => {
       />,
     );
 
-    const cluster = container.querySelector(".pointer-events-auto");
-    expect(cluster?.className).toContain("w-3/4");
-    expect(container.querySelector(".backdrop-blur-md")).toBeTruthy();
-    expect(container.querySelector(".bg-surface\\/70")).toBeTruthy();
+    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md");
+    expect(tray).toBeTruthy();
+    expect(tray?.querySelector('[aria-label="Open profile menu"]')).toBeTruthy();
   });
 
   it("renders coach navigation slots and profile menu", () => {
@@ -127,6 +127,31 @@ describe("MobileBottomNav", () => {
     ).toBeInTheDocument();
   });
 
+  it("uses a wider rounded selection indicator", async () => {
+    const { container } = render(
+      <MobileBottomNav
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+      />,
+    );
+
+    const homeButton = screen.getByRole("button", { name: "Home" });
+    const plansLink = screen.getByRole("link", { name: "Plans" });
+    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
+
+    mockSlotRects(homeButton, plansLink, tray);
+    window.dispatchEvent(new Event("resize"));
+
+    const indicator = screen.getByTestId("nav-selection-indicator");
+    expect(indicator.className).toContain("rounded-full");
+    await waitFor(() => {
+      expect(Number.parseFloat(indicator.style.width)).toBe(
+        44 + MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX,
+      );
+    });
+  });
+
   it("pans the selection indicator while dragging", () => {
     usePathname.mockReturnValue("/coach");
     const { container } = render(
@@ -139,7 +164,7 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
-    const tray = container.querySelector(".backdrop-blur-md") as HTMLElement;
+    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
 
     mockSlotRects(homeButton, plansLink, tray);
 
@@ -151,7 +176,7 @@ describe("MobileBottomNav", () => {
     expect(Number.parseFloat(indicator.style.left)).toBeGreaterThan(20);
   });
 
-  it("navigates when dragging the active tab onto another tab", () => {
+  it("keeps the selection on the target tab after release while navigating", () => {
     usePathname.mockReturnValue("/coach");
     const { container } = render(
       <MobileBottomNav
@@ -163,7 +188,7 @@ describe("MobileBottomNav", () => {
 
     const homeButton = screen.getByRole("button", { name: "Home" });
     const plansLink = screen.getByRole("link", { name: "Plans" });
-    const tray = container.querySelector(".backdrop-blur-md") as HTMLElement;
+    const tray = container.querySelector(".w-3\\/4.backdrop-blur-md") as HTMLElement;
 
     mockSlotRects(homeButton, plansLink, tray);
 
@@ -172,9 +197,11 @@ describe("MobileBottomNav", () => {
     fireEvent.pointerMove(homeButton, { clientX: 142, clientY: 525, pointerId: 1 });
     fireEvent.pointerUp(homeButton, { clientX: 142, clientY: 525, pointerId: 1 });
 
+    const indicator = screen.getByTestId("nav-selection-indicator");
+    const plansMetricsLeft = 120 - 20 - MOBILE_BOTTOM_NAV_SELECTION_EXPAND_PX / 2;
+
     expect(mockPush).toHaveBeenCalledWith("/coach/plans");
-    expect(document.body.style.overflow).toBe("");
-    expect(document.body.style.touchAction).toBe("");
+    expect(Number.parseFloat(indicator.style.left)).toBeCloseTo(plansMetricsLeft, 0);
   });
 
   it("anchors the page while dragging", () => {
