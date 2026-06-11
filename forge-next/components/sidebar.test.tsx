@@ -144,12 +144,11 @@ describe("Sidebar", () => {
     expect(screen.getByText("Coach User")).toBeInTheDocument();
   });
 
-  it("shows hamburger trigger on mobile and opens overlay drawer", async () => {
+  it("does not render on mobile", () => {
     mockUseIsMobile.mockReturnValue(true);
-    const user = userEvent.setup();
     usePathname.mockReturnValue("/coach");
 
-    render(
+    const { container } = render(
       <Sidebar
         role="coach"
         fullName="Coach User"
@@ -157,16 +156,6 @@ describe("Sidebar", () => {
       />,
     );
 
-    const openButton = screen.getByRole("button", { name: "Open sidebar" });
-    expect(openButton).toBeVisible();
-    expect(
-      screen.queryByRole("button", { name: /Collapse sidebar/i }),
-    ).not.toBeInTheDocument();
-
-    await user.click(openButton);
-
-    expect(screen.getByText("Forge")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Close sidebar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Home" })).toBeVisible();
+    expect(container).toBeEmptyDOMElement();
   });
 });

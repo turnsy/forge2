@@ -221,13 +221,13 @@ export function CoachWorkspace({
     if (isMobile) {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
               Welcome back,{" "}
               <span className={roleLinkClass(role)}>{firstName}</span>
             </h1>
           </div>
-          <div className="shrink-0 border-t border-surface-divider bg-background px-4 py-3">
+          <div className="shrink-0 px-4 pb-3 pt-2">
             <ChatComposer
               state={state}
               composerKey={`${state.sessionId}-${state.messages.length}`}
@@ -278,13 +278,13 @@ export function CoachWorkspace({
             />
           </div>
         ) : (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-4">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <WorkspaceCloseButton
-              className="absolute right-0 top-2 z-20"
+              className="absolute right-2 top-2 z-20"
               disabled={isChatRunning(state)}
               onClick={handleClose}
             />
-            <div className="flex min-h-0 flex-1 flex-col pt-14">
+            <div className="flex min-h-0 flex-1 flex-col px-2 pt-14">
               <CoachConversationPanel
                 state={state}
                 onAttach={attachFiles}
@@ -294,7 +294,7 @@ export function CoachWorkspace({
           </div>
         )}
 
-        <div className="absolute bottom-3 right-3 z-20">
+        <div className="absolute bottom-2 right-4 z-20">
           <IconButton
             variant={showArtifact ? "primary" : "secondary"}
             size="sm"
