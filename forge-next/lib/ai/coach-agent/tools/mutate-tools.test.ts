@@ -24,7 +24,7 @@ describe("createMutateTools", () => {
 
   it("accept_coach_link succeeds", async () => {
     mockAccept.mockResolvedValue(undefined);
-    const tools = createMutateTools({ coachId: "coach-1" });
+    const tools = createMutateTools();
     const result = await tools.accept_coach_link.execute!(
       { relationshipId: "00000000-0000-4000-8000-000000000001" },
       toolCtx,
@@ -38,7 +38,7 @@ describe("createMutateTools", () => {
 
   it("reject_coach_link succeeds", async () => {
     mockReject.mockResolvedValue(undefined);
-    const tools = createMutateTools({ coachId: "coach-1" });
+    const tools = createMutateTools();
     const result = await tools.reject_coach_link.execute!(
       { relationshipId: "00000000-0000-4000-8000-000000000002" },
       toolCtx,
@@ -52,7 +52,7 @@ describe("createMutateTools", () => {
 
   it("assign_plan succeeds", async () => {
     mockAssign.mockResolvedValue({ ok: true });
-    const tools = createMutateTools({ coachId: "coach-1" });
+    const tools = createMutateTools();
     const result = await tools.assign_plan.execute!(
       {
         planId: "00000000-0000-4000-8000-000000000010",
@@ -74,7 +74,7 @@ describe("createMutateTools", () => {
       code: "validation_error",
       message: "Athlete not linked to coach",
     });
-    const tools = createMutateTools({ coachId: "coach-1" });
+    const tools = createMutateTools();
     const result = await tools.assign_plan.execute!(
       {
         planId: "00000000-0000-4000-8000-000000000010",

@@ -23,7 +23,7 @@ export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
     ...createPlanChatTools(ctx),
     ...createFoundationTools({ currentArtifact: ctx.currentArtifact }),
     ...createReadTools({ coachId: ctx.coachId }),
-    ...createMutateTools({ coachId: ctx.coachId }),
+    ...createMutateTools(),
     ...createArtifactTools({
       coachId: ctx.coachId,
       onSetCurrentArtifact: ctx.onSetCurrentArtifact,

@@ -9,7 +9,7 @@ import {
   listCoachPlans,
 } from "@/lib/plans/repository";
 import { normalizeListQuery } from "@/lib/lists/query";
-import { toPlanToolSummary } from "@/lib/ai/coach-agent/tools/plan-summaries";
+import { summarizePlan } from "@/lib/plans/summarize-plan";
 import { toToolNotFound } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 
 export type ReadToolsContext = {
@@ -146,7 +146,7 @@ export function createReadTools(ctx: ReadToolsContext) {
           id: detail.id,
           name: detail.plan.name,
           createdAt: detail.createdAt,
-          summary: toPlanToolSummary(detail.plan),
+          summary: summarizePlan(detail.plan),
         };
       },
     }),
