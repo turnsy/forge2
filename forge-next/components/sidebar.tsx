@@ -269,7 +269,7 @@ function MobileSidebarDrawer({
       {!open ? (
         <div
           aria-hidden="true"
-          className="fixed left-0 top-0 z-30 h-dvh w-[30px] touch-none md:hidden"
+          className="fixed left-0 top-0 z-30 h-dvh w-[30px] touch-pan-y md:hidden"
         />
       ) : null}
 
@@ -299,7 +299,7 @@ function MobileSidebarDrawer({
         ref={drawerRef}
         aria-hidden={!open}
         className={[
-          "fixed left-0 top-0 z-50 flex h-dvh w-60 flex-col border-r border-surface-divider bg-surface text-surface-foreground transition-transform duration-200 md:hidden",
+          "fixed left-0 top-0 z-50 flex h-dvh w-60 touch-pan-y flex-col border-r border-surface-divider bg-surface text-surface-foreground transition-transform duration-200 md:hidden",
           open ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
         onPointerDown={handleDrawerPointerDown}
