@@ -6,6 +6,11 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
+const mockUseIsMobile = vi.fn(() => false);
+
+vi.mock("@/lib/hooks/use-is-mobile", () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}));
 
 vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
   useCoachPlanWorkspace: (...args: unknown[]) => mockUseCoachPlanWorkspace(...args),
@@ -69,6 +74,7 @@ function mockWorkspaceReturn(state: PlanWorkspaceState) {
 describe("CoachWorkspace layout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseIsMobile.mockReturnValue(false);
   });
 
   it("shows welcome before first message", () => {
@@ -183,6 +189,59 @@ describe("CoachWorkspace layout", () => {
 
     expect(
       screen.queryByRole("link", { name: "Back to plan" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows View above the composer on mobile when an artifact exists", async () => {
+    const user = userEvent.setup();
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(screen.getByRole("button", { name: "View artifact" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Close artifact" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "View artifact" }));
+
+    expect(screen.getByRole("button", { name: "Close artifact" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "View artifact" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("returns to chat when the mobile artifact close button is pressed", async () => {
+    const user = userEvent.setup();
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    await user.click(screen.getByRole("button", { name: "View artifact" }));
+    await user.click(screen.getByRole("button", { name: "Close artifact" }));
+
+    expect(screen.getByRole("button", { name: "View artifact" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Close artifact" }),
     ).not.toBeInTheDocument();
   });
 

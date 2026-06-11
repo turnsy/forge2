@@ -8,8 +8,8 @@ import { CoachConversationPanel } from "@/components/coach/coach-conversation-pa
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
-import { EyeOffIcon } from "@/components/icons/eye-off-icon";
-import { FadeIn, IconButton, PageBackLink } from "@/components/ui";
+import { XIcon } from "@/components/icons/x-icon";
+import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
@@ -265,17 +265,27 @@ export function CoachWorkspace({
     return (
       <div className="relative mx-2 flex min-h-0 flex-1 flex-col overflow-hidden md:mx-4">
         {showArtifact ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
-            <ArtifactPanel
-              state={state}
-              artifactFadeKey={artifactFadeKey}
-              resolvedBackHref={resolvedBackHref}
-              saveStatus={saveStatus}
-              saveError={saveError}
-              onBackClick={handleBackClick}
-              onTitleChange={setArtifactTitle}
-              onSave={handleSave}
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
+            <IconButton
+              variant="secondary"
+              size="sm"
+              className="absolute right-2 top-2 z-20"
+              icon={<XIcon />}
+              aria-label="Close artifact"
+              onClick={() => setShowArtifact(false)}
             />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-14">
+              <ArtifactPanel
+                state={state}
+                artifactFadeKey={artifactFadeKey}
+                resolvedBackHref={resolvedBackHref}
+                saveStatus={saveStatus}
+                saveError={saveError}
+                onBackClick={handleBackClick}
+                onTitleChange={setArtifactTitle}
+                onSave={handleSave}
+              />
+            </div>
           </div>
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -289,21 +299,25 @@ export function CoachWorkspace({
                 state={state}
                 onAttach={attachFiles}
                 onSend={handleSendMessage}
+                composerHeader={
+                  <div className="flex justify-end pb-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      fullWidth={false}
+                      icon={<EyeIcon />}
+                      aria-label="View artifact"
+                      onClick={() => setShowArtifact(true)}
+                    >
+                      View
+                    </Button>
+                  </div>
+                }
               />
             </div>
           </div>
         )}
-
-        <div className="absolute bottom-2 right-4 z-20">
-          <IconButton
-            variant={showArtifact ? "primary" : "secondary"}
-            size="sm"
-            icon={showArtifact ? <EyeOffIcon /> : <EyeIcon />}
-            aria-label={showArtifact ? "Show chat" : "Show artifact"}
-            aria-pressed={showArtifact}
-            onClick={() => setShowArtifact((current) => !current)}
-          />
-        </div>
       </div>
     );
   }
