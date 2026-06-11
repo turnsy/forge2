@@ -5,10 +5,17 @@ import { buildMinimalWorkoutPlan } from "@/lib/sandbox/stub";
 function mockStreamText(options: {
   text?: string;
   submitPython?: string;
+  clearArtifact?: boolean;
   tools?: {
     submit_plan_code?: {
       execute: (
         input: { python: string },
+        context: { messages: unknown[]; toolCallId: string },
+      ) => Promise<unknown>;
+    };
+    clear_current_artifact?: {
+      execute: (
+        input: Record<string, never>,
         context: { messages: unknown[]; toolCallId: string },
       ) => Promise<unknown>;
     };
@@ -21,6 +28,12 @@ function mockStreamText(options: {
       }
     })(),
     then(resolve: (value: unknown) => void) {
+      if (options.clearArtifact && options.tools?.clear_current_artifact?.execute) {
+        void options.tools.clear_current_artifact.execute(
+          {},
+          { messages: [], toolCallId: "test" },
+        );
+      }
       if (options.submitPython && options.tools?.submit_plan_code?.execute) {
         void options.tools.submit_plan_code.execute(
           { python: options.submitPython },
@@ -62,6 +75,41 @@ describe("runPlanChat", () => {
 
     expect(runSandbox).not.toHaveBeenCalled();
     expect(events.some((e) => e.type === "artifact")).toBe(false);
+    expect(events.filter((e) => e.type === "runStatus").at(-1)).toEqual({
+      type: "runStatus",
+      status: "done",
+    });
+  });
+
+  it("emits clearArtifact when clear_current_artifact is called", async () => {
+    const events: { type: string }[] = [];
+    const runSandbox = vi.fn();
+
+    await runPlanChat(
+      {
+        coachId: "coach-1",
+        sessionId: "session-1",
+        prompt: "Start a new plan",
+        messages: [],
+        currentArtifact: buildMinimalWorkoutPlan(),
+        emit: (event) => events.push(event),
+      },
+      {
+        isGatewayConfigured: () => true,
+        createModel: () => ({}) as never,
+        listSessionUploads: async () => [],
+        streamTextFn: (opts) =>
+          mockStreamText({
+            text: "Starting fresh.",
+            clearArtifact: true,
+            tools: opts.tools,
+          }),
+        runSandbox,
+      },
+    );
+
+    expect(runSandbox).not.toHaveBeenCalled();
+    expect(events).toContainEqual({ type: "clearArtifact" });
     expect(events.filter((e) => e.type === "runStatus").at(-1)).toEqual({
       type: "runStatus",
       status: "done",

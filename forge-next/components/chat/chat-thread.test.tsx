@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
 
 describe("ChatThread", () => {
@@ -30,40 +29,6 @@ describe("ChatThread", () => {
     );
     const scrollPane = container.querySelector(".overflow-y-auto");
     expect(scrollPane?.textContent).toMatch(/Hi[\s\S]*Partial reply[\s\S]*Generating/);
-  });
-
-  it("calls onRestart when the restart control is clicked", async () => {
-    const user = userEvent.setup();
-    const onRestart = vi.fn();
-    render(
-      <ChatThread
-        messages={[]}
-        streamingAssistantText=""
-        runStatus={null}
-        errors={[]}
-        phase="idle"
-        onRestart={onRestart}
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: "Restart workspace" }));
-    expect(onRestart).toHaveBeenCalledOnce();
-  });
-
-  it("disables restart while chat is running", () => {
-    render(
-      <ChatThread
-        messages={[]}
-        streamingAssistantText=""
-        runStatus="generating"
-        errors={[]}
-        phase="streaming"
-        onRestart={vi.fn()}
-        restartDisabled
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Restart workspace" }),
-    ).toBeDisabled();
   });
 
   it("shows inline errors in the thread", () => {

@@ -15,9 +15,18 @@ export function mapPlanWireEvent(event: PlanChatEvent): ChatEvent<WorkoutPlan> {
         artifact: event.plan,
         title: event.plan.name,
       };
+    case "setArtifact":
+      return {
+        type: "setArtifact",
+        artifact: event.plan,
+        title: event.title,
+        planId: event.planId,
+      };
     case "warnings":
       return event;
     case "errors":
+      return event;
+    case "clearArtifact":
       return event;
   }
 }

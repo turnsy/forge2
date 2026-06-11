@@ -33,6 +33,17 @@ describe("applyChatEvent", () => {
     expect(state.artifactTitle).toBe("Test");
   });
 
+  it("updates artifact and planId on setArtifact event", () => {
+    const state = applyChatEvent(createInitialChatWorkspaceState<WorkoutPlan>(), {
+      type: "setArtifact",
+      artifact: samplePlan,
+      title: "Test",
+      planId: "plan-1",
+    });
+    expect(state.currentArtifact).toEqual(samplePlan);
+    expect(state.planId).toBe("plan-1");
+  });
+
   it("accumulates warnings events", () => {
     let state = createInitialChatWorkspaceState<WorkoutPlan>();
     state = applyChatEvent(state, {
@@ -47,6 +58,19 @@ describe("applyChatEvent", () => {
       "CSV truncated",
       "PDF page cap reached",
     ]);
+  });
+
+  it("clears artifact and planId on clearArtifact", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState<WorkoutPlan>(),
+      currentArtifact: samplePlan,
+      artifactTitle: "Test",
+      planId: "plan-1",
+    };
+    const state = applyChatEvent(initial, { type: "clearArtifact" });
+    expect(state.currentArtifact).toBeNull();
+    expect(state.artifactTitle).toBe("");
+    expect(state.planId).toBeNull();
   });
 
   it("does not clear currentArtifact on errors", () => {

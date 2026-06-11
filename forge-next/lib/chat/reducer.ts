@@ -26,6 +26,7 @@ export function chatWorkspaceReducer<TArtifact>(
         sessionId: action.sessionId,
         hasStarted: false,
         messages: [],
+        planId: null,
         currentArtifact: null,
         contextFileIds: [],
         attachments: [],
@@ -38,6 +39,8 @@ export function chatWorkspaceReducer<TArtifact>(
       };
     case "SET_ARTIFACT_TITLE":
       return { ...state, artifactTitle: action.artifactTitle };
+    case "SET_PLAN_ID":
+      return { ...state, planId: action.planId };
     case "ATTACH_FILES":
       return {
         ...state,
@@ -102,7 +105,13 @@ export function chatWorkspaceReducer<TArtifact>(
         streamingAssistantText: "",
         messages: [
           ...state.messages,
-          { role: "user", content: action.userMessage },
+          {
+            role: "user",
+            content: action.userMessage,
+            ...(action.userSegments?.some((segment) => segment.type === "mention")
+              ? { segments: action.userSegments }
+              : {}),
+          },
         ],
       };
     case "APPLY_EVENT":

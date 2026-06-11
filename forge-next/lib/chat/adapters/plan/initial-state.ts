@@ -4,11 +4,13 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function createEditPlanWorkspaceState(
   plan: WorkoutPlan,
+  planId?: string,
 ): PlanWorkspaceState {
   return {
     ...createInitialChatWorkspaceState<WorkoutPlan>(),
     hasStarted: true,
     artifactTitle: plan.name,
     currentArtifact: plan,
+    planId: planId ?? null,
   };
 }

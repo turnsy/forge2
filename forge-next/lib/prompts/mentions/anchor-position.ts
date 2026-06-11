@@ -33,3 +33,48 @@ export function shouldFlipMenuAbove(
 ): boolean {
   return anchorTop + menuHeight + padding > viewportHeight;
 }
+
+export type MentionMenuPlacement = "above" | "below";
+
+export type MentionMenuAnchor = {
+  top: number;
+  left: number;
+  placement: MentionMenuPlacement;
+};
+
+/** Position the menu below the caret, or above with bottom-edge anchoring. */
+export function buildMentionMenuAnchor(
+  point: { top: number; bottom: number; left: number },
+  options: {
+    maxMenuHeight: number;
+    offset: number;
+    viewportHeight: number;
+  },
+): MentionMenuAnchor {
+  const placement = shouldFlipMenuAbove(
+    point.bottom + options.offset,
+    options.maxMenuHeight,
+    options.viewportHeight,
+  )
+    ? "above"
+    : "below";
+
+  return {
+    top:
+      placement === "above"
+        ? point.top - options.offset
+        : point.bottom + options.offset,
+    left: point.left,
+    placement,
+  };
+}
+
+export function mentionMenuAnchorStyle(
+  anchor: MentionMenuAnchor,
+): { top: number; left: number; transform?: string } {
+  return {
+    top: anchor.top,
+    left: anchor.left,
+    ...(anchor.placement === "above" ? { transform: "translateY(-100%)" } : {}),
+  };
+}

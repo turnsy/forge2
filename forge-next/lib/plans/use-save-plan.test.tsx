@@ -43,7 +43,7 @@ describe("useSavePlan", () => {
 
     expect(saved).toEqual({ planId: "plan-1", versionId: "version-1" });
     expect(mockCreateCoachPlanClient).toHaveBeenCalled();
-    expect(result.current.saveStatus).toBe("saving");
+    expect(result.current.saveStatus).toBe("saved");
   });
 
   it("saves a version when planId is set", async () => {

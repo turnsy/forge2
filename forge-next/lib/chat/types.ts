@@ -1,3 +1,5 @@
+import type { PromptSegment } from "@/lib/prompts/mentions/types";
+
 export type ChatStatus =
   | "parsing"
   | "generating"
@@ -9,6 +11,8 @@ export type ChatStatus =
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  /** Present on user messages sent with @ mention chips. */
+  segments?: PromptSegment[];
 };
 
 export type ChatWorkspacePhase = "idle" | "uploading" | "streaming" | "error";
@@ -34,6 +38,7 @@ export type ChatWorkspaceState<TArtifact = unknown> = {
   sessionId: string;
   hasStarted: boolean;
   artifactTitle: string;
+  planId: string | null;
   messages: ChatMessage[];
   currentArtifact: TArtifact | null;
   contextFileIds: string[];
@@ -61,6 +66,13 @@ export type ChatArtifactEvent<TArtifact = unknown> = {
   title?: string;
 };
 
+export type ChatSetArtifactEvent<TArtifact = unknown> = {
+  type: "setArtifact";
+  artifact: TArtifact;
+  title: string;
+  planId: string;
+};
+
 export type ChatWarningsEvent = {
   type: "warnings";
   warnings: string[];
@@ -73,16 +85,23 @@ export type ChatErrorsEvent = {
     | { code: string; message: string }[];
 };
 
+export type ChatClearArtifactEvent = {
+  type: "clearArtifact";
+};
+
 export type ChatEvent<TArtifact = unknown> =
   | ChatAssistantTextDeltaEvent
   | ChatRunStatusEvent
   | ChatArtifactEvent<TArtifact>
+  | ChatSetArtifactEvent<TArtifact>
   | ChatWarningsEvent
-  | ChatErrorsEvent;
+  | ChatErrorsEvent
+  | ChatClearArtifactEvent;
 
 export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "RESTART"; sessionId: string }
   | { type: "SET_ARTIFACT_TITLE"; artifactTitle: string }
+  | { type: "SET_PLAN_ID"; planId: string }
   | { type: "ATTACH_FILES"; attachments: ChatAttachment[] }
   | { type: "ATTACH_UPLOAD_START"; localIds: string[] }
   | {
@@ -92,7 +111,7 @@ export type ChatWorkspaceAction<TArtifact = unknown> =
       displayLabel: string;
     }
   | { type: "ATTACH_UPLOAD_FAILURE"; localId: string; errorMessage: string }
-  | { type: "SEND_START"; userMessage: string }
+  | { type: "SEND_START"; userMessage: string; userSegments?: PromptSegment[] }
   | { type: "APPLY_EVENT"; event: ChatEvent<TArtifact> }
   | { type: "STREAM_END" }
   | { type: "STREAM_CLIENT_ERROR"; message: string };

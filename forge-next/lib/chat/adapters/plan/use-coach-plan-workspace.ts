@@ -9,12 +9,20 @@ import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-fi
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export function useCoachPlanWorkspace(options?: { initialPlan?: WorkoutPlan }) {
+export function useCoachPlanWorkspace(options?: {
+  initialPlan?: WorkoutPlan;
+  planId?: string;
+  onArtifactCleared?: () => void;
+}) {
   const initialPlan = options?.initialPlan;
+  const planId = options?.planId;
+  const onArtifactCleared = options?.onArtifactCleared;
   const initialState = useMemo(
     () =>
-      initialPlan ? createEditPlanWorkspaceState(initialPlan) : undefined,
-    [initialPlan],
+      initialPlan && planId
+        ? createEditPlanWorkspaceState(initialPlan, planId)
+        : undefined,
+    [initialPlan, planId],
   );
 
   return useChatWorkspace<WorkoutPlan>(
@@ -35,7 +43,12 @@ export function useCoachPlanWorkspace(options?: { initialPlan?: WorkoutPlan }) {
             messages,
             currentArtifact,
           },
-          onEvent,
+          onEvent: (event) => {
+            onEvent(event);
+            if (event.type === "clearArtifact") {
+              onArtifactCleared?.();
+            }
+          },
         });
 
         if (!error) {

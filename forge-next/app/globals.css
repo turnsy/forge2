@@ -51,6 +51,7 @@
   --radius-card: 1rem;
 
   --animate-fade-in: fade-in 450ms ease-out both;
+  --animate-chat-panel-slide: chat-panel-slide 320ms ease-out both;
   --animate-auth-panel-forward: auth-panel-enter-forward 320ms ease-out both;
   --animate-auth-panel-back: auth-panel-enter-back 320ms ease-out both;
 
@@ -72,6 +73,18 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes chat-panel-slide {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -176,6 +189,10 @@ body {
   animation: var(--animate-fade-in);
 }
 
+@utility animate-chat-panel-slide {
+  animation: var(--animate-chat-panel-slide);
+}
+
 @utility animate-auth-panel-forward {
   animation: var(--animate-auth-panel-forward);
 }
@@ -200,6 +217,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
+  .animate-chat-panel-slide,
   .animate-auth-panel-forward,
   .animate-auth-panel-back {
     animation: none;

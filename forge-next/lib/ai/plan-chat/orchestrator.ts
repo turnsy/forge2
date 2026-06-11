@@ -10,8 +10,8 @@ import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import {
   PLAN_CHAT_MAX_TOOL_STEPS,
 } from "@/lib/ai/plan-chat/constants";
-import { createPlanChatTools } from "@/lib/ai/plan-chat/tools/create-plan-chat-tools";
-import { buildPlanChatSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
+import { createCoachAgentTools } from "@/lib/ai/coach-agent/tools/create-coach-agent-tools";
+import { buildCoachAgentSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
 import type { PlanChatEmit, PlanChatMessage } from "@/lib/ai/plan-chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { runSandbox } from "@/lib/sandbox";
@@ -76,21 +76,33 @@ export async function runPlanChat(
   const sessionFiles = await listUploads(input.coachId, input.sessionId);
 
   const hasSessionUploads = sessionFiles.length > 0;
-  const system = buildPlanChatSystemPrompt({
-    currentArtifact: input.currentArtifact,
+  const system = buildCoachAgentSystemPrompt({
     hasSessionUploads,
   });
 
   let submittedPython: string | null = null;
-  const tools = createPlanChatTools({
+  let clearedArtifact = false;
+  const tools = createCoachAgentTools({
     coachId: input.coachId,
     sessionId: input.sessionId,
+    currentArtifact: input.currentArtifact,
     onSubmitPlanCode: (python) => {
       submittedPython = python;
       logSubmittedPlanCode(python, {
         coachId: input.coachId,
         sessionId: input.sessionId,
       });
+    },
+    onSetCurrentArtifact: ({ planId, plan, title }) => {
+      input.emit({
+        type: "setArtifact",
+        planId,
+        plan,
+        title,
+      });
+    },
+    onClearCurrentArtifact: () => {
+      clearedArtifact = true;
     },
   });
 
@@ -121,6 +133,10 @@ export async function runPlanChat(
   }
 
   await result;
+
+  if (clearedArtifact) {
+    input.emit({ type: "clearArtifact" });
+  }
 
   if (!submittedPython) {
     input.emit({ type: "runStatus", status: "done" });

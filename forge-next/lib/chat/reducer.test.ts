@@ -10,6 +10,37 @@ const samplePlan: WorkoutPlan = {
 };
 
 describe("chatWorkspaceReducer", () => {
+  it("stores mention segments on user messages", () => {
+    const state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "SEND_START",
+      userMessage: "Edit @Summer Block",
+      userSegments: [
+        { type: "text", value: "Edit " },
+        {
+          type: "mention",
+          kind: "plan",
+          id: "plan-1",
+          label: "Summer Block",
+        },
+      ],
+    });
+
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]).toMatchObject({
+      role: "user",
+      content: "Edit @Summer Block",
+      segments: [
+        { type: "text", value: "Edit " },
+        {
+          type: "mention",
+          kind: "plan",
+          id: "plan-1",
+          label: "Summer Block",
+        },
+      ],
+    });
+  });
+
   it("commits assistant message on STREAM_END", () => {
     let state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
       type: "SEND_START",
