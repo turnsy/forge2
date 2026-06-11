@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/sidebar";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { MOBILE_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
+import { SAFE_AREA_TOP_CLASS, SAFE_AREA_X_CLASS } from "@/lib/viewport/safe-area";
 
 export function AppShell({
   role,
@@ -21,12 +22,14 @@ export function AppShell({
   const isMobile = useIsMobile();
 
   return (
-    <div className="dark flex h-dvh min-h-0 bg-background text-foreground">
+    <div className="dark fixed inset-0 flex min-h-0 bg-surface text-surface-foreground">
       <Sidebar role={role} fullName={fullName} email={email} />
       <div
         className={[
           "flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden",
-          isMobile ? MOBILE_BOTTOM_NAV_OFFSET_CLASS : "",
+          isMobile
+            ? `${SAFE_AREA_TOP_CLASS} ${SAFE_AREA_X_CLASS} ${MOBILE_BOTTOM_NAV_OFFSET_CLASS}`
+            : "",
         ].join(" ")}
       >
         {children}

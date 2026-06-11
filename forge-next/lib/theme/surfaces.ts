@@ -107,7 +107,7 @@ export function listRowClass(): string {
 }
 
 export function authLandingClass(): string {
-  return "auth-hero-background dark flex min-h-dvh w-full flex-col items-center justify-center px-4 py-4";
+  return "auth-hero-background dark fixed inset-0 flex w-full flex-col items-center justify-center pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))]";
 }
 
 export function authHeroTitleClass(): string {
