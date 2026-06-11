@@ -1,7 +1,10 @@
 import { MOBILE_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
-/** Positions the bordered overlay close control below the safe area inset. */
-export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-0 top-1 z-20";
+/** Positions the bordered overlay close control; inset matches mobile page padding. */
+export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-4 top-1 z-20";
+
+/** Light separation between the view-artifact control and the composer. */
+export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "pb-2.5";
 
 /** Reserves vertical space for the overlay close control; roomier on mobile. */
 export const MOBILE_OVERLAY_CONTENT_CLASS = "pt-16 md:pt-14";

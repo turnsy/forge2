@@ -14,6 +14,7 @@ import {
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
+  MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { isChatRunning } from "@/lib/chat";
@@ -312,7 +313,7 @@ export function CoachWorkspace({
                 onSend={handleSendMessage}
                 composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
                 composerHeader={
-                  <div className="flex justify-end pb-1">
+                  <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
                     <Button
                       type="button"
                       variant="ghost"
