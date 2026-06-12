@@ -6,6 +6,7 @@ export default defineConfig({
     environment: "node",
     environmentMatchGlobs: [
       ["components/**/*.test.tsx", "jsdom"],
+      ["app/**/*.test.tsx", "jsdom"],
       ["lib/chat/**/*.test.tsx", "jsdom"],
       ["lib/plans/**/*.test.tsx", "jsdom"],
       ["lib/lists/**/*.test.tsx", "jsdom"],
