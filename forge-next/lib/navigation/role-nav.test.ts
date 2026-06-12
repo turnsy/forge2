@@ -12,7 +12,12 @@ describe("roleNavItems", () => {
   });
 
   it("defines athlete navigation", () => {
-    expect(roleNavItems.athlete.map((item) => item.label)).toEqual(["Home"]);
+    expect(roleNavItems.athlete.map((item) => item.label)).toEqual([
+      "Home",
+      "History",
+      "Settings",
+    ]);
+    expect(roleNavItems.athlete[0]?.exact).toBe(true);
   });
 });
 

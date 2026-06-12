@@ -20,6 +20,7 @@ export function SidebarNavLink({
   trailingIcon,
   exact = false,
   collapsed = false,
+  onClick,
 }: {
   href: string;
   children: ReactNode;
@@ -27,6 +28,7 @@ export function SidebarNavLink({
   trailingIcon?: ReactNode;
   exact?: boolean;
   collapsed?: boolean;
+  onClick?: () => void;
 }) {
   const pathname = usePathname();
   const active = isNavItemActive(pathname, href, exact);
@@ -40,6 +42,7 @@ export function SidebarNavLink({
       href={href}
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
+      onClick={onClick}
       className={[
         baseClass,
         active ? activeClass : inactiveClass,

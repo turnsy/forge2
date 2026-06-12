@@ -1,6 +1,11 @@
 import type { UserRole } from "@/lib/auth/types";
 
-export type SidebarNavIcon = "home" | "plans" | "athletes";
+export type SidebarNavIcon =
+  | "home"
+  | "plans"
+  | "athletes"
+  | "history"
+  | "settings";
 
 export type RoleNavItem = {
   href: string;
@@ -15,7 +20,11 @@ export const roleNavItems: Record<UserRole, RoleNavItem[]> = {
     { href: "/coach/plans", label: "Plans", icon: "plans" },
     { href: "/coach/athletes", label: "Athletes", icon: "athletes" },
   ],
-  athlete: [{ href: "/athlete", label: "Home", icon: "home", exact: true }],
+  athlete: [
+    { href: "/athlete", label: "Home", icon: "home", exact: true },
+    { href: "/athlete/history", label: "History", icon: "history" },
+    { href: "/athlete/settings", label: "Settings", icon: "settings" },
+  ],
 };
 
 export function settingsPathForRole(role: UserRole): string {

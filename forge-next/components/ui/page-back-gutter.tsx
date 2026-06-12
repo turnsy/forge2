@@ -27,10 +27,19 @@ export function PageBackGutter({
   offsetClassName?: string;
 }) {
   return (
-    <div className={`relative${className ? ` ${className}` : ""}`}>
+    <div
+      className={`relative [&_[data-page-header]]:max-md:pl-12${className ? ` ${className}` : ""}`}
+    >
       <div
-        className={`absolute right-full flex ${backAlignClassName} ${offsetClassName}`}
+        className={`absolute right-full hidden md:flex ${backAlignClassName} ${offsetClassName}`}
       >
+        <PageBackLink
+          href={back.href}
+          ariaLabel={back.ariaLabel}
+          onClick={back.onClick}
+        />
+      </div>
+      <div className="absolute left-0 top-0 z-10 md:hidden">
         <PageBackLink
           href={back.href}
           ariaLabel={back.ariaLabel}

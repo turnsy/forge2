@@ -1,26 +1,28 @@
 "use client";
 
 import { XIcon } from "@/components/icons/x-icon";
-import { pageBackLinkClass } from "@/lib/theme";
+import { IconButton } from "@/components/ui";
 
 export function WorkspaceCloseButton({
   onClick,
   disabled = false,
   className,
+  ariaLabel = "Close workspace",
 }: {
   onClick: () => void;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 }) {
   return (
-    <button
-      type="button"
-      aria-label="Close workspace"
+    <IconButton
+      variant="secondary"
+      size="sm"
+      className={className}
+      icon={<XIcon />}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={onClick}
-      className={`${pageBackLinkClass()} disabled:pointer-events-none disabled:opacity-40${className ? ` ${className}` : ""}`}
-    >
-      <XIcon />
-    </button>
+    />
   );
 }

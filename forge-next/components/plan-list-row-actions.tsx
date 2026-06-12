@@ -17,7 +17,6 @@ export function PlanListRowActions({ plan }: { plan: CoachPlanListItem }) {
           type="button"
           variant="secondary"
           size="sm"
-          fullWidth={false}
           onClick={() => setAssignOpen(true)}
         >
           Assign
@@ -26,7 +25,6 @@ export function PlanListRowActions({ plan }: { plan: CoachPlanListItem }) {
           type="button"
           variant="danger"
           size="sm"
-          fullWidth={false}
           onClick={() => setDeleteOpen(true)}
         >
           Delete

@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { getCoachPlanById } from "@/lib/plans/repository";
-import { toPlanToolSummary } from "@/lib/ai/coach-agent/tools/plan-summaries";
+import { summarizePlan } from "@/lib/plans/summarize-plan";
 import { toToolNotFound } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -51,7 +51,7 @@ export function createArtifactTools(ctx: ArtifactToolsContext) {
           ok: true as const,
           planId: detail.id,
           name: title,
-          summary: toPlanToolSummary(detail.plan),
+          summary: summarizePlan(detail.plan),
         };
       },
     }),

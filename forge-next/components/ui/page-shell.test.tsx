@@ -10,11 +10,16 @@ describe("PageShell", () => {
       </PageShell>,
     );
 
-    const backLink = screen.getByRole("link", { name: "Back to athletes" });
     const main = screen.getByRole("main");
+    const desktopBackLink = screen
+      .getAllByRole("link", { name: "Back to athletes" })
+      .find((link) => link.parentElement?.className.includes("md:flex"));
 
-    expect(backLink).toHaveAttribute("href", "/coach/athletes");
+    expect(desktopBackLink).toHaveAttribute("href", "/coach/athletes");
     expect(main).toHaveTextContent("Pending invites");
-    expect(main.contains(backLink)).toBe(false);
+    expect(main.contains(desktopBackLink ?? null)).toBe(false);
+    expect(
+      screen.getAllByRole("link", { name: "Back to athletes" }),
+    ).toHaveLength(2);
   });
 });

@@ -63,7 +63,6 @@ function PendingInviteRow({
           <Button
             type="button"
             size="sm"
-            fullWidth={false}
             disabled={pending}
             onClick={() => runAction(() => acceptCoachLinkAction(invite.relationshipId))}
           >
@@ -73,7 +72,6 @@ function PendingInviteRow({
             type="button"
             variant="danger"
             size="sm"
-            fullWidth={false}
             disabled={pending}
             onClick={() => runAction(() => rejectCoachLinkAction(invite.relationshipId))}
           >

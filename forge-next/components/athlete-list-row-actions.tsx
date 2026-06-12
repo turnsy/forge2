@@ -20,7 +20,6 @@ export function AthleteListRowActions({
           type="button"
           variant="secondary"
           size="sm"
-          fullWidth={false}
           onClick={() => setAssignOpen(true)}
         >
           {planActionLabel}

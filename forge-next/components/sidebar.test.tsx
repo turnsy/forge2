@@ -1,8 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const usePathname = vi.fn();
+const mockUseIsMobile = vi.fn(() => false);
+
+vi.mock("@/lib/hooks/use-is-mobile", () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => usePathname(),
@@ -42,6 +47,10 @@ vi.mock("next/link", () => ({
 import { Sidebar } from "@/components/sidebar";
 
 describe("Sidebar", () => {
+  beforeEach(() => {
+    mockUseIsMobile.mockReturnValue(false);
+  });
+
   it("renders Forge text and profile menu when expanded", () => {
     usePathname.mockReturnValue("/coach");
 
@@ -133,5 +142,20 @@ describe("Sidebar", () => {
 
     expect(screen.getByText("Forge")).toBeInTheDocument();
     expect(screen.getByText("Coach User")).toBeInTheDocument();
+  });
+
+  it("does not render on mobile", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    usePathname.mockReturnValue("/coach");
+
+    const { container } = render(
+      <Sidebar
+        role="coach"
+        fullName="Coach User"
+        email="coach@example.com"
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

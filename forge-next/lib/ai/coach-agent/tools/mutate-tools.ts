@@ -4,13 +4,7 @@ import { acceptCoachLink, rejectCoachLink } from "@/lib/links/repository";
 import { assignPlanToAthletes } from "@/lib/plans/mutations";
 import { toToolError } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 
-export type MutateToolsContext = {
-  coachId: string;
-};
-
-export function createMutateTools(ctx: MutateToolsContext) {
-  void ctx;
-
+export function createMutateTools() {
   return {
     accept_coach_link: tool({
       description:

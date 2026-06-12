@@ -1,31 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { SidebarProfileMenu } from "@/components/sidebar-profile-menu";
-import {
-  AthletesIcon,
-  HomeIcon,
-  PlansIcon,
-} from "@/components/icons/sidebar-nav-icons";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
+import { SidebarProfileMenu } from "@/components/sidebar-profile-menu";
 import { IconButton } from "@/components/ui";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
 import type { UserRole } from "@/lib/auth/types";
-import {
-  roleNavItems,
-  type SidebarNavIcon,
-} from "@/lib/navigation/role-nav";
-
-function navIcon(icon: SidebarNavIcon) {
-  switch (icon) {
-    case "home":
-      return <HomeIcon />;
-    case "plans":
-      return <PlansIcon />;
-    case "athletes":
-      return <AthletesIcon />;
-  }
-}
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import { renderNavIcon } from "@/lib/navigation/nav-icon";
+import { roleNavItems } from "@/lib/navigation/role-nav";
 
 export function Sidebar({
   role,
@@ -36,8 +19,13 @@ export function Sidebar({
   fullName: string | null;
   email: string | undefined;
 }) {
+  const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
   const navItems = roleNavItems[role];
+
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <aside
@@ -53,7 +41,7 @@ export function Sidebar({
         ].join(" ")}
       >
         {collapsed ? null : (
-          <span className="truncate text-lg font-semibold tracking-tight text-surface-foreground px-2">
+          <span className="truncate px-2 text-lg font-semibold tracking-tight text-surface-foreground">
             Forge
           </span>
         )}
@@ -77,7 +65,7 @@ export function Sidebar({
           <SidebarNavLink
             key={item.href}
             href={item.href}
-            icon={navIcon(item.icon)}
+            icon={renderNavIcon(item.icon)}
             exact={item.exact}
             collapsed={collapsed}
           >

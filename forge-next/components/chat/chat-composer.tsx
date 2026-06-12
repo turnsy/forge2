@@ -51,7 +51,7 @@ export function ChatComposer({
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
-          className={`flex flex-col rounded-card border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition ${
+          className={`flex flex-col rounded-card border bg-glass backdrop-blur-md transition ${
             compact ? "min-h-0 p-2" : "min-h-40 p-3"
           } ${
             isDragging
