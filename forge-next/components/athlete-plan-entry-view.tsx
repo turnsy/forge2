@@ -14,10 +14,11 @@ import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dial
 import { Button, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
 import {
-  buildActualForSave,
   buildActualFromInputs,
   dayHasUnfilledNonTargetSets,
   isSetActualComplete,
+  resolveSaveActual,
+  setFormStateFromActual,
   type CurrentDayLocation,
 } from "@/lib/athlete/plan/domain";
 import { getDayTitle, getWeekTitle } from "@/lib/plans/display";
@@ -45,31 +46,24 @@ function getSetKey(exerciseIdx: number, setIdx: number): string {
   return `${exerciseIdx}-${setIdx}`;
 }
 
-function formatLoadInputValue(set: Set): string {
-  if (!set.actual?.load) {
-    return "";
-  }
-
-  if (set.actual.load.type === "absolute") {
-    return String(set.actual.load.value);
-  }
-
-  return String(set.actual.load.value ?? "");
-}
-
 function buildInitialFormState(day: Day): Record<string, SetFormState> {
   const state: Record<string, SetFormState> = {};
 
   day.exercises.forEach((exercise, exerciseIdx) => {
     exercise.sets.forEach((set, setIdx) => {
-      state[getSetKey(exerciseIdx, setIdx)] = {
-        reps: set.actual?.reps !== undefined ? String(set.actual.reps) : "",
-        load: formatLoadInputValue(set),
-      };
+      state[getSetKey(exerciseIdx, setIdx)] = setFormStateFromActual(set);
     });
   });
 
   return state;
+}
+
+function getResolvedSetFormState(
+  formState: Record<string, SetFormState>,
+  set: Set,
+  key: string,
+): SetFormState {
+  return formState[key] ?? setFormStateFromActual(set);
 }
 
 function getAbsoluteUnit(set: Set): string | null {
@@ -232,7 +226,10 @@ export function AthletePlanEntryView({
       load: string,
       generation: number,
     ) => {
-      const actual = buildActualForSave(reps, load, set);
+      const actual = resolveSaveActual(reps, load, set);
+      if (actual === undefined) {
+        return;
+      }
 
       try {
         await saveSetActualsAction(
@@ -340,6 +337,11 @@ export function AthletePlanEntryView({
           return;
         }
 
+        const actual = resolveSaveActual(local.reps, local.load, set);
+        if (actual === undefined) {
+          return;
+        }
+
         saves.push(
           saveSetActualsAction(
             assignmentId,
@@ -347,7 +349,7 @@ export function AthletePlanEntryView({
             currentDay.dayIndex,
             exerciseIdx,
             setIdx,
-            buildActualForSave(local.reps, local.load, set),
+            actual,
           ),
         );
       });
@@ -436,7 +438,7 @@ export function AthletePlanEntryView({
             <div className="space-y-3">
               {exercise.sets.map((set, setIdx) => {
                 const key = getSetKey(exerciseIdx, setIdx);
-                const local = formState[key] ?? { reps: "", load: "" };
+                const local = getResolvedSetFormState(formState, set, key);
                 const previewActual = buildActualFromInputs(local.reps, local.load, set);
                 const complete = previewActual !== null || isSetActualComplete(set);
 

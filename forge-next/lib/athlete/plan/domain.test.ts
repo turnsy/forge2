@@ -10,6 +10,9 @@ import {
   isSetActualComplete,
   parseLoadInput,
   parseRepsInput,
+  mergeSavedActual,
+  resolveSaveActual,
+  setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -148,6 +151,81 @@ describe("athlete plan domain", () => {
     expect(buildActualForSave("8", "60", absoluteSet)).toEqual({
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
+    });
+  });
+
+  it("reuses saved reps when only load input changes", () => {
+    const plan = makePlan();
+    const savedSet = {
+      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      actual: {
+        reps: 8,
+        load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+      },
+    };
+
+    expect(buildActualForSave("", "65", savedSet)).toEqual({
+      reps: 8,
+      load: { type: "absolute", value: 65, unit: "kg" },
+    });
+  });
+
+  it("hydrates form state from saved actual values", () => {
+    const plan = makePlan();
+    const absoluteSet = {
+      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      actual: {
+        reps: 8,
+        load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+      },
+    };
+
+    expect(setFormStateFromActual(absoluteSet)).toEqual({
+      reps: "8",
+      load: "60",
+    });
+  });
+
+  it("merges partial saves with existing actual values on the server", () => {
+    const plan = makePlan();
+    const withReps = applySetActuals(plan, 1, 1, 0, 0, { reps: 8 });
+    const withLoad = applySetActuals(withReps, 1, 1, 0, 0, {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    });
+
+    expect(
+      withLoad.weeks[0].days[0].exercises[0].sets[0].actual,
+    ).toEqual({
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    });
+
+    expect(
+      mergeSavedActual(
+        { reps: 8, load: { type: "absolute", value: 60, unit: "kg" } },
+        { reps: 7 },
+      ),
+    ).toEqual({
+      reps: 7,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    });
+  });
+
+  it("skips wiping persisted actuals when both inputs are empty", () => {
+    const plan = makePlan();
+    const savedSet = {
+      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      actual: {
+        reps: 8,
+        load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+      },
+    };
+
+    expect(resolveSaveActual("", "", savedSet)).toBeUndefined();
+    expect(resolveSaveActual("", "65", savedSet)).toEqual({
+      reps: 8,
+      load: { type: "absolute", value: 65, unit: "kg" },
     });
   });
 

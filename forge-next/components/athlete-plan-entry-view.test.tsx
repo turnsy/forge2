@@ -273,6 +273,37 @@ describe("AthletePlanEntryView", () => {
     });
   });
 
+  it("renders saved actual values on mount after reload", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].exercises[0].sets[0].actual = {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    };
+    plan.weeks[0].days[0].exercises[0].sets[1].actual = {
+      reps: 6,
+      load: {
+        type: "percentage",
+        unit: "%",
+        operator: "exact",
+        value: 75,
+      },
+    };
+
+    render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    expect(screen.getByPlaceholderText("8")).toHaveValue("8");
+    expect(screen.getByPlaceholderText("60")).toHaveValue("60");
+    expect(screen.getByPlaceholderText("6")).toHaveValue("6");
+    expect(screen.getByPlaceholderText("75%")).toHaveValue("75");
+  });
+
   it("keeps local input values when parent props refresh for the same day", async () => {
     vi.useFakeTimers();
     const plan = makePlan();

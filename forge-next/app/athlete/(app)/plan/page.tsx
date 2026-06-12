@@ -58,6 +58,7 @@ export default async function AthletePlanPage() {
   return (
     <PageShell back={{ href: "/athlete", ariaLabel: "Back to home" }}>
       <AthletePlanEntryView
+        key={`${assignment.id}-${currentDay.weekIndex}-${currentDay.dayIndex}`}
         assignmentId={assignment.id}
         plan={assignment.plan}
         currentDay={currentDay}

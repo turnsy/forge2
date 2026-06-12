@@ -140,10 +140,13 @@ export function buildActualForSave(
     return null;
   }
 
-  const reps = parseRepsInput(repsInput);
-  const load = parseLoadInput(loadInput, set.planned.load);
+  const parsedReps = parseRepsInput(repsInput);
+  const parsedLoad = parseLoadInput(loadInput, set.planned.load);
+  const reps =
+    parsedReps ??
+    (set.actual?.reps !== undefined ? set.actual.reps : null);
 
-  if (reps === null && load === null) {
+  if (reps === null && parsedLoad === null) {
     return null;
   }
 
@@ -151,7 +154,59 @@ export function buildActualForSave(
     return null;
   }
 
-  return load !== null ? { reps, load } : { reps };
+  const load = parsedLoad ?? set.actual?.load;
+
+  return load !== undefined ? { reps, load } : { reps };
+}
+
+export function formatActualLoadInput(set: Set): string {
+  if (!set.actual?.load) {
+    return "";
+  }
+
+  if (set.actual.load.type === "absolute") {
+    return String(set.actual.load.value);
+  }
+
+  return String(set.actual.load.value ?? "");
+}
+
+export function setFormStateFromActual(set: Set): {
+  reps: string;
+  load: string;
+} {
+  return {
+    reps: set.actual?.reps !== undefined ? String(set.actual.reps) : "",
+    load: formatActualLoadInput(set),
+  };
+}
+
+export function mergeSavedActual(
+  existing: ActualSet | null,
+  incoming: ActualSet,
+): ActualSet {
+  if (!existing) {
+    return incoming;
+  }
+
+  return {
+    reps: incoming.reps,
+    load: incoming.load ?? existing.load,
+    completedAt: incoming.completedAt ?? existing.completedAt,
+    notes: incoming.notes ?? existing.notes,
+  };
+}
+
+export function resolveSaveActual(
+  repsInput: string,
+  loadInput: string,
+  set: Set,
+): ActualSet | null | undefined {
+  if (!repsInput.trim() && !loadInput.trim() && set.actual !== null) {
+    return undefined;
+  }
+
+  return buildActualForSave(repsInput, loadInput, set);
 }
 
 export function applySetActuals(
@@ -192,7 +247,10 @@ export function applySetActuals(
 
                   return {
                     ...set,
-                    actual,
+                    actual:
+                      actual === null
+                        ? null
+                        : mergeSavedActual(set.actual, actual),
                   };
                 }) as typeof exercise.sets,
               };

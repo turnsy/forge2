@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { createClient } from "@/utils/supabase/server";
@@ -58,6 +59,7 @@ export async function getActiveAthletePlan(
   userId: string,
   client?: AthletePlanClient,
 ): Promise<AssignedPlan | null> {
+  noStore();
   const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("assigned_plans")
@@ -85,6 +87,7 @@ export async function getAssignedPlanById(
   assignmentId: string,
   client?: AthletePlanClient,
 ): Promise<AssignedPlan | null> {
+  noStore();
   const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("assigned_plans")
