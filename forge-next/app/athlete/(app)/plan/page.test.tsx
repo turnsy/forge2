@@ -1,6 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const mockRedirect = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  redirect: (...args: unknown[]) => {
+    mockRedirect(...args);
+    throw new Error("NEXT_REDIRECT");
+  },
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}));
+
 vi.mock("@/lib/auth/session", () => ({
   requireRole: vi.fn(async () => ({
     id: "athlete-1",
@@ -25,12 +37,6 @@ vi.mock("@/lib/links/repository", () => ({
   })),
 }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    refresh: vi.fn(),
-  }),
-}));
-
 import AthletePlanPage from "@/app/athlete/(app)/plan/page";
 import { getActiveAthletePlan } from "@/lib/athlete/plan/repository";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
@@ -39,6 +45,7 @@ const mockGetActiveAthletePlan = vi.mocked(getActiveAthletePlan);
 
 describe("AthletePlanPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     Element.prototype.scrollIntoView = vi.fn();
   });
 
@@ -83,12 +90,10 @@ describe("AthletePlanPage", () => {
     expect(screen.getByText("All workouts complete! 🎉")).toBeInTheDocument();
   });
 
-  it("renders no active plan message when assignment is missing", async () => {
+  it("redirects home when there is no active assignment", async () => {
     mockGetActiveAthletePlan.mockResolvedValue(null);
 
-    const ui = await AthletePlanPage();
-    render(ui);
-
-    expect(screen.getByText("No active plan assigned yet.")).toBeInTheDocument();
+    await expect(AthletePlanPage()).rejects.toThrow("NEXT_REDIRECT");
+    expect(mockRedirect).toHaveBeenCalledWith("/athlete");
   });
 });

@@ -86,6 +86,8 @@ export async function unlinkCoachAthleteAction(
     revalidatePath("/coach/athletes");
     revalidatePath("/coach/athletes/pending");
     revalidatePath("/athlete");
+    revalidatePath("/athlete/plan");
+    revalidatePath("/athlete/settings");
     return success();
   } catch (error) {
     return failure(error instanceof Error ? error.message : "Unlink failed");
