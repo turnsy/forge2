@@ -31,7 +31,7 @@ describe("AthletePlanMilestoneView", () => {
       />,
     );
 
-    expect(screen.getByText("All workouts complete! 🎉")).toBeInTheDocument();
+    expect(screen.getByText("All workouts complete!")).toBeInTheDocument();
     expect(screen.getByText("4-Week Strength Block with Coach Alex")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });

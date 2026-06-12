@@ -35,7 +35,7 @@ describe("athlete plan milestones", () => {
       planName: "4-Week Strength Block",
       coachName: "Coach Alex",
     });
-    expect(milestoneTitle(milestone)).toBe("All workouts complete! 🎉");
+    expect(milestoneTitle(milestone)).toBe("All workouts complete!");
     expect(milestoneDescription(milestone)).toBe(
       "4-Week Strength Block with Coach Alex",
     );

@@ -480,7 +480,7 @@ export function AthletePlanEntryView({
         disabled={completing}
         onClick={handleCompleteDay}
       >
-        {completing ? "Completing…" : "Complete Day"}
+        {completing ? "Completing…" : "Complete"}
       </Button>
 
       <AthleteSkipConfirmDialog

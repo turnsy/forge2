@@ -211,14 +211,14 @@ describe("AthletePlanEntryView", () => {
     fireEvent.change(screen.getByPlaceholderText("6"), { target: { value: "6" } });
     fireEvent.change(screen.getByPlaceholderText("75%"), { target: { value: "75" } });
 
-    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Complete" }));
 
     await waitFor(() => {
       expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 1, 1);
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("Day completed!")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Complete Day" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
   });
 
   it("opens skip dialog when completing with unfilled sets", async () => {
@@ -234,7 +234,7 @@ describe("AthletePlanEntryView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Complete" }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(mockCompleteDayAction).not.toHaveBeenCalled();
@@ -254,7 +254,7 @@ describe("AthletePlanEntryView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Complete" }));
     await user.click(screen.getByRole("button", { name: "Skip & Complete" }));
 
     await waitFor(() => {
@@ -280,12 +280,12 @@ describe("AthletePlanEntryView", () => {
     fireEvent.change(screen.getByPlaceholderText("60"), { target: { value: "60" } });
     fireEvent.change(screen.getByPlaceholderText("6"), { target: { value: "6" } });
     fireEvent.change(screen.getByPlaceholderText("75%"), { target: { value: "75" } });
-    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Complete" }));
 
     await waitFor(() => {
-      expect(screen.getByText("All workouts complete! 🎉")).toBeInTheDocument();
+      expect(screen.getByText("All workouts complete!")).toBeInTheDocument();
     });
-    expect(screen.queryByRole("button", { name: "Complete Day" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
   });
 
   it("shows day completed after confirming skip", async () => {
@@ -302,7 +302,7 @@ describe("AthletePlanEntryView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Complete" }));
     await user.click(screen.getByRole("button", { name: "Skip & Complete" }));
 
     await waitFor(() => {

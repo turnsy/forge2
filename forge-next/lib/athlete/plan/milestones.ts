@@ -25,7 +25,7 @@ export function planCompletedMilestone(
 }
 
 export function milestoneTitle(milestone: AthletePlanMilestone): string {
-  return milestone.kind === "day" ? "Day completed!" : "All workouts complete! 🎉";
+  return milestone.kind === "day" ? "Day completed!" : "All workouts complete!";
 }
 
 export function milestoneDescription(milestone: AthletePlanMilestone): string {
