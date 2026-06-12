@@ -38,7 +38,6 @@ export async function saveSetActualsAction(
   );
 
   await savePlanActuals(assignmentId, updatedPlan);
-  revalidatePath("/athlete/plan");
 }
 
 export async function completeDayAction(

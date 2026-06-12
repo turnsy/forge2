@@ -131,6 +131,29 @@ export function buildActualFromInputs(
   return { reps, load };
 }
 
+export function buildActualForSave(
+  repsInput: string,
+  loadInput: string,
+  set: Set,
+): ActualSet | null {
+  if (set.planned.type === "target") {
+    return null;
+  }
+
+  const reps = parseRepsInput(repsInput);
+  const load = parseLoadInput(loadInput, set.planned.load);
+
+  if (reps === null && load === null) {
+    return null;
+  }
+
+  if (reps === null) {
+    return null;
+  }
+
+  return load !== null ? { reps, load } : { reps };
+}
+
 export function applySetActuals(
   plan: WorkoutPlan,
   weekIdx: number,

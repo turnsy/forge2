@@ -14,6 +14,7 @@ import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dial
 import { Button, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
 import {
+  buildActualForSave,
   buildActualFromInputs,
   dayHasUnfilledNonTargetSets,
   isSetActualComplete,
@@ -204,7 +205,7 @@ export function AthletePlanEntryView({
     setCompleteError(null);
     setConfirmSkipOpen(false);
     setShowCelebration(false);
-  }, [currentDay.day, currentDay.dayIndex, currentDay.weekIndex]);
+  }, [currentDay.dayIndex, currentDay.weekIndex]);
 
   useEffect(() => {
     if (!firstIncompleteKey) {
@@ -231,7 +232,7 @@ export function AthletePlanEntryView({
       load: string,
       generation: number,
     ) => {
-      const actual = buildActualFromInputs(reps, load, set);
+      const actual = buildActualForSave(reps, load, set);
 
       try {
         await saveSetActualsAction(
@@ -346,7 +347,7 @@ export function AthletePlanEntryView({
             currentDay.dayIndex,
             exerciseIdx,
             setIdx,
-            buildActualFromInputs(local.reps, local.load, set),
+            buildActualForSave(local.reps, local.load, set),
           ),
         );
       });

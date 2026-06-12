@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applySetActuals,
   areAllDaysComplete,
+  buildActualForSave,
   buildActualFromInputs,
   completeDayInPlan,
   dayHasUnfilledNonTargetSets,
@@ -135,6 +136,18 @@ describe("athlete plan domain", () => {
     expect(buildActualFromInputs("3+1", "75%", percentageSet)).toEqual({
       reps: "3+1",
       load: expect.objectContaining({ type: "percentage", value: 75 }),
+    });
+  });
+
+  it("builds partial actual values for save when only reps are entered", () => {
+    const plan = makePlan();
+    const absoluteSet = plan.weeks[0].days[0].exercises[0].sets[0];
+
+    expect(buildActualForSave("8", "", absoluteSet)).toEqual({ reps: 8 });
+    expect(buildActualForSave("", "", absoluteSet)).toBeNull();
+    expect(buildActualForSave("8", "60", absoluteSet)).toEqual({
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
     });
   });
 

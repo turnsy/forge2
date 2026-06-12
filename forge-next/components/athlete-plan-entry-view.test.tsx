@@ -273,6 +273,39 @@ describe("AthletePlanEntryView", () => {
     });
   });
 
+  it("keeps local input values when parent props refresh for the same day", async () => {
+    vi.useFakeTimers();
+    const plan = makePlan();
+    mockSaveSetActualsAction.mockResolvedValue(undefined);
+
+    const { rerender } = render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("8"), { target: { value: "8" } });
+    await vi.advanceTimersByTimeAsync(800);
+
+    const refreshedPlan = structuredClone(plan);
+    refreshedPlan.weeks[0].days[0].exercises[0].sets[0].actual = { reps: 8 };
+
+    rerender(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={refreshedPlan}
+        currentDay={makeCurrentDay(refreshedPlan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    expect(screen.getByPlaceholderText("8")).toHaveValue("8");
+    vi.useRealTimers();
+  });
+
   it("scrolls to the first incomplete set on mount", () => {
     const plan = makePlan();
     render(
