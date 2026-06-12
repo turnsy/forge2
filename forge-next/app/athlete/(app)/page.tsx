@@ -1,10 +1,18 @@
-import { redirect } from "next/navigation";
 import { AthleteLinkForm } from "@/components/athlete-link-form";
 import { AthleteLinkPendingView } from "@/components/athlete-link-pending-view";
+import { AthletePlanEntryView } from "@/components/athlete-plan-entry-view";
 import { NoPlanAssignedView } from "@/components/no-plan-assigned-view";
+import { PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
+import { findCurrentDay } from "@/lib/athlete/plan/domain";
 import { getActiveAthletePlan } from "@/lib/athlete/plan/repository";
 import { getAthleteCoachLink } from "@/lib/links/repository";
+
+const centeredMainClass =
+  "mx-auto flex min-h-full max-w-3xl flex-1 items-center justify-center p-4 md:p-8";
+
+const stackedMainClass =
+  "mx-auto flex min-h-full max-w-3xl flex-col gap-6 p-4 md:p-8";
 
 export default async function AthletePage() {
   const user = await requireRole("athlete");
@@ -12,7 +20,7 @@ export default async function AthletePage() {
 
   if (!link) {
     return (
-      <main className="mx-auto flex min-h-full max-w-3xl flex-1 items-center justify-center p-4 md:p-8">
+      <main className={centeredMainClass}>
         <AthleteLinkForm />
       </main>
     );
@@ -20,20 +28,41 @@ export default async function AthletePage() {
 
   if (link.status === "pending") {
     return (
-      <main className="mx-auto flex min-h-full max-w-3xl flex-col p-4 md:p-8">
+      <main className={stackedMainClass}>
         <AthleteLinkPendingView link={link} />
       </main>
     );
   }
 
-  const activePlan = await getActiveAthletePlan(user.id);
-  if (activePlan) {
-    redirect("/athlete/plan");
+  const assignment = await getActiveAthletePlan(user.id);
+
+  if (!assignment) {
+    return (
+      <main className={stackedMainClass}>
+        <NoPlanAssignedView />
+      </main>
+    );
+  }
+
+  const currentDay = findCurrentDay(assignment.plan);
+
+  if (!currentDay) {
+    return (
+      <main className={stackedMainClass}>
+        <NoPlanAssignedView />
+      </main>
+    );
   }
 
   return (
-    <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-6 p-4 md:p-8">
-      <NoPlanAssignedView />
-    </main>
+    <PageShell>
+      <AthletePlanEntryView
+        key={`${assignment.id}-${currentDay.weekIndex}-${currentDay.dayIndex}`}
+        assignmentId={assignment.id}
+        plan={assignment.plan}
+        currentDay={currentDay}
+        coachName={link.coachName}
+      />
+    </PageShell>
   );
 }

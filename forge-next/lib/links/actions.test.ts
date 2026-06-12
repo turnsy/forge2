@@ -107,7 +107,6 @@ describe("link actions", () => {
     expect(result).toEqual({ ok: true });
     expect(mockUnlinkCoachAthlete).toHaveBeenCalledWith("rel-1");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/athlete");
-    expect(mockRevalidatePath).toHaveBeenCalledWith("/athlete/plan");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/athlete/settings");
   });
 });
