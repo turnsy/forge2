@@ -11,8 +11,9 @@ import {
 import { useRouter } from "next/navigation";
 import { AthletePlanCompleteView } from "@/components/athlete-plan-complete-view";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
-import { Button, Input, Message } from "@/components/ui";
+import { Button, Input, Message, PageHeader } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
+import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 import {
   buildActualFromInputs,
   dayHasUnfilledNonTargetSets,
@@ -420,16 +421,12 @@ export function AthletePlanEntryView({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 md:p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">{plan.name}</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {weekTitle} · {dayTitle}
-          </p>
-        </div>
-        <SaveIndicator status={saveStatus} />
-      </div>
+    <div className={`flex flex-col gap-6 ${MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS}`}>
+      <PageHeader
+        title={plan.name}
+        description={`${weekTitle} · ${dayTitle}`}
+        actions={<SaveIndicator status={saveStatus} />}
+      />
 
       <div className="space-y-8">
         {currentDay.day.exercises.map((exercise, exerciseIdx) => (
@@ -448,10 +445,10 @@ export function AthletePlanEntryView({
                     ref={(node) => {
                       setRefs.current[key] = node;
                     }}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700"
+                    className="flex items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700"
                   >
-                    <span className="w-14 shrink-0 text-sm font-medium text-zinc-500">
-                      Set {setIdx + 1}
+                    <span className="w-6 shrink-0 text-center text-sm font-medium text-zinc-500">
+                      {setIdx + 1}
                     </span>
                     <SetRowInputs
                       set={set}
@@ -517,18 +514,19 @@ function SetRowInputs({
   const unit = getAbsoluteUnit(set);
 
   return (
-    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+    <div className="flex min-w-0 flex-1 items-center gap-2">
       <Input
-        aria-label={`Set reps`}
+        aria-label="Set reps"
         type="text"
         value={reps}
         placeholder={String(set.planned.reps)}
         onChange={(event) => onRepsChange(event.target.value)}
-        className="w-20"
+        className="w-16"
         size="sm"
       />
+      <span className="shrink-0 text-sm text-zinc-500">of</span>
       <Input
-        aria-label={`Set load`}
+        aria-label="Set load"
         type="text"
         value={load}
         placeholder={
@@ -537,10 +535,10 @@ function SetRowInputs({
             : getAbsoluteLoadPlaceholder(set)
         }
         onChange={(event) => onLoadChange(event.target.value)}
-        className="w-24"
+        className="w-16"
         size="sm"
       />
-      {unit ? <span className="text-sm text-zinc-500">{unit}</span> : null}
+      {unit ? <span className="shrink-0 text-sm text-zinc-500">{unit}</span> : null}
     </div>
   );
 }

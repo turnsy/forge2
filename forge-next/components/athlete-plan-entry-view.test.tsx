@@ -129,7 +129,8 @@ describe("AthletePlanEntryView", () => {
     expect(screen.getByPlaceholderText("60")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("75%")).toBeInTheDocument();
     expect(screen.getByText("kg")).toBeInTheDocument();
-    expect(screen.queryByText("%")).not.toBeInTheDocument();
+    expect(screen.getAllByText("of")).toHaveLength(2);
+    expect(screen.queryByText("Set 1")).not.toBeInTheDocument();
   });
 
   it("debounces auto-save instead of saving on every keystroke", async () => {

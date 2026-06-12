@@ -1,4 +1,5 @@
-import { ButtonLink } from "@/components/ui";
+import { ButtonLink, PageHeader } from "@/components/ui";
+import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 export function AthletePlanCompleteView({
   planName,
@@ -8,13 +9,13 @@ export function AthletePlanCompleteView({
   coachName: string;
 }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold">All workouts complete! 🎉</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {planName} with {coachName}
-        </p>
-      </div>
+    <div
+      className={`flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center ${MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS}`}
+    >
+      <PageHeader
+        title="All workouts complete! 🎉"
+        description={`${planName} with ${coachName}`}
+      />
       <ButtonLink href="/athlete" variant="primary" size="md">
         Back to Home
       </ButtonLink>
