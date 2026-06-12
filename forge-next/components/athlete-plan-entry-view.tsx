@@ -21,7 +21,11 @@ import {
   type CurrentDayLocation,
 } from "@/lib/athlete/plan/domain";
 import { getDayTitle, getWeekTitle } from "@/lib/plans/display";
-import { accordionClass, accordionNestedClass } from "@/lib/theme";
+import {
+  accordionClass,
+  accordionNestedClass,
+  completionCheckmarkClass,
+} from "@/lib/theme";
 import type {
   AbsoluteLoad,
   Day,
@@ -31,8 +35,6 @@ import type {
 } from "@/lib/plans/workout-plan";
 
 const SAVE_DEBOUNCE_MS = 800;
-
-const completeOutlineClass = "border-emerald-500 dark:border-emerald-400";
 
 type SetFormState = {
   reps: string;
@@ -98,31 +100,18 @@ function cloneDay(day: Day): Day {
 }
 
 function exerciseCardClassName(complete: boolean): string {
-  return [accordionNestedClass(), "space-y-4", complete ? completeOutlineClass : ""]
-    .filter(Boolean)
-    .join(" ");
+  return [accordionNestedClass(complete ? "success" : "default"), "space-y-4"].join(" ");
 }
 
 function setRowClassName(complete: boolean): string {
-  return [
-    accordionClass(),
-    "flex items-center gap-3 !p-3",
-    complete ? completeOutlineClass : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  return [accordionClass(complete ? "success" : "default"), "flex items-center gap-3 !p-3"].join(
+    " ",
+  );
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {
   return (
-    <span
-      aria-hidden="true"
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm ${
-        complete
-          ? "border-emerald-500 bg-emerald-50 text-emerald-600 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300"
-          : "border-zinc-200 text-zinc-300 dark:border-zinc-700 dark:text-zinc-600"
-      }`}
-    >
+    <span aria-hidden="true" className={completionCheckmarkClass(complete)}>
       ✓
     </span>
   );

@@ -21,6 +21,9 @@ export {
   accordionNestedClass,
   accordionContentCardClass,
   attachmentChipClass,
+  completionCheckmarkClass,
+  glassSurfaceClass,
+  glassSurfaceTransitionClass,
   messageToneClass,
   pageContentClass,
   pageShellClass,
@@ -32,6 +35,8 @@ export {
   type AttachmentChipTone,
   type ButtonSize,
   type ButtonVariant,
+  type GlassSurfaceTone,
+  type GlassSurfaceVariant,
   type MessageTone,
   type PillTone,
 } from "@/lib/theme/surfaces";

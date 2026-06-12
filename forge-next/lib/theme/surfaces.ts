@@ -102,8 +102,8 @@ export function pageBackGutterReserveClass(): string {
   return "pl-12";
 }
 
-export function listRowClass(): string {
-  return `${radius.card} border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
+export function listRowClass(tone: GlassSurfaceTone = "default"): string {
+  return `${glassSurfaceClass("default", tone)} p-4`;
 }
 
 export function authLandingClass(): string {
@@ -123,12 +123,12 @@ export function authPanelCardClass(role?: UserRole): string {
 export function authPanelStackClass(): string {
   return "grid [&>*]:col-start-1 [&>*]:row-start-1";
 }
-export function accordionClass(): string {
-  return listRowClass();
+export function accordionClass(tone: GlassSurfaceTone = "default"): string {
+  return listRowClass(tone);
 }
 
-export function accordionNestedClass(): string {
-  return `${radius.card} border border-glass-border bg-[var(--color-glass-nested)] p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
+export function accordionNestedClass(tone: GlassSurfaceTone = "default"): string {
+  return `${glassSurfaceClass("nested", tone)} p-4`;
 }
 
 export function accordionContentCardClass(variant: "default" | "nested" = "default"): string {
@@ -138,6 +138,57 @@ export function accordionContentCardClass(variant: "default" | "nested" = "defau
 }
 
 export type AttachmentChipTone = "default" | "error";
+export type GlassSurfaceTone = "default" | "success";
+export type GlassSurfaceVariant = "default" | "nested";
+
+export const glassSurfaceTransitionClass =
+  "transition-[background-color,border-color,box-shadow] duration-300 ease-out motion-reduce:transition-none";
+
+const glassSurfaceToneClasses: Record<
+  GlassSurfaceTone,
+  { border: string; background: string; highlight: string }
+> = {
+  default: {
+    border: "border-glass-border",
+    background: "bg-glass",
+    highlight: "shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]",
+  },
+  success: {
+    border: "border-success-border",
+    background: "bg-success-muted",
+    highlight: "shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)]",
+  },
+};
+
+export function glassSurfaceClass(
+  variant: GlassSurfaceVariant = "default",
+  tone: GlassSurfaceTone = "default",
+): string {
+  const toneClasses = glassSurfaceToneClasses[tone];
+  const background =
+    tone === "default" && variant === "nested"
+      ? "bg-[var(--color-glass-nested)]"
+      : toneClasses.background;
+
+  return [
+    radius.card,
+    "border",
+    toneClasses.border,
+    background,
+    toneClasses.highlight,
+    "backdrop-blur-md",
+    glassSurfaceTransitionClass,
+  ].join(" ");
+}
+
+export function completionCheckmarkClass(complete: boolean): string {
+  const base =
+    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm transition-[background-color,border-color,color] duration-300 ease-out motion-reduce:transition-none";
+
+  return complete
+    ? `${base} border-success-border bg-success-muted text-success`
+    : `${base} border-glass-border text-surface-muted`;
+}
 
 const pillToneClasses: Record<PillTone, string> = {
   default:
