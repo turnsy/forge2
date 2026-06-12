@@ -69,7 +69,14 @@ describe("AthletePlanPage", () => {
     expect(screen.getByPlaceholderText("5")).toBeInTheDocument();
   });
 
-  it("renders celebration when all days are complete", async () => {
+  it("redirects home when there is no active assignment", async () => {
+    mockGetActiveAthletePlan.mockResolvedValue(null);
+
+    await expect(AthletePlanPage()).rejects.toThrow("NEXT_REDIRECT");
+    expect(mockRedirect).toHaveBeenCalledWith("/athlete");
+  });
+
+  it("redirects home when every day is already complete", async () => {
     const completedPlan = structuredClone(minimalWorkoutPlan);
     completedPlan.weeks[0].days[0].exercises[0].sets[0].status = "completed";
 
@@ -83,15 +90,6 @@ describe("AthletePlanPage", () => {
       planVersionId: null,
       plan: completedPlan,
     });
-
-    const ui = await AthletePlanPage();
-    render(ui);
-
-    expect(screen.getByText("All workouts complete! 🎉")).toBeInTheDocument();
-  });
-
-  it("redirects home when there is no active assignment", async () => {
-    mockGetActiveAthletePlan.mockResolvedValue(null);
 
     await expect(AthletePlanPage()).rejects.toThrow("NEXT_REDIRECT");
     expect(mockRedirect).toHaveBeenCalledWith("/athlete");

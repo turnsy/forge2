@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import {
   applySetActuals,
@@ -58,9 +57,6 @@ export async function completeDayAction(
     weekIdx,
     dayIdx,
   );
-
-  revalidatePath("/athlete/plan");
-  revalidatePath("/athlete");
 
   if (allDaysDone) {
     return { nextDayIdx: null, allDaysDone: true };

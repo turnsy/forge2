@@ -7,17 +7,10 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const mockSaveSetActualsAction = vi.fn();
 const mockCompleteDayAction = vi.fn();
-const mockRefresh = vi.fn();
 
 vi.mock("@/lib/athlete/plan/actions", () => ({
   saveSetActualsAction: (...args: unknown[]) => mockSaveSetActualsAction(...args),
   completeDayAction: (...args: unknown[]) => mockCompleteDayAction(...args),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    refresh: mockRefresh,
-  }),
 }));
 
 function makePlan(): WorkoutPlan {
@@ -224,7 +217,8 @@ describe("AthletePlanEntryView", () => {
       expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 1, 1);
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(mockRefresh).toHaveBeenCalled();
+    expect(screen.getByText("Day completed!")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete Day" })).not.toBeInTheDocument();
   });
 
   it("opens skip dialog when completing with unfilled sets", async () => {
@@ -268,7 +262,7 @@ describe("AthletePlanEntryView", () => {
     });
   });
 
-  it("renders celebration when all days are done", async () => {
+  it("renders plan celebration when all days are done", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({ nextDayIdx: null, allDaysDone: true });
@@ -290,6 +284,29 @@ describe("AthletePlanEntryView", () => {
 
     await waitFor(() => {
       expect(screen.getByText("All workouts complete! 🎉")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "Complete Day" })).not.toBeInTheDocument();
+  });
+
+  it("shows day completed after confirming skip", async () => {
+    const user = userEvent.setup();
+    const plan = makePlan();
+    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: 2, allDaysDone: false });
+
+    render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Complete Day" }));
+    await user.click(screen.getByRole("button", { name: "Skip & Complete" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Day completed!")).toBeInTheDocument();
     });
   });
 

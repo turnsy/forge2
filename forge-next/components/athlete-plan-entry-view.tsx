@@ -1,18 +1,15 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
-import { useRouter } from "next/navigation";
-import { AthletePlanCompleteView } from "@/components/athlete-plan-complete-view";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { Button, Card, Input, Message, PageHeader } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
+import {
+  dayCompletedMilestone,
+  planCompletedMilestone,
+  type AthletePlanMilestone,
+} from "@/lib/athlete/plan/milestones";
 import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 import {
   buildActualFromInputs,
@@ -156,7 +153,6 @@ export function AthletePlanEntryView({
   currentDay: CurrentDayLocation;
   coachName: string;
 }) {
-  const router = useRouter();
   const [formState, setFormState] = useState<Record<string, SetFormState>>(() =>
     buildInitialFormState(currentDay.day),
   );
@@ -165,7 +161,7 @@ export function AthletePlanEntryView({
   );
   const [confirmSkipOpen, setConfirmSkipOpen] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [milestone, setMilestone] = useState<AthletePlanMilestone | null>(null);
   const [completing, startCompleteTransition] = useTransition();
 
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -207,7 +203,7 @@ export function AthletePlanEntryView({
     setSaveStatus("idle");
     setCompleteError(null);
     setConfirmSkipOpen(false);
-    setShowCelebration(false);
+    setMilestone(null);
   }, [currentDay.dayIndex, currentDay.weekIndex]);
 
   useEffect(() => {
@@ -367,6 +363,15 @@ export function AthletePlanEntryView({
     await Promise.all(saves);
   }, [assignmentId, currentDay.day, currentDay.dayIndex, currentDay.weekIndex]);
 
+  function handleCompleteSuccess(allDaysDone: boolean) {
+    if (allDaysDone) {
+      setMilestone(planCompletedMilestone(plan, coachName));
+      return;
+    }
+
+    setMilestone(dayCompletedMilestone(currentDay));
+  }
+
   function handleCompleteDay() {
     setCompleteError(null);
 
@@ -388,12 +393,7 @@ export function AthletePlanEntryView({
           currentDay.dayIndex,
         );
 
-        if (result.allDaysDone) {
-          setShowCelebration(true);
-          return;
-        }
-
-        router.refresh();
+        handleCompleteSuccess(result.allDaysDone);
       } catch {
         setCompleteError("Could not complete the day. Try again.");
       }
@@ -411,12 +411,7 @@ export function AthletePlanEntryView({
         );
         setConfirmSkipOpen(false);
 
-        if (result.allDaysDone) {
-          setShowCelebration(true);
-          return;
-        }
-
-        router.refresh();
+        handleCompleteSuccess(result.allDaysDone);
       } catch {
         setCompleteError("Could not complete the day. Try again.");
         setConfirmSkipOpen(false);
@@ -424,8 +419,8 @@ export function AthletePlanEntryView({
     });
   }
 
-  if (showCelebration) {
-    return <AthletePlanCompleteView planName={plan.name} coachName={coachName} />;
+  if (milestone) {
+    return <AthletePlanMilestoneView milestone={milestone} />;
   }
 
   return (
