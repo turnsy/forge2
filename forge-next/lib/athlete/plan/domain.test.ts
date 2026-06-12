@@ -7,6 +7,7 @@ import {
   completeDayInPlan,
   dayHasUnfilledNonTargetSets,
   findCurrentDay,
+  isExerciseComplete,
   isSetActualComplete,
   parseLoadInput,
   parseRepsInput,
@@ -260,6 +261,25 @@ describe("athlete plan domain", () => {
         actual: { reps: 1 },
       }),
     ).toBe(true);
+  });
+
+  it("marks an exercise complete only when every set is complete", () => {
+    const plan = makePlan();
+    const exercise = plan.weeks[0].days[0].exercises[0];
+
+    expect(isExerciseComplete(exercise)).toBe(false);
+
+    exercise.sets[0].actual = {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    };
+    expect(isExerciseComplete(exercise)).toBe(false);
+
+    exercise.sets[1].actual = {
+      reps: 6,
+      load: { type: "percentage", unit: "%", operator: "exact", value: 75 },
+    };
+    expect(isExerciseComplete(exercise)).toBe(true);
   });
 
   it("completes a day with filled sets and skips unfilled non-target sets", () => {

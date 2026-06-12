@@ -126,7 +126,7 @@ describe("AthletePlanEntryView", () => {
     expect(screen.queryByText("Set 1")).not.toBeInTheDocument();
   });
 
-  it("uses a green outline on completed set rows", () => {
+  it("uses a green outline on saved complete set rows", () => {
     const plan = makePlan();
     plan.weeks[0].days[0].exercises[0].sets[0].actual = {
       reps: 8,
@@ -142,7 +142,64 @@ describe("AthletePlanEntryView", () => {
       />,
     );
 
-    expect(container.querySelector(".border-emerald-500")).toBeInTheDocument();
+    expect(container.querySelector('[data-set-complete="true"]')).toBeInTheDocument();
+  });
+
+  it("does not outline sets from unsaved input", async () => {
+    const plan = makePlan();
+
+    const { container } = render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("8"), { target: { value: "8" } });
+    fireEvent.change(screen.getByPlaceholderText("60"), { target: { value: "60" } });
+
+    expect(container.querySelector('[data-set-complete="true"]')).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockSaveSetActualsAction).toHaveBeenCalledTimes(1);
+    });
+
+    expect(container.querySelector('[data-set-complete="true"]')).toBeInTheDocument();
+  });
+
+  it("outlines an exercise only after every set is saved", async () => {
+    const plan = makePlan();
+
+    const { container } = render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("8"), { target: { value: "8" } });
+    fireEvent.change(screen.getByPlaceholderText("60"), { target: { value: "60" } });
+
+    await waitFor(() => {
+      expect(mockSaveSetActualsAction).toHaveBeenCalledTimes(1);
+    });
+
+    expect(container.querySelectorAll('[data-set-complete="true"]')).toHaveLength(1);
+    expect(container.querySelector('[data-exercise-complete="true"]')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText("6"), { target: { value: "6" } });
+    fireEvent.change(screen.getByPlaceholderText("75%"), { target: { value: "75" } });
+
+    await waitFor(() => {
+      expect(mockSaveSetActualsAction).toHaveBeenCalledTimes(2);
+    });
+
+    expect(container.querySelectorAll('[data-set-complete="true"]')).toHaveLength(2);
+    expect(container.querySelector('[data-exercise-complete="true"]')).toBeInTheDocument();
   });
 
   it("debounces auto-save instead of saving on every keystroke", async () => {

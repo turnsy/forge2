@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
-import { Button, Card, Input, Message, PageHeader } from "@/components/ui";
+import { Button, Input, Message, PageHeader } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
 import {
   dayCompletedMilestone,
@@ -14,12 +14,14 @@ import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bot
 import {
   buildActualFromInputs,
   dayHasUnfilledNonTargetSets,
+  isExerciseComplete,
   isSetActualComplete,
   resolveSaveActual,
   setFormStateFromActual,
   type CurrentDayLocation,
 } from "@/lib/athlete/plan/domain";
 import { getDayTitle, getWeekTitle } from "@/lib/plans/display";
+import { accordionClass, accordionNestedClass } from "@/lib/theme";
 import type {
   AbsoluteLoad,
   Day,
@@ -29,6 +31,8 @@ import type {
 } from "@/lib/plans/workout-plan";
 
 const SAVE_DEBOUNCE_MS = 800;
+
+const completeOutlineClass = "border-emerald-500 dark:border-emerald-400";
 
 type SetFormState = {
   reps: string;
@@ -89,12 +93,24 @@ function getAbsoluteLoadPlaceholder(set: Set): string {
   return String((set.planned.load as AbsoluteLoad).value);
 }
 
+function cloneDay(day: Day): Day {
+  return structuredClone(day);
+}
+
+function exerciseCardClassName(complete: boolean): string {
+  return [accordionNestedClass(), "space-y-4", complete ? completeOutlineClass : ""]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function setRowClassName(complete: boolean): string {
-  return `flex items-center gap-3 rounded-xl border px-4 py-3 ${
-    complete
-      ? "border-emerald-500 dark:border-emerald-400"
-      : "border-zinc-200 dark:border-zinc-700"
-  }`;
+  return [
+    accordionClass(),
+    "flex items-center gap-3 !p-3",
+    complete ? completeOutlineClass : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {
@@ -156,6 +172,7 @@ export function AthletePlanEntryView({
   const [formState, setFormState] = useState<Record<string, SetFormState>>(() =>
     buildInitialFormState(currentDay.day),
   );
+  const [savedDay, setSavedDay] = useState<Day>(() => cloneDay(currentDay.day));
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
@@ -200,6 +217,7 @@ export function AthletePlanEntryView({
 
   useEffect(() => {
     setFormState(buildInitialFormState(currentDay.day));
+    setSavedDay(cloneDay(currentDay.day));
     setSaveStatus("idle");
     setCompleteError(null);
     setConfirmSkipOpen(false);
@@ -222,6 +240,20 @@ export function AthletePlanEntryView({
       }
     };
   }, []);
+
+  const applySavedActual = useCallback(
+    (location: SetLocation, actual: Set["actual"]) => {
+      setSavedDay((previous) => {
+        const next = cloneDay(previous);
+        next.exercises[location.exerciseIdx].sets[location.setIdx] = {
+          ...next.exercises[location.exerciseIdx].sets[location.setIdx],
+          actual,
+        };
+        return next;
+      });
+    },
+    [],
+  );
 
   const runSave = useCallback(
     async (
@@ -246,6 +278,8 @@ export function AthletePlanEntryView({
           actual,
         );
 
+        applySavedActual(location, actual);
+
         if (generation === saveGeneration.current) {
           setSaveStatus("saved");
         }
@@ -255,7 +289,12 @@ export function AthletePlanEntryView({
         }
       }
     },
-    [assignmentId, currentDay.dayIndex, currentDay.weekIndex],
+    [
+      applySavedActual,
+      assignmentId,
+      currentDay.dayIndex,
+      currentDay.weekIndex,
+    ],
   );
 
   const flushSaveQueue = useCallback(async () => {
@@ -331,6 +370,7 @@ export function AthletePlanEntryView({
     }
 
     const saves: Array<Promise<void>> = [];
+    const savedUpdates: Array<{ location: SetLocation; actual: Set["actual"] }> = [];
     currentDay.day.exercises.forEach((exercise, exerciseIdx) => {
       exercise.sets.forEach((set, setIdx) => {
         if (set.planned.type === "target") {
@@ -347,6 +387,8 @@ export function AthletePlanEntryView({
           return;
         }
 
+        const location = { exerciseIdx, setIdx };
+        savedUpdates.push({ location, actual });
         saves.push(
           saveSetActualsAction(
             assignmentId,
@@ -361,6 +403,19 @@ export function AthletePlanEntryView({
     });
 
     await Promise.all(saves);
+
+    if (savedUpdates.length > 0) {
+      setSavedDay((previous) => {
+        const next = cloneDay(previous);
+        for (const { location, actual } of savedUpdates) {
+          next.exercises[location.exerciseIdx].sets[location.setIdx] = {
+            ...next.exercises[location.exerciseIdx].sets[location.setIdx],
+            actual,
+          };
+        }
+        return next;
+      });
+    }
   }, [assignmentId, currentDay.day, currentDay.dayIndex, currentDay.weekIndex]);
 
   function handleCompleteSuccess(allDaysDone: boolean) {
@@ -432,45 +487,69 @@ export function AthletePlanEntryView({
       />
 
       <div className="space-y-4">
-        {currentDay.day.exercises.map((exercise, exerciseIdx) => (
-          <Card key={`${exercise.name}-${exerciseIdx}`} role="athlete" className="space-y-4 p-4">
-            <h2 className="text-lg font-medium">{exercise.name}</h2>
-            <div className="space-y-3">
-              {exercise.sets.map((set, setIdx) => {
-                const key = getSetKey(exerciseIdx, setIdx);
-                const local = getResolvedSetFormState(formState, set, key);
-                const previewActual = buildActualFromInputs(local.reps, local.load, set);
-                const complete = previewActual !== null || isSetActualComplete(set);
+        {savedDay.exercises.map((exercise, exerciseIdx) => {
+          const exerciseComplete = isExerciseComplete(exercise);
 
-                return (
-                  <div
-                    key={set.id}
-                    ref={(node) => {
-                      setRefs.current[key] = node;
-                    }}
-                    className={setRowClassName(complete)}
-                  >
-                    <span className="w-6 shrink-0 text-center text-sm font-medium text-zinc-500">
-                      {setIdx + 1}
-                    </span>
-                    <SetRowInputs
-                      set={set}
-                      reps={local.reps}
-                      load={local.load}
-                      onRepsChange={(value) =>
-                        handleInputChange({ exerciseIdx, setIdx }, set, "reps", value)
-                      }
-                      onLoadChange={(value) =>
-                        handleInputChange({ exerciseIdx, setIdx }, set, "load", value)
-                      }
-                    />
-                    <SetCheckmark complete={complete} />
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        ))}
+          return (
+            <section
+              key={`${exercise.name}-${exerciseIdx}`}
+              className={exerciseCardClassName(exerciseComplete)}
+              data-exercise-complete={exerciseComplete ? "true" : "false"}
+            >
+              <h2 className="text-base font-semibold text-surface-foreground">
+                {exercise.name}
+              </h2>
+              <div className="space-y-3">
+                {exercise.sets.map((savedSet, setIdx) => {
+                  const key = getSetKey(exerciseIdx, setIdx);
+                  const local = getResolvedSetFormState(
+                    formState,
+                    currentDay.day.exercises[exerciseIdx].sets[setIdx],
+                    key,
+                  );
+                  const complete = isSetActualComplete(savedSet);
+
+                  return (
+                    <div
+                      key={savedSet.id}
+                      ref={(node) => {
+                        setRefs.current[key] = node;
+                      }}
+                      className={setRowClassName(complete)}
+                      data-set-complete={complete ? "true" : "false"}
+                    >
+                      <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
+                        {setIdx + 1}
+                      </span>
+                      <SetRowInputs
+                        set={currentDay.day.exercises[exerciseIdx].sets[setIdx]}
+                        reps={local.reps}
+                        load={local.load}
+                        onRepsChange={(value) =>
+                          handleInputChange(
+                            { exerciseIdx, setIdx },
+                            currentDay.day.exercises[exerciseIdx].sets[setIdx],
+                            "reps",
+                            value,
+                          )
+                        }
+                        onLoadChange={(value) =>
+                          handleInputChange(
+                            { exerciseIdx, setIdx },
+                            currentDay.day.exercises[exerciseIdx].sets[setIdx],
+                            "load",
+                            value,
+                          )
+                        }
+                      />
+                      <SetCheckmark complete={complete} />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       {completeError ? <Message tone="error">{completeError}</Message> : null}
@@ -508,7 +587,7 @@ function SetRowInputs({
 }) {
   if (set.planned.type === "target") {
     return (
-      <p className="min-w-0 flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+      <p className="min-w-0 flex-1 text-sm text-surface-muted">
         {set.planned.instruction}
       </p>
     );
@@ -527,7 +606,7 @@ function SetRowInputs({
         className="w-16"
         size="sm"
       />
-      <span className="shrink-0 text-sm text-zinc-500">of</span>
+      <span className="shrink-0 text-sm text-surface-muted">of</span>
       <Input
         aria-label="Set load"
         type="text"
@@ -541,7 +620,7 @@ function SetRowInputs({
         className="w-16"
         size="sm"
       />
-      {unit ? <span className="shrink-0 text-sm text-zinc-500">{unit}</span> : null}
+      {unit ? <span className="shrink-0 text-sm text-surface-muted">{unit}</span> : null}
     </div>
   );
 }

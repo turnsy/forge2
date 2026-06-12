@@ -1,6 +1,7 @@
 import type {
   ActualSet,
   Day,
+  Exercise,
   Load,
   Set,
   Week,
@@ -54,6 +55,10 @@ export function isSetActualComplete(set: Set): boolean {
   }
 
   return set.actual.load !== undefined;
+}
+
+export function isExerciseComplete(exercise: Exercise): boolean {
+  return exercise.sets.every((set) => isSetActualComplete(set));
 }
 
 export function dayHasUnfilledNonTargetSets(day: Day): boolean {
