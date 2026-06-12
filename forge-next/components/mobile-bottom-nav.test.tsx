@@ -143,7 +143,9 @@ describe("MobileBottomNav", () => {
     mockSlotRects(homeButton, plansLink, tray);
     window.dispatchEvent(new Event("resize"));
 
-    const indicator = screen.getByTestId("nav-selection-indicator");
+    const indicator = await waitFor(() =>
+      screen.getByTestId("nav-selection-indicator"),
+    );
     expect(indicator.className).toContain("rounded-full");
     await waitFor(() => {
       expect(Number.parseFloat(indicator.style.width)).toBe(

@@ -269,13 +269,9 @@ export function MobileBottomNav({
     [navItems, pathname],
   );
 
-  const resolveIndicatorHref = useCallback(() => {
-    if (committedHref) {
-      return committedHref;
-    }
-
-    return getActiveItem()?.href ?? null;
-  }, [committedHref, getActiveItem]);
+  const activeHref = getActiveItem()?.href ?? null;
+  const indicatorTargetHref =
+    committedHref && committedHref !== activeHref ? committedHref : activeHref;
 
   const syncIndicatorToHref = useCallback(
     (href: string) => {
@@ -288,11 +284,10 @@ export function MobileBottomNav({
   );
 
   const syncIndicatorToResolved = useCallback(() => {
-    const href = resolveIndicatorHref();
-    if (href) {
-      syncIndicatorToHref(href);
+    if (indicatorTargetHref) {
+      syncIndicatorToHref(indicatorTargetHref);
     }
-  }, [resolveIndicatorHref, syncIndicatorToHref]);
+  }, [indicatorTargetHref, syncIndicatorToHref]);
 
   const getNavSlotCenterBounds = useCallback(() => {
     const centers = navItems
@@ -362,17 +357,16 @@ export function MobileBottomNav({
   );
 
   useLayoutEffect(() => {
-    const activeItem = getActiveItem();
-    if (committedHref && activeItem?.href === committedHref) {
-      setCommittedHref(null);
+    if (isDragging) {
+      return;
     }
-  }, [committedHref, getActiveItem, pathname]);
 
-  useLayoutEffect(() => {
-    if (!isDragging) {
+    const frame = requestAnimationFrame(() => {
       syncIndicatorToResolved();
-    }
-  }, [isDragging, syncIndicatorToResolved, pathname, committedHref]);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isDragging, syncIndicatorToResolved, indicatorTargetHref]);
 
   useEffect(() => {
     function handleResize() {

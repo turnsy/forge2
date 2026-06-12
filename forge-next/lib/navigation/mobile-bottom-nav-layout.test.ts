@@ -21,7 +21,6 @@ describe("mobile bottom nav layout", () => {
 
 describe("shouldReserveMobileBottomNavSpace", () => {
   it("never reserves shell space; coach workspace handles composer inset", () => {
-    expect(shouldReserveMobileBottomNavSpace("coach", "/coach")).toBe(false);
-    expect(shouldReserveMobileBottomNavSpace("coach", "/coach/plans")).toBe(false);
+    expect(shouldReserveMobileBottomNavSpace()).toBe(false);
   });
 });
