@@ -11,7 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import { AthletePlanCompleteView } from "@/components/athlete-plan-complete-view";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
-import { Button, Input, Message, PageHeader } from "@/components/ui";
+import { Button, Card, Input, Message, PageHeader } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
 import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 import {
@@ -90,6 +90,14 @@ function getAbsoluteLoadPlaceholder(set: Set): string {
   }
 
   return String((set.planned.load as AbsoluteLoad).value);
+}
+
+function setRowClassName(complete: boolean): string {
+  return `flex items-center gap-3 rounded-xl border px-4 py-3 ${
+    complete
+      ? "border-emerald-500 dark:border-emerald-400"
+      : "border-zinc-200 dark:border-zinc-700"
+  }`;
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {
@@ -428,9 +436,9 @@ export function AthletePlanEntryView({
         actions={<SaveIndicator status={saveStatus} />}
       />
 
-      <div className="space-y-8">
+      <div className="space-y-4">
         {currentDay.day.exercises.map((exercise, exerciseIdx) => (
-          <section key={`${exercise.name}-${exerciseIdx}`} className="space-y-4">
+          <Card key={`${exercise.name}-${exerciseIdx}`} role="athlete" className="space-y-4 p-4">
             <h2 className="text-lg font-medium">{exercise.name}</h2>
             <div className="space-y-3">
               {exercise.sets.map((set, setIdx) => {
@@ -445,7 +453,7 @@ export function AthletePlanEntryView({
                     ref={(node) => {
                       setRefs.current[key] = node;
                     }}
-                    className="flex items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700"
+                    className={setRowClassName(complete)}
                   >
                     <span className="w-6 shrink-0 text-center text-sm font-medium text-zinc-500">
                       {setIdx + 1}
@@ -466,7 +474,7 @@ export function AthletePlanEntryView({
                 );
               })}
             </div>
-          </section>
+          </Card>
         ))}
       </div>
 

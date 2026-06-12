@@ -133,6 +133,25 @@ describe("AthletePlanEntryView", () => {
     expect(screen.queryByText("Set 1")).not.toBeInTheDocument();
   });
 
+  it("uses a green outline on completed set rows", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].exercises[0].sets[0].actual = {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    };
+
+    const { container } = render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        currentDay={makeCurrentDay(plan)}
+        coachName="Coach Alex"
+      />,
+    );
+
+    expect(container.querySelector(".border-emerald-500")).toBeInTheDocument();
+  });
+
   it("debounces auto-save instead of saving on every keystroke", async () => {
     vi.useFakeTimers();
     const plan = makePlan();
