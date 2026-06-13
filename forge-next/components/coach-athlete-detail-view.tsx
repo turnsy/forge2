@@ -108,8 +108,6 @@ function PreviousPlansTab({
         <ListRow
           key={plan.id}
           appearIndex={index}
-          metaColumns={1}
-          metaLayout="column"
           leading={
             <button
               type="button"

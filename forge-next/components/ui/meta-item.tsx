@@ -8,7 +8,7 @@ export function MetaItem({
   value: ReactNode;
 }) {
   return (
-    <div className="min-w-0 text-left">
+    <div className="min-w-0 w-full text-left">
       <dt className="text-left text-xs font-medium uppercase tracking-wide text-surface-muted">
         {label}
       </dt>
