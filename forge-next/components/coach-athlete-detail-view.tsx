@@ -21,16 +21,9 @@ import {
 } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
+import { getAssignedPlanHistoryMeta } from "@/lib/athlete/plan/display";
 import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import type { CoachAthleteRelationship } from "@/lib/links/types";
-
-function formatAssignmentDateRange(plan: AssignedPlan): string {
-  const start = formatDate(plan.assignedAt);
-  if (plan.completedAt) {
-    return `${start} – ${formatDate(plan.completedAt)}`;
-  }
-  return start;
-}
 
 function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
   if (status === "completed") {
@@ -108,7 +101,10 @@ function PreviousPlansTab({
 
   return (
     <List>
-      {previousPlans.map((plan, index) => (
+      {previousPlans.map((plan, index) => {
+        const historyMeta = getAssignedPlanHistoryMeta(plan);
+
+        return (
         <ListRow
           key={plan.id}
           appearIndex={index}
@@ -125,15 +121,13 @@ function PreviousPlansTab({
           }
           meta={
             <MetaGroup>
-              <MetaItem
-                label="Assigned"
-                value={formatAssignmentDateRange(plan)}
-              />
+              <MetaItem label={historyMeta.label} value={historyMeta.value} />
             </MetaGroup>
           }
           actions={<AssignmentStatusBadge status={plan.status} />}
         />
-      ))}
+        );
+      })}
     </List>
   );
 }

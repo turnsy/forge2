@@ -33,6 +33,7 @@ function assignedPlan(overrides: Partial<AssignedPlan> = {}): AssignedPlan {
     status: "active",
     assignedAt: "2026-01-10T00:00:00.000Z",
     completedAt: null,
+    unassignedAt: null,
     planVersionId: null,
     plan: minimalWorkoutPlan,
     ...overrides,
@@ -91,6 +92,8 @@ describe("CoachAthleteDetailView", () => {
             id: "assignment-3",
             status: "unassigned",
             assignedAt: "2025-12-01T00:00:00.000Z",
+            completedAt: null,
+            unassignedAt: "2026-06-12T00:00:00.000Z",
           }),
         ]}
       />,
@@ -98,8 +101,11 @@ describe("CoachAthleteDetailView", () => {
 
     await user.click(screen.getByRole("tab", { name: "History" }));
 
-    expect(screen.getByText("Completed")).toBeInTheDocument();
-    expect(screen.getByText("Aborted")).toBeInTheDocument();
+    expect(screen.getAllByText("Completed").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Aborted").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Feb 1, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Jun 12, 2026")).toBeInTheDocument();
+    expect(screen.queryByText("Assigned")).not.toBeInTheDocument();
 
     await user.click(screen.getAllByRole("button", { name: "4-Week Strength Block" })[0]);
 

@@ -54,6 +54,7 @@ describe("CoachAthleteDetailPage", () => {
       status: "active",
       assignedAt: "2026-01-10T00:00:00.000Z",
       completedAt: null,
+      unassignedAt: null,
       planVersionId: null,
       plan: minimalWorkoutPlan,
     });

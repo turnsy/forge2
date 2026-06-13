@@ -18,6 +18,7 @@ type AssignedPlanRow = {
   status: "active" | "completed" | "unassigned";
   assigned_at: string;
   completed_at: string | null;
+  unassigned_at: string | null;
   plan_version_id: string | null;
 };
 
@@ -28,6 +29,7 @@ export type AssignedPlan = {
   status: "active" | "completed" | "unassigned";
   assignedAt: string;
   completedAt: string | null;
+  unassignedAt: string | null;
   planVersionId: string | null;
   plan: WorkoutPlan;
 };
@@ -50,6 +52,7 @@ export function mapAssignedPlanRow(row: AssignedPlanRow): AssignedPlan | null {
     status: row.status,
     assignedAt: row.assigned_at,
     completedAt: row.completed_at,
+    unassignedAt: row.unassigned_at,
     planVersionId: row.plan_version_id,
     plan: result.plan,
   };
@@ -64,7 +67,7 @@ export async function getActiveAthletePlan(
   const { data, error } = await supabase
     .from("assigned_plans")
     .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, plan_version_id",
+      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
     )
     .eq("athlete_id", userId)
     .eq("status", "active")
@@ -92,7 +95,7 @@ export async function getAssignedPlanById(
   const { data, error } = await supabase
     .from("assigned_plans")
     .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, plan_version_id",
+      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
     )
     .eq("id", assignmentId)
     .maybeSingle();
@@ -118,7 +121,7 @@ export async function listAthleteAssignedPlans(
   const { data, error } = await supabase
     .from("assigned_plans")
     .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, plan_version_id",
+      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
     )
     .eq("athlete_id", athleteId)
     .eq("coach_id", coachId)

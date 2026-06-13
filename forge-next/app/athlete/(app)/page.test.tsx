@@ -81,6 +81,7 @@ describe("AthletePage", () => {
       status: "active",
       assignedAt: "2026-01-01T00:00:00.000Z",
       completedAt: null,
+      unassignedAt: null,
       planVersionId: null,
       plan: minimalWorkoutPlan,
     });
@@ -131,6 +132,7 @@ describe("AthletePage", () => {
       status: "active",
       assignedAt: "2026-01-01T00:00:00.000Z",
       completedAt: null,
+      unassignedAt: null,
       planVersionId: null,
       plan: completedPlan,
     });

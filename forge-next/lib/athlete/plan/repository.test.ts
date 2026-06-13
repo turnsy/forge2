@@ -52,6 +52,7 @@ describe("athlete plan repository", () => {
       status: "active",
       assigned_at: "2026-01-01T00:00:00.000Z",
       completed_at: null,
+      unassigned_at: null,
       plan_version_id: "version-1",
     });
 
@@ -74,6 +75,7 @@ describe("athlete plan repository", () => {
         status: "active",
         assigned_at: "2026-01-01T00:00:00.000Z",
         completed_at: null,
+        unassigned_at: null,
         plan_version_id: null,
       }),
     ).toBeNull();
@@ -89,6 +91,7 @@ describe("athlete plan repository", () => {
         status: "active",
         assigned_at: "2026-01-01T00:00:00.000Z",
         completed_at: null,
+        unassigned_at: null,
         plan_version_id: null,
       },
       error: null,
@@ -135,6 +138,7 @@ describe("athlete plan repository", () => {
           status: "completed",
           assigned_at: "2026-01-01T00:00:00.000Z",
           completed_at: "2026-02-01T00:00:00.000Z",
+          unassigned_at: null,
           plan_version_id: null,
         },
         {
@@ -145,6 +149,7 @@ describe("athlete plan repository", () => {
           status: "unassigned",
           assigned_at: "2025-12-01T00:00:00.000Z",
           completed_at: null,
+          unassigned_at: "2026-06-12T00:00:00.000Z",
           plan_version_id: null,
         },
       ],
