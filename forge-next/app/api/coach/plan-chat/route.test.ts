@@ -61,10 +61,32 @@ describe("POST /api/coach/plan-chat", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 400 when sessionId is missing", async () => {
+  it("returns 403 when prompt beta is disabled for the coach email", async () => {
     mockRequireApiRole.mockResolvedValue({
       ok: true,
       user: { id: "coach-1", role: "coach", email: "c@x.com", fullName: null },
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/coach/plan-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: "s-1", prompt: "hi" }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(mockRunPlanChat).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when sessionId is missing", async () => {
+    mockRequireApiRole.mockResolvedValue({
+      ok: true,
+      user: {
+        id: "coach-1",
+        role: "coach",
+        email: "jayturnsek@gmail.com",
+        fullName: null,
+      },
     });
 
     const response = await POST(
@@ -80,7 +102,12 @@ describe("POST /api/coach/plan-chat", () => {
   it("returns 400 for invalid body", async () => {
     mockRequireApiRole.mockResolvedValue({
       ok: true,
-      user: { id: "coach-1", role: "coach", email: "c@x.com", fullName: null },
+      user: {
+        id: "coach-1",
+        role: "coach",
+        email: "jayturnsek@gmail.com",
+        fullName: null,
+      },
     });
 
     const response = await POST(
@@ -96,7 +123,12 @@ describe("POST /api/coach/plan-chat", () => {
   it("streams SSE events on success", async () => {
     mockRequireApiRole.mockResolvedValue({
       ok: true,
-      user: { id: "coach-1", role: "coach", email: "c@x.com", fullName: null },
+      user: {
+        id: "coach-1",
+        role: "coach",
+        email: "masonmcgriskin19@gmail.com",
+        fullName: null,
+      },
     });
 
     const response = await POST(

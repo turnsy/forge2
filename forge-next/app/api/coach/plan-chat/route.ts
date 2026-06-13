@@ -5,11 +5,16 @@ import {
   PLAN_CHAT_STREAM_HEADERS,
   runPlanChat,
 } from "@/lib/ai/plan-chat";
+import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
   if (!auth.ok) {
     return auth.response;
+  }
+
+  if (!isPromptBetaEnabled(auth.user.email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let body: unknown;

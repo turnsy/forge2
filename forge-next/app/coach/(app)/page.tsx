@@ -4,6 +4,7 @@ import { ErrorState, PageContent, PageHeader, PageShell } from "@/components/ui"
 import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
 import { getCoachPlanById } from "@/lib/plans/repository";
+import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
 function PlanValidationErrors({
   errors,
@@ -29,6 +30,7 @@ export default async function CoachHomePage({
 }) {
   const user = await requireRole("coach");
   const { planId } = await searchParams;
+  const promptEnabled = isPromptBetaEnabled(user.email);
 
   if (planId) {
     const result = await getCoachPlanById(user.id, planId);
@@ -68,6 +70,7 @@ export default async function CoachHomePage({
           planId={detail.id}
           initialPlan={detail.plan}
           stripPlanIdOnClear
+          promptEnabled={promptEnabled}
         />
       </PageContent>
     );
@@ -75,7 +78,11 @@ export default async function CoachHomePage({
 
   return (
     <PageContent className="flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden max-w-none px-0 py-0">
-      <CoachWorkspace firstName={firstName(user.fullName)} role="coach" />
+      <CoachWorkspace
+        firstName={firstName(user.fullName)}
+        role="coach"
+        promptEnabled={promptEnabled}
+      />
     </PageContent>
   );
 }

@@ -3,6 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
 
+const mockUseIsMobile = vi.fn(() => false);
+
+vi.mock("@/lib/hooks/use-is-mobile", () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}));
+
 const athletesResponse = {
   items: [
     { id: "a1", name: "Jane Smith", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" },
@@ -47,6 +53,7 @@ function mockMentionFetch() {
 
 describe("PromptComposer", () => {
   beforeEach(() => {
+    mockUseIsMobile.mockReturnValue(false);
     mockMentionFetch();
   });
 
@@ -124,6 +131,21 @@ describe("PromptComposer", () => {
     const editor = screen.getByRole("textbox");
     await user.click(editor);
     await user.type(editor, "@jane{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    });
+    expect(editor).toHaveTextContent("@jane");
+  });
+
+  it("does not open the mention menu on mobile", async () => {
+    mockUseIsMobile.mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<PromptComposer placeholder="Ask Forge..." />);
+
+    const editor = screen.getByRole("textbox");
+    await user.click(editor);
+    await user.type(editor, "@jane");
 
     await waitFor(() => {
       expect(screen.queryByRole("listbox")).not.toBeInTheDocument();

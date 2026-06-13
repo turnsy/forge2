@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { MentionMenu } from "@/components/prompt/mention-menu";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
   focusCaretAtIndex,
   getCaretIndex,
@@ -49,6 +50,7 @@ export function PromptComposer({
   const menuId = useId();
   const editorRef = useRef<HTMLDivElement>(null);
   const skipInputRef = useRef(false);
+  const isMobile = useIsMobile();
   const [segments, setSegments] = useState<PromptSegment[]>([]);
   const [caretIndex, setCaretIndexState] = useState(0);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -60,6 +62,7 @@ export function PromptComposer({
 
   const activeQuery = getActiveMentionQuery(segments, caretIndex);
   const menuVisible =
+    !isMobile &&
     activeQuery !== null &&
     (suppressedRange === null ||
       suppressedRange.start !== activeQuery.start ||
@@ -295,7 +298,7 @@ export function PromptComposer({
           role="textbox"
           aria-multiline="true"
           aria-controls={menuVisible ? menuId : undefined}
-          aria-haspopup="listbox"
+          aria-haspopup={isMobile ? undefined : "listbox"}
           contentEditable
           suppressContentEditableWarning
           data-placeholder={placeholder}

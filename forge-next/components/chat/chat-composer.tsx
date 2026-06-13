@@ -15,6 +15,7 @@ export function ChatComposer({
   composerKey,
   onAttach,
   onSend,
+  promptEnabled = true,
   className = "",
   compact = false,
 }: {
@@ -22,6 +23,7 @@ export function ChatComposer({
   composerKey: string;
   onAttach: (files: File[]) => void;
   onSend: (segments: PromptSegment[]) => void;
+  promptEnabled?: boolean;
   className?: string;
   compact?: boolean;
 }) {
@@ -29,6 +31,11 @@ export function ChatComposer({
   const [dragDepth, setDragDepth] = useState(0);
   const latestSegmentsRef = useRef<PromptSegment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!promptEnabled) {
+    return null;
+  }
+
   const isDragging = dragDepth > 0;
   const sendAllowed = canSendChat(state) && !documentEmpty;
 
