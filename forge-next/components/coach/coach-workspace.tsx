@@ -98,12 +98,14 @@ export function CoachWorkspace({
   planId: initialPlanId,
   initialPlan,
   stripPlanIdOnClear = false,
+  promptEnabled = true,
 }: {
   firstName: string;
   role: UserRole;
   planId?: string;
   initialPlan?: WorkoutPlan;
   stripPlanIdOnClear?: boolean;
+  promptEnabled?: boolean;
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -244,6 +246,7 @@ export function CoachWorkspace({
               composerKey={`${state.sessionId}-${state.messages.length}`}
               onAttach={attachFiles}
               onSend={handleSendMessage}
+              promptEnabled={promptEnabled}
             />
           </div>
         </div>
@@ -264,6 +267,7 @@ export function CoachWorkspace({
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
           onSend={handleSendMessage}
+          promptEnabled={promptEnabled}
         />
       </div>
     );
@@ -288,6 +292,7 @@ export function CoachWorkspace({
               state={state}
               onAttach={attachFiles}
               onSend={handleSendMessage}
+              promptEnabled={promptEnabled}
               composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
             />
           </div>
@@ -333,6 +338,7 @@ export function CoachWorkspace({
                 state={state}
                 onAttach={attachFiles}
                 onSend={handleSendMessage}
+                promptEnabled={promptEnabled}
                 composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
                 composerHeader={
                   <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
@@ -407,6 +413,7 @@ export function CoachWorkspace({
               state={state}
               onAttach={attachFiles}
               onSend={handleSendMessage}
+              promptEnabled={promptEnabled}
             />
           </div>
         </div>

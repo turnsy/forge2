@@ -9,12 +9,14 @@ export function CoachConversationPanel({
   state,
   onAttach,
   onSend,
+  promptEnabled = true,
   composerHeader,
   composerClassName = "",
 }: {
   state: PlanWorkspaceState;
   onAttach: (files: File[]) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
+  promptEnabled?: boolean;
   composerHeader?: ReactNode;
   composerClassName?: string;
 }) {
@@ -35,6 +37,7 @@ export function CoachConversationPanel({
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={onAttach}
           onSend={onSend}
+          promptEnabled={promptEnabled}
         />
       </div>
     </>
