@@ -353,7 +353,6 @@ returns table (
   current_plan_id uuid,
   current_plan_name text,
   current_assignment_status assignment_status,
-  completion_percent int,
   total_count bigint
 )
 language sql
@@ -368,31 +367,7 @@ as $$
       ca.linked_at,
       ap.plan_id as current_plan_id,
       ap.plan_data->>'name' as current_plan_name,
-      ap.status as current_assignment_status,
-      case
-        when ap.id is null then null
-        else (
-          select case
-            when count(*) = 0 then 0
-            else round(
-              (count(*) filter (where day_complete))::numeric / count(*) * 100
-            )::int
-          end
-          from (
-            select
-              coalesce(
-                (
-                  select bool_and((s->>'status') = 'completed')
-                  from jsonb_array_elements(d->'exercises') e,
-                       jsonb_array_elements(e->'sets') s
-                ),
-                false
-              ) as day_complete
-            from jsonb_array_elements(ap.plan_data->'weeks') w,
-                 jsonb_array_elements(w->'days') d
-          ) day_stats
-        )
-      end as completion_percent
+      ap.status as current_assignment_status
     from coach_athletes ca
     join profiles p on p.id = ca.athlete_id
     join auth.users u on u.id = p.id
@@ -417,7 +392,6 @@ as $$
     current_plan_id,
     current_plan_name,
     current_assignment_status,
-    completion_percent,
     count(*) over() as total_count
   from filtered
   order by
