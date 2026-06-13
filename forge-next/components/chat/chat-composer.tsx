@@ -27,13 +27,15 @@ export function ChatComposer({
   className?: string;
   compact?: boolean;
 }) {
-  if (!promptEnabled) {
-    return null;
-  }
   const [documentEmpty, setDocumentEmpty] = useState(true);
   const [dragDepth, setDragDepth] = useState(0);
   const latestSegmentsRef = useRef<PromptSegment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!promptEnabled) {
+    return null;
+  }
+
   const isDragging = dragDepth > 0;
   const sendAllowed = canSendChat(state) && !documentEmpty;
 
