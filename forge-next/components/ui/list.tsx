@@ -30,6 +30,7 @@ export function ListRow({
   meta,
   metaColumns = 2,
   metaClassName,
+  metaLayout = "inline",
   actions,
   appearIndex = 0,
 }: {
@@ -38,6 +39,7 @@ export function ListRow({
   meta?: ReactNode;
   metaColumns?: 1 | 2 | 3;
   metaClassName?: string;
+  metaLayout?: "inline" | "column";
   actions?: ReactNode;
   appearIndex?: number;
 }) {
@@ -49,9 +51,42 @@ export function ListRow({
     </dl>
   ) : null;
 
+  const leadingContent = leading ? <div className="min-w-0">{leading}</div> : null;
+
+  if (metaLayout === "column" && metaContent) {
+    const columnArticleClass = actions
+      ? "md:grid-cols-[minmax(0,1fr)_7.5rem_auto]"
+      : "md:grid-cols-[minmax(0,1fr)_7.5rem]";
+
+    return (
+      <li
+        className="list-none animate-fade-in"
+        style={{ animationDelay: `${staggerDelayMs(appearIndex)}ms` }}
+      >
+        <article
+          className={`grid grid-cols-1 items-stretch gap-4 rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md md:items-center md:gap-6 ${columnArticleClass}`}
+        >
+          {href ? (
+            <Link href={href} className={`min-w-0 ${interactiveClass}`}>
+              {leadingContent}
+            </Link>
+          ) : (
+            leadingContent
+          )}
+          {metaContent}
+          {actions ? (
+            <div className="relative z-10 w-full shrink-0 md:w-auto md:justify-self-end">
+              {actions}
+            </div>
+          ) : null}
+        </article>
+      </li>
+    );
+  }
+
   const mainContent = (
     <>
-      {leading ? <div className="min-w-0">{leading}</div> : null}
+      {leadingContent}
       {metaContent}
     </>
   );

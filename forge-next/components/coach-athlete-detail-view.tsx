@@ -109,7 +109,7 @@ function PreviousPlansTab({
           key={plan.id}
           appearIndex={index}
           metaColumns={1}
-          metaClassName="w-[7.5rem] shrink-0"
+          metaLayout="column"
           leading={
             <button
               type="button"
