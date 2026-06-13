@@ -255,9 +255,7 @@
     "actualSet": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "reps"
-      ],
+      "minProperties": 1,
       "properties": {
         "reps": {
           "$ref": "#/$defs/repsValue"

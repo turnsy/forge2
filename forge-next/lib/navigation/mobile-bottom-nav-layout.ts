@@ -2,6 +2,10 @@
 export const MOBILE_BOTTOM_NAV_OFFSET_CLASS =
   "pb-[calc(4.5rem+0.75rem+env(safe-area-inset-bottom,0px))]";
 
+/** Mobile-only reserved space for the floating bottom nav. */
+export const MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS =
+  "max-md:pb-[calc(4.5rem+0.75rem+env(safe-area-inset-bottom,0px))]";
+
 /** Width of the bottom nav tray. */
 export const MOBILE_BOTTOM_NAV_WIDTH_CLASS = "w-3/4";
 

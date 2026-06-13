@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentChipClass,
   buttonVariantClass,
+  completionCheckmarkClass,
+  glassSurfaceClass,
+  glassSurfaceTransitionClass,
   iconButtonVariantClass,
   pageBackLinkClass,
   pageBackGutterReserveClass,
@@ -82,5 +85,20 @@ describe("surface theme helpers", () => {
   it("uses tighter page padding on small screens", () => {
     expect(pageContentClass()).toContain("p-4");
     expect(pageContentClass()).toContain("md:p-8");
+  });
+
+  it("returns default and success glass surface styling", () => {
+    expect(glassSurfaceClass()).toContain("bg-glass");
+    expect(glassSurfaceClass()).toContain("border-glass-border");
+    expect(glassSurfaceClass("nested")).toContain("bg-[var(--color-glass-nested)]");
+    expect(glassSurfaceClass("default", "success")).toContain("bg-success-muted");
+    expect(glassSurfaceClass("default", "success")).toContain("border-success-border");
+    expect(glassSurfaceClass()).toContain(glassSurfaceTransitionClass);
+  });
+
+  it("returns completion checkmark styling", () => {
+    expect(completionCheckmarkClass(false)).toContain("border-glass-border");
+    expect(completionCheckmarkClass(true)).toContain("bg-success-muted");
+    expect(completionCheckmarkClass(true)).toContain("text-success");
   });
 });

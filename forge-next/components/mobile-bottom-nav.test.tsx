@@ -229,6 +229,27 @@ describe("MobileBottomNav", () => {
     expect(document.body.style.touchAction).toBe("");
   });
 
+  it("highlights athlete home on athlete home", () => {
+    usePathname.mockReturnValue("/athlete");
+
+    render(
+      <MobileBottomNav
+        role="athlete"
+        fullName="Athlete User"
+        email="athlete@example.com"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Home" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "History" })).toHaveAttribute(
+      "href",
+      "/athlete/history",
+    );
+  });
+
   it("opens the profile menu from the profile button", async () => {
     const user = userEvent.setup();
 
