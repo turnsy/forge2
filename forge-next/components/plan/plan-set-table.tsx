@@ -87,7 +87,7 @@ function ActualInlineValue({
   return (
     <>
       {" "}
-      <span className={actualValueClass(matches)}>[{value}]</span>
+      <span className={actualValueClass(matches)}>({value})</span>
     </>
   );
 }
