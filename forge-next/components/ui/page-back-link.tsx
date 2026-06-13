@@ -3,6 +3,27 @@ import type { ComponentProps, MouseEvent } from "react";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { pageBackLinkClass } from "@/lib/theme";
 
+export function PageBackButton({
+  ariaLabel,
+  className,
+  onClick,
+}: {
+  ariaLabel: string;
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={`${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
+    >
+      <ArrowRightIcon className="h-6 w-6 rotate-180" />
+    </button>
+  );
+}
+
 export function PageBackLink({
   href,
   ariaLabel,

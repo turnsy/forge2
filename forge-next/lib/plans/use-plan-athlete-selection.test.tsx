@@ -12,6 +12,7 @@ function athlete(
     email: "alex@example.com",
     currentPlanId: null,
     currentPlanName: null,
+    completionPercent: null,
     joinedAt: "2026-06-01T00:00:00.000Z",
     ...overrides,
   };

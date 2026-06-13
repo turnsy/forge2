@@ -11,9 +11,9 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 const athletesResponse = {
   items: [
-    { id: "a1", name: "Jane Smith", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" },
-    { id: "a2", name: "John Adams", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" },
-    { id: "a3", name: "Jamie Lee", email: "", currentPlanId: null, currentPlanName: null, joinedAt: "" },
+    { id: "a1", name: "Jane Smith", email: "", currentPlanId: null, currentPlanName: null, completionPercent: null, joinedAt: "" },
+    { id: "a2", name: "John Adams", email: "", currentPlanId: null, currentPlanName: null, completionPercent: null, joinedAt: "" },
+    { id: "a3", name: "Jamie Lee", email: "", currentPlanId: null, currentPlanName: null, completionPercent: null, joinedAt: "" },
   ],
   total: 3,
   page: 1,

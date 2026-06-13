@@ -12,6 +12,7 @@ describe("mapCoachAthleteRow", () => {
         current_plan_id: "plan-1",
         current_plan_name: "4-Week Strength Block",
         current_assignment_status: "active",
+        completion_percent: 32,
       }),
     ).toEqual({
       id: "athlete-1",
@@ -19,6 +20,7 @@ describe("mapCoachAthleteRow", () => {
       email: "alex@example.com",
       currentPlanId: "plan-1",
       currentPlanName: "4-Week Strength Block",
+      completionPercent: 32,
       joinedAt: "2026-01-10T00:00:00.000Z",
     });
   });
@@ -33,6 +35,7 @@ describe("mapCoachAthleteRow", () => {
         current_plan_id: null,
         current_plan_name: null,
         current_assignment_status: null,
+        completion_percent: null,
       }),
     ).toEqual({
       id: "athlete-2",
@@ -40,6 +43,7 @@ describe("mapCoachAthleteRow", () => {
       email: "",
       currentPlanId: null,
       currentPlanName: null,
+      completionPercent: null,
       joinedAt: "2026-01-10T00:00:00.000Z",
     });
   });

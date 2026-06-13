@@ -2,6 +2,8 @@ import type { Set } from "@/lib/plans/workout-plan";
 import type { AccordionVariant } from "@/components/ui/accordion";
 import {
   EMPTY_CELL,
+  actualLoadMatchesPlanned,
+  actualRepsMatchesPlanned,
   formatLoad,
   formatOptionalCell,
   formatReps,
@@ -40,6 +42,62 @@ function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
   };
 }
 
+function SetStatusPill({ status }: { status: "completed" | "skipped" }) {
+  const baseClass =
+    "inline-flex rounded-full px-1.5 py-px text-[10px] font-medium leading-tight md:px-2 md:py-0.5 md:text-xs";
+
+  if (status === "completed") {
+    return (
+      <span
+        className={`${baseClass} border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300`}
+      >
+        Completed
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`${baseClass} border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200`}
+    >
+      Skipped
+    </span>
+  );
+}
+
+function PrescribedActualCell({
+  prescribed,
+  actualValue,
+  matches,
+}: {
+  prescribed: string;
+  actualValue: string | null;
+  matches: boolean | null;
+}) {
+  if (!actualValue) {
+    return <span>{prescribed}</span>;
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5 md:inline-flex md:flex-row md:items-baseline md:gap-1">
+      <span>{prescribed}</span>
+      <span className={actualValueClass(matches)}>({actualValue})</span>
+    </div>
+  );
+}
+
+function actualValueClass(matches: boolean | null): string {
+  if (matches === true) {
+    return "font-bold text-emerald-700 dark:text-emerald-300";
+  }
+
+  if (matches === false) {
+    return "font-bold text-amber-800 dark:text-amber-200";
+  }
+
+  return "font-bold text-surface-foreground";
+}
+
 export function PlanSetTable({
   sets,
   view,
@@ -53,7 +111,10 @@ export function PlanSetTable({
     return null;
   }
 
-  const rows = sets.map((set, index) => buildCoachSetRow(set, index + 1));
+  const rows = sets.map((set, index) => ({
+    set,
+    row: buildCoachSetRow(set, index + 1),
+  }));
 
   return (
     <div className={accordionContentCardClass(surfaceVariant)}>
@@ -68,23 +129,62 @@ export function PlanSetTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.setNumber}
-                className="border-b border-glass-border/60 last:border-b-0"
-              >
-                <td className="px-3 py-2 font-medium text-surface-foreground">
-                  {row.setNumber}
-                </td>
-                <td className="px-3 py-2 text-surface-foreground">{row.reps}</td>
-                <td className="px-3 py-2 text-surface-foreground">{row.load}</td>
-                <td
-                  className={`px-3 py-2 ${row.notes === EMPTY_CELL ? mutedCellClass : "text-surface-foreground"}`}
-                >
-                  {row.notes}
-                </td>
-              </tr>
-            ))}
+            {rows.map(({ set, row }) => {
+              const showActual =
+                set.status !== "skipped" && set.actual !== null;
+              const actualReps =
+                showActual &&
+                set.actual?.reps !== undefined &&
+                set.actual.reps !== ""
+                  ? set.actual.reps
+                  : null;
+              const actualLoad = showActual ? (set.actual?.load ?? null) : null;
+
+              return (
+                <tr key={set.id} className="border-b border-glass-border/60 last:border-b-0">
+                  <td className="px-3 py-2 font-medium text-surface-foreground">
+                    <div className="flex flex-col items-start gap-1 md:flex-row md:flex-wrap md:items-center md:gap-2">
+                      <span className="hidden md:inline">{row.setNumber}</span>
+                      {set.status === "completed" ? (
+                        <SetStatusPill status="completed" />
+                      ) : null}
+                      {set.status === "skipped" ? (
+                        <SetStatusPill status="skipped" />
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-surface-foreground">
+                    <PrescribedActualCell
+                      prescribed={row.reps}
+                      actualValue={
+                        actualReps !== null ? formatReps(actualReps) : null
+                      }
+                      matches={
+                        actualReps !== null && set.actual
+                          ? actualRepsMatchesPlanned(set.planned, set.actual)
+                          : null
+                      }
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-surface-foreground">
+                    <PrescribedActualCell
+                      prescribed={row.load}
+                      actualValue={actualLoad ? formatLoad(actualLoad) : null}
+                      matches={
+                        actualLoad && set.actual
+                          ? actualLoadMatchesPlanned(set.planned, set.actual)
+                          : null
+                      }
+                    />
+                  </td>
+                  <td
+                    className={`px-3 py-2 ${row.notes === EMPTY_CELL ? mutedCellClass : "text-surface-foreground"}`}
+                  >
+                    {row.notes}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

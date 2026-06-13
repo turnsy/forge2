@@ -1,7 +1,9 @@
 import type {
   AbsoluteLoad,
+  ActualSet,
   Load,
   PercentageLoad,
+  PlannedSet,
   RepsValue,
   Week,
   Day,
@@ -66,4 +68,54 @@ export function formatOptionalCell(value: string | undefined): string {
   }
 
   return value.trim();
+}
+
+function getPlannedReps(planned: PlannedSet): RepsValue | undefined {
+  return planned.reps;
+}
+
+function getPlannedLoad(planned: PlannedSet): Load | undefined {
+  return planned.load;
+}
+
+export function actualRepsMatchesPlanned(
+  planned: PlannedSet,
+  actual: ActualSet,
+): boolean | null {
+  if (actual.reps === undefined || actual.reps === "") {
+    return null;
+  }
+
+  const plannedReps = getPlannedReps(planned);
+  if (plannedReps === undefined) {
+    return null;
+  }
+
+  return String(plannedReps) === String(actual.reps);
+}
+
+export function actualLoadMatchesPlanned(
+  planned: PlannedSet,
+  actual: ActualSet,
+): boolean | null {
+  if (!actual.load) {
+    return null;
+  }
+
+  const plannedLoad = getPlannedLoad(planned);
+  if (!plannedLoad) {
+    return null;
+  }
+
+  if (plannedLoad.type === "percentage") {
+    return true;
+  }
+
+  if (actual.load.type !== "absolute" || plannedLoad.type !== "absolute") {
+    return false;
+  }
+
+  return (
+    plannedLoad.value === actual.load.value && plannedLoad.unit === actual.load.unit
+  );
 }

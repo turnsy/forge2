@@ -5,6 +5,7 @@ import {
   buildActualForSave,
   buildActualFromInputs,
   completeDayInPlan,
+  computePlanCompletionPercent,
   dayHasUnfilledNonTargetSets,
   findCurrentDay,
   isExerciseComplete,
@@ -367,5 +368,85 @@ describe("athlete plan domain", () => {
     }).weeks[0].days[0];
 
     expect(dayHasUnfilledNonTargetSets(filledDay)).toBe(false);
+  });
+});
+
+describe("computePlanCompletionPercent", () => {
+  function markAllSetsCompleted(plan: WorkoutPlan): WorkoutPlan {
+    return {
+      ...plan,
+      weeks: plan.weeks.map((week) => ({
+        ...week,
+        days: week.days.map((day) => ({
+          ...day,
+          exercises: day.exercises.map((exercise) => ({
+            ...exercise,
+            sets: exercise.sets.map((set) => ({
+              ...set,
+              status: "completed" as const,
+              actual: set.actual ?? {
+                reps: 5,
+                load: { type: "absolute" as const, value: 100, unit: "kg" as const },
+              },
+            })),
+          })),
+        })),
+      })),
+    };
+  }
+
+  it("returns 0 when no days are complete", () => {
+    expect(computePlanCompletionPercent(makePlan())).toBe(0);
+  });
+
+  it("returns 100 when every day is complete", () => {
+    expect(computePlanCompletionPercent(markAllSetsCompleted(makePlan()))).toBe(100);
+  });
+
+  it("returns partial completion across multiple days", () => {
+    const dayOne = makePlan().weeks[0].days[0];
+    const dayTwo = {
+      index: 2,
+      code: "w1d2",
+      exercises: [
+        {
+          name: "Deadlift",
+          sets: [
+            {
+              id: "w1d2-dl-1",
+              planned: {
+                type: "exact" as const,
+                reps: 5,
+                load: { type: "absolute" as const, value: 100, unit: "kg" as const },
+              },
+              actual: null,
+              status: "planned" as const,
+              locked: false,
+            },
+          ],
+        },
+      ],
+    };
+
+    const twoDayPlan: WorkoutPlan = {
+      ...makePlan(),
+      weeks: [{ index: 1, days: [dayOne, dayTwo] }],
+    };
+
+    const partialPlan: WorkoutPlan = {
+      ...twoDayPlan,
+      weeks: [
+        {
+          index: 1,
+          days: [
+            markAllSetsCompleted({ ...twoDayPlan, weeks: [{ index: 1, days: [dayOne] }] })
+              .weeks[0].days[0],
+            dayTwo,
+          ],
+        },
+      ],
+    };
+
+    expect(computePlanCompletionPercent(partialPlan)).toBe(50);
   });
 });

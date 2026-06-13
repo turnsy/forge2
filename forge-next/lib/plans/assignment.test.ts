@@ -13,6 +13,7 @@ const athletes: CoachAthleteListItem[] = [
     email: "alex@example.com",
     currentPlanId: "plan-a",
     currentPlanName: "Plan A",
+    completionPercent: null,
     joinedAt: "2026-01-01T00:00:00.000Z",
   },
   {
@@ -21,6 +22,7 @@ const athletes: CoachAthleteListItem[] = [
     email: "sam@example.com",
     currentPlanId: "plan-b",
     currentPlanName: "Plan B",
+    completionPercent: null,
     joinedAt: "2026-01-02T00:00:00.000Z",
   },
   {
@@ -29,6 +31,7 @@ const athletes: CoachAthleteListItem[] = [
     email: "jordan@example.com",
     currentPlanId: null,
     currentPlanName: null,
+    completionPercent: null,
     joinedAt: "2026-01-03T00:00:00.000Z",
   },
 ];
