@@ -8,11 +8,11 @@ export function MetaItem({
   value: ReactNode;
 }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-xs font-medium uppercase tracking-wide text-surface-muted">
+    <div className="min-w-0 text-left">
+      <dt className="text-left text-xs font-medium uppercase tracking-wide text-surface-muted">
         {label}
       </dt>
-      <dd className="mt-1 min-w-0 text-sm font-medium text-surface-foreground">
+      <dd className="mt-1 min-w-0 text-left text-sm font-medium text-surface-foreground">
         {value}
       </dd>
     </div>

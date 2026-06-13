@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const metaWidthClass = {
+  1: "",
   2: "md:w-72",
   3: "md:w-[26rem]",
 } as const;
 
 const metaGridClass = {
+  1: "grid-cols-1",
   2: "grid-cols-2",
   3: "grid-cols-2 sm:grid-cols-3",
 } as const;
@@ -34,7 +36,7 @@ export function ListRow({
   href?: string;
   leading?: ReactNode;
   meta?: ReactNode;
-  metaColumns?: 2 | 3;
+  metaColumns?: 1 | 2 | 3;
   metaClassName?: string;
   actions?: ReactNode;
   appearIndex?: number;
@@ -60,7 +62,7 @@ export function ListRow({
       style={{ animationDelay: `${staggerDelayMs(appearIndex)}ms` }}
     >
       <article
-        className={`grid grid-cols-1 items-center gap-4 rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md md:gap-6 ${
+        className={`grid grid-cols-1 items-stretch gap-4 rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md md:items-center md:gap-6 ${
           actions ? "md:grid-cols-[minmax(0,1fr)_auto]" : ""
         }`}
       >
