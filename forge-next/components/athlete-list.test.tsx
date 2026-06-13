@@ -26,9 +26,9 @@ describe("AthleteListRow", () => {
     );
 
     expect(screen.getAllByText("32%")).toHaveLength(2);
-    expect(screen.getAllByText("4-Week Strength Block").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("4-Week Strength Block")).toBeInTheDocument();
     expect(container.querySelector(".md\\:hidden")).toHaveTextContent("32%");
-    expect(container.querySelector(".md\\:flex .mt-0\\.5")).toHaveTextContent("32%");
+    expect(container.querySelector(".hidden.md\\:inline-flex")).toHaveTextContent("32%");
   });
 
   it("shows No plan without a badge when there is no active plan", () => {

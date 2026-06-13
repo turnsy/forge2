@@ -32,11 +32,15 @@ export function AthleteListRow({
 }) {
   const showCompletionBadge = shouldShowCompletionBadge(athlete);
   const currentPlanValue = athlete.currentPlanName ?? "No plan";
+  const metaClassName = showCompletionBadge
+    ? "md:w-auto md:min-w-[28rem] md:max-w-xl md:grid-cols-[auto_minmax(0,1.75fr)_auto]"
+    : "md:w-auto md:min-w-[24rem] md:max-w-md md:grid-cols-[minmax(0,1.75fr)_auto]";
 
   return (
     <ListRow
       href={`/coach/athletes/${athlete.id}`}
       appearIndex={appearIndex}
+      metaClassName={metaClassName}
       leading={
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
@@ -60,21 +64,15 @@ export function AthleteListRow({
       meta={
         <MetaGroup>
           {showCompletionBadge ? (
-            <>
-              <div className="min-w-0 md:hidden">
-                <MetaItem label="Current plan" value={currentPlanValue} />
-              </div>
-              <div className="hidden min-w-0 items-start gap-2 md:flex">
-                <CompletionBadge
-                  percent={athlete.completionPercent!}
-                  className="mt-0.5"
-                />
-                <MetaItem label="Current plan" value={currentPlanValue} />
-              </div>
-            </>
-          ) : (
-            <MetaItem label="Current plan" value={currentPlanValue} />
-          )}
+            <CompletionBadge
+              percent={athlete.completionPercent!}
+              className="hidden shrink-0 self-start md:inline-flex md:mt-0.5"
+            />
+          ) : null}
+          <MetaItem
+            label="Current plan"
+            value={<span className="block md:truncate">{currentPlanValue}</span>}
+          />
           <MetaItem label="Joined" value={formatDate(athlete.joinedAt)} />
         </MetaGroup>
       }

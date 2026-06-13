@@ -27,6 +27,7 @@ export function ListRow({
   leading,
   meta,
   metaColumns = 2,
+  metaClassName,
   actions,
   appearIndex = 0,
 }: {
@@ -34,12 +35,13 @@ export function ListRow({
   leading?: ReactNode;
   meta?: ReactNode;
   metaColumns?: 2 | 3;
+  metaClassName?: string;
   actions?: ReactNode;
   appearIndex?: number;
 }) {
   const metaContent = meta ? (
     <dl
-      className={`grid shrink-0 gap-x-6 gap-y-4 ${metaGridClass[metaColumns]} ${metaWidthClass[metaColumns]}`}
+      className={`grid shrink-0 gap-x-6 gap-y-4 ${metaGridClass[metaColumns]} ${metaWidthClass[metaColumns]}${metaClassName ? ` ${metaClassName}` : ""}`}
     >
       {meta}
     </dl>
