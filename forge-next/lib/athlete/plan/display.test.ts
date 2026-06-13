@@ -26,7 +26,7 @@ describe("getAssignedPlanHistoryMeta", () => {
     });
   });
 
-  it("shows aborted date for unassigned plans", () => {
+  it("uses the same label with aborted date for unassigned plans", () => {
     expect(
       getAssignedPlanHistoryMeta(
         plan({
@@ -36,7 +36,7 @@ describe("getAssignedPlanHistoryMeta", () => {
         }),
       ),
     ).toEqual({
-      label: "Aborted",
+      label: "Completed",
       value: "Jun 12, 2026",
     });
   });

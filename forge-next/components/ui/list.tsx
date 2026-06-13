@@ -41,7 +41,7 @@ export function ListRow({
 }) {
   const metaContent = meta ? (
     <dl
-      className={`grid shrink-0 justify-items-start gap-x-6 gap-y-4 text-left ${metaGridClass[metaColumns]} ${metaWidthClass[metaColumns]}${metaClassName ? ` ${metaClassName}` : ""}`}
+      className={`grid shrink-0 gap-x-6 gap-y-4 ${metaGridClass[metaColumns]} ${metaWidthClass[metaColumns]}${metaClassName ? ` ${metaClassName}` : ""}`}
     >
       {meta}
     </dl>

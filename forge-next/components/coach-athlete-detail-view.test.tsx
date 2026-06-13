@@ -101,8 +101,8 @@ describe("CoachAthleteDetailView", () => {
 
     await user.click(screen.getByRole("tab", { name: "History" }));
 
-    expect(screen.getAllByText("Completed").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Aborted").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Completed").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Aborted")).toBeInTheDocument();
     expect(screen.getByText("Feb 1, 2026")).toBeInTheDocument();
     expect(screen.getByText("Jun 12, 2026")).toBeInTheDocument();
     expect(screen.queryByText("Assigned")).not.toBeInTheDocument();
