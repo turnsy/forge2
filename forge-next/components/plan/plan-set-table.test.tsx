@@ -19,8 +19,8 @@ function makeSet(overrides: Partial<Set> = {}): Set {
 }
 
 describe("PlanSetTable", () => {
-  it("shows athlete actuals and completion indicator in coach view", () => {
-    render(
+  it("shows inline status pills and bracketed actual values in coach view", () => {
+    const { container } = render(
       <PlanSetTable
         view="coach"
         sets={[
@@ -39,9 +39,48 @@ describe("PlanSetTable", () => {
       />,
     );
 
-    expect(screen.getByText(/Actual: 5 reps · 102 kg/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Completed")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Skipped")).toBeInTheDocument();
+    expect(screen.getByText("[5]")).toBeInTheDocument();
+    expect(screen.getByText("[102 kg]")).toBeInTheDocument();
+    expect(screen.queryByText(/Actual:/)).not.toBeInTheDocument();
+
+    const matchingReps = screen.getByText("[5]");
+    const mismatchedLoad = screen.getByText("[102 kg]");
+
+    expect(matchingReps).toHaveClass("text-emerald-700");
+    expect(mismatchedLoad).toHaveClass("text-amber-800");
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(2);
+  });
+
+  it("shows percentage-based actual load in green", () => {
+    render(
+      <PlanSetTable
+        view="coach"
+        sets={[
+          makeSet({
+            planned: {
+              type: "exact",
+              reps: 5,
+              load: {
+                type: "percentage",
+                unit: "%",
+                basis: "back_squat_1rm",
+                operator: "exact",
+                value: 80,
+              },
+            },
+            actual: {
+              reps: 5,
+              load: { type: "absolute", value: 102, unit: "kg" },
+            },
+            status: "completed",
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("[102 kg]")).toHaveClass("text-emerald-700");
   });
 
   it("renders nothing for athlete view", () => {

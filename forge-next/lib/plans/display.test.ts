@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  actualLoadMatchesPlanned,
+  actualRepsMatchesPlanned,
   formatLoad,
   formatPercentageLoad,
   formatReps,
@@ -85,5 +87,73 @@ describe("getDayTitle", () => {
     expect(getDayTitle({ index: 3, code: "w2d3", name: "Heavy day", exercises: [] as never })).toBe(
       "Day 3",
     );
+  });
+});
+
+describe("actualRepsMatchesPlanned", () => {
+  it("returns true when exact planned reps match actual", () => {
+    expect(
+      actualRepsMatchesPlanned(
+        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { reps: 5 },
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false when exact planned reps differ from actual", () => {
+    expect(
+      actualRepsMatchesPlanned(
+        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { reps: 4 },
+      ),
+    ).toBe(false);
+  });
+
+  it("returns null when target set has no prescribed reps", () => {
+    expect(
+      actualRepsMatchesPlanned(
+        { type: "target", instruction: "work up to" },
+        { reps: 5 },
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("actualLoadMatchesPlanned", () => {
+  it("returns true when absolute planned load matches actual", () => {
+    expect(
+      actualLoadMatchesPlanned(
+        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { load: { type: "absolute", value: 85, unit: "kg" } },
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false when absolute planned load differs from actual", () => {
+    expect(
+      actualLoadMatchesPlanned(
+        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { load: { type: "absolute", value: 102, unit: "kg" } },
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for percentage-based prescriptions regardless of actual load", () => {
+    expect(
+      actualLoadMatchesPlanned(
+        {
+          type: "exact",
+          reps: 5,
+          load: {
+            type: "percentage",
+            unit: "%",
+            basis: "back_squat_1rm",
+            operator: "exact",
+            value: 80,
+          },
+        },
+        { load: { type: "absolute", value: 102, unit: "kg" } },
+      ),
+    ).toBe(true);
   });
 });
