@@ -5,6 +5,7 @@ import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-act
 import { CoachAthletePlanActions } from "@/components/coach-athlete-plan-actions";
 import { CompletionProgressRing } from "@/components/completion-progress-ring";
 import { PlanViewer } from "@/components/plan/plan-viewer";
+import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
 import {
   EmptyState,
   List,
@@ -21,7 +22,6 @@ import { formatDate } from "@/lib/format/date";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import type { CoachAthleteRelationship } from "@/lib/links/types";
-import { formatPlanScheduleSummary, getPlanStats } from "@/lib/plans/stats";
 
 function formatAssignmentDateRange(plan: AssignedPlan): string {
   const start = formatDate(plan.assignedAt);
@@ -50,7 +50,6 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
 function CoachAssignedPlanPanel({ assignedPlan }: { assignedPlan: AssignedPlan }) {
   const { plan } = assignedPlan;
   const completionPercent = computePlanCompletionPercent(plan);
-  const scheduleSummary = formatPlanScheduleSummary(getPlanStats(plan));
 
   return (
     <div className="space-y-6">
@@ -61,7 +60,7 @@ function CoachAssignedPlanPanel({ assignedPlan }: { assignedPlan: AssignedPlan }
           </h2>
           <CompletionProgressRing percent={completionPercent} size={40} />
         </div>
-        <p className="text-sm text-surface-muted">{scheduleSummary}</p>
+        <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
       </div>
       <PlanViewer plan={plan} view="coach" showMeta={false} />
     </div>

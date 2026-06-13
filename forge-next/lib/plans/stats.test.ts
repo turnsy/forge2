@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPlanScheduleSummary, getPlanStats } from "@/lib/plans/stats";
+import { getPlanStats } from "@/lib/plans/stats";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
@@ -52,34 +52,5 @@ describe("getPlanStats", () => {
       weekCount: 3,
       daysPerWeek: "3–4",
     });
-  });
-});
-
-describe("formatPlanScheduleSummary", () => {
-  it("formats uniform week and day counts", () => {
-    expect(
-      formatPlanScheduleSummary({
-        weekCount: 2,
-        daysPerWeek: 3,
-      }),
-    ).toBe("2 weeks · 3 days/week");
-  });
-
-  it("uses singular labels for single week and day", () => {
-    expect(
-      formatPlanScheduleSummary({
-        weekCount: 1,
-        daysPerWeek: 1,
-      }),
-    ).toBe("1 week · 1 day/week");
-  });
-
-  it("preserves day ranges", () => {
-    expect(
-      formatPlanScheduleSummary({
-        weekCount: 3,
-        daysPerWeek: "3–4",
-      }),
-    ).toBe("3 weeks · 3–4 days/week");
   });
 });

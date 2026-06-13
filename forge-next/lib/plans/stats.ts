@@ -25,19 +25,3 @@ export function getPlanStats(planData: WorkoutPlan | null | undefined): PlanStat
     daysPerWeek: max === 0 ? 0 : min === max ? min : `${min}–${max}`,
   };
 }
-
-function formatCountLabel(count: number, singular: string, plural: string): string {
-  return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
-}
-
-export function formatPlanScheduleSummary(stats: PlanStats): string {
-  const weeks = formatCountLabel(stats.weekCount, "week", "weeks");
-  const daysPerWeek =
-    typeof stats.daysPerWeek === "number"
-      ? stats.daysPerWeek === 1
-        ? "1 day/week"
-        : `${stats.daysPerWeek} days/week`
-      : `${stats.daysPerWeek} days/week`;
-
-  return `${weeks} · ${daysPerWeek}`;
-}

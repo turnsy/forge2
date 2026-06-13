@@ -55,7 +55,8 @@ describe("CoachAthleteDetailView", () => {
     );
     expect(screen.getByRole("heading", { name: "4-Week Strength Block" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "0% complete" })).toBeInTheDocument();
-    expect(screen.getByText("1 week · 1 day/week")).toBeInTheDocument();
+    expect(screen.getByText("Weeks")).toBeInTheDocument();
+    expect(screen.getByText("Days/week")).toBeInTheDocument();
     expect(screen.queryByText("Progress")).not.toBeInTheDocument();
     expect(screen.getByText("Back Squat")).toBeInTheDocument();
   });
