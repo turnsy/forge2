@@ -18,15 +18,17 @@ function athlete(overrides: Partial<CoachAthleteListItem> = {}): CoachAthleteLis
 
 describe("AthleteListRow", () => {
   it("shows a completion badge when the athlete has a plan and percent", () => {
-    render(
+    const { container } = render(
       <AthleteListRow
         athlete={athlete({ completionPercent: 32 })}
         appearIndex={0}
       />,
     );
 
-    expect(screen.getByText("32%")).toBeInTheDocument();
-    expect(screen.getByText("4-Week Strength Block")).toBeInTheDocument();
+    expect(screen.getAllByText("32%")).toHaveLength(2);
+    expect(screen.getAllByText("4-Week Strength Block").length).toBeGreaterThanOrEqual(1);
+    expect(container.querySelector(".md\\:hidden")).toHaveTextContent("32%");
+    expect(container.querySelector(".md\\:flex .mt-0\\.5")).toHaveTextContent("32%");
   });
 
   it("shows No plan without a badge when there is no active plan", () => {
