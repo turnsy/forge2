@@ -49,7 +49,7 @@ describe("CoachAthleteDetailView", () => {
       />,
     );
 
-    expect(screen.getByRole("tab", { name: "Current Plan" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Current plan" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -96,7 +96,7 @@ describe("CoachAthleteDetailView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "Previous Plans" }));
+    await user.click(screen.getByRole("tab", { name: "History" }));
 
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Aborted")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("CoachAthleteDetailView", () => {
     expect(screen.getByRole("img", { name: "0% complete" })).toBeInTheDocument();
   });
 
-  it("shows athlete info and unlink action on the info tab", async () => {
+  it("shows athlete info and unlink action on the profile tab", async () => {
     const user = userEvent.setup();
 
     render(
@@ -119,7 +119,7 @@ describe("CoachAthleteDetailView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "Info / Unlink" }));
+    await user.click(screen.getByRole("tab", { name: "Profile" }));
 
     expect(screen.getByText("alex@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Unlink athlete" })).toBeInTheDocument();

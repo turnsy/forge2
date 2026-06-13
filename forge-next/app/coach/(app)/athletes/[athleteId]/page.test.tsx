@@ -65,8 +65,8 @@ describe("CoachAthleteDetailPage", () => {
     render(ui);
 
     expect(screen.getByRole("heading", { name: "Alex Rivera" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Current Plan" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Previous Plans" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Info / Unlink" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Current plan" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "History" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Profile" })).toBeInTheDocument();
   });
 });

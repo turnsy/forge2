@@ -146,9 +146,9 @@ export function CoachAthleteDetailView({
       <PageHeader title={relationship.athleteName} />
       <Tabs defaultTab="current-plan">
         <TabList>
-          <Tab id="current-plan">Current Plan</Tab>
-          <Tab id="previous-plans">Previous Plans</Tab>
-          <Tab id="info">Info / Unlink</Tab>
+          <Tab id="current-plan">Current plan</Tab>
+          <Tab id="previous-plans">History</Tab>
+          <Tab id="info">Profile</Tab>
         </TabList>
 
         <TabPanel id="current-plan">
