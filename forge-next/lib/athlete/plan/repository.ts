@@ -108,6 +108,32 @@ export async function getAssignedPlanById(
   return mapAssignedPlanRow(data as AssignedPlanRow);
 }
 
+export async function listAthleteAssignedPlans(
+  athleteId: string,
+  coachId: string,
+  client?: AthletePlanClient,
+): Promise<AssignedPlan[]> {
+  noStore();
+  const supabase = await resolveClient(client);
+  const { data, error } = await supabase
+    .from("assigned_plans")
+    .select(
+      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, plan_version_id",
+    )
+    .eq("athlete_id", athleteId)
+    .eq("coach_id", coachId)
+    .neq("status", "active")
+    .order("assigned_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data as AssignedPlanRow[] | null) ?? [])
+    .map(mapAssignedPlanRow)
+    .filter((plan): plan is AssignedPlan => plan !== null);
+}
+
 export async function savePlanActuals(
   assignmentId: string,
   planData: WorkoutPlan,

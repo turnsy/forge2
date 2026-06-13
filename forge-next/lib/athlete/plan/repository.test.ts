@@ -4,6 +4,7 @@ import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 const mockFrom = vi.fn();
 const mockSelect = vi.fn();
 const mockEq = vi.fn();
+const mockNeq = vi.fn();
 const mockOrder = vi.fn();
 const mockLimit = vi.fn();
 const mockMaybeSingle = vi.fn();
@@ -17,6 +18,7 @@ vi.mock("@/utils/supabase/server", () => ({
 
 import {
   getActiveAthletePlan,
+  listAthleteAssignedPlans,
   mapAssignedPlanRow,
   savePlanActuals,
 } from "@/lib/athlete/plan/repository";
@@ -116,5 +118,46 @@ describe("athlete plan repository", () => {
     await savePlanActuals("assignment-1", minimalWorkoutPlan);
 
     expect(updateEq).toHaveBeenCalledWith("id", "assignment-1");
+  });
+
+  it("lists non-active assigned plans for an athlete and coach", async () => {
+    mockFrom.mockReturnValue({ select: mockSelect });
+    mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ eq: mockEq, neq: mockNeq });
+    mockNeq.mockReturnValue({ order: mockOrder });
+    mockOrder.mockResolvedValue({
+      data: [
+        {
+          id: "assignment-2",
+          athlete_id: "athlete-1",
+          coach_id: "coach-1",
+          plan_data: minimalWorkoutPlan,
+          status: "completed",
+          assigned_at: "2026-01-01T00:00:00.000Z",
+          completed_at: "2026-02-01T00:00:00.000Z",
+          plan_version_id: null,
+        },
+        {
+          id: "assignment-3",
+          athlete_id: "athlete-1",
+          coach_id: "coach-1",
+          plan_data: minimalWorkoutPlan,
+          status: "unassigned",
+          assigned_at: "2025-12-01T00:00:00.000Z",
+          completed_at: null,
+          plan_version_id: null,
+        },
+      ],
+      error: null,
+    });
+
+    const plans = await listAthleteAssignedPlans("athlete-1", "coach-1");
+
+    expect(plans).toHaveLength(2);
+    expect(plans[0].status).toBe("completed");
+    expect(plans[1].status).toBe("unassigned");
+    expect(mockEq).toHaveBeenCalledWith("athlete_id", "athlete-1");
+    expect(mockEq).toHaveBeenCalledWith("coach_id", "coach-1");
+    expect(mockNeq).toHaveBeenCalledWith("status", "active");
   });
 });

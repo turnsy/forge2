@@ -25,6 +25,7 @@ export { MetaGroup } from "./meta-group";
 export { ActionGroup } from "./action-group";
 export { ListSectionSpinner } from "./list-section-spinner";
 export { List, ListRow } from "./list";
+export { Tabs, TabList, Tab, TabPanel } from "./tabs";
 export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
 export { ChatBubble } from "./chat-bubble";

@@ -40,6 +40,29 @@ export function areAllDaysComplete(plan: WorkoutPlan): boolean {
   return findCurrentDay(plan) === null;
 }
 
+export function computePlanCompletionPercent(plan: WorkoutPlan): number {
+  let totalDays = 0;
+  let completedDays = 0;
+
+  for (const week of plan.weeks) {
+    for (const day of week.days) {
+      totalDays += 1;
+      const dayComplete = day.exercises.every((exercise) =>
+        exercise.sets.every((set) => set.status === "completed"),
+      );
+      if (dayComplete) {
+        completedDays += 1;
+      }
+    }
+  }
+
+  if (totalDays === 0) {
+    return 0;
+  }
+
+  return Math.round((completedDays / totalDays) * 100);
+}
+
 export function isSetActualComplete(set: Set): boolean {
   if (set.status === "skipped") {
     return true;

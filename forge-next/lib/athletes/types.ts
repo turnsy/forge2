@@ -4,6 +4,7 @@ export type CoachAthleteListItem = {
   email: string;
   currentPlanId: string | null;
   currentPlanName: string | null;
+  completionPercent: number | null;
   joinedAt: string;
 };
 
@@ -15,4 +16,5 @@ export type CoachAthleteRow = {
   current_plan_id: string | null;
   current_plan_name: string | null;
   current_assignment_status: string | null;
+  completion_percent: number | null;
 };

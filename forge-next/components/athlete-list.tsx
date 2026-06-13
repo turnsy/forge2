@@ -1,7 +1,24 @@
 import { AthleteListRowActions } from "@/components/athlete-list-row-actions";
-import { EmptyState, List, ListRow, MetaGroup, MetaItem } from "@/components/ui";
+import { EmptyState, List, ListRow, MetaGroup, MetaItem, Pill } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
+
+function CurrentPlanMetaValue({ athlete }: { athlete: CoachAthleteListItem }) {
+  if (!athlete.currentPlanName) {
+    return "No plan";
+  }
+
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2">
+      <span className="truncate">{athlete.currentPlanName}</span>
+      {athlete.completionPercent !== null ? (
+        <Pill className="shrink-0 px-2 py-0.5 text-xs">
+          {athlete.completionPercent}%
+        </Pill>
+      ) : null}
+    </span>
+  );
+}
 
 export function AthleteListRow({
   athlete,
@@ -28,7 +45,7 @@ export function AthleteListRow({
         <MetaGroup>
           <MetaItem
             label="Current plan"
-            value={athlete.currentPlanName ?? "No plan"}
+            value={<CurrentPlanMetaValue athlete={athlete} />}
           />
           <MetaItem label="Joined" value={formatDate(athlete.joinedAt)} />
         </MetaGroup>

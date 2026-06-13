@@ -19,6 +19,10 @@ export function mapCoachAthleteRow(row: CoachAthleteRow): CoachAthleteListItem {
     email: row.email?.trim() || "",
     currentPlanId: row.current_plan_id ?? null,
     currentPlanName: row.current_plan_name?.trim() || null,
+    completionPercent:
+      row.completion_percent === null || row.completion_percent === undefined
+        ? null
+        : Number(row.completion_percent),
     joinedAt: row.linked_at,
   };
 }

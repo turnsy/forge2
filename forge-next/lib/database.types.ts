@@ -320,6 +320,7 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: {
           athlete_id: string
+          completion_percent: number | null
           current_assignment_status: Database["public"]["Enums"]["assignment_status"]
           current_plan_id: string
           current_plan_name: string
