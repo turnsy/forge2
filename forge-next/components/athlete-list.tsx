@@ -64,10 +64,12 @@ export function AthleteListRow({
       meta={
         <MetaGroup>
           {showCompletionBadge ? (
-            <CompletionBadge
-              percent={athlete.completionPercent!}
-              className="hidden shrink-0 self-start md:inline-flex md:mt-0.5"
-            />
+            <div className="hidden md:contents">
+              <CompletionBadge
+                percent={athlete.completionPercent!}
+                className="mt-0.5"
+              />
+            </div>
           ) : null}
           <MetaItem
             label="Current plan"
