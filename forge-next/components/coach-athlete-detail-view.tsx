@@ -26,16 +26,23 @@ import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import type { CoachAthleteRelationship } from "@/lib/links/types";
 
 function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
+  const baseClass =
+    "inline-flex min-w-[5.75rem] justify-center rounded-full px-2.5 py-0.5 text-center text-xs font-medium";
+
   if (status === "completed") {
     return (
-      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+      <span
+        className={`${baseClass} border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300`}
+      >
         Completed
       </span>
     );
   }
 
   return (
-    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
+    <span
+      className={`${baseClass} border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200`}
+    >
       Aborted
     </span>
   );

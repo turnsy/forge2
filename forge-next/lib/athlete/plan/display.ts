@@ -5,11 +5,15 @@ export function getAssignedPlanHistoryMeta(plan: AssignedPlan): {
   label: string;
   value: string;
 } {
-  const endDate =
-    plan.status === "completed" ? plan.completedAt : plan.unassignedAt;
+  if (plan.status === "completed") {
+    return {
+      label: "Completed",
+      value: plan.completedAt ? formatDate(plan.completedAt) : "—",
+    };
+  }
 
   return {
-    label: "Completed",
-    value: endDate ? formatDate(endDate) : "—",
+    label: "Aborted",
+    value: plan.unassignedAt ? formatDate(plan.unassignedAt) : "—",
   };
 }
