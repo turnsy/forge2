@@ -1,21 +1,8 @@
 import { AthleteListRowActions } from "@/components/athlete-list-row-actions";
-import { EmptyState, List, ListRow, MetaGroup, MetaItem, Pill } from "@/components/ui";
+import { CompletionProgressRing } from "@/components/completion-progress-ring";
+import { EmptyState, List, ListRow, MetaGroup, MetaItem } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachAthleteListItem } from "@/lib/athletes/types";
-
-function CompletionBadge({
-  percent,
-  className,
-}: {
-  percent: number;
-  className?: string;
-}) {
-  return (
-    <Pill className={`shrink-0 px-2 py-0.5 text-xs${className ? ` ${className}` : ""}`}>
-      {percent}%
-    </Pill>
-  );
-}
 
 function shouldShowCompletionBadge(athlete: CoachAthleteListItem): boolean {
   return (
@@ -53,7 +40,7 @@ export function AthleteListRow({
               ) : null}
             </div>
             {showCompletionBadge ? (
-              <CompletionBadge
+              <CompletionProgressRing
                 percent={athlete.completionPercent!}
                 className="md:hidden"
               />
@@ -65,7 +52,7 @@ export function AthleteListRow({
         <MetaGroup>
           {showCompletionBadge ? (
             <div className="hidden md:contents">
-              <CompletionBadge
+              <CompletionProgressRing
                 percent={athlete.completionPercent!}
                 className="mt-0.5"
               />
