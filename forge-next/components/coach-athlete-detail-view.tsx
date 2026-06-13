@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-actions";
 import { CoachAthletePlanActions } from "@/components/coach-athlete-plan-actions";
+import { CompletionProgressRing } from "@/components/completion-progress-ring";
 import { PlanViewer } from "@/components/plan/plan-viewer";
 import {
   EmptyState,
@@ -20,6 +21,7 @@ import { formatDate } from "@/lib/format/date";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import type { CoachAthleteRelationship } from "@/lib/links/types";
+import { formatPlanScheduleSummary, getPlanStats } from "@/lib/plans/stats";
 
 function formatAssignmentDateRange(plan: AssignedPlan): string {
   const start = formatDate(plan.assignedAt);
@@ -46,14 +48,22 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
 }
 
 function CoachAssignedPlanPanel({ assignedPlan }: { assignedPlan: AssignedPlan }) {
-  const completionPercent = computePlanCompletionPercent(assignedPlan.plan);
+  const { plan } = assignedPlan;
+  const completionPercent = computePlanCompletionPercent(plan);
+  const scheduleSummary = formatPlanScheduleSummary(getPlanStats(plan));
 
   return (
-    <div className="space-y-4">
-      <MetaGroup>
-        <MetaItem label="Progress" value={`${completionPercent}%`} />
-      </MetaGroup>
-      <PlanViewer plan={assignedPlan.plan} view="coach" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="min-w-0 text-lg font-semibold text-surface-foreground">
+            {plan.name}
+          </h2>
+          <CompletionProgressRing percent={completionPercent} size={40} />
+        </div>
+        <p className="text-sm text-surface-muted">{scheduleSummary}</p>
+      </div>
+      <PlanViewer plan={plan} view="coach" showMeta={false} />
     </div>
   );
 }
@@ -86,9 +96,6 @@ function PreviousPlansTab({
         >
           ← Back to previous plans
         </button>
-        <h2 className="text-lg font-semibold text-surface-foreground">
-          {selectedPlan.plan.name}
-        </h2>
         <CoachAssignedPlanPanel assignedPlan={selectedPlan} />
       </div>
     );

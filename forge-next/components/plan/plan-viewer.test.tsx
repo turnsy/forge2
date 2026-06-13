@@ -93,4 +93,12 @@ describe("PlanViewer", () => {
     expect(screen.getByRole("button", { name: /Day 1/i })).toBeInTheDocument();
     expect(screen.queryByText("w1d1")).not.toBeInTheDocument();
   });
+
+  it("can hide the meta summary", () => {
+    render(<PlanViewer plan={makePlanWithIdenticalSets(1)} view="coach" showMeta={false} />);
+
+    expect(screen.queryByText("Weeks")).not.toBeInTheDocument();
+    expect(screen.queryByText("Days/week")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Week 1/i })).toBeInTheDocument();
+  });
 });
