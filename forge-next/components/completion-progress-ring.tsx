@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 type CompletionProgressRingProps = {
   percent: number;
@@ -12,12 +12,24 @@ function clampPercent(percent: number): number {
   return Math.max(0, Math.min(100, Math.round(percent)));
 }
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    return false;
-  }
+function subscribeToReducedMotion(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => {
+    mediaQuery.removeEventListener("change", onStoreChange);
+  };
+}
 
+function getReducedMotionSnapshot(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    () => false,
+  );
 }
 
 export function CompletionProgressRing({
@@ -26,21 +38,20 @@ export function CompletionProgressRing({
   size = 36,
 }: CompletionProgressRingProps) {
   const value = clampPercent(percent);
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [animatedPercent, setAnimatedPercent] = useState(0);
+  const ringPercent = prefersReducedMotion ? value : animatedPercent;
   const strokeWidth = 2.5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progressOffset =
-    circumference - (animatedPercent / 100) * circumference;
+  const progressOffset = circumference - (ringPercent / 100) * circumference;
   const center = size / 2;
 
   useEffect(() => {
-    if (prefersReducedMotion()) {
-      setAnimatedPercent(value);
+    if (prefersReducedMotion) {
       return;
     }
 
-    setAnimatedPercent(0);
     const frame = window.requestAnimationFrame(() => {
       setAnimatedPercent(value);
     });
@@ -48,7 +59,7 @@ export function CompletionProgressRing({
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [value]);
+  }, [value, prefersReducedMotion]);
 
   return (
     <div
