@@ -44,7 +44,7 @@ function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
 
 function SetStatusPill({ status }: { status: "completed" | "skipped" }) {
   const baseClass =
-    "inline-flex rounded-full px-2 py-0.5 text-xs font-medium";
+    "inline-flex rounded-full px-1.5 py-px text-[10px] font-medium leading-tight md:px-2 md:py-0.5 md:text-xs";
 
   if (status === "completed") {
     return (
@@ -65,6 +65,27 @@ function SetStatusPill({ status }: { status: "completed" | "skipped" }) {
   );
 }
 
+function PrescribedActualCell({
+  prescribed,
+  actualValue,
+  matches,
+}: {
+  prescribed: string;
+  actualValue: string | null;
+  matches: boolean | null;
+}) {
+  if (!actualValue) {
+    return <span>{prescribed}</span>;
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5 md:inline-flex md:flex-row md:items-baseline md:gap-1">
+      <span>{prescribed}</span>
+      <span className={actualValueClass(matches)}>({actualValue})</span>
+    </div>
+  );
+}
+
 function actualValueClass(matches: boolean | null): string {
   if (matches === true) {
     return "font-bold text-emerald-700 dark:text-emerald-300";
@@ -75,21 +96,6 @@ function actualValueClass(matches: boolean | null): string {
   }
 
   return "font-bold text-surface-foreground";
-}
-
-function ActualInlineValue({
-  value,
-  matches,
-}: {
-  value: string;
-  matches: boolean | null;
-}) {
-  return (
-    <>
-      {" "}
-      <span className={actualValueClass(matches)}>({value})</span>
-    </>
-  );
 }
 
 export function PlanSetTable({
@@ -137,8 +143,8 @@ export function PlanSetTable({
               return (
                 <tr key={set.id} className="border-b border-glass-border/60 last:border-b-0">
                   <td className="px-3 py-2 font-medium text-surface-foreground">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span>{row.setNumber}</span>
+                    <div className="flex flex-col items-start gap-1 md:flex-row md:flex-wrap md:items-center md:gap-2">
+                      <span className="hidden md:inline">{row.setNumber}</span>
                       {set.status === "completed" ? (
                         <SetStatusPill status="completed" />
                       ) : null}
@@ -148,22 +154,28 @@ export function PlanSetTable({
                     </div>
                   </td>
                   <td className="px-3 py-2 text-surface-foreground">
-                    <span>{row.reps}</span>
-                    {actualReps !== null && set.actual ? (
-                      <ActualInlineValue
-                        value={formatReps(actualReps)}
-                        matches={actualRepsMatchesPlanned(set.planned, set.actual)}
-                      />
-                    ) : null}
+                    <PrescribedActualCell
+                      prescribed={row.reps}
+                      actualValue={
+                        actualReps !== null ? formatReps(actualReps) : null
+                      }
+                      matches={
+                        actualReps !== null && set.actual
+                          ? actualRepsMatchesPlanned(set.planned, set.actual)
+                          : null
+                      }
+                    />
                   </td>
                   <td className="px-3 py-2 text-surface-foreground">
-                    <span>{row.load}</span>
-                    {actualLoad && set.actual ? (
-                      <ActualInlineValue
-                        value={formatLoad(actualLoad)}
-                        matches={actualLoadMatchesPlanned(set.planned, set.actual)}
-                      />
-                    ) : null}
+                    <PrescribedActualCell
+                      prescribed={row.load}
+                      actualValue={actualLoad ? formatLoad(actualLoad) : null}
+                      matches={
+                        actualLoad && set.actual
+                          ? actualLoadMatchesPlanned(set.planned, set.actual)
+                          : null
+                      }
+                    />
                   </td>
                   <td
                     className={`px-3 py-2 ${row.notes === EMPTY_CELL ? mutedCellClass : "text-surface-foreground"}`}

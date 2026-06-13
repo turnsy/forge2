@@ -53,6 +53,32 @@ describe("PlanSetTable", () => {
     expect(container.querySelectorAll("tbody tr")).toHaveLength(2);
   });
 
+  it("uses mobile-friendly layout classes for set rows", () => {
+    const { container } = render(
+      <PlanSetTable
+        view="coach"
+        sets={[
+          makeSet({
+            actual: {
+              reps: 5,
+              load: { type: "absolute", value: 85, unit: "kg" },
+            },
+            status: "completed",
+          }),
+        ]}
+      />,
+    );
+
+    const setNumber = container.querySelector("tbody tr td:first-child span");
+    expect(setNumber).toHaveClass("hidden", "md:inline");
+
+    const repsCell = screen.getByText("(5)").parentElement;
+    expect(repsCell).toHaveClass("flex", "flex-col", "md:inline-flex");
+
+    const statusPill = screen.getByText("Completed");
+    expect(statusPill).toHaveClass("text-[10px]", "md:text-xs");
+  });
+
   it("shows percentage-based actual load in green", () => {
     render(
       <PlanSetTable
