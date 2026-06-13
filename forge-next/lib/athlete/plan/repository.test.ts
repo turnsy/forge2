@@ -101,6 +101,7 @@ describe("athlete plan repository", () => {
   });
 
   it("returns null when no active assignment exists", async () => {
+    // RLS may also return null when a row exists but is not visible to the caller.
     mockAssignedPlanQuery({ data: null, error: null });
 
     await expect(getActiveAthletePlan("athlete-1")).resolves.toBeNull();

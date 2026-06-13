@@ -205,15 +205,6 @@ export function AthletePlanEntryView({
   }, [currentDay.day, formState]);
 
   useEffect(() => {
-    setFormState(buildInitialFormState(currentDay.day));
-    setSavedDay(cloneDay(currentDay.day));
-    setSaveStatus("idle");
-    setCompleteError(null);
-    setConfirmSkipOpen(false);
-    setMilestone(null);
-  }, [currentDay.dayIndex, currentDay.weekIndex]);
-
-  useEffect(() => {
     if (!firstIncompleteKey) {
       return;
     }
@@ -245,17 +236,15 @@ export function AthletePlanEntryView({
   );
 
   const runSave = useCallback(
-    async (
-      location: SetLocation,
-      set: Set,
-      reps: string,
-      load: string,
-      generation: number,
-    ) => {
+    async (location: SetLocation, set: Set, reps: string, load: string) => {
       const actual = resolveSaveActual(reps, load, set);
       if (actual === undefined) {
         return;
       }
+
+      saveGeneration.current += 1;
+      const generation = saveGeneration.current;
+      setSaveStatus("saving");
 
       try {
         await saveSetActualsAction(
@@ -286,7 +275,7 @@ export function AthletePlanEntryView({
     ],
   );
 
-  const flushSaveQueue = useCallback(async () => {
+  async function flushSaveQueue(): Promise<void> {
     if (inFlightSave.current) {
       return;
     }
@@ -304,10 +293,10 @@ export function AthletePlanEntryView({
     } finally {
       inFlightSave.current = null;
       if (queuedSave.current) {
-        void flushSaveQueue();
+        await flushSaveQueue();
       }
     }
-  }, []);
+  }
 
   const scheduleSave = useCallback(
     (location: SetLocation, set: Set, reps: string, load: string) => {
@@ -319,16 +308,13 @@ export function AthletePlanEntryView({
 
       debounceTimers.current[key] = setTimeout(() => {
         delete debounceTimers.current[key];
-        saveGeneration.current += 1;
-        const generation = saveGeneration.current;
-        setSaveStatus("saving");
 
-        const saveTask = () => runSave(location, set, reps, load, generation);
+        const saveTask = () => runSave(location, set, reps, load);
         queuedSave.current = saveTask;
         void flushSaveQueue();
       }, SAVE_DEBOUNCE_MS);
     },
-    [flushSaveQueue, runSave],
+    [runSave],
   );
 
   function handleInputChange(

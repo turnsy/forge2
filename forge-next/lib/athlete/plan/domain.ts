@@ -41,6 +41,10 @@ export function areAllDaysComplete(plan: WorkoutPlan): boolean {
 }
 
 export function isSetActualComplete(set: Set): boolean {
+  if (set.status === "skipped") {
+    return true;
+  }
+
   if (set.planned.type === "target") {
     return set.actual !== null;
   }
@@ -195,7 +199,7 @@ export function mergeSavedActual(
   }
 
   return {
-    reps: incoming.reps,
+    reps: incoming.reps ?? existing.reps,
     load: incoming.load ?? existing.load,
     completedAt: incoming.completedAt ?? existing.completedAt,
     notes: incoming.notes ?? existing.notes,
@@ -269,6 +273,18 @@ export function applySetActuals(
 
 export type SetCompletionStatus = "completed" | "skipped";
 
+function buildTargetCompletionActual(set: Set, completedAt: string): ActualSet {
+  if (set.actual) {
+    return { ...set.actual, completedAt };
+  }
+
+  if (set.planned.type === "target" && set.planned.reps !== undefined) {
+    return { reps: set.planned.reps, completedAt };
+  }
+
+  return { completedAt };
+}
+
 export function completeDayInPlan(
   plan: WorkoutPlan,
   weekIdx: number,
@@ -308,10 +324,7 @@ export function completeDayInPlan(
 
                 const actual =
                   set.planned.type === "target"
-                    ? (set.actual ?? {
-                        reps: set.planned.reps ?? 1,
-                        completedAt,
-                      })
+                    ? buildTargetCompletionActual(set, completedAt)
                     : set.actual
                       ? { ...set.actual, completedAt }
                       : set.actual;

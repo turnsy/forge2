@@ -24,7 +24,7 @@ export async function saveSetActualsAction(
   const assignment = await getAssignedPlanById(assignmentId);
 
   if (!assignment || assignment.athleteId !== user.id) {
-    throw new Error("Assignment not found");
+    throw new Error("Assignment not found or access denied");
   }
 
   const updatedPlan = applySetActuals(
@@ -48,7 +48,7 @@ export async function completeDayAction(
   const assignment = await getAssignedPlanById(assignmentId);
 
   if (!assignment || assignment.athleteId !== user.id) {
-    throw new Error("Assignment not found");
+    throw new Error("Assignment not found or access denied");
   }
 
   const { allDaysDone, plan } = await completeDay(

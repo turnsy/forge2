@@ -107,7 +107,7 @@ export interface TargetPlannedSet {
   notes?: string;
 }
 export interface ActualSet {
-  reps: RepsValue;
+  reps?: RepsValue;
   load?: Load;
   completedAt?: string;
   notes?: string;

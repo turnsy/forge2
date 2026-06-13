@@ -300,8 +300,51 @@ describe("athlete plan domain", () => {
       completed.weeks[0].days[0].exercises[0].sets[1].status,
     ).toBe("skipped");
     expect(
+      completed.weeks[0].days[0].exercises[0].sets[1].actual,
+    ).toBeNull();
+    expect(
       completed.weeks[0].days[0].exercises[1].sets[0].status,
     ).toBe("completed");
+  });
+
+  it("stores target completion without fabricating reps", () => {
+    const plan = makePlan();
+    const filled = applySetActuals(plan, 1, 1, 0, 0, {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    });
+    const filledBoth = applySetActuals(filled, 1, 1, 0, 1, {
+      reps: 6,
+      load: {
+        type: "percentage",
+        unit: "%",
+        operator: "exact",
+        value: 75,
+      },
+    });
+
+    const { plan: completed } = completeDayInPlan(filledBoth, 1, 1);
+    const targetSet = completed.weeks[0].days[0].exercises[1].sets[0];
+
+    expect(targetSet.actual).toEqual(
+      expect.objectContaining({
+        completedAt: expect.any(String),
+      }),
+    );
+    expect(targetSet.actual?.reps).toBeUndefined();
+  });
+
+  it("treats skipped sets as done for exercise completion", () => {
+    const plan = makePlan();
+    const exercise = plan.weeks[0].days[0].exercises[0];
+
+    exercise.sets[0].actual = {
+      reps: 8,
+      load: { type: "absolute", value: 60, unit: "kg" },
+    };
+    exercise.sets[1].status = "skipped";
+
+    expect(isExerciseComplete(exercise)).toBe(true);
   });
 
   it("detects unfilled non-target sets for skip dialog", () => {
