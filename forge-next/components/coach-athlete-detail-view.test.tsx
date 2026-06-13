@@ -103,8 +103,9 @@ describe("CoachAthleteDetailView", () => {
 
     await user.click(screen.getAllByRole("button", { name: "4-Week Strength Block" })[0]);
 
-    expect(screen.getByText("← Back to previous plans")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to history" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "4-Week Strength Block" })).toBeInTheDocument();
+    expect(screen.queryByText("← Back to previous plans")).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "0% complete" })).toBeInTheDocument();
   });
 

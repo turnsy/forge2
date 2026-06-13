@@ -12,6 +12,7 @@ import {
   ListRow,
   MetaGroup,
   MetaItem,
+  PageBackButton,
   PageHeader,
   Tab,
   TabList,
@@ -47,7 +48,13 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
   );
 }
 
-function CoachAssignedPlanPanel({ assignedPlan }: { assignedPlan: AssignedPlan }) {
+function CoachAssignedPlanPanel({
+  assignedPlan,
+  onBack,
+}: {
+  assignedPlan: AssignedPlan;
+  onBack?: () => void;
+}) {
   const { plan } = assignedPlan;
   const completionPercent = computePlanCompletionPercent(plan);
 
@@ -55,9 +62,14 @@ function CoachAssignedPlanPanel({ assignedPlan }: { assignedPlan: AssignedPlan }
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-4">
-          <h2 className="min-w-0 text-lg font-semibold text-surface-foreground">
-            {plan.name}
-          </h2>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {onBack ? (
+              <PageBackButton ariaLabel="Back to history" onClick={onBack} />
+            ) : null}
+            <h2 className="min-w-0 text-lg font-semibold text-surface-foreground">
+              {plan.name}
+            </h2>
+          </div>
           <CompletionProgressRing percent={completionPercent} size={40} />
         </div>
         <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
@@ -87,16 +99,10 @@ function PreviousPlansTab({
 
   if (selectedPlan) {
     return (
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => setSelectedPlanId(null)}
-          className="text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
-        >
-          ← Back to previous plans
-        </button>
-        <CoachAssignedPlanPanel assignedPlan={selectedPlan} />
-      </div>
+      <CoachAssignedPlanPanel
+        assignedPlan={selectedPlan}
+        onBack={() => setSelectedPlanId(null)}
+      />
     );
   }
 
