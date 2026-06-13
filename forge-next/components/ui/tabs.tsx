@@ -100,7 +100,7 @@ export function TabPanel({
       role="tabpanel"
       id={`${baseId}-panel-${id}`}
       aria-labelledby={`${baseId}-tab-${id}`}
-      className="pt-4"
+      className="pt-2"
     >
       {children}
     </div>
