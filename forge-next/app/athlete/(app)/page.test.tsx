@@ -75,15 +75,18 @@ describe("AthletePage", () => {
       linkedAt: "2026-01-02T00:00:00.000Z",
     });
     mockGetActiveAthletePlan.mockResolvedValue({
-      id: "assignment-1",
-      athleteId: "athlete-1",
-      coachId: "coach-1",
-      status: "active",
-      assignedAt: "2026-01-01T00:00:00.000Z",
-      completedAt: null,
-      unassignedAt: null,
-      planVersionId: null,
-      plan: minimalWorkoutPlan,
+      ok: true,
+      plan: {
+        id: "assignment-1",
+        athleteId: "athlete-1",
+        coachId: "coach-1",
+        status: "active",
+        assignedAt: "2026-01-01T00:00:00.000Z",
+        completedAt: null,
+        unassignedAt: null,
+        planVersionId: null,
+        plan: minimalWorkoutPlan,
+      },
     });
 
     const ui = await AthletePage();
@@ -103,7 +106,7 @@ describe("AthletePage", () => {
       requestedAt: "2026-01-01T00:00:00.000Z",
       linkedAt: "2026-01-02T00:00:00.000Z",
     });
-    mockGetActiveAthletePlan.mockResolvedValue(null);
+    mockGetActiveAthletePlan.mockResolvedValue({ ok: true, plan: null });
 
     const ui = await AthletePage();
     render(ui);
@@ -126,15 +129,18 @@ describe("AthletePage", () => {
       linkedAt: "2026-01-02T00:00:00.000Z",
     });
     mockGetActiveAthletePlan.mockResolvedValue({
-      id: "assignment-1",
-      athleteId: "athlete-1",
-      coachId: "coach-1",
-      status: "active",
-      assignedAt: "2026-01-01T00:00:00.000Z",
-      completedAt: null,
-      unassignedAt: null,
-      planVersionId: null,
-      plan: completedPlan,
+      ok: true,
+      plan: {
+        id: "assignment-1",
+        athleteId: "athlete-1",
+        coachId: "coach-1",
+        status: "active",
+        assignedAt: "2026-01-01T00:00:00.000Z",
+        completedAt: null,
+        unassignedAt: null,
+        planVersionId: null,
+        plan: completedPlan,
+      },
     });
 
     const ui = await AthletePage();

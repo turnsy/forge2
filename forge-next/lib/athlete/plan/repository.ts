@@ -1,4 +1,9 @@
 import { unstable_noStore as noStore } from "next/cache";
+import {
+  ServiceErrorCode,
+  serviceError,
+  type ServiceResult,
+} from "@/lib/errors/service-error";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { createClient } from "@/utils/supabase/server";
@@ -9,6 +14,9 @@ import {
 } from "@/lib/athlete/plan/domain";
 
 type AthletePlanClient = Awaited<ReturnType<typeof createClient>>;
+
+const ASSIGNED_PLAN_COLUMNS =
+  "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id";
 
 type AssignedPlanRow = {
   id: string;
@@ -33,6 +41,16 @@ export type AssignedPlan = {
   planVersionId: string | null;
   plan: WorkoutPlan;
 };
+
+export type ActiveAthletePlanResult = ServiceResult<{ plan: AssignedPlan | null }>;
+export type AssignedPlanByIdResult = ServiceResult<{ plan: AssignedPlan | null }>;
+export type ListAthleteAssignedPlansResult = ServiceResult<{ plans: AssignedPlan[] }>;
+export type SavePlanActualsResult = ServiceResult<Record<never, never>>;
+export type CompleteDayResult = ServiceResult<{
+  allDaysDone: boolean;
+  plan: WorkoutPlan;
+  setStatuses: { setIndex: number; status: SetCompletionStatus }[];
+}>;
 
 async function resolveClient(client?: AthletePlanClient): Promise<AthletePlanClient> {
   return client ?? (await createClient());
@@ -61,14 +79,12 @@ export function mapAssignedPlanRow(row: AssignedPlanRow): AssignedPlan | null {
 export async function getActiveAthletePlan(
   userId: string,
   client?: AthletePlanClient,
-): Promise<AssignedPlan | null> {
+): Promise<ActiveAthletePlanResult> {
   noStore();
   const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("assigned_plans")
-    .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
-    )
+    .select(ASSIGNED_PLAN_COLUMNS)
     .eq("athlete_id", userId)
     .eq("status", "active")
     .order("assigned_at", { ascending: false })
@@ -76,75 +92,73 @@ export async function getActiveAthletePlan(
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
   }
 
   if (!data) {
-    return null;
+    return { ok: true, plan: null };
   }
 
-  return mapAssignedPlanRow(data as AssignedPlanRow);
+  return { ok: true, plan: mapAssignedPlanRow(data as AssignedPlanRow) };
 }
 
 export async function getAssignedPlanById(
   assignmentId: string,
   client?: AthletePlanClient,
-): Promise<AssignedPlan | null> {
+): Promise<AssignedPlanByIdResult> {
   noStore();
   const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("assigned_plans")
-    .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
-    )
+    .select(ASSIGNED_PLAN_COLUMNS)
     .eq("id", assignmentId)
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
   }
 
   if (!data) {
-    return null;
+    return { ok: true, plan: null };
   }
 
-  return mapAssignedPlanRow(data as AssignedPlanRow);
+  return { ok: true, plan: mapAssignedPlanRow(data as AssignedPlanRow) };
 }
 
 export async function listAthleteAssignedPlans(
   athleteId: string,
   coachId: string,
   client?: AthletePlanClient,
-): Promise<AssignedPlan[]> {
+): Promise<ListAthleteAssignedPlansResult> {
   noStore();
   const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("assigned_plans")
-    .select(
-      "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id",
-    )
+    .select(ASSIGNED_PLAN_COLUMNS)
     .eq("athlete_id", athleteId)
     .eq("coach_id", coachId)
     .neq("status", "active")
     .order("assigned_at", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
   }
 
-  return ((data as AssignedPlanRow[] | null) ?? [])
+  const plans = ((data as AssignedPlanRow[] | null) ?? [])
     .map(mapAssignedPlanRow)
     .filter((plan): plan is AssignedPlan => plan !== null);
+
+  return { ok: true, plans };
 }
 
 export async function savePlanActuals(
   assignmentId: string,
   planData: WorkoutPlan,
   client?: AthletePlanClient,
-): Promise<void> {
+): Promise<SavePlanActualsResult> {
   const validation = loadWorkoutPlan(planData);
   if (!validation.ok) {
-    throw new Error("Invalid plan data");
+    return serviceError(ServiceErrorCode.VALIDATION_ERROR, "Invalid plan data");
   }
 
   const supabase = await resolveClient(client);
@@ -154,8 +168,10 @@ export async function savePlanActuals(
     .eq("id", assignmentId);
 
   if (error) {
-    throw new Error(error.message);
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
   }
+
+  return { ok: true };
 }
 
 export async function completeDay(
@@ -164,14 +180,14 @@ export async function completeDay(
   weekIdx: number,
   dayIdx: number,
   client?: AthletePlanClient,
-): Promise<{ allDaysDone: boolean; plan: WorkoutPlan; setStatuses: { setIndex: number; status: SetCompletionStatus }[] }> {
+): Promise<CompleteDayResult> {
   const { plan, setStatuses } = completeDayInPlan(planData, weekIdx, dayIdx);
   const allDaysDone = areAllDaysComplete(plan);
   const completedAt = allDaysDone ? new Date().toISOString() : null;
 
   const validation = loadWorkoutPlan(plan);
   if (!validation.ok) {
-    throw new Error("Invalid plan data");
+    return serviceError(ServiceErrorCode.VALIDATION_ERROR, "Invalid plan data");
   }
 
   const supabase = await resolveClient(client);
@@ -189,8 +205,8 @@ export async function completeDay(
     .eq("id", assignmentId);
 
   if (error) {
-    throw new Error(error.message);
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
   }
 
-  return { allDaysDone, plan: validation.plan, setStatuses };
+  return { ok: true, allDaysDone, plan: validation.plan, setStatuses };
 }

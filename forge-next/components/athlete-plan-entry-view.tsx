@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { Button, Input, Message, PageHeader } from "@/components/ui";
-import { completeDayAction, saveSetActualsAction } from "@/lib/athlete/plan/actions";
+import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
 import {
   dayCompletedMilestone,
   planCompletedMilestone,
@@ -237,34 +237,36 @@ export function AthletePlanEntryView({
 
   const runSave = useCallback(
     async (location: SetLocation, set: Set, reps: string, load: string) => {
-      const actual = resolveSaveActual(reps, load, set);
-      if (actual === undefined) {
+      const resolution = resolveSaveActual(reps, load, set);
+      if (resolution.type === "skip") {
         return;
       }
 
+      const { actual } = resolution;
       saveGeneration.current += 1;
       const generation = saveGeneration.current;
       setSaveStatus("saving");
 
-      try {
-        await saveSetActualsAction(
-          assignmentId,
-          currentDay.weekIndex,
-          currentDay.dayIndex,
-          location.exerciseIdx,
-          location.setIdx,
-          actual,
-        );
+      const result = await saveSetActualsAction(
+        assignmentId,
+        currentDay.weekIndex,
+        currentDay.dayIndex,
+        location.exerciseIdx,
+        location.setIdx,
+        actual,
+      );
 
-        applySavedActual(location, actual);
-
-        if (generation === saveGeneration.current) {
-          setSaveStatus("saved");
-        }
-      } catch {
+      if (!result.ok) {
         if (generation === saveGeneration.current) {
           setSaveStatus("error");
         }
+        return;
+      }
+
+      applySavedActual(location, actual);
+
+      if (generation === saveGeneration.current) {
+        setSaveStatus("saved");
       }
     },
     [
@@ -344,7 +346,7 @@ export function AthletePlanEntryView({
       inFlightSave.current = null;
     }
 
-    const saves: Array<Promise<void>> = [];
+    const saves: Array<Promise<SaveSetActualsActionResult>> = [];
     const savedUpdates: Array<{ location: SetLocation; actual: Set["actual"] }> = [];
     currentDay.day.exercises.forEach((exercise, exerciseIdx) => {
       exercise.sets.forEach((set, setIdx) => {
@@ -357,11 +359,12 @@ export function AthletePlanEntryView({
           return;
         }
 
-        const actual = resolveSaveActual(local.reps, local.load, set);
-        if (actual === undefined) {
+        const resolution = resolveSaveActual(local.reps, local.load, set);
+        if (resolution.type === "skip") {
           return;
         }
 
+        const { actual } = resolution;
         const location = { exerciseIdx, setIdx };
         savedUpdates.push({ location, actual });
         saves.push(
@@ -377,7 +380,10 @@ export function AthletePlanEntryView({
       });
     });
 
-    await Promise.all(saves);
+    const results = await Promise.all(saves);
+    if (results.some((result) => !result.ok)) {
+      throw new Error("Failed to save set actuals");
+    }
 
     if (savedUpdates.length > 0) {
       setSavedDay((previous) => {
@@ -423,6 +429,11 @@ export function AthletePlanEntryView({
           currentDay.dayIndex,
         );
 
+        if (!result.ok) {
+          setCompleteError("Could not complete the day. Try again.");
+          return;
+        }
+
         handleCompleteSuccess(result.allDaysDone);
       } catch {
         setCompleteError("Could not complete the day. Try again.");
@@ -440,6 +451,11 @@ export function AthletePlanEntryView({
           currentDay.dayIndex,
         );
         setConfirmSkipOpen(false);
+
+        if (!result.ok) {
+          setCompleteError("Could not complete the day. Try again.");
+          return;
+        }
 
         handleCompleteSuccess(result.allDaysDone);
       } catch {

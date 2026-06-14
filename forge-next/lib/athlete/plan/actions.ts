@@ -1,6 +1,5 @@
 "use server";
 
-import { requireRole } from "@/lib/auth/session";
 import {
   applySetActuals,
   findNextDayAfter,
@@ -10,7 +9,20 @@ import {
   getAssignedPlanById,
   savePlanActuals,
 } from "@/lib/athlete/plan/repository";
+import { requireRoleAuth } from "@/lib/errors/require-role-auth";
+import {
+  ServiceErrorCode,
+  serviceError,
+  type ServiceResult,
+} from "@/lib/errors/service-error";
 import type { ActualSet } from "@/lib/plans/workout-plan";
+
+export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
+
+export type CompleteDayActionResult = ServiceResult<{
+  nextDayIdx: number | null;
+  allDaysDone: boolean;
+}>;
 
 export async function saveSetActualsAction(
   assignmentId: string,
@@ -19,12 +31,23 @@ export async function saveSetActualsAction(
   exerciseIdx: number,
   setIdx: number,
   actual: ActualSet | null,
-): Promise<void> {
-  const user = await requireRole("athlete");
-  const assignment = await getAssignedPlanById(assignmentId);
+): Promise<SaveSetActualsActionResult> {
+  const auth = await requireRoleAuth("athlete");
+  if (!auth.ok) {
+    return auth;
+  }
 
-  if (!assignment || assignment.athleteId !== user.id) {
-    throw new Error("Assignment not found or access denied");
+  const assignmentResult = await getAssignedPlanById(assignmentId);
+  if (!assignmentResult.ok) {
+    return assignmentResult;
+  }
+
+  const assignment = assignmentResult.plan;
+  if (!assignment || assignment.athleteId !== auth.user.id) {
+    return serviceError(
+      ServiceErrorCode.NOT_FOUND,
+      "Assignment not found or access denied",
+    );
   }
 
   const updatedPlan = applySetActuals(
@@ -36,35 +59,53 @@ export async function saveSetActualsAction(
     actual,
   );
 
-  await savePlanActuals(assignmentId, updatedPlan);
+  return savePlanActuals(assignmentId, updatedPlan);
 }
 
 export async function completeDayAction(
   assignmentId: string,
   weekIdx: number,
   dayIdx: number,
-): Promise<{ nextDayIdx: number | null; allDaysDone: boolean }> {
-  const user = await requireRole("athlete");
-  const assignment = await getAssignedPlanById(assignmentId);
-
-  if (!assignment || assignment.athleteId !== user.id) {
-    throw new Error("Assignment not found or access denied");
+): Promise<CompleteDayActionResult> {
+  const auth = await requireRoleAuth("athlete");
+  if (!auth.ok) {
+    return auth;
   }
 
-  const { allDaysDone, plan } = await completeDay(
+  const assignmentResult = await getAssignedPlanById(assignmentId);
+  if (!assignmentResult.ok) {
+    return assignmentResult;
+  }
+
+  const assignment = assignmentResult.plan;
+  if (!assignment || assignment.athleteId !== auth.user.id) {
+    return serviceError(
+      ServiceErrorCode.NOT_FOUND,
+      "Assignment not found or access denied",
+    );
+  }
+
+  const completeResult = await completeDay(
     assignmentId,
     assignment.plan,
     weekIdx,
     dayIdx,
   );
 
+  if (!completeResult.ok) {
+    return completeResult;
+  }
+
+  const { allDaysDone, plan } = completeResult;
+
   if (allDaysDone) {
-    return { nextDayIdx: null, allDaysDone: true };
+    return { ok: true, nextDayIdx: null, allDaysDone: true };
   }
 
   const nextDay = findNextDayAfter(plan, weekIdx, dayIdx);
 
   return {
+    ok: true,
     nextDayIdx: nextDay?.dayIndex ?? null,
     allDaysDone: false,
   };

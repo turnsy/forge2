@@ -224,10 +224,13 @@ describe("athlete plan domain", () => {
       },
     };
 
-    expect(resolveSaveActual("", "", savedSet)).toBeUndefined();
+    expect(resolveSaveActual("", "", savedSet)).toEqual({ type: "skip" });
     expect(resolveSaveActual("", "65", savedSet)).toEqual({
-      reps: 8,
-      load: { type: "absolute", value: 65, unit: "kg" },
+      type: "save",
+      actual: {
+        reps: 8,
+        load: { type: "absolute", value: 65, unit: "kg" },
+      },
     });
   });
 

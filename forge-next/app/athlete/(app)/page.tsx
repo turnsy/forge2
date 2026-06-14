@@ -34,7 +34,13 @@ export default async function AthletePage() {
     );
   }
 
-  const assignment = await getActiveAthletePlan(user.id);
+  const assignmentResult = await getActiveAthletePlan(user.id);
+
+  if (!assignmentResult.ok) {
+    throw new Error(assignmentResult.message);
+  }
+
+  const assignment = assignmentResult.plan;
 
   if (!assignment) {
     return (
@@ -57,7 +63,7 @@ export default async function AthletePage() {
   return (
     <PageShell>
       <AthletePlanEntryView
-        key={`${assignment.id}-${currentDay.weekIndex}-${currentDay.dayIndex}`}
+        key={`${currentDay.weekIndex}-${currentDay.dayIndex}`}
         assignmentId={assignment.id}
         plan={assignment.plan}
         currentDay={currentDay}
