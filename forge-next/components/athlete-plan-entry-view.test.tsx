@@ -97,8 +97,8 @@ describe("AthletePlanEntryView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
-    mockSaveSetActualsAction.mockResolvedValue(undefined);
-    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: null, allDaysDone: false });
+    mockSaveSetActualsAction.mockResolvedValue({ ok: true });
+    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: false });
     Element.prototype.scrollIntoView = vi.fn();
   });
 
@@ -205,7 +205,7 @@ describe("AthletePlanEntryView", () => {
   it("debounces auto-save instead of saving on every keystroke", async () => {
     vi.useFakeTimers();
     const plan = makePlan();
-    mockSaveSetActualsAction.mockResolvedValue(undefined);
+    mockSaveSetActualsAction.mockResolvedValue({ ok: true });
 
     render(
       <AthletePlanEntryView
@@ -227,7 +227,11 @@ describe("AthletePlanEntryView", () => {
   });
 
   it("shows save error when auto-save fails", async () => {
-    mockSaveSetActualsAction.mockRejectedValue(new Error("save failed"));
+    mockSaveSetActualsAction.mockResolvedValue({
+      ok: false,
+      code: "db_error",
+      message: "save failed",
+    });
 
     const plan = makePlan();
     render(
@@ -252,7 +256,7 @@ describe("AthletePlanEntryView", () => {
   it("completes the day directly when all non-target sets are filled", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
 
     render(
       <AthletePlanEntryView
@@ -300,7 +304,7 @@ describe("AthletePlanEntryView", () => {
   it("confirms skip and completes the day", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
 
     render(
       <AthletePlanEntryView
@@ -322,7 +326,7 @@ describe("AthletePlanEntryView", () => {
   it("renders plan celebration when all days are done", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: null, allDaysDone: true });
+    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: true });
 
     render(
       <AthletePlanEntryView
@@ -348,7 +352,7 @@ describe("AthletePlanEntryView", () => {
   it("shows day completed after confirming skip", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
 
     render(
       <AthletePlanEntryView
@@ -401,7 +405,7 @@ describe("AthletePlanEntryView", () => {
   it("keeps local input values when parent props refresh for the same day", async () => {
     vi.useFakeTimers();
     const plan = makePlan();
-    mockSaveSetActualsAction.mockResolvedValue(undefined);
+    mockSaveSetActualsAction.mockResolvedValue({ ok: true });
 
     const { rerender } = render(
       <AthletePlanEntryView

@@ -21,12 +21,23 @@ export default async function CoachAthleteDetailPage({
     notFound();
   }
 
-  const [activePlan, previousPlans] = await Promise.all([
+  const [activePlanResult, previousPlansResult] = await Promise.all([
     relationship.currentPlanName
       ? getActiveAthletePlan(relationship.athleteId)
-      : Promise.resolve(null),
+      : Promise.resolve({ ok: true as const, plan: null }),
     listAthleteAssignedPlans(relationship.athleteId, coach.id),
   ]);
+
+  if (!activePlanResult.ok) {
+    throw new Error(activePlanResult.message);
+  }
+
+  if (!previousPlansResult.ok) {
+    throw new Error(previousPlansResult.message);
+  }
+
+  const activePlan = activePlanResult.plan;
+  const previousPlans = previousPlansResult.plans;
 
   return (
     <PageShell back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}>

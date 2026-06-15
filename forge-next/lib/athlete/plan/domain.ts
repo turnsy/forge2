@@ -229,16 +229,20 @@ export function mergeSavedActual(
   };
 }
 
+export type ResolveSaveActualResult =
+  | { type: "save"; actual: ActualSet | null }
+  | { type: "skip" };
+
 export function resolveSaveActual(
   repsInput: string,
   loadInput: string,
   set: Set,
-): ActualSet | null | undefined {
+): ResolveSaveActualResult {
   if (!repsInput.trim() && !loadInput.trim() && set.actual !== null) {
-    return undefined;
+    return { type: "skip" };
   }
 
-  return buildActualForSave(repsInput, loadInput, set);
+  return { type: "save", actual: buildActualForSave(repsInput, loadInput, set) };
 }
 
 export function applySetActuals(

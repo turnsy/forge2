@@ -48,17 +48,20 @@ describe("CoachAthleteDetailPage", () => {
       currentPlanName: "4-Week Strength Block",
     });
     mockGetActiveAthletePlan.mockResolvedValue({
-      id: "assignment-1",
-      athleteId: "athlete-1",
-      coachId: "coach-1",
-      status: "active",
-      assignedAt: "2026-01-10T00:00:00.000Z",
-      completedAt: null,
-      unassignedAt: null,
-      planVersionId: null,
-      plan: minimalWorkoutPlan,
+      ok: true,
+      plan: {
+        id: "assignment-1",
+        athleteId: "athlete-1",
+        coachId: "coach-1",
+        status: "active",
+        assignedAt: "2026-01-10T00:00:00.000Z",
+        completedAt: null,
+        unassignedAt: null,
+        planVersionId: null,
+        plan: minimalWorkoutPlan,
+      },
     });
-    mockListAthleteAssignedPlans.mockResolvedValue([]);
+    mockListAthleteAssignedPlans.mockResolvedValue({ ok: true, plans: [] });
 
     const ui = await CoachAthleteDetailPage({
       params: Promise.resolve({ athleteId: "athlete-1" }),

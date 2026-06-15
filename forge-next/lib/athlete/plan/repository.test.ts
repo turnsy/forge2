@@ -97,9 +97,14 @@ describe("athlete plan repository", () => {
       error: null,
     });
 
-    const assignment = await getActiveAthletePlan("athlete-1");
+    const result = await getActiveAthletePlan("athlete-1");
 
-    expect(assignment?.id).toBe("assignment-1");
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        plan: expect.objectContaining({ id: "assignment-1" }),
+      }),
+    );
     expect(mockFrom).toHaveBeenCalledWith("assigned_plans");
     expect(mockEq).toHaveBeenCalledWith("athlete_id", "athlete-1");
     expect(mockEq).toHaveBeenCalledWith("status", "active");
@@ -109,7 +114,23 @@ describe("athlete plan repository", () => {
     // RLS may also return null when a row exists but is not visible to the caller.
     mockAssignedPlanQuery({ data: null, error: null });
 
-    await expect(getActiveAthletePlan("athlete-1")).resolves.toBeNull();
+    await expect(getActiveAthletePlan("athlete-1")).resolves.toEqual({
+      ok: true,
+      plan: null,
+    });
+  });
+
+  it("returns a db error when the query fails", async () => {
+    mockAssignedPlanQuery({
+      data: null,
+      error: { message: "connection failed" },
+    });
+
+    await expect(getActiveAthletePlan("athlete-1")).resolves.toEqual({
+      ok: false,
+      code: "db_error",
+      message: "connection failed",
+    });
   });
 
   it("updates plan_data when saving actuals", async () => {
@@ -118,7 +139,9 @@ describe("athlete plan repository", () => {
       update: vi.fn().mockReturnValue({ eq: updateEq }),
     });
 
-    await savePlanActuals("assignment-1", minimalWorkoutPlan);
+    await expect(savePlanActuals("assignment-1", minimalWorkoutPlan)).resolves.toEqual({
+      ok: true,
+    });
 
     expect(updateEq).toHaveBeenCalledWith("id", "assignment-1");
   });
@@ -156,11 +179,15 @@ describe("athlete plan repository", () => {
       error: null,
     });
 
-    const plans = await listAthleteAssignedPlans("athlete-1", "coach-1");
+    const result = await listAthleteAssignedPlans("athlete-1", "coach-1");
 
-    expect(plans).toHaveLength(2);
-    expect(plans[0].status).toBe("completed");
-    expect(plans[1].status).toBe("unassigned");
+    expect(result).toEqual({
+      ok: true,
+      plans: [
+        expect.objectContaining({ id: "assignment-2", status: "completed" }),
+        expect.objectContaining({ id: "assignment-3", status: "unassigned" }),
+      ],
+    });
     expect(mockEq).toHaveBeenCalledWith("athlete_id", "athlete-1");
     expect(mockEq).toHaveBeenCalledWith("coach_id", "coach-1");
     expect(mockNeq).toHaveBeenCalledWith("status", "active");
