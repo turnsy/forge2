@@ -2,15 +2,19 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AthletePlanEntryView } from "@/components/athlete-plan-entry-view";
-import type { CurrentDayLocation } from "@/lib/athlete/plan/domain";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const mockSaveSetActualsAction = vi.fn();
 const mockCompleteDayAction = vi.fn();
+const mockUseIsMobile = vi.fn(() => false);
 
 vi.mock("@/lib/athlete/plan/actions", () => ({
   saveSetActualsAction: (...args: unknown[]) => mockSaveSetActualsAction(...args),
   completeDayAction: (...args: unknown[]) => mockCompleteDayAction(...args),
+}));
+
+vi.mock("@/lib/hooks/use-is-mobile", () => ({
+  useIsMobile: () => mockUseIsMobile(),
 }));
 
 function makePlan(): WorkoutPlan {
@@ -81,22 +85,11 @@ function makePlan(): WorkoutPlan {
   };
 }
 
-function makeCurrentDay(plan: WorkoutPlan): CurrentDayLocation {
-  const week = plan.weeks[0];
-  const day = week.days[0];
-
-  return {
-    weekIndex: week.index,
-    dayIndex: day.index,
-    week,
-    day,
-  };
-}
-
 describe("AthletePlanEntryView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
+    mockUseIsMobile.mockReturnValue(false);
     mockSaveSetActualsAction.mockResolvedValue({ ok: true });
     mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: false });
     Element.prototype.scrollIntoView = vi.fn();
@@ -108,13 +101,13 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
 
     expect(screen.getByRole("heading", { name: "Strength Block" })).toBeInTheDocument();
-    expect(screen.getByText("Week 1 · Day 1")).toBeInTheDocument();
+    expect(screen.getByLabelText("Week")).toHaveTextContent("1: Week 1");
+    expect(screen.getByLabelText("Day")).toHaveTextContent("Day 1");
     expect(screen.getByText("Back Squat")).toBeInTheDocument();
     expect(screen.getByText("Run 400m at RPE 7")).toBeInTheDocument();
 
@@ -137,7 +130,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -152,7 +144,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -176,7 +167,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -211,7 +201,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -238,7 +227,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -262,7 +250,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -290,7 +277,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -310,7 +296,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -332,7 +317,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -358,7 +342,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -391,7 +374,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -411,7 +393,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );
@@ -426,7 +407,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={refreshedPlan}
-        currentDay={makeCurrentDay(refreshedPlan)}
         coachName="Coach Alex"
       />,
     );
@@ -441,7 +421,6 @@ describe("AthletePlanEntryView", () => {
       <AthletePlanEntryView
         assignmentId="assignment-1"
         plan={plan}
-        currentDay={makeCurrentDay(plan)}
         coachName="Coach Alex"
       />,
     );

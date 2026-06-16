@@ -93,7 +93,8 @@ describe("AthletePage", () => {
     render(ui);
 
     expect(screen.getByRole("heading", { name: "4-Week Strength Block" })).toBeInTheDocument();
-    expect(screen.getByText("Week 1 · Day 1")).toBeInTheDocument();
+    expect(screen.getByLabelText("Week")).toBeInTheDocument();
+    expect(screen.getByLabelText("Day")).toHaveTextContent("Day 1");
     expect(screen.getByPlaceholderText("5")).toBeInTheDocument();
   });
 

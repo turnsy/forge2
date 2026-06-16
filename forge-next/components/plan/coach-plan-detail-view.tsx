@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { PlanVersionHistory } from "@/components/plan/plan-version-history";
-import { PlanViewer } from "@/components/plan/plan-viewer";
+import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanDetailActions } from "@/components/plan-detail-actions";
 import { Button, ButtonLink, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
@@ -59,7 +59,7 @@ export function CoachPlanDetailView({
           <p className="text-sm text-surface-muted">
             Created {formatDate(createdAt)}
           </p>
-          <PlanViewer plan={plan} view="coach" />
+          <PlanDayNavigator plan={plan} view="coach" readOnly />
         </>
       )}
     </>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-actions";
 import { CoachAthletePlanActions } from "@/components/coach-athlete-plan-actions";
 import { CompletionProgressRing } from "@/components/completion-progress-ring";
-import { PlanViewer } from "@/components/plan/plan-viewer";
+import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
 import {
   EmptyState,
@@ -74,7 +74,7 @@ function CoachAssignedPlanPanel({
         </div>
         <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
       </div>
-      <PlanViewer plan={plan} view="coach" showMeta={false} />
+      <PlanDayNavigator plan={plan} view="coach" readOnly />
     </div>
   );
 }
