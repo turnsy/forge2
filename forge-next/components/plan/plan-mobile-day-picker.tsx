@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { IconButton } from "@/components/ui/icon-button";
+import { PillButton } from "@/components/ui/pill-button";
 import {
   buildPlanDayNavItems,
   getAdjacentDaySelection,
@@ -154,7 +155,7 @@ export function PlanMobileDayPicker({
           aria-expanded={open}
           aria-controls={dropdownId}
           onClick={toggleDropdown}
-          className={`flex min-w-0 flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-surface-foreground ${glassSurfaceClass()}`}
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2 py-2.5 text-sm font-medium text-surface-foreground"
         >
           <span className="truncate">{headerLabel}</span>
           <ChevronDownIcon
@@ -183,33 +184,32 @@ export function PlanMobileDayPicker({
           id={dropdownId}
           role="listbox"
           aria-label={`${getWeekDropdownLabel(previewWeek)} days`}
-          className={`absolute top-[calc(100%+0.5rem)] z-20 w-full p-2 ${glassSurfaceClass()}`}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          className={`absolute top-[calc(100%+0.5rem)] z-20 w-full p-3 ${glassSurfaceClass()}`}
         >
-          <p className="px-2 pb-2 text-xs font-medium text-surface-muted">
+          <div
+            className="px-1 pb-3 text-xs font-medium text-surface-muted"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {getWeekDropdownLabel(previewWeek)}
-          </p>
-          <div className="flex flex-col gap-1">
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {previewWeek.days.map((day) => {
               const isSelected =
                 previewWeek.index === selectedWeekIndex && day.index === selectedDayIndex;
 
               return (
-                <button
+                <PillButton
                   key={day.code}
                   type="button"
                   role="option"
+                  selected={isSelected}
                   aria-selected={isSelected}
+                  className="shrink-0"
                   onClick={() => handleSelectDay(previewWeek.index, day.index)}
-                  className={`rounded-card px-3 py-2 text-left text-sm font-medium transition ${
-                    isSelected
-                      ? "bg-glass-focus text-surface-foreground"
-                      : "text-surface-muted hover:bg-glass-focus/60 hover:text-surface-foreground"
-                  }`}
                 >
                   {getDayDropdownLabel(day)}
-                </button>
+                </PillButton>
               );
             })}
           </div>

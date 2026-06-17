@@ -182,7 +182,7 @@ describe("PlanDayNavigator", () => {
     render(<PlanDayNavigator plan={makeMultiWeekPlan()} view="coach" readOnly />);
 
     expect(screen.getByLabelText("Week")).toHaveTextContent("Week 1");
-    expect(screen.getByLabelText("Week")).toHaveTextContent("2: Deload Week");
+    expect(screen.getByLabelText("Week")).toHaveTextContent("Deload Week");
   });
 
   it("shows correct day labels", () => {

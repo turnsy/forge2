@@ -33,11 +33,11 @@ export function buildPlanDayNavItems(plan: WorkoutPlan): PlanDayNavItem[] {
 
 export function getWeekDropdownLabel(week: Week): string {
   if (week.label?.trim()) {
-    return `${week.index}: ${week.label.trim()}`;
+    return week.label.trim();
   }
 
   if (week.name?.trim()) {
-    return `${week.index}: ${week.name.trim()}`;
+    return week.name.trim();
   }
 
   return `Week ${week.index}`;

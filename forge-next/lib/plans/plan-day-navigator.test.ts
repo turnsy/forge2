@@ -3,6 +3,7 @@ import {
   getAdjacentDaySelection,
   getAdjacentWeekIndex,
   getMobileDayHeaderLabel,
+  getWeekDropdownLabel,
 } from "@/lib/plans/plan-day-navigator";
 import { buildPlanDayNavItems } from "@/lib/plans/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -31,6 +32,13 @@ function makePlan(): WorkoutPlan {
 describe("plan day navigator domain", () => {
   it("formats the mobile header label", () => {
     expect(getMobileDayHeaderLabel(1, 1)).toBe("Week 1, Day 1");
+  });
+
+  it("returns week labels without index prefixes", () => {
+    const plan = makePlan();
+    expect(getWeekDropdownLabel(plan.weeks[0])).toBe("Week 1");
+    expect(getWeekDropdownLabel(plan.weeks[1])).toBe("Deload Week");
+    expect(getWeekDropdownLabel({ index: 3, days: [] })).toBe("Week 3");
   });
 
   it("returns adjacent day selections across week boundaries", () => {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlanMobileDayPicker } from "@/components/plan/plan-mobile-day-picker";
@@ -148,15 +148,16 @@ describe("PlanMobileDayPicker", () => {
     await user.click(screen.getByRole("button", { name: "Week 1, Day 2" }));
 
     const dropdown = screen.getByRole("listbox", { name: "Week 1 days" });
+    const weekLabel = within(dropdown).getByText("Week 1");
 
-    fireEvent.touchStart(dropdown, {
+    fireEvent.touchStart(weekLabel, {
       touches: [{ clientX: 180 }],
     });
-    fireEvent.touchEnd(dropdown, {
+    fireEvent.touchEnd(weekLabel, {
       changedTouches: [{ clientX: 100 }],
     });
 
-    expect(screen.getByRole("listbox", { name: "2: Deload Week days" })).toBeInTheDocument();
+    expect(screen.getByRole("listbox", { name: "Deload Week days" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Day 1" })).toHaveAttribute(
       "aria-selected",
       "false",
