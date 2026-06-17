@@ -225,47 +225,42 @@ function SetRowInputs({
 function AthleteReadOnlyDayContent({ day }: { day: Day }) {
   return (
     <div className="space-y-4">
-      {day.exercises.map((exercise, exerciseIdx) => {
-        const exerciseComplete = isExerciseComplete(exercise);
+      {day.exercises.map((exercise, exerciseIdx) => (
+        <section
+          key={`${exercise.name}-${exerciseIdx}`}
+          className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
+        >
+          <h2 className="text-base font-semibold text-surface-foreground">
+            {exercise.name}
+          </h2>
+          <div className="space-y-3">
+            {exercise.sets.map((set, setIdx) => {
+              const filled = set.status === "completed";
+              const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
 
-        return (
-          <section
-            key={`${exercise.name}-${exerciseIdx}`}
-            className={exerciseCardClassName(exerciseComplete)}
-            data-exercise-complete={exerciseComplete ? "true" : "false"}
-          >
-            <h2 className="text-base font-semibold text-surface-foreground">
-              {exercise.name}
-            </h2>
-            <div className="space-y-3">
-              {exercise.sets.map((set, setIdx) => {
-                const filled = set.status === "completed";
-                const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
-
-                return (
-                  <div
-                    key={set.id}
-                    className={athleteReadOnlySetRowClassName(set)}
-                    data-set-status={set.status}
-                    data-set-complete={filled ? "true" : "false"}
-                  >
-                    <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
-                      {setIdx + 1}
-                    </span>
-                    <SetRowInputs
-                      set={set}
-                      reps={values.reps}
-                      load={values.load}
-                      readOnly
-                    />
-                    <SetCheckmark complete={filled} />
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+              return (
+                <div
+                  key={set.id}
+                  className={athleteReadOnlySetRowClassName(set)}
+                  data-set-status={set.status}
+                  data-set-complete={filled ? "true" : "false"}
+                >
+                  <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
+                    {setIdx + 1}
+                  </span>
+                  <SetRowInputs
+                    set={set}
+                    reps={values.reps}
+                    load={values.load}
+                    readOnly
+                  />
+                  <SetCheckmark complete={filled} />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
