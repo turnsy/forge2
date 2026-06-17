@@ -9,6 +9,7 @@ import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResul
 import {
   buildActualFromInputs,
   dayHasUnfilledNonTargetSets,
+  formatActualLoadInput,
   isExerciseComplete,
   isSetActualComplete,
   resolveSaveActual,
@@ -115,6 +116,43 @@ function setRowClassName(complete: boolean): string {
   );
 }
 
+function readOnlySetRowClassName(set: Set): string {
+  const base = "flex items-center gap-3 !p-3";
+
+  if (set.status === "skipped") {
+    return [
+      accordionClass("default"),
+      base,
+      "border-danger-border bg-danger-muted/60",
+    ].join(" ");
+  }
+
+  if (set.status === "completed") {
+    return [
+      accordionClass("default"),
+      base,
+      "border-orange-500/35 bg-orange-500/10",
+    ].join(" ");
+  }
+
+  return [accordionClass("default"), base].join(" ");
+}
+
+function readOnlySetCheckmarkClass(set: Set): string {
+  const base =
+    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm";
+
+  if (set.status === "skipped") {
+    return `${base} border-danger-border bg-danger-muted text-danger`;
+  }
+
+  if (set.status === "completed") {
+    return `${base} border-orange-500/50 bg-orange-500/15 text-orange-700 dark:text-orange-300`;
+  }
+
+  return `${base} border-glass-border text-surface-muted`;
+}
+
 function SetCheckmark({ complete }: { complete: boolean }) {
   return (
     <span aria-hidden="true" className={completionCheckmarkClass(complete)}>
@@ -145,6 +183,46 @@ function applyLocalActualsToDay(
       }) as typeof exercise.sets,
     })) as typeof day.exercises,
   };
+}
+
+function SetRowReadOnlyDisplay({ set }: { set: Set }) {
+  if (set.planned.type === "target") {
+    return (
+      <p className="min-w-0 flex-1 text-sm text-surface-foreground">
+        {set.planned.instruction}
+      </p>
+    );
+  }
+
+  if (set.status === "skipped") {
+    return (
+      <p className="min-w-0 flex-1 text-sm font-medium text-danger">Skipped</p>
+    );
+  }
+
+  const reps =
+    set.actual?.reps !== undefined && set.actual.reps !== ""
+      ? String(set.actual.reps)
+      : null;
+  const load = formatActualLoadInput(set);
+  const unit = getAbsoluteUnit(set);
+
+  if (!reps && !load) {
+    return <p className="min-w-0 flex-1 text-sm text-surface-muted">—</p>;
+  }
+
+  const loadSuffix =
+    set.planned.load.type === "percentage" ? "%" : unit ? ` ${unit}` : "";
+
+  return (
+    <p className="min-w-0 flex-1 text-sm text-surface-foreground">
+      <span className="font-medium">{reps ?? "—"}</span>
+      <span className="text-surface-muted"> of </span>
+      <span className="font-medium">
+        {load ? `${load}${loadSuffix}` : "—"}
+      </span>
+    </p>
+  );
 }
 
 function SetRowInputs({
@@ -196,6 +274,43 @@ function SetRowInputs({
         size="sm"
       />
       {unit ? <span className="shrink-0 text-sm text-surface-muted">{unit}</span> : null}
+    </div>
+  );
+}
+
+function AthleteReadOnlyDayContent({ day }: { day: Day }) {
+  return (
+    <div className="space-y-4">
+      {day.exercises.map((exercise, exerciseIdx) => (
+        <section
+          key={`${exercise.name}-${exerciseIdx}`}
+          className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
+        >
+          <h2 className="text-base font-semibold text-surface-foreground">
+            {exercise.name}
+          </h2>
+          <div className="space-y-3">
+            {exercise.sets.map((set, setIdx) => (
+              <div
+                key={set.id}
+                className={readOnlySetRowClassName(set)}
+                data-set-status={set.status}
+              >
+                <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
+                  {setIdx + 1}
+                </span>
+                <SetRowReadOnlyDisplay set={set} />
+                <span
+                  aria-hidden="true"
+                  className={readOnlySetCheckmarkClass(set)}
+                >
+                  {set.status === "skipped" ? "—" : "✓"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
@@ -618,23 +733,22 @@ export function PlanDayView({
 
   const { day } = location;
 
-  if (
-    view === "athlete" &&
-    !readOnly &&
-    isDayEditable(day) &&
-    assignmentId
-  ) {
-    return (
-      <AthleteEditableDayContent
-        key={`${weekIndex}-${dayIndex}`}
-        day={day}
-        weekIndex={weekIndex}
-        dayIndex={dayIndex}
-        assignmentId={assignmentId}
-        onDayCompleted={onDayCompleted}
-        onSaveStatusChange={onSaveStatusChange}
-      />
-    );
+  if (view === "athlete" && assignmentId) {
+    if (!readOnly && isDayEditable(day)) {
+      return (
+        <AthleteEditableDayContent
+          key={`${weekIndex}-${dayIndex}`}
+          day={day}
+          weekIndex={weekIndex}
+          dayIndex={dayIndex}
+          assignmentId={assignmentId}
+          onDayCompleted={onDayCompleted}
+          onSaveStatusChange={onSaveStatusChange}
+        />
+      );
+    }
+
+    return <AthleteReadOnlyDayContent day={day} />;
   }
 
   return <CoachDayContent day={day} />;
