@@ -200,6 +200,17 @@ export function pillClass(tone: PillTone = "default"): string {
   return `inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition ${pillToneClasses[tone]}`;
 }
 
+export function pillButtonClass(selected = false): string {
+  const base =
+    "inline-flex shrink-0 items-center justify-center rounded-full font-medium transition disabled:cursor-not-allowed disabled:opacity-60";
+
+  if (selected) {
+    return `${base} glass-button-primary px-3 py-1.5 text-xs`;
+  }
+
+  return `${base} border border-glass-border bg-glass px-3 py-1.5 text-xs text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus`;
+}
+
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
   const base =
     "inline-flex items-center gap-1.5 rounded-full border py-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";

@@ -10,6 +10,7 @@ import {
   pageBackGutterReserveClass,
   pageContentClass,
   pillClass,
+  pillButtonClass,
   cardClass,
   cardFooterClass,
   controlClass,
@@ -80,6 +81,11 @@ describe("surface theme helpers", () => {
   it("returns pill styling", () => {
     expect(pillClass()).toContain("rounded-full");
     expect(pillClass("danger")).toContain("bg-red-600");
+  });
+
+  it("returns pill button styling for selected and unselected states", () => {
+    expect(pillButtonClass(false)).toContain("bg-glass");
+    expect(pillButtonClass(true)).toContain("glass-button-primary");
   });
 
   it("uses tighter page padding on small screens", () => {

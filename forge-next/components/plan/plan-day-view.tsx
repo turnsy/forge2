@@ -617,7 +617,6 @@ export function PlanDayView({
   }
 
   const { day } = location;
-  const isCoachOrReadOnly = view === "coach" || readOnly;
 
   if (
     view === "athlete" &&

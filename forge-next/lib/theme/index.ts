@@ -32,6 +32,7 @@ export {
   pageBackGutterAlignClass,
   pageBackGutterReserveClass,
   pillClass,
+  pillButtonClass,
   type AttachmentChipTone,
   type ButtonSize,
   type ButtonVariant,

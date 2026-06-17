@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PlanDayView } from "@/components/plan/plan-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, PillButton, Select } from "@/components/ui";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { CurrentDayLocation } from "@/lib/athlete/plan/domain";
 import {
@@ -162,36 +162,34 @@ export function PlanDayNavigator({
 
       <div className="space-y-3">
         <div className="hidden items-center gap-3 md:flex">
-          <label className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="sr-only">Week</span>
-            <select
-              aria-label="Week"
-              className="rounded-md border border-surface-border bg-surface px-3 py-2 text-sm text-surface-foreground"
-              value={selectedWeekIndex}
-              onChange={(event) => handleWeekChange(Number(event.target.value))}
-            >
-              {weekOptions.map((option) => (
-                <option key={option.index} value={option.index}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="sr-only">Day</span>
-            <select
-              aria-label="Day"
-              className="rounded-md border border-surface-border bg-surface px-3 py-2 text-sm text-surface-foreground"
-              value={selectedDayIndex}
-              onChange={(event) => handleDayChange(Number(event.target.value))}
-            >
-              {dayOptions.map((option) => (
-                <option key={option.index} value={option.index}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Week"
+            hideLabel
+            size="sm"
+            wrapperClassName="min-w-0 flex-1"
+            value={selectedWeekIndex}
+            onChange={(event) => handleWeekChange(Number(event.target.value))}
+          >
+            {weekOptions.map((option) => (
+              <option key={option.index} value={option.index}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Day"
+            hideLabel
+            size="sm"
+            wrapperClassName="min-w-0 flex-1"
+            value={selectedDayIndex}
+            onChange={(event) => handleDayChange(Number(event.target.value))}
+          >
+            {dayOptions.map((option) => (
+              <option key={option.index} value={option.index}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div
@@ -205,24 +203,20 @@ export function PlanDayNavigator({
               item.weekIndex === selectedWeekIndex && item.dayIndex === selectedDayIndex;
 
             return (
-              <button
+              <PillButton
                 key={key}
                 ref={(node) => {
                   tileRefs.current[key] = node;
                 }}
-                type="button"
+                selected={isSelected}
                 aria-label={getMobileDayLabel(item.weekIndex, item.dayIndex)}
                 aria-current={isSelected ? "true" : undefined}
-                className={`w-[4.5em] shrink-0 rounded-full border px-2 py-1.5 text-center text-xs font-medium transition-colors ${
-                  isSelected
-                    ? "border-surface-foreground bg-surface-foreground text-background"
-                    : "border-surface-border bg-surface text-surface-foreground"
-                }`}
+                className="w-[4.5em] text-center"
                 style={{ scrollSnapAlign: "center" }}
                 onClick={() => handleMobileSelect(item.weekIndex, item.dayIndex)}
               >
                 {getMobileDayLabel(item.weekIndex, item.dayIndex)}
-              </button>
+              </PillButton>
             );
           })}
         </div>
