@@ -88,25 +88,6 @@ export function getAdjacentDaySelection(
   };
 }
 
-export function getAdjacentWeekIndex(
-  plan: WorkoutPlan,
-  weekIndex: number,
-  direction: "prev" | "next",
-): number | null {
-  const weekIndices = plan.weeks.map((week) => week.index);
-  const currentIndex = weekIndices.indexOf(weekIndex);
-  if (currentIndex === -1) {
-    return null;
-  }
-
-  const nextIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
-  if (nextIndex < 0 || nextIndex >= weekIndices.length) {
-    return null;
-  }
-
-  return weekIndices[nextIndex];
-}
-
 export function resolveDayLocation(
   plan: WorkoutPlan,
   weekIndex: number,

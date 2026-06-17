@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   getAdjacentDaySelection,
-  getAdjacentWeekIndex,
   getMobileDayHeaderLabel,
   getWeekDropdownLabel,
 } from "@/lib/plans/plan-day-navigator";
@@ -58,14 +57,5 @@ describe("plan day navigator domain", () => {
     });
     expect(getAdjacentDaySelection(items, 1, 1, "prev")).toBeNull();
     expect(getAdjacentDaySelection(items, 2, 1, "next")).toBeNull();
-  });
-
-  it("returns adjacent week indices for dropdown swipes", () => {
-    const plan = makePlan();
-
-    expect(getAdjacentWeekIndex(plan, 1, "next")).toBe(2);
-    expect(getAdjacentWeekIndex(plan, 2, "prev")).toBe(1);
-    expect(getAdjacentWeekIndex(plan, 1, "prev")).toBeNull();
-    expect(getAdjacentWeekIndex(plan, 2, "next")).toBeNull();
   });
 });

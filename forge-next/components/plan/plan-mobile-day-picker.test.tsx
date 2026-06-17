@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlanMobileDayPicker } from "@/components/plan/plan-mobile-day-picker";
@@ -106,7 +106,7 @@ describe("PlanMobileDayPicker", () => {
     expect(onSelect).toHaveBeenCalledWith({ weekIndex: 1, dayIndex: 2 });
   });
 
-  it("opens a dropdown of the current week's days and selects on tap", async () => {
+  it("opens a dropdown with every week and day, then selects on tap", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
 
@@ -121,46 +121,39 @@ describe("PlanMobileDayPicker", () => {
 
     await user.click(screen.getByRole("button", { name: "Week 1, Day 1" }));
 
-    expect(screen.getByRole("listbox", { name: "Week 1 days" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Day 1" })).toHaveAttribute(
+    expect(screen.getByRole("listbox", { name: "Plan days" })).toBeInTheDocument();
+    const weekOne = screen.getByLabelText("Week 1");
+    expect(screen.getByLabelText("Deload Week")).toBeInTheDocument();
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(within(weekOne).getByRole("option", { name: "Day 1" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
 
-    await user.click(screen.getByRole("option", { name: "Day 2" }));
+    await user.click(within(weekOne).getByRole("option", { name: "Day 2" }));
 
     expect(onSelect).toHaveBeenCalledWith({ weekIndex: 1, dayIndex: 2 });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
-  it("swipes between weeks in the dropdown", async () => {
+  it("can select a day from a later week", async () => {
     const user = userEvent.setup();
+    const onSelect = vi.fn();
 
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
         selectedWeekIndex={1}
-        selectedDayIndex={2}
-        onSelect={() => undefined}
+        selectedDayIndex={1}
+        onSelect={onSelect}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Week 1, Day 2" }));
+    await user.click(screen.getByRole("button", { name: "Week 1, Day 1" }));
 
-    const dropdown = screen.getByRole("listbox", { name: "Week 1 days" });
-    const weekLabel = within(dropdown).getByText("Week 1");
+    const deloadWeek = screen.getByLabelText("Deload Week");
+    await user.click(within(deloadWeek).getByRole("option", { name: "Day 1" }));
 
-    fireEvent.touchStart(weekLabel, {
-      touches: [{ clientX: 180 }],
-    });
-    fireEvent.touchEnd(weekLabel, {
-      changedTouches: [{ clientX: 100 }],
-    });
-
-    expect(screen.getByRole("listbox", { name: "Deload Week days" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Day 1" })).toHaveAttribute(
-      "aria-selected",
-      "false",
-    );
+    expect(onSelect).toHaveBeenCalledWith({ weekIndex: 2, dayIndex: 1 });
   });
 });
