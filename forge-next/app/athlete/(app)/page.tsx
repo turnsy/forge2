@@ -63,10 +63,8 @@ export default async function AthletePage() {
   return (
     <PageShell>
       <AthletePlanEntryView
-        key={`${currentDay.weekIndex}-${currentDay.dayIndex}`}
         assignmentId={assignment.id}
         plan={assignment.plan}
-        currentDay={currentDay}
         coachName={link.coachName}
       />
     </PageShell>

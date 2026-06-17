@@ -36,6 +36,15 @@ export function controlClass(size: "sm" | "md" = "md"): string {
   return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
 }
 
+export function selectClass(size: "sm" | "md" = "md"): string {
+  const sizeClass =
+    size === "sm"
+      ? "py-2 pl-3 pr-10 text-base"
+      : "py-3.5 pl-5 pr-12 text-base";
+
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer ${sizeClass}`;
+}
+
 export function buttonVariantClass(
   variant: ButtonVariant,
   fullWidth = true,
@@ -198,6 +207,17 @@ const pillToneClasses: Record<PillTone, string> = {
 
 export function pillClass(tone: PillTone = "default"): string {
   return `inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition ${pillToneClasses[tone]}`;
+}
+
+export function pillButtonClass(selected = false): string {
+  const base =
+    "inline-flex shrink-0 items-center justify-center rounded-full font-medium transition disabled:cursor-not-allowed disabled:opacity-60";
+
+  if (selected) {
+    return `${base} glass-button-primary px-3 py-1.5 text-xs`;
+  }
+
+  return `${base} border border-glass-border bg-glass px-3 py-1.5 text-xs text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus`;
 }
 
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {

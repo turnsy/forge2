@@ -10,9 +10,11 @@ import {
   pageBackGutterReserveClass,
   pageContentClass,
   pillClass,
+  pillButtonClass,
   cardClass,
   cardFooterClass,
   controlClass,
+  selectClass,
   dividerLineClass,
   messageToneClass,
 } from "@/lib/theme/surfaces";
@@ -56,6 +58,12 @@ describe("surface theme helpers", () => {
     expect(controlClass()).toContain("w-full");
   });
 
+  it("returns select styling with extra trailing padding for the chevron", () => {
+    expect(selectClass("sm")).toContain("pr-10");
+    expect(selectClass("md")).toContain("pr-12");
+    expect(selectClass()).toContain("cursor-pointer");
+  });
+
   it("returns tone-specific message styling", () => {
     expect(messageToneClass("error")).toContain("text-danger");
     expect(messageToneClass("success")).toContain("text-success");
@@ -80,6 +88,11 @@ describe("surface theme helpers", () => {
   it("returns pill styling", () => {
     expect(pillClass()).toContain("rounded-full");
     expect(pillClass("danger")).toContain("bg-red-600");
+  });
+
+  it("returns pill button styling for selected and unselected states", () => {
+    expect(pillButtonClass(false)).toContain("bg-glass");
+    expect(pillButtonClass(true)).toContain("glass-button-primary");
   });
 
   it("uses tighter page padding on small screens", () => {

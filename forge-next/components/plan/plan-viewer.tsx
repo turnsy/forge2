@@ -1,6 +1,6 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
-import { PlanWeekAccordion } from "@/components/plan/plan-week-accordion";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 
 export function PlanViewer({
@@ -22,11 +22,7 @@ export function PlanViewer({
       {plan.notes ? (
         <p className="text-sm text-surface-muted">{plan.notes}</p>
       ) : null}
-      <div className="space-y-4">
-        {plan.weeks.map((week) => (
-          <PlanWeekAccordion key={week.index} week={week} view={view} defaultOpen />
-        ))}
-      </div>
+      <PlanDayNavigator plan={plan} view={view} readOnly />
     </div>
   );
 }

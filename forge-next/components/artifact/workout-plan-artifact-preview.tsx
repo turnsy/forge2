@@ -1,4 +1,4 @@
-import { PlanViewer } from "@/components/plan/plan-viewer";
+import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { Spinner } from "@/components/ui";
 import { shouldShowPreviewSpinner } from "@/lib/chat/run-status-copy";
 import type { ChatStatus } from "@/lib/chat/types";
@@ -20,7 +20,7 @@ export function WorkoutPlanArtifactPreview({
           <Spinner label="Working…" />
         </div>
       ) : null}
-      <PlanViewer plan={plan} view="coach" />
+      <PlanDayNavigator plan={plan} view="coach" readOnly />
     </div>
   );
 }

@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PlanViewer } from "@/components/plan/plan-viewer";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+
+vi.mock("@/lib/hooks/use-is-mobile", () => ({
+  useIsMobile: () => false,
+}));
 
 function makePlanWithIdenticalSets(setCount: number): WorkoutPlan {
   return {
@@ -61,7 +65,7 @@ function makePlanWithIdenticalSets(setCount: number): WorkoutPlan {
 }
 
 describe("PlanViewer", () => {
-  it("renders one table row per set in coach view", () => {
+  it("renders one table row per set in coach view via PlanDayNavigator", () => {
     render(<PlanViewer plan={makePlanWithIdenticalSets(3)} view="coach" />);
 
     expect(screen.getByText("Hang SN")).toBeInTheDocument();
@@ -78,19 +82,12 @@ describe("PlanViewer", () => {
     expect(screen.queryByText("completed")).not.toBeInTheDocument();
   });
 
-  it("renders week accordion open by default", () => {
+  it("renders day navigation dropdowns", () => {
     render(<PlanViewer plan={makePlanWithIdenticalSets(1)} view="coach" />);
 
-    expect(screen.getByRole("button", { name: /Week 1/i })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-  });
-
-  it("renders day accordions with Day index titles", () => {
-    render(<PlanViewer plan={makePlanWithIdenticalSets(1)} view="coach" />);
-
-    expect(screen.getByRole("button", { name: /Day 1/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Week")).toBeInTheDocument();
+    expect(screen.getByLabelText("Day")).toBeInTheDocument();
+    expect(screen.getByLabelText("Day")).toHaveTextContent("Day 1");
     expect(screen.queryByText("w1d1")).not.toBeInTheDocument();
   });
 
@@ -99,6 +96,6 @@ describe("PlanViewer", () => {
 
     expect(screen.queryByText("Weeks")).not.toBeInTheDocument();
     expect(screen.queryByText("Days/week")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Week 1/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Week")).toBeInTheDocument();
   });
 });
