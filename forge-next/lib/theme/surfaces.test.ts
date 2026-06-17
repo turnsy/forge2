@@ -14,6 +14,7 @@ import {
   cardClass,
   cardFooterClass,
   controlClass,
+  selectClass,
   dividerLineClass,
   messageToneClass,
 } from "@/lib/theme/surfaces";
@@ -55,6 +56,12 @@ describe("surface theme helpers", () => {
     expect(controlClass()).toContain("glass-surface");
     expect(controlClass()).toContain("rounded-control");
     expect(controlClass()).toContain("w-full");
+  });
+
+  it("returns select styling with extra trailing padding for the chevron", () => {
+    expect(selectClass("sm")).toContain("pr-10");
+    expect(selectClass("md")).toContain("pr-12");
+    expect(selectClass()).toContain("cursor-pointer");
   });
 
   it("returns tone-specific message styling", () => {

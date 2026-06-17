@@ -1,5 +1,5 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
-import { controlClass } from "@/lib/theme";
+import { selectClass } from "@/lib/theme";
 
 export function Select({
   label,
@@ -16,7 +16,7 @@ export function Select({
   size?: "sm" | "md";
   children: ReactNode;
 }) {
-  const selectClassName = `${controlClass(size)} cursor-pointer${className ? ` ${className}` : ""}`;
+  const selectClassName = `${selectClass(size)}${className ? ` ${className}` : ""}`;
   const select = (
     <select className={selectClassName} {...props}>
       {children}

@@ -13,6 +13,7 @@ describe("Select", () => {
     const select = screen.getByRole("combobox", { name: "Week" });
     expect(select.className).toContain("glass-surface");
     expect(select.className).toContain("rounded-control");
+    expect(select.className).toContain("pr-12");
     expect(select.className).toContain("cursor-pointer");
   });
 

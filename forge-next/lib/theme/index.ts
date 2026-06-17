@@ -14,6 +14,7 @@ export {
   cardClass,
   cardFooterClass,
   controlClass,
+  selectClass,
   dividerLineClass,
   iconButtonVariantClass,
   listRowClass,

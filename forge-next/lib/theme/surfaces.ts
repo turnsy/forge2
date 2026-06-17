@@ -36,6 +36,15 @@ export function controlClass(size: "sm" | "md" = "md"): string {
   return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
 }
 
+export function selectClass(size: "sm" | "md" = "md"): string {
+  const sizeClass =
+    size === "sm"
+      ? "py-2 pl-3 pr-10 text-base"
+      : "py-3.5 pl-5 pr-12 text-base";
+
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer ${sizeClass}`;
+}
+
 export function buttonVariantClass(
   variant: ButtonVariant,
   fullWidth = true,
