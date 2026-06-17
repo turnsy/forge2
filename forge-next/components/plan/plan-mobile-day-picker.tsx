@@ -149,7 +149,12 @@ export function PlanMobileDayPicker({
                 <h3 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-surface-muted">
                   {getWeekDropdownLabel(week)}
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div
+                  className="grid w-full gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${week.days.length}, minmax(0, 1fr))`,
+                  }}
+                >
                   {week.days.map((day) => {
                     const isSelected =
                       week.index === selectedWeekIndex && day.index === selectedDayIndex;
@@ -161,7 +166,7 @@ export function PlanMobileDayPicker({
                         role="option"
                         selected={isSelected}
                         aria-selected={isSelected}
-                        className="shrink-0"
+                        className="w-full"
                         onClick={() => handleSelectDay(week.index, day.index)}
                       >
                         {getDayDropdownLabel(day)}
