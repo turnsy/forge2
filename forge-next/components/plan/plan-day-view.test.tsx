@@ -85,7 +85,7 @@ describe("PlanDayView", () => {
     expect(screen.getByText("Back Squat")).toBeInTheDocument();
   });
 
-  it("shows athlete read-only layout for completed day with status shading", () => {
+  it("shows athlete read-only layout for completed day with filled green inputs", () => {
     const { container } = render(
       <PlanDayView
         plan={makePlan({ dayComplete: true })}
@@ -97,16 +97,16 @@ describe("PlanDayView", () => {
     );
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText("8")).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("8")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("60")).toBeInTheDocument();
     expect(screen.getByText("Back Squat")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument();
-    expect(screen.getByText("60 kg")).toBeInTheDocument();
 
     const completedRow = container.querySelector('[data-set-status="completed"]');
-    expect(completedRow).toHaveClass("bg-orange-500/10");
+    expect(completedRow).toHaveClass("bg-success-muted");
+    expect(completedRow?.querySelector("input")).toHaveAttribute("readonly");
   });
 
-  it("shades skipped sets red in athlete read-only view", () => {
+  it("shades skipped sets orange with empty inputs in athlete read-only view", () => {
     const { container } = render(
       <PlanDayView
         plan={makePlan({ dayComplete: true, includeSkippedSet: true })}
@@ -117,10 +117,14 @@ describe("PlanDayView", () => {
       />,
     );
 
-    expect(screen.getByText("Skipped")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("5")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("80")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("5")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("80")).not.toBeInTheDocument();
 
     const skippedRow = container.querySelector('[data-set-status="skipped"]');
-    expect(skippedRow).toHaveClass("bg-danger-muted/60");
+    expect(skippedRow).toHaveClass("bg-orange-500/10");
+    expect(skippedRow).toHaveAttribute("data-set-complete", "false");
   });
 
   it("shows set inputs for athlete editable view on incomplete day", () => {
