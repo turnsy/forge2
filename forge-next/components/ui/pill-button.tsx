@@ -16,7 +16,6 @@ export const PillButton = forwardRef<
       ref={ref}
       type="button"
       className={`${pillButtonClass(selected)}${className ? ` ${className}` : ""}`}
-      aria-pressed={selected}
       {...props}
     >
       {children}

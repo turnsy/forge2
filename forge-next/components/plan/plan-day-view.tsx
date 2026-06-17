@@ -29,6 +29,7 @@ import {
 } from "@/lib/theme";
 
 const SAVE_DEBOUNCE_MS = 800;
+const COMPLETE_DAY_ERROR = "Could not complete the day. Try again.";
 
 type SetFormState = {
   reps: string;
@@ -547,13 +548,13 @@ function AthleteEditableDayContent({
         const result = await completeDayAction(assignmentId, weekIndex, dayIndex);
 
         if (!result.ok) {
-          setCompleteError("Could not complete the day. Try again.");
+          setCompleteError(COMPLETE_DAY_ERROR);
           return;
         }
 
         handleCompleteSuccess(result.allDaysDone);
       } catch {
-        setCompleteError("Could not complete the day. Try again.");
+        setCompleteError(COMPLETE_DAY_ERROR);
       }
     });
   }
@@ -566,13 +567,13 @@ function AthleteEditableDayContent({
         setConfirmSkipOpen(false);
 
         if (!result.ok) {
-          setCompleteError("Could not complete the day. Try again.");
+          setCompleteError(COMPLETE_DAY_ERROR);
           return;
         }
 
         handleCompleteSuccess(result.allDaysDone);
       } catch {
-        setCompleteError("Could not complete the day. Try again.");
+        setCompleteError(COMPLETE_DAY_ERROR);
         setConfirmSkipOpen(false);
       }
     });

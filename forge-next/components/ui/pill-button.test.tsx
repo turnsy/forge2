@@ -9,7 +9,7 @@ describe("PillButton", () => {
     const button = screen.getByRole("button", { name: "W1 D1" });
     expect(button.className).toContain("bg-glass");
     expect(button.className).toContain("border-glass-border");
-    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button).not.toHaveAttribute("aria-pressed");
   });
 
   it("uses primary glass styling when selected", () => {
@@ -17,6 +17,19 @@ describe("PillButton", () => {
 
     const button = screen.getByRole("button", { name: "W1 D1" });
     expect(button.className).toContain("glass-button-primary");
-    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).not.toHaveAttribute("aria-pressed");
+  });
+
+  it("allows callers to set toggle semantics via aria-pressed", () => {
+    render(
+      <PillButton selected aria-pressed>
+        W1 D1
+      </PillButton>,
+    );
+
+    expect(screen.getByRole("button", { name: "W1 D1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });
