@@ -39,6 +39,8 @@ function ArtifactPanel({
   onBackClick,
   onTitleChange,
   onSave,
+  disabled,
+  onPlanChange,
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
@@ -48,6 +50,8 @@ function ArtifactPanel({
   onBackClick: (event: MouseEvent<HTMLAnchorElement>) => void;
   onTitleChange: (title: string) => void;
   onSave: () => void;
+  disabled: boolean;
+  onPlanChange: (plan: WorkoutPlan) => void;
 }) {
   return (
     <FadeIn
@@ -85,6 +89,8 @@ function ArtifactPanel({
             artifact={toArtifactPreviewModel(state.currentArtifact)}
             runStatus={state.runStatus}
             isAwaitingArtifact={false}
+            disabled={disabled}
+            onPlanChange={onPlanChange}
           />
         </div>
       </div>
@@ -128,6 +134,7 @@ export function CoachWorkspace({
     sendMessage,
     setArtifactTitle,
     setPlanId,
+    setArtifact,
     restart,
   } = useCoachPlanWorkspace(
     initialPlan && initialPlanId
@@ -158,6 +165,13 @@ export function CoachWorkspace({
       await sendMessage(...args);
     },
     [activePlanId, resetSaveStatus, sendMessage],
+  );
+
+  const handlePlanChange = useCallback(
+    (plan: WorkoutPlan) => {
+      setArtifact(plan);
+    },
+    [setArtifact],
   );
 
   const handleSave = useCallback(async () => {
@@ -321,6 +335,8 @@ export function CoachWorkspace({
                 onBackClick={handleBackClick}
                 onTitleChange={setArtifactTitle}
                 onSave={handleSave}
+                disabled={isChatRunning(state)}
+                onPlanChange={handlePlanChange}
               />
             </div>
           </div>
@@ -392,6 +408,8 @@ export function CoachWorkspace({
               onBackClick={handleBackClick}
               onTitleChange={setArtifactTitle}
               onSave={handleSave}
+              disabled={isChatRunning(state)}
+              onPlanChange={handlePlanChange}
             />
           ) : null}
         </div>

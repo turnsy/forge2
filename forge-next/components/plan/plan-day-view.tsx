@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { Button, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
@@ -51,6 +52,8 @@ export type PlanDayViewProps = {
   coachName?: string;
   onDayCompleted?: (allDaysDone: boolean) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
+  onPlanChange?: (plan: WorkoutPlan) => void;
+  disabled?: boolean;
 };
 
 function getSetKey(exerciseIdx: number, setIdx: number): string {
@@ -672,6 +675,8 @@ export function PlanDayView({
   assignmentId,
   onDayCompleted,
   onSaveStatusChange,
+  onPlanChange,
+  disabled = false,
 }: PlanDayViewProps) {
   if (!plan) {
     return <p className="text-sm text-surface-muted">Day not found</p>;
@@ -700,6 +705,18 @@ export function PlanDayView({
     }
 
     return <AthleteReadOnlyDayContent day={day} />;
+  }
+
+  if (view === "coach" && !readOnly && onPlanChange && plan) {
+    return (
+      <CoachEditableDayView
+        plan={plan}
+        weekIndex={weekIndex}
+        dayIndex={dayIndex}
+        disabled={disabled}
+        onPlanChange={onPlanChange}
+      />
+    );
   }
 
   return <CoachDayContent day={day} />;

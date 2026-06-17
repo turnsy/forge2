@@ -1,8 +1,9 @@
 import { WorkoutPlanArtifactPreview } from "@/components/artifact/workout-plan-artifact-preview";
 import { Spinner } from "@/components/ui";
 import { getRunStatusLabel } from "@/lib/chat/run-status-copy";
-import type { ChatStatus } from "@/lib/chat/types";
 import type { ArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
+import type { ChatStatus } from "@/lib/chat/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function PreviewLoadingState({ label }: { label: string }) {
   return (
@@ -17,10 +18,14 @@ export function ArtifactPreview({
   artifact,
   runStatus,
   isAwaitingArtifact,
+  disabled,
+  onPlanChange,
 }: {
   artifact: ArtifactPreviewModel;
   runStatus: ChatStatus | null;
   isAwaitingArtifact: boolean;
+  disabled: boolean;
+  onPlanChange: (plan: WorkoutPlan) => void;
 }) {
   if (!artifact) {
     if (isAwaitingArtifact) {
@@ -44,6 +49,8 @@ export function ArtifactPreview({
         <WorkoutPlanArtifactPreview
           plan={artifact.plan}
           runStatus={runStatus}
+          disabled={disabled}
+          onPlanChange={onPlanChange}
         />
       );
     default: {

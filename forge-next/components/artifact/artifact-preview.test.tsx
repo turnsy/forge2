@@ -14,6 +14,8 @@ const samplePlan: WorkoutPlan = {
   weeks: [],
 };
 
+const noopPlanChange = vi.fn();
+
 describe("ArtifactPreview", () => {
   it("shows a loading state while awaiting the first artifact", () => {
     render(
@@ -21,6 +23,8 @@ describe("ArtifactPreview", () => {
         artifact={null}
         runStatus="generating"
         isAwaitingArtifact
+        disabled={false}
+        onPlanChange={noopPlanChange}
       />,
     );
     expect(screen.getByLabelText("Generating")).toBeInTheDocument();
@@ -32,6 +36,8 @@ describe("ArtifactPreview", () => {
         artifact={null}
         runStatus={null}
         isAwaitingArtifact={false}
+        disabled={false}
+        onPlanChange={noopPlanChange}
       />,
     );
     expect(screen.getByText("Working…")).toBeInTheDocument();
@@ -43,10 +49,12 @@ describe("ArtifactPreview", () => {
         artifact={{ type: "workout-plan", plan: minimalWorkoutPlan }}
         runStatus="done"
         isAwaitingArtifact={false}
+        disabled={false}
+        onPlanChange={noopPlanChange}
       />,
     );
     expect(screen.getByLabelText("Week")).toBeInTheDocument();
-    expect(screen.getByText("Back Squat")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
   });
 
   it("shows a spinner overlay during sandbox when an artifact exists", () => {
@@ -55,6 +63,8 @@ describe("ArtifactPreview", () => {
         artifact={{ type: "workout-plan", plan: samplePlan }}
         runStatus="sandbox"
         isAwaitingArtifact={false}
+        disabled={false}
+        onPlanChange={noopPlanChange}
       />,
     );
     expect(screen.getByLabelText("Working…")).toBeInTheDocument();

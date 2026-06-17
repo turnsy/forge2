@@ -7,9 +7,13 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 export function WorkoutPlanArtifactPreview({
   plan,
   runStatus,
+  disabled,
+  onPlanChange,
 }: {
   plan: WorkoutPlan;
   runStatus: ChatStatus | null;
+  disabled: boolean;
+  onPlanChange: (plan: WorkoutPlan) => void;
 }) {
   const showOverlaySpinner = shouldShowPreviewSpinner(runStatus);
 
@@ -20,7 +24,13 @@ export function WorkoutPlanArtifactPreview({
           <Spinner label="Working…" />
         </div>
       ) : null}
-      <PlanDayNavigator plan={plan} view="coach" readOnly />
+      <PlanDayNavigator
+        plan={plan}
+        view="coach"
+        readOnly={false}
+        onPlanChange={onPlanChange}
+        disabled={disabled}
+      />
     </div>
   );
 }

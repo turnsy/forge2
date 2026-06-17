@@ -23,6 +23,8 @@ export type PlanDayNavigatorProps = {
   coachName?: string;
   readOnly?: boolean;
   onDayCompleted?: (allDaysDone: boolean, completedDay: CurrentDayLocation) => void;
+  onPlanChange?: (plan: WorkoutPlan) => void;
+  disabled?: boolean;
 };
 
 function SaveIndicator({
@@ -62,6 +64,8 @@ export function PlanDayNavigator({
   assignmentId,
   readOnly = false,
   onDayCompleted,
+  onPlanChange,
+  disabled = false,
 }: PlanDayNavigatorProps) {
   const defaultSelection = useMemo(
     () => getInitialDaySelection(plan, view, initialDay),
@@ -180,6 +184,8 @@ export function PlanDayNavigator({
         view={view}
         readOnly={readOnly}
         assignmentId={assignmentId}
+        onPlanChange={onPlanChange}
+        disabled={disabled}
         onDayCompleted={
           view === "athlete" && !readOnly
             ? (allDaysDone) => handleDayCompleted(allDaysDone)

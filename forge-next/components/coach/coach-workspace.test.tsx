@@ -67,6 +67,7 @@ function mockWorkspaceReturn(state: PlanWorkspaceState) {
     sendMessage: vi.fn(),
     setArtifactTitle: vi.fn(),
     setPlanId: mockSetPlanId,
+    setArtifact: vi.fn(),
     restart: mockRestart,
   };
 }
