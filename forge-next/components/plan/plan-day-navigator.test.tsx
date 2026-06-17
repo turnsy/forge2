@@ -145,14 +145,25 @@ describe("PlanDayNavigator", () => {
     expect(screen.getByText("Week 1 Day 1 Exercise")).toBeInTheDocument();
   });
 
-  it("renders horizontal scroll on mobile viewport", () => {
+  it("renders the mobile day picker header on mobile viewport", () => {
     mockUseIsMobile.mockReturnValue(true);
 
     render(<PlanDayNavigator plan={makeMultiWeekPlan()} view="coach" readOnly />);
 
-    expect(screen.getByRole("button", { name: "W1 D1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "W1 D2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "W2 D1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Week 1, Day 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous day" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next day" })).toBeInTheDocument();
+  });
+
+  it("navigates days from the mobile header arrows", async () => {
+    mockUseIsMobile.mockReturnValue(true);
+    const user = userEvent.setup();
+
+    render(<PlanDayNavigator plan={makeMultiWeekPlan()} view="coach" readOnly />);
+
+    await user.click(screen.getByRole("button", { name: "Next day" }));
+    expect(screen.getByText("Week 1 Day 2 Exercise")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Week 1, Day 2" })).toBeInTheDocument();
   });
 
   it("changing week resets day to Day 1", async () => {

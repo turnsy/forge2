@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { PlanDayView } from "@/components/plan/plan-day-view";
+import { PlanMobileDayPicker } from "@/components/plan/plan-mobile-day-picker";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
-import { PageHeader, PillButton, Select } from "@/components/ui";
-import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import { PageHeader, Select } from "@/components/ui";
 import type { CurrentDayLocation } from "@/lib/athlete/plan/domain";
 import {
-  buildPlanDayNavItems,
   clampDaySelectionForWeek,
   getDayDropdownLabel,
   getInitialDaySelection,
-  getMobileDayLabel,
   getWeekDropdownLabel,
   type DaySelection,
 } from "@/lib/plans/plan-day-navigator";
@@ -65,8 +63,6 @@ export function PlanDayNavigator({
   readOnly = false,
   onDayCompleted,
 }: PlanDayNavigatorProps) {
-  const isMobile = useIsMobile();
-  const navItems = useMemo(() => buildPlanDayNavItems(plan), [plan]);
   const defaultSelection = useMemo(
     () => getInitialDaySelection(plan, view, initialDay),
     [plan, view, initialDay],
@@ -76,31 +72,7 @@ export function PlanDayNavigator({
   const [selectedDayIndex, setSelectedDayIndex] = useState(defaultSelection.dayIndex);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const tileRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
   const selectionKey = `${selectedWeekIndex}-${selectedDayIndex}`;
-
-  useEffect(() => {
-    if (!isMobile) {
-      return;
-    }
-
-    const key = `${selectedWeekIndex}-${selectedDayIndex}`;
-    const tile = tileRefs.current[key];
-    const container = scrollContainerRef.current;
-
-    if (!tile || !container) {
-      return;
-    }
-
-    const tileLeft = tile.offsetLeft;
-    const tileWidth = tile.offsetWidth;
-    const containerWidth = container.offsetWidth;
-    const scrollLeft = tileLeft - containerWidth / 2 + tileWidth / 2;
-
-    container.scrollTo?.({ left: scrollLeft, behavior: "smooth" });
-  }, [isMobile, selectedWeekIndex, selectedDayIndex]);
 
   function handleWeekChange(weekIndex: number) {
     const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
@@ -117,7 +89,7 @@ export function PlanDayNavigator({
     setSelectedDayIndex(dayIndex);
   }
 
-  function handleMobileSelect(weekIndex: number, dayIndex: number) {
+  function handleMobileSelect({ weekIndex, dayIndex }: DaySelection) {
     setSelectedWeekIndex(weekIndex);
     setSelectedDayIndex(dayIndex);
   }
@@ -192,34 +164,12 @@ export function PlanDayNavigator({
           </Select>
         </div>
 
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-2 overflow-x-auto pb-1 md:hidden"
-          style={{ scrollSnapType: "x mandatory" }}
-        >
-          {navItems.map((item) => {
-            const key = `${item.weekIndex}-${item.dayIndex}`;
-            const isSelected =
-              item.weekIndex === selectedWeekIndex && item.dayIndex === selectedDayIndex;
-
-            return (
-              <PillButton
-                key={key}
-                ref={(node) => {
-                  tileRefs.current[key] = node;
-                }}
-                selected={isSelected}
-                aria-label={getMobileDayLabel(item.weekIndex, item.dayIndex)}
-                aria-current={isSelected ? "true" : undefined}
-                className="w-[4.5em] text-center"
-                style={{ scrollSnapAlign: "center" }}
-                onClick={() => handleMobileSelect(item.weekIndex, item.dayIndex)}
-              >
-                {getMobileDayLabel(item.weekIndex, item.dayIndex)}
-              </PillButton>
-            );
-          })}
-        </div>
+        <PlanMobileDayPicker
+          plan={plan}
+          selectedWeekIndex={selectedWeekIndex}
+          selectedDayIndex={selectedDayIndex}
+          onSelect={handleMobileSelect}
+        />
       </div>
 
       <PlanDayView

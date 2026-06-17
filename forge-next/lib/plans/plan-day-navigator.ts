@@ -51,6 +51,62 @@ export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
   return `W${weekIndex} D${dayIndex}`;
 }
 
+export function getMobileDayHeaderLabel(weekIndex: number, dayIndex: number): string {
+  return `Week ${weekIndex}, Day ${dayIndex}`;
+}
+
+export function findNavItemIndex(
+  items: PlanDayNavItem[],
+  weekIndex: number,
+  dayIndex: number,
+): number {
+  return items.findIndex(
+    (item) => item.weekIndex === weekIndex && item.dayIndex === dayIndex,
+  );
+}
+
+export function getAdjacentDaySelection(
+  items: PlanDayNavItem[],
+  weekIndex: number,
+  dayIndex: number,
+  direction: "prev" | "next",
+): DaySelection | null {
+  const currentIndex = findNavItemIndex(items, weekIndex, dayIndex);
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  const nextIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+  if (nextIndex < 0 || nextIndex >= items.length) {
+    return null;
+  }
+
+  const item = items[nextIndex];
+  return {
+    weekIndex: item.weekIndex,
+    dayIndex: item.dayIndex,
+  };
+}
+
+export function getAdjacentWeekIndex(
+  plan: WorkoutPlan,
+  weekIndex: number,
+  direction: "prev" | "next",
+): number | null {
+  const weekIndices = plan.weeks.map((week) => week.index);
+  const currentIndex = weekIndices.indexOf(weekIndex);
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  const nextIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+  if (nextIndex < 0 || nextIndex >= weekIndices.length) {
+    return null;
+  }
+
+  return weekIndices[nextIndex];
+}
+
 export function resolveDayLocation(
   plan: WorkoutPlan,
   weekIndex: number,
