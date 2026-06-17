@@ -348,7 +348,7 @@ function EditableExerciseBlock({
       ...exercise,
       sets: exercise.sets.map((set, index) =>
         index === setIndex ? updater(set) : set,
-      ),
+      ) as typeof exercise.sets,
     });
   }
 
@@ -361,7 +361,7 @@ function EditableExerciseBlock({
     );
 
     if (nextSets !== exercise.sets) {
-      onExerciseChange({ ...exercise, sets: nextSets });
+      onExerciseChange({ ...exercise, sets: nextSets as typeof exercise.sets });
     }
   }
 
@@ -519,7 +519,9 @@ function EditableExerciseBlock({
                       onDelete={() => {
                         onExerciseChange({
                           ...exercise,
-                          sets: exercise.sets.filter((_, index) => index !== setIndex),
+                          sets: exercise.sets.filter(
+                            (_, index) => index !== setIndex,
+                          ) as typeof exercise.sets,
                         });
                       }}
                     />
@@ -564,7 +566,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
   function updateExercise(exerciseIndex: number, exercise: Exercise) {
     const nextExercises = [...editableDay.exercises];
     nextExercises[exerciseIndex] = exercise;
-    emitChange({ ...editableDay, exercises: nextExercises });
+    emitChange({ ...editableDay, exercises: nextExercises as typeof editableDay.exercises });
   }
 
   function moveExercise(exerciseIndex: number, direction: -1 | 1) {
@@ -576,7 +578,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
     const nextExercises = [...editableDay.exercises];
     const [moved] = nextExercises.splice(exerciseIndex, 1);
     nextExercises.splice(targetIndex, 0, moved);
-    emitChange({ ...editableDay, exercises: nextExercises });
+    emitChange({ ...editableDay, exercises: nextExercises as typeof editableDay.exercises });
   }
 
   return (
