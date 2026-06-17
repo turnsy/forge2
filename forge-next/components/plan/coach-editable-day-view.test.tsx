@@ -216,6 +216,50 @@ describe("CoachEditableDayView", () => {
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].exercises).toHaveLength(3);
     expect(lastCall.weeks[0].days[0].exercises[2].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].exercises[2].id).toBeTruthy();
+  });
+
+  it("assigns stable ids to exercises without one", () => {
+    const plan = makePlan();
+    delete plan.weeks[0].days[0].exercises[0].id;
+
+    let currentPlan = plan;
+    const onPlanChange = vi.fn((updated: WorkoutPlan) => {
+      currentPlan = updated;
+    });
+
+    const { rerender } = render(
+      <CoachEditableDayView
+        plan={currentPlan}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByDisplayValue("Bench Press"), {
+      target: { value: "Incline Bench" },
+    });
+
+    const exerciseId = currentPlan.weeks[0].days[0].exercises[0].id;
+    expect(exerciseId).toBeTruthy();
+
+    rerender(
+      <CoachEditableDayView
+        plan={currentPlan}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByDisplayValue("Incline Bench"), {
+      target: { value: "Flat Bench" },
+    });
+
+    expect(currentPlan.weeks[0].days[0].exercises[0].id).toBe(exerciseId);
   });
 
   it("removes an exercise when delete is clicked", async () => {

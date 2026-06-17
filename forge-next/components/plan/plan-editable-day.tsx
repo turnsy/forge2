@@ -46,25 +46,30 @@ export type PlanEditableDayProps = {
   onChange: (day: Day) => void;
 };
 
-type EditableExercise = Omit<Exercise, "sets"> & { sets: Set[] };
-type EditableDay = Omit<Day, "exercises"> & { exercises: EditableExercise[] };
-
-function toEditableDay(day: Day): EditableDay {
+function cloneDayForEditing(day: Day): Day {
   return {
     ...day,
     exercises: day.exercises.map((exercise) => ({
-      ...exercise,
+      ...ensureExerciseId(exercise),
       sets: [...exercise.sets],
-    })),
+    })) as Day["exercises"],
   };
-}
-
-function toDay(day: EditableDay): Day {
-  return day as unknown as Day;
 }
 
 function createSetId(): string {
   return crypto.randomUUID();
+}
+
+function createExerciseId(): string {
+  return crypto.randomUUID();
+}
+
+function ensureExerciseId(exercise: Exercise): Exercise {
+  if (exercise.id) {
+    return exercise;
+  }
+
+  return { ...exercise, id: createExerciseId() };
 }
 
 function parseRepsValue(value: string): RepsValue {
@@ -241,7 +246,7 @@ function SortableSetRow({
   }
 
   const planned = set.planned as ExactPlannedSet;
-  const notes = planned.notes ?? set.notes ?? "";
+  const notes = planned.notes ?? "";
 
   return (
     <tr
@@ -254,8 +259,8 @@ function SortableSetRow({
       <td className="px-2 py-2">
         <button
           type="button"
-          className={`flex cursor-grab items-center active:cursor-grabbing ${
-            disabled ? "cursor-not-allowed" : ""
+          className={`flex items-center ${
+            disabled ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"
           }`}
           aria-label="Drag to reorder set"
           disabled={disabled}
@@ -326,11 +331,11 @@ function EditableExerciseBlock({
   onMoveUp,
   onMoveDown,
 }: {
-  exercise: EditableExercise;
+  exercise: Exercise;
   exerciseIndex: number;
   exerciseCount: number;
   disabled: boolean;
-  onExerciseChange: (exercise: EditableExercise) => void;
+  onExerciseChange: (exercise: Exercise) => void;
   onDeleteExercise: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -550,13 +555,13 @@ function EditableExerciseBlock({
 }
 
 export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProps) {
-  const editableDay = toEditableDay(day);
+  const editableDay = cloneDayForEditing(day);
 
-  function emitChange(nextDay: EditableDay) {
-    onChange(toDay(nextDay));
+  function emitChange(nextDay: Day) {
+    onChange(nextDay);
   }
 
-  function updateExercise(exerciseIndex: number, exercise: EditableExercise) {
+  function updateExercise(exerciseIndex: number, exercise: Exercise) {
     const nextExercises = [...editableDay.exercises];
     nextExercises[exerciseIndex] = exercise;
     emitChange({ ...editableDay, exercises: nextExercises });
@@ -594,7 +599,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
 
       {editableDay.exercises.map((exercise, exerciseIndex) => (
         <EditableExerciseBlock
-          key={`${exercise.id ?? exercise.name}-${exerciseIndex}`}
+          key={exercise.id}
           exercise={exercise}
           exerciseIndex={exerciseIndex}
           exerciseCount={editableDay.exercises.length}
@@ -605,7 +610,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
               ...editableDay,
               exercises: editableDay.exercises.filter(
                 (_, index) => index !== exerciseIndex,
-              ),
+              ) as Day["exercises"],
             });
           }}
           onMoveUp={() => moveExercise(exerciseIndex, -1)}
@@ -626,6 +631,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
             exercises: [
               ...editableDay.exercises,
               {
+                id: createExerciseId(),
                 name: "New Exercise",
                 sets: [createDefaultSet()],
               },
