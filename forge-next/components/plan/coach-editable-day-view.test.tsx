@@ -24,6 +24,49 @@ function makeSet(id: string, reps: number, weight: number): Set {
   };
 }
 
+function makePercentagePlan(): WorkoutPlan {
+  return {
+    schemaVersion: "2.0.0",
+    name: "Percentage Block",
+    weeks: [
+      {
+        index: 1,
+        days: [
+          {
+            index: 1,
+            code: "w1d1",
+            name: "Squat Day",
+            exercises: [
+              {
+                name: "Back Squat",
+                sets: [
+                  {
+                    id: "set-pct-1",
+                    planned: {
+                      type: "exact",
+                      reps: 5,
+                      load: {
+                        type: "percentage",
+                        unit: "%",
+                        operator: "exact",
+                        value: 75,
+                        basis: "back_squat_1rm",
+                      },
+                    },
+                    actual: null,
+                    status: "planned",
+                    locked: false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 function makePlan(): WorkoutPlan {
   return {
     schemaVersion: "2.0.0",
@@ -424,6 +467,80 @@ describe("CoachEditableDayView", () => {
     if (load.type === "exact" && load.load.type === "absolute") {
       expect(load.load.unit).toBe("");
     }
+  });
+
+  it("edits percentage load operator, values, and basis", () => {
+    function Harness() {
+      const [plan, setPlan] = useState(makePercentagePlan());
+
+      return (
+        <CoachEditableDayView
+          plan={plan}
+          weekIndex={1}
+          dayIndex={1}
+          disabled={false}
+          onPlanChange={setPlan}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    expect(screen.getByLabelText("Set 1 target percentage")).toHaveValue("75");
+    expect(screen.getByLabelText("Percentage basis")).toHaveValue("back_squat_1rm");
+
+    fireEvent.change(screen.getByLabelText("Percentage operator"), {
+      target: { value: "range" },
+    });
+
+    expect(screen.getByLabelText("Set 1 minimum percentage")).toHaveValue("75");
+    expect(screen.getByLabelText("Set 1 maximum percentage")).toHaveValue("80");
+
+    fireEvent.change(screen.getByLabelText("Set 1 minimum percentage"), {
+      target: { value: "70" },
+    });
+    fireEvent.change(screen.getByLabelText("Set 1 maximum percentage"), {
+      target: { value: "80" },
+    });
+
+    fireEvent.change(screen.getByLabelText("Percentage basis"), {
+      target: { value: "snatch_1rm" },
+    });
+
+    expect(screen.getByLabelText("Percentage basis")).toHaveValue("snatch_1rm");
+    expect(screen.getByLabelText("Set 1 minimum percentage")).toHaveValue("70");
+    expect(screen.getByLabelText("Set 1 maximum percentage")).toHaveValue("80");
+  });
+
+  it("switches a set between absolute and percentage loads", () => {
+    function Harness() {
+      const [plan, setPlan] = useState(makePlan());
+
+      return (
+        <CoachEditableDayView
+          plan={plan}
+          weekIndex={1}
+          dayIndex={1}
+          disabled={false}
+          onPlanChange={setPlan}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    fireEvent.change(screen.getAllByLabelText("Load type")[0], {
+      target: { value: "percentage" },
+    });
+
+    expect(screen.getByLabelText("Set 1 target percentage")).toHaveValue("100");
+
+    fireEvent.change(screen.getAllByLabelText("Load type")[0], {
+      target: { value: "absolute" },
+    });
+
+    expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("100");
+    expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
   });
 
   it("disables inputs and buttons when disabled", () => {
