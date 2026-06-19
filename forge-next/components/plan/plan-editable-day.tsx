@@ -208,6 +208,7 @@ function LoadUnitControl({
   disabled: boolean;
   onChange: (unit: string) => void;
 }) {
+  const unitControlClass = "w-[4.75rem] shrink-0";
   const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
   const customInputRef = useRef<HTMLInputElement>(null);
 
@@ -251,7 +252,7 @@ function LoadUnitControl({
         disabled={disabled}
         aria-label="Custom unit"
         placeholder="e.g. mi"
-        className="w-24 min-w-0"
+        className={unitControlClass}
         onChange={(event) => onChange(event.target.value)}
         onBlur={handleCustomBlur}
         onKeyDown={(event) => {
@@ -271,7 +272,7 @@ function LoadUnitControl({
       size="sm"
       value={selectValue}
       disabled={disabled}
-      className="w-[4.75rem] shrink-0"
+      className={unitControlClass}
       onChange={handleSelectChange}
     >
       {PRESET_LOAD_UNITS.map((preset) => (
