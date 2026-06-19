@@ -208,7 +208,7 @@ function LoadUnitControl({
   disabled: boolean;
   onChange: (unit: string) => void;
 }) {
-  const unitControlClass = "w-[4.75rem] shrink-0";
+  const unitControlWidthClass = "w-[4.75rem] shrink-0";
   const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
   const customInputRef = useRef<HTMLInputElement>(null);
 
@@ -245,43 +245,47 @@ function LoadUnitControl({
 
   if (customActive) {
     return (
-      <Input
-        ref={customInputRef}
-        size="sm"
-        value={getCustomUnitInputValue(unit, customActive)}
-        disabled={disabled}
-        aria-label="Custom unit"
-        placeholder="e.g. mi"
-        className={unitControlClass}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={handleCustomBlur}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setCustomActive(false);
-            onChange("lb");
-          }
-        }}
-      />
+      <div className={unitControlWidthClass}>
+        <Input
+          ref={customInputRef}
+          size="sm"
+          value={getCustomUnitInputValue(unit, customActive)}
+          disabled={disabled}
+          aria-label="Custom unit"
+          placeholder="e.g. mi"
+          className="w-full min-w-0"
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={handleCustomBlur}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setCustomActive(false);
+              onChange("lb");
+            }
+          }}
+        />
+      </div>
     );
   }
 
   return (
-    <Select
-      hideLabel
-      label="Unit"
-      size="sm"
-      value={selectValue}
-      disabled={disabled}
-      className={unitControlClass}
-      onChange={handleSelectChange}
-    >
-      {PRESET_LOAD_UNITS.map((preset) => (
-        <option key={preset} value={preset}>
-          {preset}
-        </option>
-      ))}
-      <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
-    </Select>
+    <div className={unitControlWidthClass}>
+      <Select
+        hideLabel
+        label="Unit"
+        size="sm"
+        value={selectValue}
+        disabled={disabled}
+        className="w-full"
+        onChange={handleSelectChange}
+      >
+        {PRESET_LOAD_UNITS.map((preset) => (
+          <option key={preset} value={preset}>
+            {preset}
+          </option>
+        ))}
+        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
+      </Select>
+    </div>
   );
 }
 
