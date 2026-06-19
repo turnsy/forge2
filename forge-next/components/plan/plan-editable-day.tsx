@@ -26,6 +26,11 @@ import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input, Select } from "@/components/ui";
 import { formatReps } from "@/lib/plans/display";
 import {
+  createDefaultSet,
+  createExerciseId,
+  createSetId,
+} from "@/lib/plans/plan-defaults";
+import {
   CUSTOM_LOAD_UNIT_OPTION,
   isPresetLoadUnit,
   PRESET_LOAD_UNITS,
@@ -60,14 +65,6 @@ function cloneDayForEditing(day: Day): Day {
       sets: [...exercise.sets],
     })) as Day["exercises"],
   };
-}
-
-function createSetId(): string {
-  return crypto.randomUUID();
-}
-
-function createExerciseId(): string {
-  return crypto.randomUUID();
 }
 
 function ensureExerciseId(exercise: Exercise): Exercise {
@@ -142,20 +139,6 @@ function getCustomUnitInputValue(unit: string, customActive: boolean): string {
   }
 
   return unit;
-}
-
-function createDefaultSet(): Set {
-  return {
-    id: createSetId(),
-    planned: {
-      type: "exact",
-      reps: 10,
-      load: { type: "absolute", value: 0, unit: "lb" },
-    },
-    actual: null,
-    status: "planned",
-    locked: false,
-  };
 }
 
 function cloneSetFromPrevious(previous: Set): Set {
