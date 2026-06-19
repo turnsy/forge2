@@ -122,23 +122,119 @@ function updateLoadUnit(load: Load, unit: string): Load {
     return load;
   }
 
-  const trimmed = unit.trim();
-  if (!trimmed) {
-    return load;
-  }
-
   return {
     ...load,
-    unit: trimmed,
+    unit: unit.trim(),
   } satisfies AbsoluteLoad;
 }
 
-function getCustomUnitInputValue(unit: string, customActive: boolean): string {
-  if (!customActive || isPresetLoadUnit(unit)) {
-    return "";
+function LoadUnitControl({
+  unit,
+  disabled,
+  onChange,
+}: {
+  unit: string;
+  disabled: boolean;
+  onChange: (unit: string) => void;
+}) {
+  const unitControlWidthClass = "w-[4.75rem] shrink-0";
+  const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
+  const [customDraft, setCustomDraft] = useState(() =>
+    !isPresetLoadUnit(unit) ? unit : "",
+  );
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (customActive && !isPresetLoadUnit(unit)) {
+      setCustomDraft(unit);
+    }
+  }, [customActive, unit]);
+
+  useEffect(() => {
+    if (customActive) {
+      customInputRef.current?.focus();
+    }
+  }, [customActive]);
+
+  function enterCustomMode() {
+    setCustomDraft(isPresetLoadUnit(unit) ? "" : unit);
+    setCustomActive(true);
   }
 
-  return unit;
+  function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
+    const next = event.target.value;
+    if (next === CUSTOM_LOAD_UNIT_OPTION) {
+      enterCustomMode();
+      return;
+    }
+
+    setCustomActive(false);
+    onChange(next);
+  }
+
+  function handleCustomBlur() {
+    const trimmed = customDraft.trim();
+    if (!trimmed || isPresetLoadUnit(trimmed)) {
+      setCustomActive(false);
+      onChange("lb");
+      return;
+    }
+
+    if (trimmed !== unit) {
+      onChange(trimmed);
+    }
+  }
+
+  const selectValue = customActive ? CUSTOM_LOAD_UNIT_OPTION : unit;
+
+  if (customActive) {
+    return (
+      <div className={unitControlWidthClass}>
+        <Input
+          ref={customInputRef}
+          size="sm"
+          value={customDraft}
+          disabled={disabled}
+          aria-label="Custom unit"
+          placeholder="e.g. mi"
+          className="w-full min-w-0"
+          onChange={(event) => {
+            const next = event.target.value;
+            setCustomDraft(next);
+            onChange(next);
+          }}
+          onBlur={handleCustomBlur}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setCustomActive(false);
+              onChange("lb");
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={unitControlWidthClass}>
+      <Select
+        hideLabel
+        label="Unit"
+        size="sm"
+        value={selectValue}
+        disabled={disabled}
+        className="w-full"
+        onChange={handleSelectChange}
+      >
+        {PRESET_LOAD_UNITS.map((preset) => (
+          <option key={preset} value={preset}>
+            {preset}
+          </option>
+        ))}
+        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
+      </Select>
+    </div>
+  );
 }
 
 function cloneSetFromPrevious(previous: Set): Set {
@@ -179,96 +275,6 @@ export function reorderSetsInExercise(
   }
 
   return arrayMove(sets, oldIndex, newIndex);
-}
-
-function LoadUnitControl({
-  unit,
-  disabled,
-  onChange,
-}: {
-  unit: string;
-  disabled: boolean;
-  onChange: (unit: string) => void;
-}) {
-  const unitControlWidthClass = "w-[4.75rem] shrink-0";
-  const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
-  const customInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (customActive) {
-      customInputRef.current?.focus();
-    }
-  }, [customActive]);
-
-  function enterCustomMode() {
-    setCustomActive(true);
-  }
-
-  function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    const next = event.target.value;
-    if (next === CUSTOM_LOAD_UNIT_OPTION) {
-      enterCustomMode();
-      return;
-    }
-
-    setCustomActive(false);
-    onChange(next);
-  }
-
-  function handleCustomBlur() {
-    const trimmed = unit.trim();
-    if (!trimmed || isPresetLoadUnit(trimmed)) {
-      setCustomActive(false);
-      onChange("lb");
-    }
-  }
-
-  const selectValue = customActive ? CUSTOM_LOAD_UNIT_OPTION : unit;
-
-  if (customActive) {
-    return (
-      <div className={unitControlWidthClass}>
-        <Input
-          ref={customInputRef}
-          size="sm"
-          value={getCustomUnitInputValue(unit, customActive)}
-          disabled={disabled}
-          aria-label="Custom unit"
-          placeholder="e.g. mi"
-          className="w-full min-w-0"
-          onChange={(event) => onChange(event.target.value)}
-          onBlur={handleCustomBlur}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setCustomActive(false);
-              onChange("lb");
-            }
-          }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={unitControlWidthClass}>
-      <Select
-        hideLabel
-        label="Unit"
-        size="sm"
-        value={selectValue}
-        disabled={disabled}
-        className="w-full"
-        onChange={handleSelectChange}
-      >
-        {PRESET_LOAD_UNITS.map((preset) => (
-          <option key={preset} value={preset}>
-            {preset}
-          </option>
-        ))}
-        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
-      </Select>
-    </div>
-  );
 }
 
 function GripIcon() {
@@ -523,8 +529,8 @@ function EditableExerciseBlock({
         value={exercise.notes ?? ""}
         readOnly={disabled}
         rows={1}
-        placeholder="Exercise notes"
-        aria-label="Exercise notes"
+        placeholder="Notes"
+        aria-label="Notes"
         className={`${controlClass("sm")} min-h-[2.25rem] w-full resize-y`}
         onChange={(event) =>
           onExerciseChange({

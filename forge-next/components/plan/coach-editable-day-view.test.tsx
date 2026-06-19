@@ -397,6 +397,35 @@ describe("CoachEditableDayView", () => {
     }
   });
 
+  it("allows clearing a custom load unit while editing", () => {
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    const unitSelect = screen.getAllByLabelText("Unit")[0];
+    fireEvent.change(unitSelect, { target: { value: "__custom__" } });
+
+    const customUnitInput = screen.getByLabelText("Custom unit");
+    fireEvent.change(customUnitInput, { target: { value: "mi" } });
+    fireEvent.change(customUnitInput, { target: { value: "" } });
+
+    expect(customUnitInput).toHaveValue("");
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    expect(load.type).toBe("exact");
+    if (load.type === "exact" && load.load.type === "absolute") {
+      expect(load.load.unit).toBe("");
+    }
+  });
+
   it("disables inputs and buttons when disabled", () => {
     render(
       <CoachEditableDayView
