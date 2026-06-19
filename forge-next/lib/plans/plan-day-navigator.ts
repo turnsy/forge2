@@ -52,7 +52,7 @@ export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
 }
 
 export function getMobileDayHeaderLabel(week: Week, day: Day): string {
-  return `${getWeekDropdownLabel(week)}, ${getDayDropdownLabel(day)}`;
+  return `Week ${week.index}, Day ${day.index}`;
 }
 
 export function findNavItemIndex(

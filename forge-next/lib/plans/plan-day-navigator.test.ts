@@ -36,7 +36,7 @@ describe("plan day navigator domain", () => {
     );
     expect(
       getMobileDayHeaderLabel(plan.weeks[1], plan.weeks[1].days[0]),
-    ).toBe("Deload Week, Day 1");
+    ).toBe("Week 2, Day 1");
   });
 
   it("returns week labels without index prefixes", () => {
