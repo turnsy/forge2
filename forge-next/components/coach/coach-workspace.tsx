@@ -10,7 +10,6 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
-  DESKTOP_ARTIFACT_COLUMN_CLASS,
   DESKTOP_CHAT_CLOSE_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
@@ -34,7 +33,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass } from "@/lib/theme";
+import { roleLinkClass, pageShellClass } from "@/lib/theme";
 
 function ArtifactPanel({
   state,
@@ -408,7 +407,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${DESKTOP_ARTIFACT_COLUMN_CLASS}`
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none`
               : "hidden"
           }
         >

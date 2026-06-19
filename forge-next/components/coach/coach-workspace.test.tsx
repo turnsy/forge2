@@ -139,8 +139,8 @@ describe("CoachWorkspace layout", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
-    expect(container.innerHTML).toContain("md:pr-4");
-    expect(container.innerHTML).toContain("md:pt-4");
+    expect(container.innerHTML).toContain("md:p-8");
+    expect(container.innerHTML).toContain("!max-w-none");
   });
 
   it("restarts workspace on close from coach home", async () => {

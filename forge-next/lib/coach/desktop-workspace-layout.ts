@@ -1,9 +1,6 @@
 /** Fills the available main-column height for coach workspace panes. */
 export const DESKTOP_WORKSPACE_HEIGHT_CLASS = "h-full min-h-0";
 
-/** Desktop artifact column: top inset for toolbar/back, right gutter before chat. */
-export const DESKTOP_ARTIFACT_COLUMN_CLASS = "md:pt-4 md:pr-4";
-
 /** Desktop chat column: separated from artifact by border only (no top inset). */
 export const DESKTOP_CHAT_COLUMN_CLASS = "border-l border-glass-border";
 

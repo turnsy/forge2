@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DESKTOP_ARTIFACT_COLUMN_CLASS,
   DESKTOP_CHAT_CLOSE_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
@@ -10,11 +9,6 @@ describe("desktop workspace layout classes", () => {
   it("defines full-height workspace panes", () => {
     expect(DESKTOP_WORKSPACE_HEIGHT_CLASS).toContain("h-full");
     expect(DESKTOP_WORKSPACE_HEIGHT_CLASS).toContain("min-h-0");
-  });
-
-  it("adds top and right inset on the artifact column only", () => {
-    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).toContain("md:pt-4");
-    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).toContain("md:pr-4");
   });
 
   it("separates chat with a border and no top inset", () => {
