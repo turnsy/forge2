@@ -71,7 +71,8 @@ export type ChatSetArtifactEvent<TArtifact = unknown> = {
   type: "setArtifact";
   artifact: TArtifact;
   title: string;
-  planId: string;
+  planId?: string;
+  assignmentId?: string;
 };
 
 export type ChatWarningsEvent = {

@@ -11,7 +11,8 @@ import {
 export type CoachAgentToolsContext = PlanChatToolsContext & {
   currentArtifact: WorkoutPlan | null;
   onSetCurrentArtifact: (input: {
-    planId: string;
+    planId?: string;
+    assignmentId?: string;
     plan: WorkoutPlan;
     title: string;
   }) => void;
@@ -23,7 +24,7 @@ export function createCoachAgentTools(ctx: CoachAgentToolsContext) {
     ...createPlanChatTools(ctx),
     ...createFoundationTools({ currentArtifact: ctx.currentArtifact }),
     ...createReadTools({ coachId: ctx.coachId }),
-    ...createMutateTools(),
+    ...createMutateTools({ coachId: ctx.coachId }),
     ...createArtifactTools({
       coachId: ctx.coachId,
       onSetCurrentArtifact: ctx.onSetCurrentArtifact,

@@ -40,22 +40,43 @@ describe("createPlanChatTools", () => {
   });
 
   it("captures python on submit_plan_code", async () => {
-    let captured = "";
+    let captured = { python: "", assignmentId: undefined as string | undefined };
     mockList.mockResolvedValue([]);
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: (python) => {
-        captured = python;
+      onSubmitPlanCode: (input) => {
+        captured = input;
       },
     });
 
     await tools.submit_plan_code.execute!({ python: "print('hi')" }, toolCtx);
 
-    expect(captured).toBe("print('hi')");
+    expect(captured).toEqual({ python: "print('hi')" });
+  });
 
-    const listed = await tools.list_session_files.execute!({}, toolCtx);
-    expect(listed.paths).toEqual([]);
+  it("captures assignmentId on submit_plan_code", async () => {
+    let captured = { python: "", assignmentId: undefined as string | undefined };
+    const tools = createPlanChatTools({
+      coachId: "c",
+      sessionId: "s",
+      onSubmitPlanCode: (input) => {
+        captured = input;
+      },
+    });
+
+    await tools.submit_plan_code.execute!(
+      {
+        python: "print('hi')",
+        assignmentId: "00000000-0000-4000-8000-000000000001",
+      },
+      toolCtx,
+    );
+
+    expect(captured).toEqual({
+      python: "print('hi')",
+      assignmentId: "00000000-0000-4000-8000-000000000001",
+    });
   });
 
   it("read_session_file returns file content", async () => {

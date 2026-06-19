@@ -238,6 +238,62 @@ class ForgePlanTests(unittest.TestCase):
             data = load_seed_from_file(handle.name)
         self.assertEqual(data, empty_plan_template())
 
+    def _plan_with_locked_set(self) -> Plan:
+        data = empty_plan_template()
+        data["name"] = "Assigned"
+        data["weeks"] = [
+            {
+                "index": 1,
+                "days": [
+                    {
+                        "index": 1,
+                        "code": "w1d1",
+                        "exercises": [
+                            {
+                                "name": "Squat",
+                                "sets": [
+                                    {
+                                        "id": "w1d1-sq-1",
+                                        "planned": {
+                                            "type": "exact",
+                                            "reps": 5,
+                                            "load": {
+                                                "type": "absolute",
+                                                "value": 100,
+                                                "unit": "kg",
+                                            },
+                                        },
+                                        "actual": {"reps": 5},
+                                        "status": "completed",
+                                        "locked": True,
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+        return Plan(data)
+
+    def test_remove_locked_set_raises(self) -> None:
+        plan = self._plan_with_locked_set()
+        with self.assertRaises(ValueError) as ctx:
+            plan.remove_set(1, 1, 0, 0)
+        self.assertIn("locked", str(ctx.exception).lower())
+
+    def test_remove_exercise_with_locked_set_raises(self) -> None:
+        plan = self._plan_with_locked_set()
+        with self.assertRaises(ValueError) as ctx:
+            plan.remove_exercise(1, 1, 0)
+        self.assertIn("locked", str(ctx.exception).lower())
+
+    def test_add_set_on_assigned_plan_is_allowed(self) -> None:
+        plan = self._plan_with_locked_set()
+        plan.add_set(week_index=1, day_index=1, reps=3, load_value=80, unit="kg")
+        sets = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"]
+        self.assertEqual(len(sets), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

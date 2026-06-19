@@ -1,6 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { getCoachAthleteActiveAssignment } from "@/lib/athlete/plan/repository";
 import { getCoachPlanById } from "@/lib/plans/repository";
+import { countAssignmentEditability } from "@/lib/plans/assignment-editability";
 import { summarizePlan } from "@/lib/plans/summarize-plan";
 import { toToolNotFound } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -8,50 +10,100 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 export type ArtifactToolsContext = {
   coachId: string;
   onSetCurrentArtifact: (input: {
-    planId: string;
+    planId?: string;
+    assignmentId?: string;
     plan: WorkoutPlan;
     title: string;
   }) => void;
   onClearCurrentArtifact: () => void;
 };
 
+const artifactRefSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("plan"),
+    id: z.string().uuid().describe("Saved plan id."),
+  }),
+  z.object({
+    type: z.literal("assignment"),
+    id: z.string().uuid().describe("Athlete profile id."),
+  }),
+]);
+
 export function createArtifactTools(ctx: ArtifactToolsContext) {
   return {
     set_current_artifact: tool({
       description:
-        "Load a saved plan into the preview for editing. Use only when the user wants to edit a saved plan that is not already in preview (e.g. \"edit Summer Block\", \"add a week to this plan\"). Does not return full plan JSON.",
-      inputSchema: z.object({
-        planId: z.string().uuid().describe("Saved plan id."),
-      }),
-      execute: async ({ planId }) => {
-        const result = await getCoachPlanById(ctx.coachId, planId);
+        "Load a saved plan or an athlete's active assignment into the preview for editing. Use for saved plans (type=plan) or in-progress athlete assignments (type=assignment). Does not return full plan JSON.",
+      inputSchema: artifactRefSchema,
+      execute: async ({ type, id }) => {
+        if (type === "plan") {
+          const result = await getCoachPlanById(ctx.coachId, id);
 
-        if (result.status === "not_found") {
-          return toToolNotFound("Plan");
-        }
+          if (result.status === "not_found") {
+            return toToolNotFound("Plan");
+          }
 
-        if (result.status === "invalid") {
+          if (result.status === "invalid") {
+            return {
+              ok: false as const,
+              code: "invalid" as const,
+              message: "Plan data failed validation.",
+            };
+          }
+
+          const { detail } = result;
+          const title = detail.plan.name;
+
+          ctx.onSetCurrentArtifact({
+            planId: detail.id,
+            plan: detail.plan,
+            title,
+          });
+
           return {
-            ok: false as const,
-            code: "invalid" as const,
-            message: "Plan data failed validation.",
+            ok: true as const,
+            type: "plan" as const,
+            planId: detail.id,
+            name: title,
+            summary: summarizePlan(detail.plan),
           };
         }
 
-        const { detail } = result;
-        const title = detail.plan.name;
+        const result = await getCoachAthleteActiveAssignment(ctx.coachId, id);
+
+        if (!result.ok) {
+          return {
+            ok: false as const,
+            code: "db_error" as const,
+            message: result.message,
+          };
+        }
+
+        if (!result.plan) {
+          return toToolNotFound("Active assignment");
+        }
+
+        const { plan: assignment } = result;
+        const title = assignment.plan.name;
+        const { editableDayCount, lockedDayCount } = countAssignmentEditability(
+          assignment.plan,
+        );
 
         ctx.onSetCurrentArtifact({
-          planId: detail.id,
-          plan: detail.plan,
+          assignmentId: assignment.id,
+          plan: assignment.plan,
           title,
         });
 
         return {
           ok: true as const,
-          planId: detail.id,
+          type: "assignment" as const,
+          assignmentId: assignment.id,
+          athleteId: assignment.athleteId,
           name: title,
-          summary: summarizePlan(detail.plan),
+          summary: summarizePlan(assignment.plan),
+          editableDayCount,
+          lockedDayCount,
         };
       },
     }),

@@ -93,7 +93,7 @@ describe("coach agent integration", () => {
         createModel: () => ({}) as never,
         streamTextFn: mockStreamTextWithTools(async (tools) => {
           const result = await tools.set_current_artifact!.execute!(
-            { planId: "00000000-0000-4000-8000-000000000001" },
+            { type: "plan", id: "00000000-0000-4000-8000-000000000001" },
             toolCtx,
           );
           expect(result).toMatchObject({

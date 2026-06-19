@@ -211,6 +211,7 @@ class Plan:
     def move_week(self, from_index: int, to_index: int) -> None:
         """Reorder weeks by 0-based array position; renumbers indices and day codes."""
         weeks = self._ensure_weeks()
+        self._require_no_locked_sets_in_week(weeks[from_index], context="move_week")
         move_list_item(weeks, from_index, to_index)
         self._sync_structure()
 
@@ -219,6 +220,7 @@ class Plan:
         weeks = self._ensure_weeks()
         if index < 0 or index >= len(weeks):
             raise ValueError(f"week array index {index} out of range")
+        self._require_no_locked_sets_in_week(weeks[index], context="remove_week")
         weeks.pop(index)
         self._sync_structure()
 
@@ -227,6 +229,7 @@ class Plan:
         week_pos = self._schema_week_position(week_index)
         week = self._require_week_at(week_pos)
         days = week.setdefault("days", [])
+        self._require_no_locked_sets_in_day(days[from_index], context="move_day")
         move_list_item(days, from_index, to_index)
         self._sync_structure()
 
@@ -237,6 +240,7 @@ class Plan:
         days = week.setdefault("days", [])
         if index < 0 or index >= len(days):
             raise ValueError(f"day array index {index} out of range")
+        self._require_no_locked_sets_in_day(days[index], context="remove_day")
         days.pop(index)
         self._sync_structure()
 
@@ -247,6 +251,10 @@ class Plan:
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
         day = self._require_day_at(week_pos, day_pos)
         exercises = day.setdefault("exercises", [])
+        self._require_no_locked_sets_in_exercise(
+            exercises[from_index],
+            context="move_exercise",
+        )
         move_list_item(exercises, from_index, to_index)
         self._sync_structure()
 
@@ -257,6 +265,10 @@ class Plan:
         exercises = day.setdefault("exercises", [])
         if index < 0 or index >= len(exercises):
             raise ValueError(f"exercise array index {index} out of range")
+        self._require_no_locked_sets_in_exercise(
+            exercises[index],
+            context="remove_exercise",
+        )
         exercises.pop(index)
         self._sync_structure()
 
@@ -275,6 +287,7 @@ class Plan:
         if exercise_index < 0 or exercise_index >= len(exercises):
             raise ValueError(f"exercise_index {exercise_index} out of range")
         sets = exercises[exercise_index].setdefault("sets", [])
+        self._require_editable_set(sets[from_index], context="move_set")
         move_list_item(sets, from_index, to_index)
         self._sync_structure()
 
@@ -294,6 +307,7 @@ class Plan:
         sets = exercises[exercise_index].setdefault("sets", [])
         if index < 0 or index >= len(sets):
             raise ValueError(f"set array index {index} out of range")
+        self._require_editable_set(sets[index], context="remove_set")
         sets.pop(index)
         self._sync_structure()
 
@@ -426,6 +440,55 @@ class Plan:
         if day_pos < 0 or day_pos >= len(days):
             raise ValueError(f"day array index {day_pos} out of range")
         return days[day_pos]
+
+    @staticmethod
+    def _is_locked_set(set_entry: dict[str, Any]) -> bool:
+        return str(set_entry.get("status")) in {"completed", "skipped"}
+
+    def _require_editable_set(self, set_entry: dict[str, Any], *, context: str) -> None:
+        if self._is_locked_set(set_entry):
+            raise ValueError(
+                f"Cannot {context}: set status is {set_entry.get('status')!r} (locked)"
+            )
+
+    def _require_no_locked_sets_in_exercise(
+        self,
+        exercise: dict[str, Any],
+        *,
+        context: str,
+    ) -> None:
+        sets = exercise.get("sets")
+        if not isinstance(sets, list):
+            return
+        for set_entry in sets:
+            if self._is_locked_set(set_entry):
+                raise ValueError(
+                    f"Cannot {context}: exercise contains locked sets"
+                )
+
+    def _require_no_locked_sets_in_day(
+        self,
+        day: dict[str, Any],
+        *,
+        context: str,
+    ) -> None:
+        exercises = day.get("exercises")
+        if not isinstance(exercises, list):
+            return
+        for exercise in exercises:
+            self._require_no_locked_sets_in_exercise(exercise, context=context)
+
+    def _require_no_locked_sets_in_week(
+        self,
+        week: dict[str, Any],
+        *,
+        context: str,
+    ) -> None:
+        days = week.get("days")
+        if not isinstance(days, list):
+            return
+        for day in days:
+            self._require_no_locked_sets_in_day(day, context=context)
 
 
 def summarize(plan: Plan | dict[str, Any]) -> str:

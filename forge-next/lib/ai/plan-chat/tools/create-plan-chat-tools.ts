@@ -4,10 +4,15 @@ import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 import { loadUploadContextById } from "@/lib/uploads/context-storage";
 import { SESSION_UPLOAD_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
 
+export type SubmitPlanCodeInput = {
+  python: string;
+  assignmentId?: string;
+};
+
 export type PlanChatToolsContext = {
   coachId: string;
   sessionId: string;
-  onSubmitPlanCode: (python: string) => void;
+  onSubmitPlanCode: (input: SubmitPlanCodeInput) => void;
 };
 
 function truncateSessionUploadText(
@@ -61,7 +66,7 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
 
     submit_plan_code: tool({
       description:
-        "Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. Server runs sandbox after this turn.",
+        "Submit the full Python source for run.py to create or update the workout plan. When editing an assigned plan, include assignmentId from set_current_artifact. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. Server runs sandbox after this turn.",
       inputSchema: z.object({
         python: z
           .string()
@@ -69,9 +74,16 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
           .describe(
             "Complete run.py body: load seed, build all requested weeks/days/exercises, write output/plan.json.",
           ),
+        assignmentId: z
+          .string()
+          .uuid()
+          .optional()
+          .describe(
+            "Active assignment id when editing an athlete's in-progress plan.",
+          ),
       }),
-      execute: async ({ python }) => {
-        ctx.onSubmitPlanCode(python);
+      execute: async ({ python, assignmentId }) => {
+        ctx.onSubmitPlanCode({ python, assignmentId });
         return {
           ok: true as const,
           message: "Code queued. The server will run the sandbox after this turn.",

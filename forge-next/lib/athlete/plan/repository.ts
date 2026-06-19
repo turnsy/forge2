@@ -54,6 +54,12 @@ export type CompleteDayResult = ServiceResult<{
   setStatuses: { setIndex: number; status: SetCompletionStatus }[];
 }>;
 
+export type CoachAthleteActiveAssignmentResult = ServiceResult<{
+  plan: AssignedPlan | null;
+}>;
+
+export type UpdateActiveAssignmentStatusResult = ServiceResult<Record<never, never>>;
+
 async function resolveClient(client?: AthletePlanClient): Promise<AthletePlanClient> {
   return client ?? (await createClient());
 }
@@ -76,6 +82,28 @@ export function mapAssignedPlanRow(row: AssignedPlanRow): AssignedPlan | null {
     planVersionId: row.plan_version_id,
     plan: result.plan,
   };
+}
+
+export async function getCoachAthleteActiveAssignment(
+  coachId: string,
+  athleteId: string,
+  client?: AthletePlanClient,
+): Promise<CoachAthleteActiveAssignmentResult> {
+  const result = await getActiveAthletePlan(athleteId, client);
+
+  if (!result.ok) {
+    return result;
+  }
+
+  if (!result.plan) {
+    return { ok: true, plan: null };
+  }
+
+  if (result.plan.coachId !== coachId) {
+    return { ok: true, plan: null };
+  }
+
+  return { ok: true, plan: result.plan };
 }
 
 export async function getActiveAthletePlan(
@@ -224,4 +252,72 @@ export async function completeDay(
   }
 
   return { ok: true, allDaysDone, plan: validation.plan, setStatuses };
+}
+
+async function updateCoachAthleteActiveAssignmentStatus(
+  coachId: string,
+  athleteId: string,
+  status: "unassigned" | "completed",
+  client?: AthletePlanClient,
+): Promise<UpdateActiveAssignmentStatusResult> {
+  const assignmentResult = await getCoachAthleteActiveAssignment(
+    coachId,
+    athleteId,
+    client,
+  );
+
+  if (!assignmentResult.ok) {
+    return assignmentResult;
+  }
+
+  if (!assignmentResult.plan) {
+    return serviceError(ServiceErrorCode.NOT_FOUND, "No active assignment found");
+  }
+
+  const now = new Date().toISOString();
+  const supabase = await resolveClient(client);
+  const { error } = await supabase
+    .from("assigned_plans")
+    .update({
+      status,
+      ...(status === "unassigned"
+        ? { unassigned_at: now }
+        : { completed_at: now }),
+    })
+    .eq("id", assignmentResult.plan.id)
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .eq("status", "active");
+
+  if (error) {
+    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
+  }
+
+  return { ok: true };
+}
+
+export async function unassignCoachAthletePlan(
+  coachId: string,
+  athleteId: string,
+  client?: AthletePlanClient,
+): Promise<UpdateActiveAssignmentStatusResult> {
+  return updateCoachAthleteActiveAssignmentStatus(
+    coachId,
+    athleteId,
+    "unassigned",
+    client,
+  );
+}
+
+export async function completeCoachAthleteAssignment(
+  coachId: string,
+  athleteId: string,
+  client?: AthletePlanClient,
+): Promise<UpdateActiveAssignmentStatusResult> {
+  return updateCoachAthleteActiveAssignmentStatus(
+    coachId,
+    athleteId,
+    "completed",
+    client,
+  );
 }

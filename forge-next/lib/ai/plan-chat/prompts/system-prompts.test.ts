@@ -48,6 +48,16 @@ describe("buildCoachAgentSystemPrompt", () => {
     expect(system).toContain("Do not mention workspace, sandbox, JSON");
   });
 
+  it("documents assigned-plan editability rules", () => {
+    const system = buildCoachAgentSystemPrompt({
+      hasSessionUploads: false,
+    });
+    expect(system).toContain('type="assignment"');
+    expect(system).toContain("Sets with status \"completed\" or \"skipped\" are LOCKED");
+    expect(system).toContain("unassign_plan");
+    expect(system).toContain("mark_assignment_complete");
+  });
+
   it("notes when no session uploads exist", () => {
     const system = buildCoachAgentSystemPrompt({
       hasSessionUploads: false,

@@ -3,7 +3,9 @@ import {
   stepCountIs,
   streamText,
 } from "ai";
+import { getAssignedPlanById } from "@/lib/athlete/plan/repository";
 import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
+import { detectLockedSetMutations } from "@/lib/plans/assignment-editability";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
@@ -33,6 +35,7 @@ export type PlanChatOrchestratorDeps = {
   listSessionUploads?: typeof listSessionUploads;
   isGatewayConfigured?: () => boolean;
   createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
+  getAssignedPlanById?: typeof getAssignedPlanById;
 };
 
 function toModelMessages(
@@ -56,6 +59,7 @@ export async function runPlanChat(
   const listUploads = deps.listSessionUploads ?? listSessionUploads;
   const gatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const createModel = deps.createModel ?? createPlanChatGatewayModel;
+  const fetchAssignedPlan = deps.getAssignedPlanById ?? getAssignedPlanById;
 
   if (!gatewayConfigured()) {
     input.emit({
@@ -81,28 +85,34 @@ export async function runPlanChat(
   });
 
   let submittedPython: string | null = null;
+  let submittedAssignmentId: string | null = null;
+  let artifactForSandbox: WorkoutPlan | null = input.currentArtifact;
   let clearedArtifact = false;
   const tools = createCoachAgentTools({
     coachId: input.coachId,
     sessionId: input.sessionId,
     currentArtifact: input.currentArtifact,
-    onSubmitPlanCode: (python) => {
+    onSubmitPlanCode: ({ python, assignmentId }) => {
       submittedPython = python;
+      submittedAssignmentId = assignmentId ?? null;
       logSubmittedPlanCode(python, {
         coachId: input.coachId,
         sessionId: input.sessionId,
       });
     },
-    onSetCurrentArtifact: ({ planId, plan, title }) => {
+    onSetCurrentArtifact: ({ planId, assignmentId, plan, title }) => {
+      artifactForSandbox = plan;
       input.emit({
         type: "setArtifact",
         planId,
+        assignmentId,
         plan,
         title,
       });
     },
     onClearCurrentArtifact: () => {
       clearedArtifact = true;
+      artifactForSandbox = null;
     },
   });
 
@@ -143,12 +153,48 @@ export async function runPlanChat(
     return;
   }
 
+  let sandboxSeed = artifactForSandbox;
+
+  if (submittedAssignmentId) {
+    const assignmentResult = await fetchAssignedPlan(submittedAssignmentId);
+
+    if (!assignmentResult.ok) {
+      input.emit({
+        type: "errors",
+        errors: [
+          {
+            code: "ASSIGNMENT_LOOKUP_FAILED",
+            message: assignmentResult.message,
+          },
+        ],
+      });
+      input.emit({ type: "runStatus", status: "error" });
+      return;
+    }
+
+    if (!assignmentResult.plan || assignmentResult.plan.coachId !== input.coachId) {
+      input.emit({
+        type: "errors",
+        errors: [
+          {
+            code: "ASSIGNMENT_NOT_FOUND",
+            message: "Active assignment not found for this coach.",
+          },
+        ],
+      });
+      input.emit({ type: "runStatus", status: "error" });
+      return;
+    }
+
+    sandboxSeed = assignmentResult.plan.plan;
+  }
+
   input.emit({ type: "runStatus", status: "sandbox" });
 
   const sandboxResult = await executeSandbox({
     artifact: {
       type: "plan",
-      currentPlan: input.currentArtifact,
+      currentPlan: sandboxSeed,
       generatedPython: submittedPython,
     },
   });
@@ -171,6 +217,22 @@ export async function runPlanChat(
     input.emit({ type: "errors", errors: validated.errors });
     input.emit({ type: "runStatus", status: "error" });
     return;
+  }
+
+  if (submittedAssignmentId && sandboxSeed) {
+    const lockedSetErrors = detectLockedSetMutations(
+      sandboxSeed,
+      validated.plan,
+    );
+
+    if (lockedSetErrors.length > 0) {
+      input.emit({
+        type: "errors",
+        errors: lockedSetErrors,
+      });
+      input.emit({ type: "runStatus", status: "error" });
+      return;
+    }
   }
 
   input.emit({ type: "artifact", plan: validated.plan });

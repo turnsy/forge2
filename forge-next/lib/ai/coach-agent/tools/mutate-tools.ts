@@ -1,10 +1,18 @@
 import { tool } from "ai";
 import { z } from "zod";
+import {
+  completeCoachAthleteAssignment,
+  unassignCoachAthletePlan,
+} from "@/lib/athlete/plan/repository";
 import { acceptCoachLink, rejectCoachLink } from "@/lib/links/repository";
 import { assignPlanToAthletes } from "@/lib/plans/mutations";
 import { toToolError } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 
-export function createMutateTools() {
+export type MutateToolsContext = {
+  coachId: string;
+};
+
+export function createMutateTools(ctx: MutateToolsContext) {
   return {
     accept_coach_link: tool({
       description:
@@ -63,6 +71,49 @@ export function createMutateTools() {
           ok: true as const,
           planId,
           athleteIds,
+        };
+      },
+    }),
+
+    unassign_plan: tool({
+      description:
+        "Unassign an athlete's active plan. Marks the current assignment as unassigned.",
+      inputSchema: z.object({
+        athleteId: z.string().uuid().describe("Athlete profile id."),
+      }),
+      execute: async ({ athleteId }) => {
+        const result = await unassignCoachAthletePlan(ctx.coachId, athleteId);
+
+        if (!result.ok) {
+          return toToolError(result);
+        }
+
+        return {
+          ok: true as const,
+          athleteId,
+        };
+      },
+    }),
+
+    mark_assignment_complete: tool({
+      description:
+        "Force-complete an athlete's active assignment. Sets status to completed.",
+      inputSchema: z.object({
+        athleteId: z.string().uuid().describe("Athlete profile id."),
+      }),
+      execute: async ({ athleteId }) => {
+        const result = await completeCoachAthleteAssignment(
+          ctx.coachId,
+          athleteId,
+        );
+
+        if (!result.ok) {
+          return toToolError(result);
+        }
+
+        return {
+          ok: true as const,
+          athleteId,
         };
       },
     }),

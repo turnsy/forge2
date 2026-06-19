@@ -5,11 +5,12 @@ import { buildMinimalWorkoutPlan } from "@/lib/sandbox/stub";
 function mockStreamText(options: {
   text?: string;
   submitPython?: string;
+  submitAssignmentId?: string;
   clearArtifact?: boolean;
   tools?: {
     submit_plan_code?: {
       execute: (
-        input: { python: string },
+        input: { python: string; assignmentId?: string },
         context: { messages: unknown[]; toolCallId: string },
       ) => Promise<unknown>;
     };
@@ -36,7 +37,10 @@ function mockStreamText(options: {
       }
       if (options.submitPython && options.tools?.submit_plan_code?.execute) {
         void options.tools.submit_plan_code.execute(
-          { python: options.submitPython },
+          {
+            python: options.submitPython,
+            assignmentId: options.submitAssignmentId,
+          },
           { messages: [], toolCallId: "test" },
         );
       }
@@ -265,5 +269,109 @@ describe("runPlanChat", () => {
         },
       ],
     });
+  });
+
+  it("uses assignment seed and rejects locked-set mutations", async () => {
+    const seedPlan = {
+      schemaVersion: "2.0.0" as const,
+      name: "Assigned",
+      weeks: [
+        {
+          index: 1,
+          days: [
+            {
+              index: 1,
+              code: "w1d1",
+              exercises: [
+                {
+                  name: "Squat",
+                  sets: [
+                    {
+                      id: "w1d1-sq-1",
+                      planned: {
+                        type: "exact" as const,
+                        reps: 5,
+                        load: {
+                          type: "absolute" as const,
+                          value: 100,
+                          unit: "kg" as const,
+                        },
+                      },
+                      actual: { reps: 5 },
+                      status: "completed" as const,
+                      locked: true,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const mutatedPlan = structuredClone(seedPlan);
+    mutatedPlan.weeks[0].days[0].exercises[0].sets[0].planned = {
+      type: "exact",
+      reps: 3,
+      load: { type: "absolute", value: 90, unit: "kg" },
+    };
+
+    const events: unknown[] = [];
+    const runSandbox = vi.fn().mockResolvedValue({
+      ok: true,
+      plan: mutatedPlan,
+    });
+    const getAssignedPlanById = vi.fn().mockResolvedValue({
+      ok: true,
+      plan: {
+        id: "assignment-1",
+        coachId: "coach-1",
+        plan: seedPlan,
+      },
+    });
+
+    await runPlanChat(
+      {
+        coachId: "coach-1",
+        sessionId: "session-1",
+        prompt: "Bump volume",
+        messages: [],
+        currentArtifact: null,
+        emit: (event) => events.push(event),
+      },
+      {
+        isGatewayConfigured: () => true,
+        createModel: () => ({}) as never,
+        listSessionUploads: async () => [],
+        streamTextFn: (opts) =>
+          mockStreamText({
+            submitPython: "print('plan')",
+            submitAssignmentId: "assignment-1",
+            tools: opts.tools,
+          }),
+        runSandbox,
+        getAssignedPlanById,
+      },
+    );
+
+    expect(getAssignedPlanById).toHaveBeenCalledWith("assignment-1");
+    expect(runSandbox).toHaveBeenCalledWith({
+      artifact: {
+        type: "plan",
+        currentPlan: seedPlan,
+        generatedPython: "print('plan')",
+      },
+    });
+    expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
+      false,
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "errors",
+        errors: expect.arrayContaining([
+          expect.objectContaining({ code: "LOCKED_SET_MUTATED" }),
+        ]),
+      }),
+    );
   });
 });

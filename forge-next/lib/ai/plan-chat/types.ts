@@ -42,7 +42,8 @@ export type PlanChatArtifactEvent = {
 
 export type PlanChatSetArtifactEvent = {
   type: "setArtifact";
-  planId: string;
+  planId?: string;
+  assignmentId?: string;
   plan: WorkoutPlan;
   title: string;
 };
