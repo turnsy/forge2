@@ -428,7 +428,7 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
+          className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none ${
             showSplitPane
               ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
               : "w-full"

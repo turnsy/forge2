@@ -89,7 +89,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("overlays the desktop chat close button without top inset on the chat pane", () => {
+  it("uses page shell padding on the desktop chat pane", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -102,7 +102,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
-    expect(container.querySelector(".md\\:pt-4")).toBeNull();
+    expect(container.innerHTML).toContain("md:p-8");
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
   });
 
