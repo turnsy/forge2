@@ -18,6 +18,7 @@ export function PageBackGutter({
   contentClassName,
   backAlignClassName = pageBackGutterAlignClass(),
   offsetClassName = pageBackGutterOffsetClass(),
+  showMobileBack = true,
 }: {
   back: PageBackConfig;
   children: ReactNode;
@@ -25,10 +26,11 @@ export function PageBackGutter({
   contentClassName?: string;
   backAlignClassName?: string;
   offsetClassName?: string;
+  showMobileBack?: boolean;
 }) {
   return (
     <div
-      className={`relative [&_[data-page-header]]:max-md:pl-12${className ? ` ${className}` : ""}`}
+      className={`relative${showMobileBack ? " [&_[data-page-header]]:max-md:pl-12" : ""}${className ? ` ${className}` : ""}`}
     >
       <div
         className={`absolute right-full hidden md:flex ${backAlignClassName} ${offsetClassName}`}
@@ -39,13 +41,15 @@ export function PageBackGutter({
           onClick={back.onClick}
         />
       </div>
-      <div className="absolute left-0 top-0 z-10 md:hidden">
-        <PageBackLink
-          href={back.href}
-          ariaLabel={back.ariaLabel}
-          onClick={back.onClick}
-        />
-      </div>
+      {showMobileBack ? (
+        <div className="absolute left-0 top-0 z-10 md:hidden">
+          <PageBackLink
+            href={back.href}
+            ariaLabel={back.ariaLabel}
+            onClick={back.onClick}
+          />
+        </div>
+      ) : null}
       {contentClassName ? (
         <div className={contentClassName}>{children}</div>
       ) : (

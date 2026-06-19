@@ -30,10 +30,10 @@ describe("surface theme helpers", () => {
     expect(buttonVariantClass("ghost", false)).not.toContain("w-full");
   });
 
-  it("applies role-specific card borders", () => {
-    expect(cardClass("coach")).toContain("border-coach-border");
-    expect(cardClass("athlete")).toContain("border-athlete-border");
-    expect(cardClass()).toContain("border-surface-divider");
+  it("uses grayscale glass card styling", () => {
+    expect(cardClass()).toContain("border-glass-border");
+    expect(cardClass()).toContain("bg-glass");
+    expect(cardClass()).toContain("backdrop-blur-md");
   });
 
   it("returns borderless back link styling", () => {

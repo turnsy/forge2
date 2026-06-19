@@ -10,6 +10,7 @@ export function PlanEditorConfirmModal({
   confirmLabel,
   onConfirm,
   onCancel,
+  pending = false,
 }: {
   open: boolean;
   title: string;
@@ -17,6 +18,7 @@ export function PlanEditorConfirmModal({
   confirmLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
+  pending?: boolean;
 }) {
   return (
     <Modal
@@ -25,10 +27,22 @@ export function PlanEditorConfirmModal({
       onClose={onCancel}
       footer={
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" fullWidth={false} onClick={onCancel}>
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth={false}
+            disabled={pending}
+            onClick={onCancel}
+          >
             Cancel
           </Button>
-          <Button type="button" variant="danger" fullWidth={false} onClick={onConfirm}>
+          <Button
+            type="button"
+            variant="danger"
+            fullWidth={false}
+            disabled={pending}
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </Button>
         </div>
