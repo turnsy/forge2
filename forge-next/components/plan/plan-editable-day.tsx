@@ -22,7 +22,6 @@ import { useEffect, useId, useRef, useState, type ChangeEvent, type RefObject } 
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
-import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input, Select } from "@/components/ui";
 import { formatReps } from "@/lib/plans/display";
 import {
@@ -406,16 +405,18 @@ function SortableSetRow({
           onChange={(event) => onNotesChange(event.target.value)}
         />
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 text-right">
         {canDelete ? (
-          <IconButton
+          <Button
+            type="button"
             variant="danger"
             size="sm"
-            icon={<XIcon className="h-4 w-4" />}
-            aria-label={`Delete set ${setNumber}`}
+            fullWidth={false}
             disabled={disabled}
             onClick={onDelete}
-          />
+          >
+            Delete set
+          </Button>
         ) : null}
       </td>
     </tr>
@@ -493,14 +494,6 @@ function EditableExerciseBlock({
         />
         <div className="flex shrink-0 items-center gap-1">
           <IconButton
-            variant="danger"
-            size="sm"
-            icon={<XIcon className="h-4 w-4" />}
-            aria-label="Delete exercise"
-            disabled={disabled}
-            onClick={onDeleteExercise}
-          />
-          <IconButton
             variant="ghost"
             size="sm"
             icon={<ChevronUpIcon className="h-4 w-4" />}
@@ -516,6 +509,16 @@ function EditableExerciseBlock({
             disabled={disabled || exerciseIndex === exerciseCount - 1}
             onClick={onMoveDown}
           />
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            fullWidth={false}
+            disabled={disabled}
+            onClick={onDeleteExercise}
+          >
+            Delete exercise
+          </Button>
         </div>
       </div>
 
@@ -549,7 +552,7 @@ function EditableExerciseBlock({
                   <th className="px-2 py-2 font-medium">Reps</th>
                   <th className="px-2 py-2 font-medium">Target</th>
                   <th className="px-2 py-2 font-medium">Notes</th>
-                  <th className="w-10 px-2 py-2" aria-label="Actions" />
+                  <th className="min-w-[5.5rem] px-2 py-2 text-right" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>

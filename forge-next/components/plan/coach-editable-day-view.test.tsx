@@ -258,7 +258,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    await user.click(screen.getByLabelText("Delete set 1"));
+    await user.click(screen.getAllByRole("button", { name: "Delete set" })[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].exercises[0].sets).toHaveLength(1);
@@ -341,7 +341,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    await user.click(screen.getAllByLabelText("Delete exercise")[0]);
+    await user.click(screen.getAllByRole("button", { name: "Delete exercise" })[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].exercises).toHaveLength(1);

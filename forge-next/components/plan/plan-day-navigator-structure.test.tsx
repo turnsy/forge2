@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
@@ -98,7 +98,6 @@ function makeEditablePlan(): WorkoutPlan {
 describe("PlanDayNavigator structure controls", () => {
   beforeEach(() => {
     mockUseIsMobile.mockReturnValue(false);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
   });
 
   it("shows week and day structure controls when coach editing is enabled", () => {
@@ -111,17 +110,41 @@ describe("PlanDayNavigator structure controls", () => {
       />,
     );
 
-    expect(screen.getAllByLabelText("Add week").length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText("Add day").length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText("Delete week").length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText("Delete day").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Add week" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Add day" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Delete week" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Delete day" }).length).toBeGreaterThan(0);
   });
 
   it("does not show structure controls in read-only coach view", () => {
     render(<PlanDayNavigator plan={makeEditablePlan()} view="coach" readOnly />);
 
-    expect(screen.queryByLabelText("Add week")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Add day")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add week" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add day" })).not.toBeInTheDocument();
+  });
+
+  it("confirms week deletion in a modal", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+
+    render(
+      <PlanDayNavigator
+        plan={makeEditablePlan()}
+        view="coach"
+        readOnly={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Delete week" })[0]);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("This week and all of its days will be removed from the plan."),
+    ).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Delete week" }));
+    expect(onPlanChange).toHaveBeenCalled();
   });
 
   it("adds a week through onPlanChange", async () => {
@@ -137,7 +160,7 @@ describe("PlanDayNavigator structure controls", () => {
       />,
     );
 
-    await user.click(screen.getAllByLabelText("Add week")[0]);
+    await user.click(screen.getAllByRole("button", { name: "Add week" })[0]);
 
     const nextPlan = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(nextPlan.weeks).toHaveLength(3);
@@ -157,6 +180,6 @@ describe("PlanDayNavigator structure controls", () => {
       />,
     );
 
-    expect(screen.getAllByLabelText("Delete week")[0]).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "Delete week" })[0]).toBeDisabled();
   });
 });

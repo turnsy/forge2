@@ -1,84 +1,32 @@
 "use client";
 
-import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
-import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
+import { useState } from "react";
 import { PlusIcon } from "@/components/icons/plus-icon";
-import { XIcon } from "@/components/icons/x-icon";
-import { Button, IconButton } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { PlanEditorConfirmModal } from "@/components/plan/plan-editor-confirm-modal";
 import type { DaySelection } from "@/lib/plans/plan-day-navigator";
+import { resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import {
   addDay,
   addWeek,
-  canMoveDay,
-  canMoveWeek,
   canRemoveDay,
   canRemoveWeek,
   getDayArrayIndex,
   getWeekArrayIndex,
-  moveDay,
-  moveWeek,
   removeDay,
   removeWeek,
   resolveSelectionAfterAddDay,
   resolveSelectionAfterAddWeek,
-  resolveSelectionAfterMoveDay,
-  resolveSelectionAfterMoveWeek,
   resolveSelectionAfterRemoveDay,
   resolveSelectionAfterRemoveWeek,
   shouldConfirmDeleteDay,
   shouldConfirmDeleteWeek,
 } from "@/lib/plans/plan-structure";
-import { resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-function StructureControlButtons({
-  disabled,
-  canMoveUp,
-  canMoveDown,
-  canRemove,
-  removeLabel,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: {
-  disabled: boolean;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-  canRemove: boolean;
-  removeLabel: string;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="flex shrink-0 items-center gap-1">
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={<ChevronUpIcon className="h-4 w-4" />}
-        aria-label={`Move ${removeLabel.toLowerCase()} up`}
-        disabled={disabled || !canMoveUp}
-        onClick={onMoveUp}
-      />
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={<ChevronDownIcon className="h-4 w-4" />}
-        aria-label={`Move ${removeLabel.toLowerCase()} down`}
-        disabled={disabled || !canMoveDown}
-        onClick={onMoveDown}
-      />
-      <IconButton
-        variant="danger"
-        size="sm"
-        icon={<XIcon className="h-4 w-4" />}
-        aria-label={`Delete ${removeLabel.toLowerCase()}`}
-        disabled={disabled || !canRemove}
-        onClick={onRemove}
-      />
-    </div>
-  );
-}
+type PendingDelete =
+  | { type: "week" }
+  | { type: "day" };
 
 export function PlanStructureControls({
   plan,
@@ -97,6 +45,7 @@ export function PlanStructureControls({
   onSelectionChange: (selection: DaySelection) => void;
   layout?: "desktop" | "mobile";
 }) {
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const weekArrayIndex = getWeekArrayIndex(plan, selectedWeekIndex);
   const dayArrayIndex = getDayArrayIndex(plan, selectedWeekIndex, selectedDayIndex);
   const selectedLocation = resolveDayLocation(plan, selectedWeekIndex, selectedDayIndex);
@@ -113,15 +62,8 @@ export function PlanStructureControls({
     onSelectionChange(resolveSelectionAfterAddDay(nextPlan, selectedWeekIndex));
   }
 
-  function handleRemoveWeek() {
+  function executeRemoveWeek() {
     if (weekArrayIndex === -1) {
-      return;
-    }
-
-    if (
-      shouldConfirmDeleteWeek(plan, selectedWeekIndex) &&
-      !window.confirm("Delete this week and all of its days?")
-    ) {
       return;
     }
 
@@ -134,15 +76,8 @@ export function PlanStructureControls({
     onSelectionChange(resolveSelectionAfterRemoveWeek(nextPlan, weekArrayIndex));
   }
 
-  function handleRemoveDay() {
+  function executeRemoveDay() {
     if (!selectedLocation || dayArrayIndex === -1) {
-      return;
-    }
-
-    if (
-      shouldConfirmDeleteDay(selectedLocation.day) &&
-      !window.confirm("Delete this day and all of its exercises?")
-    ) {
       return;
     }
 
@@ -157,50 +92,50 @@ export function PlanStructureControls({
     );
   }
 
-  function handleMoveWeek(direction: -1 | 1) {
-    if (weekArrayIndex === -1) {
+  function requestRemoveWeek() {
+    if (!canRemoveWeek(plan)) {
       return;
     }
 
-    const nextPlan = moveWeek(plan, selectedWeekIndex, direction);
-    if (!nextPlan) {
+    if (shouldConfirmDeleteWeek(plan, selectedWeekIndex)) {
+      setPendingDelete({ type: "week" });
       return;
     }
 
-    onPlanChange(nextPlan);
-    onSelectionChange(
-      resolveSelectionAfterMoveWeek(nextPlan, weekArrayIndex + direction),
-    );
+    executeRemoveWeek();
   }
 
-  function handleMoveDay(direction: -1 | 1) {
-    if (dayArrayIndex === -1) {
+  function requestRemoveDay() {
+    if (!canRemoveDay(plan, selectedWeekIndex) || !selectedLocation) {
       return;
     }
 
-    const nextPlan = moveDay(plan, selectedWeekIndex, selectedDayIndex, direction);
-    if (!nextPlan) {
+    if (shouldConfirmDeleteDay(selectedLocation.day)) {
+      setPendingDelete({ type: "day" });
       return;
     }
 
-    onPlanChange(nextPlan);
-    onSelectionChange(
-      resolveSelectionAfterMoveDay(nextPlan, selectedWeekIndex, dayArrayIndex + direction),
-    );
+    executeRemoveDay();
+  }
+
+  function handleConfirmDelete() {
+    if (pendingDelete?.type === "week") {
+      executeRemoveWeek();
+    } else if (pendingDelete?.type === "day") {
+      executeRemoveDay();
+    }
+
+    setPendingDelete(null);
   }
 
   const weekControls = (
-    <div className={layout === "desktop" ? "flex min-w-0 flex-1 items-center gap-2" : "flex items-center gap-2"}>
-      <StructureControlButtons
-        disabled={disabled}
-        canMoveUp={canMoveWeek(plan, selectedWeekIndex, -1)}
-        canMoveDown={canMoveWeek(plan, selectedWeekIndex, 1)}
-        canRemove={canRemoveWeek(plan)}
-        removeLabel="Week"
-        onMoveUp={() => handleMoveWeek(-1)}
-        onMoveDown={() => handleMoveWeek(1)}
-        onRemove={handleRemoveWeek}
-      />
+    <div
+      className={
+        layout === "desktop"
+          ? "flex min-w-0 flex-1 items-center justify-end gap-2"
+          : "flex items-center justify-end gap-2"
+      }
+    >
       <Button
         type="button"
         variant="ghost"
@@ -213,21 +148,27 @@ export function PlanStructureControls({
       >
         Add
       </Button>
+      <Button
+        type="button"
+        variant="danger"
+        size="sm"
+        fullWidth={layout === "mobile"}
+        disabled={disabled || !canRemoveWeek(plan)}
+        onClick={requestRemoveWeek}
+      >
+        Delete week
+      </Button>
     </div>
   );
 
   const dayControls = (
-    <div className={layout === "desktop" ? "flex min-w-0 flex-1 items-center gap-2" : "flex items-center gap-2"}>
-      <StructureControlButtons
-        disabled={disabled}
-        canMoveUp={canMoveDay(plan, selectedWeekIndex, selectedDayIndex, -1)}
-        canMoveDown={canMoveDay(plan, selectedWeekIndex, selectedDayIndex, 1)}
-        canRemove={canRemoveDay(plan, selectedWeekIndex)}
-        removeLabel="Day"
-        onMoveUp={() => handleMoveDay(-1)}
-        onMoveDown={() => handleMoveDay(1)}
-        onRemove={handleRemoveDay}
-      />
+    <div
+      className={
+        layout === "desktop"
+          ? "flex min-w-0 flex-1 items-center justify-end gap-2"
+          : "flex items-center justify-end gap-2"
+      }
+    >
       <Button
         type="button"
         variant="ghost"
@@ -240,28 +181,65 @@ export function PlanStructureControls({
       >
         Add
       </Button>
+      <Button
+        type="button"
+        variant="danger"
+        size="sm"
+        fullWidth={layout === "mobile"}
+        disabled={disabled || !canRemoveDay(plan, selectedWeekIndex)}
+        onClick={requestRemoveDay}
+      >
+        Delete day
+      </Button>
     </div>
   );
 
+  const confirmModal =
+    pendingDelete?.type === "week" ? (
+      <PlanEditorConfirmModal
+        open
+        title="Delete week?"
+        description="This week and all of its days will be removed from the plan."
+        confirmLabel="Delete week"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+    ) : pendingDelete?.type === "day" ? (
+      <PlanEditorConfirmModal
+        open
+        title="Delete day?"
+        description="This day and all of its exercises will be removed from the plan."
+        confirmLabel="Delete day"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+    ) : null;
+
   if (layout === "mobile") {
     return (
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-surface-muted">Week</p>
-          {weekControls}
+      <>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-surface-muted">Week</p>
+            {weekControls}
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-surface-muted">Day</p>
+            {dayControls}
+          </div>
         </div>
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-surface-muted">Day</p>
-          {dayControls}
-        </div>
-      </div>
+        {confirmModal}
+      </>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {weekControls}
-      {dayControls}
-    </div>
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        {weekControls}
+        {dayControls}
+      </div>
+      {confirmModal}
+    </>
   );
 }
