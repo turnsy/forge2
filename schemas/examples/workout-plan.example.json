@@ -24,10 +24,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -41,10 +39,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -58,10 +54,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -75,10 +69,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -92,10 +84,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -109,10 +99,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -132,10 +120,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -149,10 +135,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -166,10 +150,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -189,10 +171,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -206,10 +186,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -223,10 +201,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -240,10 +216,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -257,10 +231,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -328,10 +300,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -345,10 +315,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -362,10 +330,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -379,10 +345,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -396,10 +360,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -413,10 +375,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -436,10 +396,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 40
+                      "value": 40,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -453,10 +411,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -470,10 +426,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -487,10 +441,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -504,10 +456,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -521,10 +471,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -538,10 +486,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -561,10 +507,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -578,10 +522,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -595,10 +537,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -618,10 +558,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -635,10 +573,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -652,10 +588,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -669,10 +603,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -686,10 +618,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -715,10 +645,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -732,10 +660,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -749,10 +675,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -766,10 +690,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -783,10 +705,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -800,10 +720,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -823,10 +741,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -840,10 +756,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -857,10 +771,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -874,10 +786,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -897,10 +807,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -914,10 +822,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -931,10 +837,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -948,10 +852,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -965,10 +867,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -994,10 +894,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1011,10 +909,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1028,10 +924,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1045,10 +939,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1068,10 +960,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1085,10 +975,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1102,10 +990,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1119,10 +1005,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1136,10 +1020,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1153,10 +1035,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1170,10 +1050,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1193,10 +1071,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 40
+                      "value": 40,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1210,10 +1086,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1227,10 +1101,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1244,10 +1116,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1261,10 +1131,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1278,10 +1146,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "at-least",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1295,10 +1161,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "at-least",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1312,10 +1176,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "at-least",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1329,10 +1191,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "at-least",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1352,10 +1212,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1369,10 +1227,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1386,10 +1242,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1403,10 +1257,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1420,10 +1272,8 @@
                     "reps": 5,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1473,10 +1323,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 100
+                      "value": 100,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1490,10 +1338,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 100
+                      "value": 100,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1507,10 +1353,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 100
+                      "value": 100,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1548,10 +1392,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1565,10 +1407,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1582,10 +1422,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1611,10 +1449,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1628,10 +1464,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1645,10 +1479,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1662,10 +1494,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1679,10 +1509,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1696,10 +1524,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 84
+                      "value": 84,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1713,10 +1539,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "at-least",
-                      "value": 86
+                      "value": 86,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1730,10 +1554,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "at-least",
-                      "value": 86
+                      "value": 86,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1753,10 +1575,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1770,10 +1590,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1787,10 +1605,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1804,10 +1620,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1821,10 +1635,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1844,10 +1656,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1861,10 +1671,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1878,10 +1686,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1895,10 +1701,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1912,10 +1716,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1929,11 +1731,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "range",
-                      "minValue": 87,
-                      "maxValue": 90
+                      "value": 87,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1947,11 +1746,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "range",
-                      "minValue": 87,
-                      "maxValue": 90
+                      "value": 87,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -1965,11 +1761,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "range",
-                      "minValue": 87,
-                      "maxValue": 90
+                      "value": 87,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2007,10 +1800,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2024,10 +1815,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2041,10 +1830,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2058,10 +1845,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2075,10 +1860,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 90
+                      "value": 90,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2092,10 +1875,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 90
+                      "value": 90,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2139,10 +1920,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2156,10 +1935,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2173,10 +1950,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2190,10 +1965,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2207,10 +1980,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2224,10 +1995,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2241,10 +2010,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 89
+                      "value": 89,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2258,10 +2025,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 89
+                      "value": 89,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2281,10 +2046,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2298,10 +2061,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2315,10 +2076,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2338,10 +2097,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2355,10 +2112,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2372,10 +2127,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2389,10 +2142,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2406,10 +2157,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2423,10 +2172,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2440,11 +2187,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "range",
-                      "minValue": 87,
-                      "maxValue": 90
+                      "value": 87,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2458,11 +2202,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "jerk_1rm",
-                      "operator": "range",
-                      "minValue": 87,
-                      "maxValue": 90
+                      "value": 87,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2483,10 +2224,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 87
+                      "value": 87,
+                      "unit": "kg"
                     },
                     "notes": "work up to 87% 3x3"
                   },
@@ -2502,10 +2241,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 87
+                      "value": 87,
+                      "unit": "kg"
                     },
                     "notes": "work up to 87% 3x3"
                   },
@@ -2521,10 +2258,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 87
+                      "value": 87,
+                      "unit": "kg"
                     },
                     "notes": "work up to 87% 3x3"
                   },
@@ -2557,10 +2292,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2574,10 +2307,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2591,10 +2322,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2608,10 +2337,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2625,10 +2352,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2642,10 +2367,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2665,10 +2388,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2682,10 +2403,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2699,10 +2418,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2716,10 +2433,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2733,10 +2448,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2750,10 +2463,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2773,10 +2484,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2790,10 +2499,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2807,10 +2514,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2824,10 +2529,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2841,10 +2544,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2858,10 +2559,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 85
+                      "value": 85,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2881,10 +2580,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2898,10 +2595,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2915,10 +2610,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2932,10 +2625,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2949,10 +2640,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2966,10 +2655,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "press_1rm",
-                      "operator": "exact",
-                      "value": 75
+                      "value": 75,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -2995,10 +2682,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3012,10 +2697,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3029,10 +2712,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3052,10 +2733,8 @@
                     "reps": "2+2",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3069,10 +2748,8 @@
                     "reps": "2+1",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3086,10 +2763,8 @@
                     "reps": "2+1",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3109,10 +2784,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3126,10 +2799,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3143,10 +2814,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3160,10 +2829,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "front_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3189,10 +2856,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3206,10 +2871,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3223,10 +2886,8 @@
                     "reps": 1,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "snatch_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3246,10 +2907,8 @@
                     "reps": "2+2",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3263,10 +2922,8 @@
                     "reps": "2+1",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3280,10 +2937,8 @@
                     "reps": "2+1",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3297,10 +2952,8 @@
                     "reps": "2+1",
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "clean_and_jerk_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3320,10 +2973,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 50
+                      "value": 50,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3337,10 +2988,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 60
+                      "value": 60,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3354,10 +3003,8 @@
                     "reps": 3,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 70
+                      "value": 70,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3371,10 +3018,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3388,10 +3033,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,
@@ -3405,10 +3048,8 @@
                     "reps": 2,
                     "load": {
                       "type": "percentage",
-                      "unit": "%",
-                      "basis": "back_squat_1rm",
-                      "operator": "exact",
-                      "value": 80
+                      "value": 80,
+                      "unit": "kg"
                     }
                   },
                   "actual": null,

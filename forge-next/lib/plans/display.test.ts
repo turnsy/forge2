@@ -25,41 +25,14 @@ describe("formatLoad", () => {
     expect(formatLoad({ type: "absolute", value: 100, unit: "kg" })).toBe("100 kg");
   });
 
-  it("formats exact percentage load", () => {
+  it("formats percentage load with unit", () => {
     expect(
       formatPercentageLoad({
         type: "percentage",
-        unit: "%",
-        basis: "snatch_1rm",
-        operator: "exact",
         value: 70,
+        unit: "kg",
       }),
-    ).toBe("70%");
-  });
-
-  it("formats range percentage load", () => {
-    expect(
-      formatPercentageLoad({
-        type: "percentage",
-        unit: "%",
-        basis: "clean_1rm",
-        operator: "range",
-        minValue: 70,
-        maxValue: 80,
-      }),
-    ).toBe("70–80%");
-  });
-
-  it("formats at-least percentage load", () => {
-    expect(
-      formatPercentageLoad({
-        type: "percentage",
-        unit: "%",
-        basis: "back_squat_1rm",
-        operator: "at-least",
-        value: 80,
-      }),
-    ).toBe("≥80%");
+    ).toBe("70% (kg)");
   });
 });
 
@@ -146,10 +119,8 @@ describe("actualLoadMatchesPlanned", () => {
           reps: 5,
           load: {
             type: "percentage",
-            unit: "%",
-            basis: "back_squat_1rm",
-            operator: "exact",
             value: 80,
+            unit: "kg",
           },
         },
         { load: { type: "absolute", value: 102, unit: "kg" } },

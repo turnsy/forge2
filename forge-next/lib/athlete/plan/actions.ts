@@ -15,13 +15,14 @@ import {
   serviceError,
   type ServiceResult,
 } from "@/lib/errors/service-error";
-import type { ActualSet } from "@/lib/plans/workout-plan";
+import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
 
 export type CompleteDayActionResult = ServiceResult<{
   nextDayIdx: number | null;
   allDaysDone: boolean;
+  plan: WorkoutPlan;
 }>;
 
 export async function saveSetActualsAction(
@@ -99,7 +100,7 @@ export async function completeDayAction(
   const { allDaysDone, plan } = completeResult;
 
   if (allDaysDone) {
-    return { ok: true, nextDayIdx: null, allDaysDone: true };
+    return { ok: true, nextDayIdx: null, allDaysDone: true, plan };
   }
 
   const nextDay = findNextDayAfter(plan, weekIdx, dayIdx);
@@ -108,5 +109,6 @@ export async function completeDayAction(
     ok: true,
     nextDayIdx: nextDay?.dayIndex ?? null,
     allDaysDone: false,
+    plan,
   };
 }

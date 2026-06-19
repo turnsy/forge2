@@ -76,22 +76,15 @@ def build_absolute_load(value: float, unit: str) -> dict[str, Any]:
 
 def build_percentage_load(
     value: float,
-    operator: str = "exact",
     *,
-    absolute_unit: str | None = None,
+    unit: str = "kg",
 ) -> dict[str, Any]:
-    """Build a percentage load (``basis`` omitted — optional in schema v2.0.0)."""
-    load: dict[str, Any] = {
+    """Build a percentage load."""
+    return {
         "type": "percentage",
-        "unit": "%",
-        "operator": operator,
         "value": value,
+        "unit": unit.strip() or "kg",
     }
-    if absolute_unit is not None:
-        trimmed = absolute_unit.strip()
-        if trimmed:
-            load["absoluteUnit"] = trimmed
-    return load
 
 
 def build_planned_set(
@@ -100,7 +93,6 @@ def build_planned_set(
     load_type: str,
     load_value: float,
     unit: str = "kg",
-    operator: str = "exact",
     notes: str | None = None,
 ) -> dict[str, Any]:
     """Build a minimal exact planned set (absolute or percentage load).
@@ -111,11 +103,7 @@ def build_planned_set(
     if load_type == "absolute":
         load = build_absolute_load(load_value, unit)
     elif load_type == "percentage":
-        load = build_percentage_load(
-            load_value,
-            operator=operator,
-            absolute_unit=unit,
-        )
+        load = build_percentage_load(load_value, unit=unit)
     else:
         raise ValueError("load_type must be 'absolute' or 'percentage'")
 
@@ -136,7 +124,6 @@ def build_set_entry(
     load_type: str,
     load_value: float,
     unit: str = "kg",
-    operator: str = "exact",
     notes: str | None = None,
 ) -> dict[str, Any]:
     """Build a full set entry for the workout plan schema."""
@@ -147,7 +134,6 @@ def build_set_entry(
             load_type=load_type,
             load_value=load_value,
             unit=unit,
-            operator=operator,
             notes=notes,
         ),
         "actual": None,

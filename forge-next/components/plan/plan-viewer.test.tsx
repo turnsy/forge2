@@ -28,10 +28,8 @@ function makePlanWithIdenticalSets(setCount: number): WorkoutPlan {
                     reps: 3,
                     load: {
                       type: "percentage" as const,
-                      unit: "%" as const,
-                      basis: "snatch_1rm",
-                      operator: "exact" as const,
                       value: 70,
+                      unit: "kg",
                     },
                   },
                   actual: null,

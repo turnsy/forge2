@@ -89,7 +89,7 @@ class ForgePlanTests(unittest.TestCase):
         self.assertEqual(len(sets), 1)
         self.assertEqual(sets[0]["planned"]["reps"], 8)
 
-    def test_percentage_set_without_basis(self) -> None:
+    def test_percentage_set(self) -> None:
         plan = Plan.empty("Pct")
         plan.add_week()
         plan.add_day(week_index=1)
@@ -106,8 +106,7 @@ class ForgePlanTests(unittest.TestCase):
         load = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["load"]
         self.assertEqual(load["type"], "percentage")
         self.assertEqual(load["value"], 85)
-        self.assertEqual(load["absoluteUnit"], "kg")
-        self.assertNotIn("basis", load)
+        self.assertEqual(load["unit"], "kg")
 
     def test_move_week_renumbers_indices(self) -> None:
         plan = Plan.empty("Reorder")

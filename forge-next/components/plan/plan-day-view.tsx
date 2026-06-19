@@ -51,7 +51,7 @@ export type PlanDayViewProps = {
   readOnly?: boolean;
   assignmentId?: string;
   coachName?: string;
-  onDayCompleted?: (allDaysDone: boolean) => void;
+  onDayCompleted?: (allDaysDone: boolean, plan: WorkoutPlan) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
   onPlanChange?: (plan: WorkoutPlan) => void;
   disabled?: boolean;
@@ -81,8 +81,8 @@ function getResolvedSetFormState(
   return formState[key] ?? setFormStateFromActual(set);
 }
 
-function getAbsoluteUnit(set: Set): string | null {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "absolute") {
+function getLoadUnitLabel(set: Set): string | null {
+  if (set.planned.type !== "exact") {
     return null;
   }
 
@@ -95,7 +95,7 @@ function getPercentagePlaceholder(set: Set): string {
   }
 
   const load = set.planned.load as PercentageLoad;
-  return `${load.value ?? ""}%`;
+  return `${load.value}%`;
 }
 
 function getAbsoluteLoadPlaceholder(set: Set): string {
@@ -189,7 +189,7 @@ function SetRowInputs({
     );
   }
 
-  const unit = getAbsoluteUnit(set);
+  const unit = getLoadUnitLabel(set);
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -305,7 +305,7 @@ function AthleteEditableDayContent({
   weekIndex: number;
   dayIndex: number;
   assignmentId: string;
-  onDayCompleted?: (allDaysDone: boolean) => void;
+  onDayCompleted?: (allDaysDone: boolean, plan: WorkoutPlan) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
 }) {
   const [formState, setFormState] = useState<Record<string, SetFormState>>(() =>
@@ -541,8 +541,8 @@ function AthleteEditableDayContent({
     }
   }, [assignmentId, day, dayIndex, weekIndex]);
 
-  function handleCompleteSuccess(allDaysDone: boolean) {
-    onDayCompleted?.(allDaysDone);
+  function handleCompleteSuccess(allDaysDone: boolean, plan: WorkoutPlan) {
+    onDayCompleted?.(allDaysDone, plan);
   }
 
   function handleCompleteDay() {
@@ -564,7 +564,7 @@ function AthleteEditableDayContent({
           return;
         }
 
-        handleCompleteSuccess(result.allDaysDone);
+        handleCompleteSuccess(result.allDaysDone, result.plan);
       } catch {
         setCompleteError(COMPLETE_DAY_ERROR);
       }
@@ -583,7 +583,7 @@ function AthleteEditableDayContent({
           return;
         }
 
-        handleCompleteSuccess(result.allDaysDone);
+        handleCompleteSuccess(result.allDaysDone, result.plan);
       } catch {
         setCompleteError(COMPLETE_DAY_ERROR);
         setConfirmSkipOpen(false);

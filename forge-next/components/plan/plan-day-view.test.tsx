@@ -73,7 +73,12 @@ describe("PlanDayView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSaveSetActualsAction.mockResolvedValue({ ok: true });
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: null,
+      allDaysDone: false,
+      plan: makePlan(),
+    });
     Element.prototype.scrollIntoView = vi.fn();
   });
 
