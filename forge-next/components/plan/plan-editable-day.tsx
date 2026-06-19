@@ -678,6 +678,7 @@ function EditableExerciseBlock({
             size="sm"
             fullWidth={false}
             icon={<PlusIcon />}
+            aria-label="Add set"
             disabled={disabled}
             onClick={() => {
             const lastSet = exercise.sets.at(-1);
@@ -689,7 +690,7 @@ function EditableExerciseBlock({
             });
           }}
           >
-            Set
+            Add
           </Button>
         </div>
       </div>
@@ -768,6 +769,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
           size="sm"
           fullWidth={false}
           icon={<PlusIcon />}
+          aria-label="Add exercise"
           disabled={disabled}
           onClick={() => {
           emitChange({
@@ -783,7 +785,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
           });
         }}
         >
-          Exercise
+          Add
         </Button>
       </div>
     </div>

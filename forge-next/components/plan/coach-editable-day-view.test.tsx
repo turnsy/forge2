@@ -167,7 +167,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const addSetButtons = screen.getAllByRole("button", { name: "Set" });
+    const addSetButtons = screen.getAllByRole("button", { name: "Add set" });
     await user.click(addSetButtons[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
@@ -211,7 +211,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Exercise" }));
+    await user.click(screen.getByRole("button", { name: "Add exercise" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].exercises).toHaveLength(3);
@@ -343,7 +343,7 @@ describe("CoachEditableDayView", () => {
     );
 
     expect(screen.getByDisplayValue("Bench Press")).toHaveAttribute("readonly");
-    expect(screen.getByRole("button", { name: "Exercise" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add exercise" })).toBeDisabled();
     expect(screen.getAllByLabelText("Drag to reorder set")[0]).toBeDisabled();
     expect(document.querySelector("[data-plan-editable-day]")).toHaveClass(
       "pointer-events-none",
