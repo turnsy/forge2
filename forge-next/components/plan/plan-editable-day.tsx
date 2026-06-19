@@ -25,6 +25,7 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input } from "@/components/ui";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
+import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { formatReps } from "@/lib/plans/display";
 import {
   createDefaultSet,
@@ -49,6 +50,8 @@ export type PlanEditableDayProps = {
   day: Day;
   disabled: boolean;
   onChange: (day: Day) => void;
+  isSetEditable?: (set: Set) => boolean;
+  isExerciseEditable?: (exercise: Exercise) => boolean;
 };
 
 function cloneDayForEditing(day: Day): Day {
@@ -152,6 +155,7 @@ function SortableSetRow({
   set,
   setNumber,
   disabled,
+  setEditable,
   canDelete,
   repsInputRef,
   onRepsChange,
@@ -162,6 +166,7 @@ function SortableSetRow({
   set: Set;
   setNumber: number;
   disabled: boolean;
+  setEditable: boolean;
   canDelete: boolean;
   repsInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void);
   onRepsChange: (value: string) => void;
@@ -172,7 +177,7 @@ function SortableSetRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({
       id: set.id,
-      disabled,
+      disabled: disabled || !setEditable,
     });
 
   const style = {
@@ -199,6 +204,7 @@ function SortableSetRow({
 
   const planned = set.planned as ExactPlannedSet;
   const notes = planned.notes ?? "";
+  const rowDisabled = disabled || !setEditable;
 
   return (
     <tr
@@ -206,16 +212,19 @@ function SortableSetRow({
       style={style}
       className={`border-b border-glass-border/60 last:border-b-0 max-md:mb-3 max-md:grid max-md:grid-cols-[auto_1fr_auto] max-md:gap-x-2 max-md:gap-y-2.5 max-md:rounded-lg max-md:border max-md:p-3 max-md:last:mb-0 max-md:last:border-b ${
         isDragging ? "opacity-50" : ""
-      }`}
+      } ${!setEditable ? "bg-zinc-100/60 dark:bg-zinc-800/40" : ""}`}
+      data-set-editable={setEditable ? "true" : "false"}
     >
       <td className="px-2 py-2 max-md:col-start-1 max-md:row-start-1 max-md:p-0">
         <button
           type="button"
           className={`flex items-center ${
-            disabled ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"
+            rowDisabled || !setEditable
+              ? "cursor-not-allowed"
+              : "cursor-grab active:cursor-grabbing"
           }`}
           aria-label="Drag to reorder set"
-          disabled={disabled}
+          disabled={rowDisabled || !setEditable}
           {...attributes}
           {...listeners}
         >
@@ -228,7 +237,7 @@ function SortableSetRow({
           ref={repsInputRef}
           size="sm"
           value={formatReps(planned.reps)}
-          readOnly={disabled}
+          readOnly={rowDisabled}
           aria-label={`Set ${setNumber} reps`}
           className="w-full"
           onChange={(event) => onRepsChange(event.target.value)}
@@ -238,7 +247,7 @@ function SortableSetRow({
         <MobileFieldLabel>Target</MobileFieldLabel>
         <PlanLoadTargetControl
           load={planned.load}
-          disabled={disabled}
+          disabled={rowDisabled}
           setNumber={setNumber}
           onChange={onLoadUpdate}
         />
@@ -248,7 +257,7 @@ function SortableSetRow({
         <Input
           size="sm"
           value={notes}
-          readOnly={disabled}
+          readOnly={rowDisabled}
           aria-label={`Set ${setNumber} notes`}
           className="w-full"
           onChange={(event) => onNotesChange(event.target.value)}
@@ -261,7 +270,7 @@ function SortableSetRow({
             size="sm"
             icon={<XIcon className="h-4 w-4" />}
             aria-label={`Delete set ${setNumber}`}
-            disabled={disabled}
+            disabled={rowDisabled}
             onClick={onDelete}
           />
         ) : null}
@@ -275,6 +284,8 @@ function EditableExerciseBlock({
   exerciseIndex,
   exerciseCount,
   disabled,
+  isSetEditable,
+  isExerciseEditable,
   onExerciseChange,
   onDeleteExercise,
   onMoveUp,
@@ -284,6 +295,8 @@ function EditableExerciseBlock({
   exerciseIndex: number;
   exerciseCount: number;
   disabled: boolean;
+  isSetEditable: (set: Set) => boolean;
+  isExerciseEditable: boolean;
   onExerciseChange: (exercise: Exercise) => void;
   onDeleteExercise: () => void;
   onMoveUp: () => void;
@@ -291,6 +304,21 @@ function EditableExerciseBlock({
 }) {
   const autoFocusSetIdRef = useRef<string | null>(null);
   const dndId = useId();
+
+  if (!isExerciseEditable) {
+    return (
+      <section
+        className={[accordionNestedClass(), "space-y-3 bg-zinc-100/60 p-4 dark:bg-zinc-800/40"].join(
+          " ",
+        )}
+        data-exercise-editable="false"
+      >
+        <PlanExerciseBlock exercise={exercise} view="coach" />
+      </section>
+    );
+  }
+
+  const editableSets = exercise.sets.filter(isSetEditable);
 
   function updateSet(setIndex: number, updater: (set: Set) => Set) {
     onExerciseChange({
@@ -303,11 +331,14 @@ function EditableExerciseBlock({
 
   function handleSetDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    const nextSets = reorderSetsInExercise(
-      exercise.sets,
-      String(active.id),
-      over ? String(over.id) : undefined,
-    );
+    const activeId = String(active.id);
+    const overId = over ? String(over.id) : undefined;
+
+    if (!isSetEditable(exercise.sets.find((set) => set.id === activeId)!)) {
+      return;
+    }
+
+    const nextSets = reorderSetsInExercise(exercise.sets, activeId, overId);
 
     if (nextSets !== exercise.sets) {
       onExerciseChange({ ...exercise, sets: nextSets as typeof exercise.sets });
@@ -328,7 +359,7 @@ function EditableExerciseBlock({
   );
 
   return (
-    <section className={[accordionNestedClass(), "space-y-3 p-4"].join(" ")}>
+    <section className={[accordionNestedClass(), "space-y-3 p-4"].join(" ")} data-exercise-editable="true">
       <div className="flex items-start gap-2">
         <Input
           value={exercise.name}
@@ -345,7 +376,7 @@ function EditableExerciseBlock({
             size="sm"
             icon={<ChevronUpIcon className="h-4 w-4" />}
             aria-label="Move exercise up"
-            disabled={disabled || exerciseIndex === 0}
+            disabled={disabled || exerciseIndex === 0 || !isExerciseEditable}
             onClick={onMoveUp}
           />
           <IconButton
@@ -353,7 +384,7 @@ function EditableExerciseBlock({
             size="sm"
             icon={<ChevronDownIcon className="h-4 w-4" />}
             aria-label="Move exercise down"
-            disabled={disabled || exerciseIndex === exerciseCount - 1}
+            disabled={disabled || exerciseIndex === exerciseCount - 1 || !isExerciseEditable}
             onClick={onMoveDown}
           />
           <IconButton
@@ -361,7 +392,7 @@ function EditableExerciseBlock({
             size="sm"
             icon={<XIcon className="h-4 w-4" />}
             aria-label="Delete exercise"
-            disabled={disabled}
+            disabled={disabled || !isExerciseEditable}
             onClick={onDeleteExercise}
           />
         </div>
@@ -402,7 +433,7 @@ function EditableExerciseBlock({
               </thead>
               <tbody className="max-md:block">
                 <SortableContext
-                  items={exercise.sets.map((set) => set.id)}
+                  items={editableSets.map((set) => set.id)}
                   strategy={verticalListSortingStrategy}
                 >
                   {exercise.sets.map((set, setIndex) => (
@@ -411,7 +442,8 @@ function EditableExerciseBlock({
                       set={set}
                       setNumber={setIndex + 1}
                       disabled={disabled}
-                      canDelete={exercise.sets.length > 1}
+                      setEditable={isSetEditable(set)}
+                      canDelete={exercise.sets.length > 1 && isSetEditable(set)}
                       repsInputRef={(element) => {
                         if (
                           element &&
@@ -423,6 +455,10 @@ function EditableExerciseBlock({
                         }
                       }}
                       onRepsChange={(value) => {
+                        if (!isSetEditable(set)) {
+                          return;
+                        }
+
                         updateSet(setIndex, (current) => {
                           if (current.planned.type !== "exact") {
                             return current;
@@ -439,6 +475,10 @@ function EditableExerciseBlock({
                         });
                       }}
                       onLoadUpdate={(load) => {
+                        if (!isSetEditable(set)) {
+                          return;
+                        }
+
                         updateSet(setIndex, (current) => {
                           if (current.planned.type !== "exact") {
                             return current;
@@ -455,6 +495,10 @@ function EditableExerciseBlock({
                         });
                       }}
                       onNotesChange={(value) => {
+                        if (!isSetEditable(set)) {
+                          return;
+                        }
+
                         updateSet(setIndex, (current) => {
                           if (current.planned.type !== "exact") {
                             return current;
@@ -471,6 +515,10 @@ function EditableExerciseBlock({
                         });
                       }}
                       onDelete={() => {
+                        if (!isSetEditable(set)) {
+                          return;
+                        }
+
                         onExerciseChange({
                           ...exercise,
                           sets: exercise.sets.filter(
@@ -513,7 +561,13 @@ function EditableExerciseBlock({
   );
 }
 
-export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProps) {
+export function PlanEditableDay({
+  day,
+  disabled,
+  onChange,
+  isSetEditable = () => true,
+  isExerciseEditable: isExerciseEditableFn = () => true,
+}: PlanEditableDayProps) {
   const editableDay = cloneDayForEditing(day);
 
   function emitChange(nextDay: Day) {
@@ -564,6 +618,8 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
           exerciseIndex={exerciseIndex}
           exerciseCount={editableDay.exercises.length}
           disabled={disabled}
+          isSetEditable={isSetEditable}
+          isExerciseEditable={isExerciseEditableFn(exercise)}
           onExerciseChange={(nextExercise) => updateExercise(exerciseIndex, nextExercise)}
           onDeleteExercise={() => {
             emitChange({

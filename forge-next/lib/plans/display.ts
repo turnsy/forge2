@@ -5,6 +5,7 @@ import type {
   PercentageLoad,
   PlannedSet,
   RepsValue,
+  Set,
   Week,
   Day,
 } from "@/lib/plans/workout-plan";
@@ -61,6 +62,15 @@ export function formatOptionalCell(value: string | undefined): string {
   }
 
   return value.trim();
+}
+
+export function getSetNotes(set: Set): string | undefined {
+  if (set.planned.type === "exact" || set.planned.type === "target") {
+    const notes = set.planned.notes ?? set.notes;
+    return notes?.trim() || undefined;
+  }
+
+  return set.notes?.trim() || undefined;
 }
 
 function getPlannedReps(planned: PlannedSet): RepsValue | undefined {

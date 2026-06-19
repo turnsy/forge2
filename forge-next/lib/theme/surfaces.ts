@@ -42,7 +42,7 @@ export function selectClass(size: "sm" | "md" = "md"): string {
       ? "py-2 pl-3 pr-10 text-base"
       : "py-3.5 pl-5 pr-12 text-base";
 
-  return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer ${sizeClass}`;
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer appearance-none ${sizeClass}`;
 }
 
 export function buttonVariantClass(

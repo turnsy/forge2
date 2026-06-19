@@ -241,6 +241,26 @@ describe("CoachEditableDayView", () => {
     }
   });
 
+  it("allows clearing the target input while editing", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    const weightInput = screen.getAllByLabelText("Set 1 target")[0];
+    await user.clear(weightInput);
+
+    expect(weightInput).toHaveValue("");
+    expect(onPlanChange).not.toHaveBeenCalled();
+  });
+
   it("renders drag handles for set rows", () => {
     render(
       <CoachEditableDayView

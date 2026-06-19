@@ -15,6 +15,8 @@ vi.mock("@/lib/athlete/plan/actions", () => ({
 function makePlan(overrides: {
   dayComplete?: boolean;
   includeSkippedSet?: boolean;
+  exerciseNotes?: string;
+  setNotes?: string;
 } = {}): WorkoutPlan {
   const sets: WorkoutPlan["weeks"][number]["days"][number]["exercises"][number]["sets"] = [
     {
@@ -23,6 +25,7 @@ function makePlan(overrides: {
         type: "exact",
         reps: 8,
         load: { type: "absolute", value: 60, unit: "kg" },
+        notes: overrides.setNotes,
       },
       actual: overrides.dayComplete
         ? { reps: 8, load: { type: "absolute", value: 60, unit: "kg" } }
@@ -59,6 +62,7 @@ function makePlan(overrides: {
             exercises: [
               {
                 name: "Back Squat",
+                notes: overrides.exerciseNotes,
                 sets,
               },
             ],
@@ -147,6 +151,24 @@ describe("PlanDayView", () => {
     expect(screen.getByPlaceholderText("8")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("60")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("shows exercise and set notes in athlete editable view", () => {
+    render(
+      <PlanDayView
+        plan={makePlan({
+          exerciseNotes: "Brace hard on each rep",
+          setNotes: "Leave 2 reps in reserve",
+        })}
+        weekIndex={1}
+        dayIndex={1}
+        view="athlete"
+        assignmentId="assignment-1"
+      />,
+    );
+
+    expect(screen.getByText("Brace hard on each rep")).toBeInTheDocument();
+    expect(screen.getByText("Leave 2 reps in reserve")).toBeInTheDocument();
   });
 
   it("shows Complete button for athlete editable view", () => {
@@ -264,6 +286,23 @@ describe("PlanDayView", () => {
       <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
     );
 
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("renders locked coach day view for completed days in edit mode", () => {
+    render(
+      <PlanDayView
+        plan={makePlan({ dayComplete: true })}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("coach-locked-day")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add exercise" })).not.toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
 });

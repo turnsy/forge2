@@ -1,5 +1,16 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
+import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { selectClass } from "@/lib/theme";
+
+function SelectChevron({ size }: { size: "sm" | "md" }) {
+  return (
+    <ChevronDownIcon
+      className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-surface-muted ${
+        size === "sm" ? "right-3" : "right-4"
+      }`}
+    />
+  );
+}
 
 export function Select({
   label,
@@ -18,9 +29,12 @@ export function Select({
 }) {
   const selectClassName = `${selectClass(size)}${className ? ` ${className}` : ""}`;
   const select = (
-    <select className={selectClassName} {...props}>
-      {children}
-    </select>
+    <div className="relative w-full">
+      <select className={selectClassName} {...props}>
+        {children}
+      </select>
+      <SelectChevron size={size} />
+    </div>
   );
 
   if (label) {

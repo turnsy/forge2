@@ -13,12 +13,15 @@ import {
   getLoadUnit,
   getLoadTargetValue,
   isPercentageLoad,
+  parseLoadTargetNumber,
   updateLoadUnit,
   updateLoadTargetValue,
 } from "@/lib/plans/percentage-load";
 import type { Load } from "@/lib/plans/workout-plan";
 
-const unitControlClass = "w-[4.75rem] shrink-0";
+const unitControlClass = "w-[4.75rem] shrink-0 self-stretch";
+const percentageToggleClass =
+  "inline-flex shrink-0 items-center justify-center self-stretch rounded-control border px-2.5 py-2 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60";
 
 function LoadUnitControl({
   unit,
@@ -108,7 +111,7 @@ function LoadUnitControl({
         size="sm"
         value={selectValue}
         disabled={disabled}
-        className="w-full"
+        className="h-full"
         onChange={handleSelectChange}
       >
         {PRESET_LOAD_UNITS.map((preset) => (
@@ -137,6 +140,12 @@ export function PlanLoadTargetControl({
 }: PlanLoadTargetControlProps) {
   const isPercentage = isPercentageLoad(load);
   const displayUnit = getLoadUnit(load);
+  const loadKey = `${load.type}-${load.value}-${load.unit}`;
+  const [draft, setDraft] = useState(() => getLoadTargetValue(load));
+
+  useEffect(() => {
+    setDraft(getLoadTargetValue(load));
+  }, [loadKey]);
 
   function handleTogglePercentage() {
     if (isPercentage) {
@@ -147,26 +156,44 @@ export function PlanLoadTargetControl({
     onChange(enablePercentageLoad(load));
   }
 
+  function handleTargetChange(event: ChangeEvent<HTMLInputElement>) {
+    const next = event.target.value;
+    setDraft(next);
+
+    const parsed = parseLoadTargetNumber(next);
+    if (parsed !== undefined) {
+      onChange(updateLoadTargetValue(load, next));
+    }
+  }
+
+  function handleTargetBlur() {
+    const parsed = parseLoadTargetNumber(draft);
+    if (parsed === undefined) {
+      setDraft(getLoadTargetValue(load));
+    }
+  }
+
   return (
-    <div className="flex w-full items-center gap-1.5 max-md:gap-2">
+    <div className="flex w-full items-stretch gap-1.5 max-md:gap-2">
       <Input
         size="sm"
-        value={getLoadTargetValue(load)}
+        value={draft}
         readOnly={disabled}
         aria-label={`Set ${setNumber} target`}
-        className="min-w-0 flex-1"
-        onChange={(event) => onChange(updateLoadTargetValue(load, event.target.value))}
+        className="min-w-0 flex-1 self-stretch"
+        onChange={handleTargetChange}
+        onBlur={handleTargetBlur}
       />
       <button
         type="button"
         aria-label="Use percentage load"
         aria-pressed={isPercentage}
         disabled={disabled}
-        className={`shrink-0 rounded-control border px-2 py-1 text-xs font-medium transition ${
+        className={`${percentageToggleClass} min-w-[2.75rem] ${
           isPercentage
             ? "border-accent/40 bg-accent/15 text-accent"
             : "border-glass-border bg-glass text-surface-muted hover:text-surface-foreground"
-        } disabled:cursor-not-allowed disabled:opacity-60`}
+        }`}
         onClick={handleTogglePercentage}
       >
         %

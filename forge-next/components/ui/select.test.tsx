@@ -4,7 +4,7 @@ import { Select } from "@/components/ui/select";
 
 describe("Select", () => {
   it("applies shared control styling", () => {
-    render(
+    const { container } = render(
       <Select aria-label="Week" defaultValue="1">
         <option value="1">Week 1</option>
       </Select>,
@@ -15,6 +15,8 @@ describe("Select", () => {
     expect(select.className).toContain("rounded-control");
     expect(select.className).toContain("pr-12");
     expect(select.className).toContain("cursor-pointer");
+    expect(select.className).toContain("appearance-none");
+    expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
   it("renders a labeled select with an optional visually hidden label", () => {

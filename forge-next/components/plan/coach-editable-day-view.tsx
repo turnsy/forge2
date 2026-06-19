@@ -1,7 +1,11 @@
 "use client";
 
 import { PlanEditableDay } from "@/components/plan/plan-editable-day";
-import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
+import {
+  isExerciseEditable,
+  isSetEditable,
+} from "@/lib/plans/plan-editability";
+import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type CoachEditableDayViewProps = {
   plan: WorkoutPlan;
@@ -9,6 +13,8 @@ export type CoachEditableDayViewProps = {
   dayIndex: number;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
+  isSetEditable?: (set: Set) => boolean;
+  isExerciseEditable?: (exercise: Exercise) => boolean;
 };
 
 export function CoachEditableDayView({
@@ -17,6 +23,8 @@ export function CoachEditableDayView({
   dayIndex,
   disabled,
   onPlanChange,
+  isSetEditable: isSetEditableProp = isSetEditable,
+  isExerciseEditable: isExerciseEditableProp = isExerciseEditable,
 }: CoachEditableDayViewProps) {
   const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
   const day = week?.days.find((candidate) => candidate.index === dayIndex);
@@ -41,5 +49,13 @@ export function CoachEditableDayView({
     onPlanChange(newPlan);
   }
 
-  return <PlanEditableDay day={day} disabled={disabled} onChange={handleDayChange} />;
+  return (
+    <PlanEditableDay
+      day={day}
+      disabled={disabled}
+      isSetEditable={isSetEditableProp}
+      isExerciseEditable={isExerciseEditableProp}
+      onChange={handleDayChange}
+    />
+  );
 }

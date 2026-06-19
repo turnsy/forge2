@@ -62,6 +62,7 @@ describe("surface theme helpers", () => {
     expect(selectClass("sm")).toContain("pr-10");
     expect(selectClass("md")).toContain("pr-12");
     expect(selectClass()).toContain("cursor-pointer");
+    expect(selectClass()).toContain("appearance-none");
   });
 
   it("returns tone-specific message styling", () => {

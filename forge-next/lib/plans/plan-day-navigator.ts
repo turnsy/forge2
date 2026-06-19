@@ -1,5 +1,6 @@
 import { findCurrentDay } from "@/lib/athlete/plan/domain";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
+export { isDayEditable } from "@/lib/plans/plan-editability";
 import type { Day, Week, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type PlanDayNavItem = {
@@ -149,8 +150,3 @@ export function clampDaySelectionForWeek(
   return week.days[0]?.index ?? 1;
 }
 
-export function isDayEditable(day: Day): boolean {
-  return day.exercises.some((exercise) =>
-    exercise.sets.some((set) => set.status === "planned"),
-  );
-}
