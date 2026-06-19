@@ -21,7 +21,7 @@ export function CoachConversationPanel({
   composerClassName?: string;
 }) {
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <ChatThread
         messages={state.messages}
         streamingAssistantText={state.streamingAssistantText}
@@ -29,7 +29,9 @@ export function CoachConversationPanel({
         errors={state.errors}
         phase={state.phase}
       />
-      <div className={`shrink-0 py-3 md:py-2${composerClassName ? ` ${composerClassName}` : ""}`}>
+      <div
+        className={`shrink-0 py-3 md:py-1${composerClassName ? ` ${composerClassName}` : ""}`}
+      >
         {composerHeader}
         <ChatComposer
           compact
@@ -40,6 +42,6 @@ export function CoachConversationPanel({
           promptEnabled={promptEnabled}
         />
       </div>
-    </>
+    </div>
   );
 }

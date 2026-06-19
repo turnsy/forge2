@@ -7,7 +7,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function PreviewLoadingState({ label }: { label: string }) {
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-6 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
       <Spinner className="h-8 w-8" label={label} />
       <p className="text-sm text-surface-muted">{label}</p>
     </div>
@@ -37,7 +37,7 @@ export function ArtifactPreview({
     }
 
     return (
-      <div className="flex h-full min-h-0 flex-col items-center justify-center p-6 text-center">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
         <p className="text-sm text-surface-muted">Working…</p>
       </div>
     );

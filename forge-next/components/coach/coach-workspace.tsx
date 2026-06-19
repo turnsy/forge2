@@ -83,7 +83,7 @@ function ArtifactPanel({
           </p>
         ) : null}
         <div
-          className={`min-h-0 flex-1 md:overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS} max-md:overflow-y-auto`}
+          className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
         >
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
@@ -400,7 +400,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? "min-h-0 min-w-0 overflow-hidden pb-4 md:pb-3"
+              ? "flex min-h-0 min-w-0 flex-col overflow-hidden max-md:pb-4"
               : "hidden"
           }
         >
@@ -421,7 +421,7 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`flex min-h-0 min-w-0 flex-col overflow-hidden pb-4 md:pb-3 ${
+          className={`flex min-h-0 min-w-0 flex-col overflow-hidden max-md:pb-4 ${
             showSplitPane
               ? "animate-chat-panel-slide border-l border-glass-border"
               : "w-full"

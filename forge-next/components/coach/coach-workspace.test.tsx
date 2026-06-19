@@ -133,10 +133,11 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
+    expect(container.querySelector(".md\\:pb-3")).toBeNull();
   });
 
   it("restarts workspace on close from coach home", async () => {
