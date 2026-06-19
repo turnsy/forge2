@@ -145,12 +145,6 @@ function LoadUnitControl({
   const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (customActive && !isPresetLoadUnit(unit)) {
-      setCustomDraft(unit);
-    }
-  }, [customActive, unit]);
-
-  useEffect(() => {
     if (customActive) {
       customInputRef.current?.focus();
     }

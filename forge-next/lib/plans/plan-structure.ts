@@ -22,13 +22,13 @@ export function syncPlanStructure(plan: WorkoutPlan): WorkoutPlan {
     return {
       ...week,
       index: weekNumber,
-      days,
+      days: days as typeof week.days,
     };
   });
 
   return {
     ...plan,
-    weeks,
+    weeks: weeks as typeof plan.weeks,
   };
 }
 
@@ -169,7 +169,11 @@ export function moveWeek(
   }
 
   const nextPlan = clonePlan(plan);
-  nextPlan.weeks = moveListItem(nextPlan.weeks, weekPosition, weekPosition + direction);
+  nextPlan.weeks = moveListItem(
+    nextPlan.weeks,
+    weekPosition,
+    weekPosition + direction,
+  ) as typeof nextPlan.weeks;
   return syncPlanStructure(nextPlan);
 }
 
@@ -195,7 +199,11 @@ export function moveDay(
     return null;
   }
 
-  week.days = moveListItem(week.days, dayPosition, dayPosition + direction);
+  week.days = moveListItem(
+    week.days,
+    dayPosition,
+    dayPosition + direction,
+  ) as typeof week.days;
   return syncPlanStructure(nextPlan);
 }
 
