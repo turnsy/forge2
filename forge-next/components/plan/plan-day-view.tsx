@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
+import { CoachLockedDayView } from "@/components/plan/coach-locked-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { Button, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
@@ -718,6 +719,10 @@ export function PlanDayView({
   }
 
   if (view === "coach" && !readOnly && onPlanChange && plan) {
+    if (!isDayEditable(day)) {
+      return <CoachLockedDayView day={day} />;
+    }
+
     return (
       <CoachEditableDayView
         plan={plan}

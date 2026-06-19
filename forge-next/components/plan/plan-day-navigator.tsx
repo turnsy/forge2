@@ -14,7 +14,7 @@ import {
   getWeekDropdownLabel,
   type DaySelection,
 } from "@/lib/plans/plan-day-navigator";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type PlanDayNavigatorProps = {
   plan: WorkoutPlan;
@@ -30,6 +30,7 @@ export type PlanDayNavigatorProps = {
   ) => void;
   onPlanChange?: (plan: WorkoutPlan) => void;
   disabled?: boolean;
+  canEditDay?: (day: Day) => boolean;
 };
 
 function SaveIndicator({
@@ -71,6 +72,7 @@ export function PlanDayNavigator({
   onDayCompleted,
   onPlanChange,
   disabled = false,
+  canEditDay,
 }: PlanDayNavigatorProps) {
   const defaultSelection = useMemo(
     () => getInitialDaySelection(plan, view, initialDay),
@@ -186,6 +188,7 @@ export function PlanDayNavigator({
               selectedWeekIndex={selectedWeekIndex}
               selectedDayIndex={selectedDayIndex}
               disabled={disabled}
+              canEditDay={canEditDay}
               onPlanChange={handlePlanStructureChange}
               onSelectionChange={({ weekIndex, dayIndex }) => {
                 setSelectedWeekIndex(weekIndex);
@@ -209,6 +212,7 @@ export function PlanDayNavigator({
               selectedDayIndex={selectedDayIndex}
               disabled={disabled}
               layout="mobile"
+              canEditDay={canEditDay}
               onPlanChange={handlePlanStructureChange}
               onSelectionChange={({ weekIndex, dayIndex }) => {
                 setSelectedWeekIndex(weekIndex);

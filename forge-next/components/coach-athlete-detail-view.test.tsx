@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachAthleteDetailView } from "@/components/coach-athlete-detail-view";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import type { AssignedPlan } from "@/lib/athlete/plan/repository";
@@ -12,6 +12,16 @@ vi.mock("@/components/coach-athlete-plan-actions", () => ({
 
 vi.mock("@/components/coach-athlete-detail-actions", () => ({
   CoachAthleteDetailActions: () => <button type="button">Unlink athlete</button>,
+}));
+
+const mockSaveAssignedPlan = vi.fn();
+
+vi.mock("@/lib/coach/assigned-plan/use-save-assigned-plan", () => ({
+  useSaveAssignedPlan: () => ({
+    saveAssignedPlan: mockSaveAssignedPlan,
+    saveStatus: "idle",
+    saveError: null,
+  }),
 }));
 
 const relationship: CoachAthleteRelationship = {
@@ -41,6 +51,10 @@ function assignedPlan(overrides: Partial<AssignedPlan> = {}): AssignedPlan {
 }
 
 describe("CoachAthleteDetailView", () => {
+  beforeEach(() => {
+    mockSaveAssignedPlan.mockResolvedValue({});
+  });
+
   it("renders current plan progress and viewer when an active plan exists", () => {
     render(
       <CoachAthleteDetailView
@@ -60,6 +74,49 @@ describe("CoachAthleteDetailView", () => {
     expect(screen.getByText("Days/week")).toBeInTheDocument();
     expect(screen.queryByText("Progress")).not.toBeInTheDocument();
     expect(screen.getByText("Back Squat")).toBeInTheDocument();
+  });
+
+  it("shows edit controls for the active plan and enters edit mode", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <CoachAthleteDetailView
+        relationship={relationship}
+        activePlan={assignedPlan()}
+        previousPlans={[]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Edit plan" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit plan" }));
+
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Add exercise" }).length).toBeGreaterThan(0);
+  });
+
+  it("does not show edit controls in history detail view", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <CoachAthleteDetailView
+        relationship={relationship}
+        activePlan={assignedPlan()}
+        previousPlans={[
+          assignedPlan({
+            id: "assignment-2",
+            status: "completed",
+            completedAt: "2026-02-01T00:00:00.000Z",
+          }),
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "History" }));
+    await user.click(screen.getAllByRole("button", { name: "4-Week Strength Block" })[0]);
+
+    expect(screen.queryByRole("button", { name: "Edit plan" })).not.toBeInTheDocument();
   });
 
   it("shows empty state on current plan tab when no plan is assigned", () => {

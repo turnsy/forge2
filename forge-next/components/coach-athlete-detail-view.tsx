@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PencilIcon } from "@/components/icons/pencil-icon";
 import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-actions";
 import { CoachAthletePlanActions } from "@/components/coach-athlete-plan-actions";
 import { CompletionProgressRing } from "@/components/completion-progress-ring";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
 import {
+  Button,
   EmptyState,
   List,
   ListRow,
+  Message,
   MetaGroup,
   MetaItem,
   PageBackButton,
@@ -22,8 +25,11 @@ import {
 import { formatDate } from "@/lib/format/date";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
 import { getAssignedPlanHistoryMeta } from "@/lib/athlete/plan/display";
+import { useSaveAssignedPlan } from "@/lib/coach/assigned-plan/use-save-assigned-plan";
+import { isDayEditable } from "@/lib/plans/plan-editability";
 import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import type { CoachAthleteRelationship } from "@/lib/links/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
   const baseClass =
@@ -48,15 +54,65 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
   );
 }
 
+function SaveStatusLabel({
+  status,
+}: {
+  status: "idle" | "saving" | "saved";
+}) {
+  if (status === "idle") {
+    return null;
+  }
+
+  const label = status === "saving" ? "Saving..." : "Saved";
+
+  return (
+    <span className="text-xs text-zinc-500 dark:text-zinc-400" aria-live="polite">
+      {label}
+    </span>
+  );
+}
+
 function CoachAssignedPlanPanel({
   assignedPlan,
   onBack,
+  allowEditing = false,
 }: {
   assignedPlan: AssignedPlan;
   onBack?: () => void;
+  allowEditing?: boolean;
 }) {
-  const { plan } = assignedPlan;
+  const [isEditing, setIsEditing] = useState(false);
+  const [baselinePlan, setBaselinePlan] = useState<WorkoutPlan>(assignedPlan.plan);
+  const [plan, setPlan] = useState<WorkoutPlan>(assignedPlan.plan);
+  const { saveAssignedPlan, saveStatus, saveError } = useSaveAssignedPlan(assignedPlan.id);
+
+  useEffect(() => {
+    setBaselinePlan(assignedPlan.plan);
+    if (!isEditing) {
+      setPlan(assignedPlan.plan);
+    }
+  }, [assignedPlan.id, assignedPlan.plan, isEditing]);
+
   const completionPercent = computePlanCompletionPercent(plan);
+  const isSaving = saveStatus === "saving";
+
+  function handleEnterEditMode() {
+    setPlan(structuredClone(baselinePlan));
+    setIsEditing(true);
+  }
+
+  function handleCancelEdit() {
+    setPlan(baselinePlan);
+    setIsEditing(false);
+  }
+
+  async function handleSave() {
+    const result = await saveAssignedPlan({ plan });
+    if (result !== null) {
+      setBaselinePlan(plan);
+      setIsEditing(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -70,11 +126,59 @@ function CoachAssignedPlanPanel({
               {plan.name}
             </h2>
           </div>
-          <CompletionProgressRing percent={completionPercent} size={40} />
+          <div className="flex shrink-0 items-center gap-3">
+            {isEditing ? <SaveStatusLabel status={saveStatus} /> : null}
+            <CompletionProgressRing percent={completionPercent} size={40} />
+          </div>
         </div>
-        <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
+          {allowEditing ? (
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isSaving}
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isSaving}
+                    onClick={() => void handleSave()}
+                  >
+                    {isSaving ? "Saving…" : "Save changes"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon={<PencilIcon />}
+                  onClick={handleEnterEditMode}
+                >
+                  Edit plan
+                </Button>
+              )}
+            </div>
+          ) : null}
+        </div>
+        {saveError ? <Message tone="error">{saveError}</Message> : null}
       </div>
-      <PlanDayNavigator plan={plan} view="coach" readOnly />
+      <PlanDayNavigator
+        plan={plan}
+        view="coach"
+        readOnly={!isEditing}
+        onPlanChange={isEditing ? setPlan : undefined}
+        disabled={isSaving}
+        canEditDay={isEditing ? isDayEditable : undefined}
+      />
     </div>
   );
 }
@@ -166,7 +270,7 @@ export function CoachAthleteDetailView({
               action={<CoachAthletePlanActions relationship={relationship} />}
             />
           ) : (
-            <CoachAssignedPlanPanel assignedPlan={activePlan} />
+            <CoachAssignedPlanPanel assignedPlan={activePlan} allowEditing />
           )}
         </TabPanel>
 

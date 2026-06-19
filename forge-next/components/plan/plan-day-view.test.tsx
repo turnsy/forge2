@@ -266,4 +266,21 @@ describe("PlanDayView", () => {
 
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
+
+  it("renders locked coach day view for completed days in edit mode", () => {
+    render(
+      <PlanDayView
+        plan={makePlan({ dayComplete: true })}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("coach-locked-day")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add exercise" })).not.toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
 });
