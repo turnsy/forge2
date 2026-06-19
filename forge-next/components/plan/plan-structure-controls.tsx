@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PlusIcon } from "@/components/icons/plus-icon";
+import { XIcon } from "@/components/icons/x-icon";
 import { Button } from "@/components/ui";
 import { PlanEditorConfirmModal } from "@/components/plan/plan-editor-confirm-modal";
 import type { DaySelection } from "@/lib/plans/plan-day-navigator";
@@ -132,8 +133,8 @@ export function PlanStructureControls({
     <div
       className={
         layout === "desktop"
-          ? "flex min-w-0 flex-1 items-center justify-end gap-2"
-          : "flex items-center justify-end gap-2"
+          ? "flex min-w-0 flex-1 items-center gap-2"
+          : "flex items-center gap-2"
       }
     >
       <Button
@@ -153,6 +154,7 @@ export function PlanStructureControls({
         variant="danger"
         size="sm"
         fullWidth={layout === "mobile"}
+        icon={<XIcon />}
         disabled={disabled || !canRemoveWeek(plan)}
         onClick={requestRemoveWeek}
       >
@@ -165,8 +167,8 @@ export function PlanStructureControls({
     <div
       className={
         layout === "desktop"
-          ? "flex min-w-0 flex-1 items-center justify-end gap-2"
-          : "flex items-center justify-end gap-2"
+          ? "flex min-w-0 flex-1 items-center gap-2"
+          : "flex items-center gap-2"
       }
     >
       <Button
@@ -186,6 +188,7 @@ export function PlanStructureControls({
         variant="danger"
         size="sm"
         fullWidth={layout === "mobile"}
+        icon={<XIcon />}
         disabled={disabled || !canRemoveDay(plan, selectedWeekIndex)}
         onClick={requestRemoveDay}
       >
