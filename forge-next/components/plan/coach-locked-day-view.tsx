@@ -10,12 +10,14 @@ export function CoachLockedDayView({ day }: { day: Day }) {
       data-coach-locked-day
       data-testid="coach-locked-day"
     >
-      <div className="flex items-center gap-2">
-        <LockIcon className="h-4 w-4 text-surface-muted" />
-        <h2 className="text-lg font-semibold text-surface-muted">{getDayTitle(day)}</h2>
-        <span className="text-xs font-medium uppercase tracking-wide text-surface-muted">
-          Completed
-        </span>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 text-lg font-semibold text-surface-muted">{getDayTitle(day)}</h2>
+        <div className="flex shrink-0 items-center gap-2">
+          <LockIcon className="h-4 w-4 text-surface-muted" />
+          <span className="text-xs font-medium uppercase tracking-wide text-surface-muted">
+            Completed
+          </span>
+        </div>
       </div>
       {day.exercises.map((exercise, index) => (
         <PlanExerciseBlock

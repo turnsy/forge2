@@ -91,7 +91,7 @@ describe("CoachAthleteDetailView", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit plan" }));
 
-    expect(screen.getByRole("button", { name: "Save changes" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Add exercise" }).length).toBeGreaterThan(0);
   });

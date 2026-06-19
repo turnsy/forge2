@@ -131,16 +131,18 @@ function CoachAssignedPlanPanel({
             <CompletionProgressRing percent={completionPercent} size={40} />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <PlanViewerMeta plan={plan} layout="row" showDiscipline={false} />
           {allowEditing ? (
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
               {isEditing ? (
                 <>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
+                    fullWidth={false}
+                    className="w-full md:w-auto"
                     disabled={isSaving}
                     onClick={handleCancelEdit}
                   >
@@ -149,10 +151,12 @@ function CoachAssignedPlanPanel({
                   <Button
                     type="button"
                     size="sm"
+                    fullWidth={false}
+                    className="w-full md:w-auto"
                     disabled={isSaving}
                     onClick={() => void handleSave()}
                   >
-                    {isSaving ? "Saving…" : "Save changes"}
+                    {isSaving ? "Saving…" : "Save"}
                   </Button>
                 </>
               ) : (
@@ -160,6 +164,8 @@ function CoachAssignedPlanPanel({
                   type="button"
                   variant="ghost"
                   size="sm"
+                  fullWidth={false}
+                  className="w-full md:w-auto"
                   icon={<PencilIcon />}
                   onClick={handleEnterEditMode}
                 >
