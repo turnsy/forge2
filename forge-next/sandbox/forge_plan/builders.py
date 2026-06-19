@@ -74,7 +74,12 @@ def build_absolute_load(value: float, unit: str) -> dict[str, Any]:
     return {"type": "absolute", "value": value, "unit": unit}
 
 
-def build_percentage_load(value: float, operator: str = "exact") -> dict[str, Any]:
+def build_percentage_load(
+    value: float,
+    operator: str = "exact",
+    *,
+    absolute_unit: str | None = None,
+) -> dict[str, Any]:
     """Build a percentage load (``basis`` omitted — optional in schema v2.0.0)."""
     load: dict[str, Any] = {
         "type": "percentage",
@@ -82,6 +87,10 @@ def build_percentage_load(value: float, operator: str = "exact") -> dict[str, An
         "operator": operator,
         "value": value,
     }
+    if absolute_unit is not None:
+        trimmed = absolute_unit.strip()
+        if trimmed:
+            load["absoluteUnit"] = trimmed
     return load
 
 
@@ -102,7 +111,11 @@ def build_planned_set(
     if load_type == "absolute":
         load = build_absolute_load(load_value, unit)
     elif load_type == "percentage":
-        load = build_percentage_load(load_value, operator=operator)
+        load = build_percentage_load(
+            load_value,
+            operator=operator,
+            absolute_unit=unit,
+        )
     else:
         raise ValueError("load_type must be 'absolute' or 'percentage'")
 

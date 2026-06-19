@@ -182,6 +182,9 @@ class Plan:
         ``notes`` (e.g. ``notes="per side"``). Set ``id``, ``status``, ``locked``, and
         ``actual`` are filled automatically. Target the exercise by ``exercise_name``,
         ``exercise_index`` (0-based), or omit both to use the last exercise on that day.
+
+        For ``load_type="percentage"``, ``unit`` is stored as ``absoluteUnit`` on the load
+        (e.g. ``unit="kg"`` for 85% of a kg-based max).
         """
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
         day = self._require_day_at(week_pos, day_pos)
