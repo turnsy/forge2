@@ -18,30 +18,24 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useId, useRef, useState, type ChangeEvent, type RefObject } from "react";
+import { useId, useRef, type RefObject } from "react";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { XIcon } from "@/components/icons/x-icon";
-import { Button, IconButton, Input, Select } from "@/components/ui";
+import { Button, IconButton, Input } from "@/components/ui";
+import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { formatReps } from "@/lib/plans/display";
 import {
   createDefaultSet,
   createExerciseId,
   createSetId,
 } from "@/lib/plans/plan-defaults";
-import {
-  CUSTOM_LOAD_UNIT_OPTION,
-  isPresetLoadUnit,
-  PRESET_LOAD_UNITS,
-} from "@/lib/plans/load-units";
 import type {
-  AbsoluteLoad,
   Day,
   Exercise,
   ExactPlannedSet,
   Load,
-  PercentageLoad,
   RepsValue,
   Set,
 } from "@/lib/plans/workout-plan";
@@ -86,149 +80,6 @@ function parseRepsValue(value: string): RepsValue {
   }
 
   return value;
-}
-
-function getLoadInputValue(load: Load): string {
-  if (load.type === "absolute") {
-    return String(load.value);
-  }
-
-  if (load.value !== undefined) {
-    return String(load.value);
-  }
-
-  return "";
-}
-
-function updateLoadValue(load: Load, value: string): Load {
-  const trimmed = value.trim();
-  const numeric = trimmed === "" ? 0 : Number(trimmed);
-
-  if (load.type === "percentage") {
-    return {
-      ...load,
-      value: Number.isNaN(numeric) ? load.value : numeric,
-    } satisfies PercentageLoad;
-  }
-
-  return {
-    ...load,
-    value: Number.isNaN(numeric) ? (load as AbsoluteLoad).value : numeric,
-  } satisfies AbsoluteLoad;
-}
-
-function updateLoadUnit(load: Load, unit: string): Load {
-  if (load.type === "percentage") {
-    return load;
-  }
-
-  return {
-    ...load,
-    unit: unit.trim(),
-  } satisfies AbsoluteLoad;
-}
-
-function LoadUnitControl({
-  unit,
-  disabled,
-  onChange,
-}: {
-  unit: string;
-  disabled: boolean;
-  onChange: (unit: string) => void;
-}) {
-  const unitControlWidthClass = "w-[4.75rem] shrink-0";
-  const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
-  const [customDraft, setCustomDraft] = useState(() =>
-    !isPresetLoadUnit(unit) ? unit : "",
-  );
-  const customInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (customActive) {
-      customInputRef.current?.focus();
-    }
-  }, [customActive]);
-
-  function enterCustomMode() {
-    setCustomDraft(isPresetLoadUnit(unit) ? "" : unit);
-    setCustomActive(true);
-  }
-
-  function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    const next = event.target.value;
-    if (next === CUSTOM_LOAD_UNIT_OPTION) {
-      enterCustomMode();
-      return;
-    }
-
-    setCustomActive(false);
-    onChange(next);
-  }
-
-  function handleCustomBlur() {
-    const trimmed = customDraft.trim();
-    if (!trimmed || isPresetLoadUnit(trimmed)) {
-      setCustomActive(false);
-      onChange("lb");
-      return;
-    }
-
-    if (trimmed !== unit) {
-      onChange(trimmed);
-    }
-  }
-
-  const selectValue = customActive ? CUSTOM_LOAD_UNIT_OPTION : unit;
-
-  if (customActive) {
-    return (
-      <div className={unitControlWidthClass}>
-        <Input
-          ref={customInputRef}
-          size="sm"
-          value={customDraft}
-          disabled={disabled}
-          aria-label="Custom unit"
-          placeholder="e.g. mi"
-          className="w-full min-w-0"
-          onChange={(event) => {
-            const next = event.target.value;
-            setCustomDraft(next);
-            onChange(next);
-          }}
-          onBlur={handleCustomBlur}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setCustomActive(false);
-              onChange("lb");
-            }
-          }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={unitControlWidthClass}>
-      <Select
-        hideLabel
-        label="Unit"
-        size="sm"
-        value={selectValue}
-        disabled={disabled}
-        className="w-full"
-        onChange={handleSelectChange}
-      >
-        {PRESET_LOAD_UNITS.map((preset) => (
-          <option key={preset} value={preset}>
-            {preset}
-          </option>
-        ))}
-        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
-      </Select>
-    </div>
-  );
 }
 
 function cloneSetFromPrevious(previous: Set): Set {
@@ -297,8 +148,7 @@ function SortableSetRow({
   canDelete,
   repsInputRef,
   onRepsChange,
-  onLoadChange,
-  onLoadUnitChange,
+  onLoadUpdate,
   onNotesChange,
   onDelete,
 }: {
@@ -308,8 +158,7 @@ function SortableSetRow({
   canDelete: boolean;
   repsInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void);
   onRepsChange: (value: string) => void;
-  onLoadChange: (value: string) => void;
-  onLoadUnitChange: (unit: string) => void;
+  onLoadUpdate: (load: Load) => void;
   onNotesChange: (value: string) => void;
   onDelete: () => void;
 }) {
@@ -377,25 +226,12 @@ function SortableSetRow({
         />
       </td>
       <td className="px-2 py-2">
-        <div className="flex items-center gap-1.5">
-          <Input
-            size="sm"
-            value={getLoadInputValue(planned.load)}
-            readOnly={disabled}
-            aria-label={`Set ${setNumber} target`}
-            onChange={(event) => onLoadChange(event.target.value)}
-            className="min-w-0 flex-1"
-          />
-          {planned.load.type === "absolute" ? (
-            <LoadUnitControl
-              unit={planned.load.unit}
-              disabled={disabled}
-              onChange={onLoadUnitChange}
-            />
-          ) : (
-            <span className="shrink-0 text-xs text-surface-muted">%</span>
-          )}
-        </div>
+        <PlanLoadTargetControl
+          load={planned.load}
+          disabled={disabled}
+          setNumber={setNumber}
+          onChange={onLoadUpdate}
+        />
       </td>
       <td className="px-2 py-2">
         <Input
@@ -542,7 +378,7 @@ function EditableExerciseBlock({
           onDragEnd={handleSetDragEnd}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[24rem] border-collapse text-sm">
+            <table className="w-full min-w-[32rem] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-glass-border text-left text-xs font-medium uppercase tracking-wide text-surface-foreground/80">
                   <th className="w-8 px-2 py-2" aria-label="Reorder" />
@@ -590,7 +426,7 @@ function EditableExerciseBlock({
                           };
                         });
                       }}
-                      onLoadChange={(value) => {
+                      onLoadUpdate={(load) => {
                         updateSet(setIndex, (current) => {
                           if (current.planned.type !== "exact") {
                             return current;
@@ -601,23 +437,7 @@ function EditableExerciseBlock({
                             status: "planned",
                             planned: {
                               ...current.planned,
-                              load: updateLoadValue(current.planned.load, value),
-                            },
-                          };
-                        });
-                      }}
-                      onLoadUnitChange={(unit) => {
-                        updateSet(setIndex, (current) => {
-                          if (current.planned.type !== "exact") {
-                            return current;
-                          }
-
-                          return {
-                            ...current,
-                            status: "planned",
-                            planned: {
-                              ...current.planned,
-                              load: updateLoadUnit(current.planned.load, unit),
+                              load,
                             },
                           };
                         });
