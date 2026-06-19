@@ -57,6 +57,10 @@ export function getWeekTitle(week: Week): string {
 }
 
 export function getDayTitle(day: Day): string {
+  if (day.name?.trim()) {
+    return day.name.trim();
+  }
+
   return `Day ${day.index}`;
 }
 

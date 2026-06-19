@@ -85,7 +85,7 @@ describe("getDayTitle", () => {
   it("returns Day with index", () => {
     expect(getDayTitle({ index: 1, code: "w1d1", exercises: [] as never })).toBe("Day 1");
     expect(getDayTitle({ index: 3, code: "w2d3", name: "Heavy day", exercises: [] as never })).toBe(
-      "Day 3",
+      "Heavy day",
     );
   });
 });

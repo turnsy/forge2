@@ -115,7 +115,13 @@ export function CoachWorkspace({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [showArtifact, setShowArtifact] = useState(false);
+  const [showArtifact, setShowArtifact] = useState(() => {
+    if (!initialPlan || !initialPlanId || typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia("(max-width: 767px)").matches;
+  });
   const savedSnapshotRef = useRef<string | null>(
     initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
   );

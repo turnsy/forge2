@@ -4,6 +4,7 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -22,8 +23,14 @@ import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { XIcon } from "@/components/icons/x-icon";
-import { Button, IconButton, Input } from "@/components/ui";
+import { Button, IconButton, Input, Select } from "@/components/ui";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { formatReps } from "@/lib/plans/display";
+import {
+  CUSTOM_LOAD_UNIT_OPTION,
+  isPresetLoadUnit,
+  PRESET_LOAD_UNITS,
+} from "@/lib/plans/load-units";
 import type {
   AbsoluteLoad,
   Day,
@@ -97,14 +104,6 @@ function getLoadInputValue(load: Load): string {
   return "";
 }
 
-function getLoadUnitLabel(load: Load): string {
-  if (load.type === "percentage") {
-    return "%";
-  }
-
-  return load.unit;
-}
-
 function updateLoadValue(load: Load, value: string): Load {
   const trimmed = value.trim();
   const numeric = trimmed === "" ? 0 : Number(trimmed);
@@ -119,6 +118,18 @@ function updateLoadValue(load: Load, value: string): Load {
   return {
     ...load,
     value: Number.isNaN(numeric) ? (load as AbsoluteLoad).value : numeric,
+  } satisfies AbsoluteLoad;
+}
+
+function updateLoadUnit(load: Load, unit: string): Load {
+  if (load.type === "percentage") {
+    return load;
+  }
+
+  const trimmed = unit.trim();
+  return {
+    ...load,
+    unit: trimmed || "lb",
   } satisfies AbsoluteLoad;
 }
 
@@ -176,6 +187,63 @@ export function reorderSetsInExercise(
   return arrayMove(sets, oldIndex, newIndex);
 }
 
+function LoadUnitControl({
+  unit,
+  disabled,
+  onChange,
+}: {
+  unit: string;
+  disabled: boolean;
+  onChange: (unit: string) => void;
+}) {
+  const isPreset = isPresetLoadUnit(unit);
+  const selectValue = isPreset ? unit : CUSTOM_LOAD_UNIT_OPTION;
+
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <Select
+        hideLabel
+        label="Unit"
+        size="sm"
+        value={selectValue}
+        disabled={disabled}
+        className="w-[4.5rem] shrink-0"
+        onChange={(event) => {
+          const next = event.target.value;
+          if (next === CUSTOM_LOAD_UNIT_OPTION) {
+            onChange(isPreset ? "" : unit);
+            return;
+          }
+          onChange(next);
+        }}
+      >
+        {PRESET_LOAD_UNITS.map((preset) => (
+          <option key={preset} value={preset}>
+            {preset}
+          </option>
+        ))}
+        <option value={CUSTOM_LOAD_UNIT_OPTION}>…</option>
+      </Select>
+      {selectValue === CUSTOM_LOAD_UNIT_OPTION ? (
+        <Input
+          size="sm"
+          value={unit}
+          disabled={disabled}
+          aria-label="Custom unit"
+          placeholder="unit"
+          className="w-14 min-w-0"
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={() => {
+            if (!unit.trim()) {
+              onChange("lb");
+            }
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function GripIcon() {
   return (
     <svg
@@ -203,6 +271,7 @@ function SortableSetRow({
   repsInputRef,
   onRepsChange,
   onLoadChange,
+  onLoadUnitChange,
   onNotesChange,
   onDelete,
 }: {
@@ -213,6 +282,7 @@ function SortableSetRow({
   repsInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void);
   onRepsChange: (value: string) => void;
   onLoadChange: (value: string) => void;
+  onLoadUnitChange: (unit: string) => void;
   onNotesChange: (value: string) => void;
   onDelete: () => void;
 }) {
@@ -287,13 +357,19 @@ function SortableSetRow({
             size="sm"
             value={getLoadInputValue(planned.load)}
             readOnly={disabled}
-            aria-label={`Set ${setNumber} weight`}
+            aria-label={`Set ${setNumber} target`}
             onChange={(event) => onLoadChange(event.target.value)}
             className="min-w-0 flex-1"
           />
-          <span className="shrink-0 text-xs text-surface-muted">
-            {getLoadUnitLabel(planned.load)}
-          </span>
+          {planned.load.type === "absolute" ? (
+            <LoadUnitControl
+              unit={planned.load.unit}
+              disabled={disabled}
+              onChange={onLoadUnitChange}
+            />
+          ) : (
+            <span className="shrink-0 text-xs text-surface-muted">%</span>
+          )}
         </div>
       </td>
       <td className="px-2 py-2">
@@ -308,7 +384,7 @@ function SortableSetRow({
       <td className="px-2 py-2">
         {canDelete ? (
           <IconButton
-            variant="ghost"
+            variant="danger"
             size="sm"
             icon={<XIcon className="h-4 w-4" />}
             aria-label={`Delete set ${setNumber}`}
@@ -326,6 +402,7 @@ function EditableExerciseBlock({
   exerciseIndex,
   exerciseCount,
   disabled,
+  isMobile,
   onExerciseChange,
   onDeleteExercise,
   onMoveUp,
@@ -335,6 +412,7 @@ function EditableExerciseBlock({
   exerciseIndex: number;
   exerciseCount: number;
   disabled: boolean;
+  isMobile: boolean;
   onExerciseChange: (exercise: Exercise) => void;
   onDeleteExercise: () => void;
   onMoveUp: () => void;
@@ -367,6 +445,12 @@ function EditableExerciseBlock({
 
   const sensors = useSensors(
     useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -386,7 +470,7 @@ function EditableExerciseBlock({
         />
         <div className="flex shrink-0 items-center gap-1">
           <IconButton
-            variant="ghost"
+            variant="danger"
             size="sm"
             icon={<XIcon className="h-4 w-4" />}
             aria-label="Delete exercise"
@@ -441,7 +525,7 @@ function EditableExerciseBlock({
                   <th className="w-8 px-2 py-2" aria-label="Reorder" />
                   <th className="px-2 py-2 font-medium">Set</th>
                   <th className="px-2 py-2 font-medium">Reps</th>
-                  <th className="px-2 py-2 font-medium">Weight</th>
+                  <th className="px-2 py-2 font-medium">Target</th>
                   <th className="px-2 py-2 font-medium">Notes</th>
                   <th className="w-10 px-2 py-2" aria-label="Actions" />
                 </tr>
@@ -500,6 +584,22 @@ function EditableExerciseBlock({
                           };
                         });
                       }}
+                      onLoadUnitChange={(unit) => {
+                        updateSet(setIndex, (current) => {
+                          if (current.planned.type !== "exact") {
+                            return current;
+                          }
+
+                          return {
+                            ...current,
+                            status: "planned",
+                            planned: {
+                              ...current.planned,
+                              load: updateLoadUnit(current.planned.load, unit),
+                            },
+                          };
+                        });
+                      }}
                       onNotesChange={(value) => {
                         updateSet(setIndex, (current) => {
                           if (current.planned.type !== "exact") {
@@ -531,33 +631,34 @@ function EditableExerciseBlock({
             </table>
           </div>
         </DndContext>
-      </div>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        fullWidth={false}
-        icon={<PlusIcon />}
-        disabled={disabled}
-        onClick={() => {
-          const lastSet = exercise.sets.at(-1);
-          const nextSet = lastSet ? cloneSetFromPrevious(lastSet) : createDefaultSet();
-          autoFocusSetIdRef.current = nextSet.id;
-          onExerciseChange({
-            ...exercise,
-            sets: [...exercise.sets, nextSet],
-          });
-        }}
-      >
-        Set
-      </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={isMobile}
+          icon={<PlusIcon />}
+          disabled={disabled}
+          onClick={() => {
+            const lastSet = exercise.sets.at(-1);
+            const nextSet = lastSet ? cloneSetFromPrevious(lastSet) : createDefaultSet();
+            autoFocusSetIdRef.current = nextSet.id;
+            onExerciseChange({
+              ...exercise,
+              sets: [...exercise.sets, nextSet] as typeof exercise.sets,
+            });
+          }}
+        >
+          Set
+        </Button>
+      </div>
     </section>
   );
 }
 
 export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProps) {
   const editableDay = cloneDayForEditing(day);
+  const isMobile = useIsMobile();
 
   function emitChange(nextDay: Day) {
     onChange(nextDay);
@@ -606,6 +707,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
           exerciseIndex={exerciseIndex}
           exerciseCount={editableDay.exercises.length}
           disabled={disabled}
+          isMobile={isMobile}
           onExerciseChange={(nextExercise) => updateExercise(exerciseIndex, nextExercise)}
           onDeleteExercise={() => {
             emitChange({
@@ -624,7 +726,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
         type="button"
         variant="ghost"
         size="sm"
-        fullWidth={false}
+        fullWidth={isMobile}
         icon={<PlusIcon />}
         disabled={disabled}
         onClick={() => {
@@ -637,7 +739,7 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
                 name: "New Exercise",
                 sets: [createDefaultSet()],
               },
-            ],
+            ] as Day["exercises"],
           });
         }}
       >

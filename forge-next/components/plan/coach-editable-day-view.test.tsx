@@ -123,7 +123,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const weightInput = screen.getAllByLabelText("Set 1 weight")[0];
+    const weightInput = screen.getAllByLabelText("Set 1 target")[0];
     fireEvent.change(weightInput, { target: { value: "195" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;

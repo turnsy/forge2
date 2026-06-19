@@ -97,7 +97,7 @@ export interface ExactPlannedSet {
 export interface AbsoluteLoad {
   type: "absolute";
   value: number;
-  unit: "kg" | "lb" | "g";
+  unit: NonEmptyString;
 }
 export interface TargetPlannedSet {
   type: "target";

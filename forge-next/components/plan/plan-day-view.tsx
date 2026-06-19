@@ -16,6 +16,7 @@ import {
   setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
 import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
+import { getDayTitle } from "@/lib/plans/display";
 import type {
   AbsoluteLoad,
   Day,
@@ -229,6 +230,7 @@ function SetRowInputs({
 function AthleteReadOnlyDayContent({ day }: { day: Day }) {
   return (
     <div className="space-y-4">
+      <PlanDayHeader day={day} />
       {day.exercises.map((exercise, exerciseIdx) => (
         <section
           key={`${exercise.name}-${exerciseIdx}`}
@@ -269,9 +271,16 @@ function AthleteReadOnlyDayContent({ day }: { day: Day }) {
   );
 }
 
+function PlanDayHeader({ day }: { day: Day }) {
+  return (
+    <h2 className="text-lg font-semibold text-surface-foreground">{getDayTitle(day)}</h2>
+  );
+}
+
 function CoachDayContent({ day }: { day: Day }) {
   return (
     <div className="space-y-6">
+      <PlanDayHeader day={day} />
       {day.exercises.map((exercise, index) => (
         <PlanExerciseBlock
           key={`${day.code}-${exercise.id ?? exercise.name}-${index}`}
@@ -584,6 +593,7 @@ function AthleteEditableDayContent({
 
   return (
     <>
+      <PlanDayHeader day={day} />
       <div className="space-y-4">
         {savedDay.exercises.map((exercise, exerciseIdx) => {
           const exerciseComplete = isExerciseComplete(exercise);

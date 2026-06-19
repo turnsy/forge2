@@ -65,8 +65,8 @@ describe("PlanMobileDayPicker", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Week 1, Day 1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Week 1, Day 1" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Day 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Day 1" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
@@ -119,7 +119,7 @@ describe("PlanMobileDayPicker", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Week 1, Day 1" }));
+    await user.click(screen.getByRole("button", { name: "Day 1" }));
 
     expect(screen.getByRole("listbox", { name: "Plan days" })).toBeInTheDocument();
     const weekOne = screen.getByLabelText("Week 1");
@@ -149,7 +149,7 @@ describe("PlanMobileDayPicker", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Week 1, Day 1" }));
+    await user.click(screen.getByRole("button", { name: "Day 1" }));
 
     const deloadWeek = screen.getByLabelText("Deload Week");
     await user.click(within(deloadWeek).getByRole("option", { name: "Day 1" }));
