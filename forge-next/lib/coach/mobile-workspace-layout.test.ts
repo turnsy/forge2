@@ -15,13 +15,13 @@ describe("mobile workspace layout classes", () => {
   });
 
   it("uses extra top padding on mobile for overlay content", () => {
-    expect(MOBILE_OVERLAY_CONTENT_CLASS).toContain("pt-16");
-    expect(MOBILE_OVERLAY_CONTENT_CLASS).toContain("md:pt-14");
+    expect(MOBILE_OVERLAY_CONTENT_CLASS).toContain("max-md:pt-16");
+    expect(MOBILE_OVERLAY_CONTENT_CLASS).not.toContain("md:pt-14");
   });
 
   it("defines composer inset and scroll-end padding", () => {
     expect(MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS).toContain("pb-[calc(4.5rem");
-    expect(MOBILE_BOTTOM_NAV_SCROLL_END_CLASS).toContain("pb-[calc(4.5rem");
+    expect(MOBILE_BOTTOM_NAV_SCROLL_END_CLASS).toContain("max-md:pb-[calc(4.5rem");
   });
 
   it("defines horizontal padding for the mobile chat surface", () => {

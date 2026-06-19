@@ -49,7 +49,7 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:px-1 md:py-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0">
         {messages.map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>
             <ChatMessageBody message={message} />

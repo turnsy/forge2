@@ -39,6 +39,21 @@ describe("useChatWorkspace", () => {
     expect(streamChat).toHaveBeenCalledOnce();
   });
 
+  it("updates currentArtifact when setArtifact is called", () => {
+    const { result } = renderHook(() =>
+      useChatWorkspace({
+        streamChat: vi.fn(),
+        uploadFile: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.setArtifact("updated-artifact");
+    });
+
+    expect(result.current.state.currentArtifact).toBe("updated-artifact");
+  });
+
   it("restarts with a fresh draft id and cleared state", () => {
     const { result } = renderHook(() =>
       useChatWorkspace({

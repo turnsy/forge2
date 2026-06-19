@@ -151,6 +151,10 @@ export function useChatWorkspace<TArtifact>(
     dispatch({ type: "SET_PLAN_ID", planId });
   }, []);
 
+  const setArtifact = useCallback((artifact: TArtifact) => {
+    dispatch({ type: "SET_ARTIFACT", artifact });
+  }, []);
+
   return {
     state,
     attachFiles,
@@ -158,6 +162,7 @@ export function useChatWorkspace<TArtifact>(
     restart,
     setArtifactTitle,
     setPlanId,
+    setArtifact,
   };
 }
 

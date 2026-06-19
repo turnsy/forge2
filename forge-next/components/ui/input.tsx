@@ -1,25 +1,23 @@
-import type { InputHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes } from "react";
 import { controlClass } from "@/lib/theme";
 
-export function Input({
-  label,
-  className,
-  size = "md",
-  ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
-  label?: string;
-  size?: "sm" | "md";
-}) {
+export const Input = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
+    label?: string;
+    size?: "sm" | "md";
+  }
+>(function Input({ label, className, size = "md", ...props }, ref) {
   const inputClassName = `${controlClass(size)}${className ? ` ${className}` : ""}`;
 
   if (label) {
     return (
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         <span>{label}</span>
-        <input className={inputClassName} {...props} />
+        <input ref={ref} className={inputClassName} {...props} />
       </label>
     );
   }
 
-  return <input className={inputClassName} {...props} />;
-}
+  return <input ref={ref} className={inputClassName} {...props} />;
+});

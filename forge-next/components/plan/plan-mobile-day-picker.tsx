@@ -51,7 +51,13 @@ export function PlanMobileDayPicker({
     "next",
   );
 
-  const headerLabel = getMobileDayHeaderLabel(selectedWeekIndex, selectedDayIndex);
+  const selectedItem = navItems.find(
+    (item) =>
+      item.weekIndex === selectedWeekIndex && item.dayIndex === selectedDayIndex,
+  );
+  const headerLabel = selectedItem
+    ? getMobileDayHeaderLabel(selectedItem.week, selectedItem.day)
+    : `Week ${selectedWeekIndex}, Day ${selectedDayIndex}`;
 
   useEffect(() => {
     if (!open) {

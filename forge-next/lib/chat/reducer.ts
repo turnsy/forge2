@@ -41,6 +41,8 @@ export function chatWorkspaceReducer<TArtifact>(
       return { ...state, artifactTitle: action.artifactTitle };
     case "SET_PLAN_ID":
       return { ...state, planId: action.planId };
+    case "SET_ARTIFACT":
+      return { ...state, currentArtifact: action.artifact };
     case "ATTACH_FILES":
       return {
         ...state,

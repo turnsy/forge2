@@ -19,7 +19,7 @@ REPS_INVALID_EXAMPLES = (
     "5/5",
     "1 (3 jumps)",
 )
-LOAD_UNITS_ABSOLUTE = ("kg", "lb", "g")
+LOAD_UNITS_COMMON = ("kg", "lb", "m", "yd")
 PERCENTAGE_OPERATORS = ("exact", "range", "at-least", "at-most")
 SET_STATUS_VALUES = ("planned", "completed", "skipped")
 
@@ -63,10 +63,11 @@ def validation_rules_cheat_sheet() -> str:
             "  - Optional: rep complexes as string 5+5+5 instead of int + notes when splitting reps matters.",
             '- planned.notes: optional string on exact sets (use for per-side, time, and coaching detail)',
             '- planned.load: "absolute" OR "percentage"',
-            f'  - absolute: type "absolute", value >= 0, unit one of {", ".join(LOAD_UNITS_ABSOLUTE)}',
+            f'  - absolute: type "absolute", value >= 0, unit non-empty string (common: {", ".join(LOAD_UNITS_COMMON)})',
             '  - percentage: type "percentage", unit "%", operator one of '
             f'{", ".join(repr(o) for o in PERCENTAGE_OPERATORS)}; '
-            '"value" for exact/at-least/at-most; "minValue"+"maxValue" for range; "basis" optional',
+            '"value" for exact/at-least/at-most; "minValue"+"maxValue" for range; '
+            '"basis" optional; "absoluteUnit" optional (lb/kg/etc. — use add_set unit= for percentage sets)',
             "- actual: null for new sets",
             f'- status: one of {", ".join(repr(s) for s in SET_STATUS_VALUES)} (builder uses "planned")',
             "- locked: boolean (builder uses false)",

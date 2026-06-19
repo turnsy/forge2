@@ -28,6 +28,7 @@ export type PercentageLoad = (
   type: "percentage";
   unit: "%";
   basis?: NonEmptyString;
+  absoluteUnit?: NonEmptyString;
   operator: "exact" | "range" | "at-least" | "at-most";
   value?: number;
   minValue?: number;
@@ -97,7 +98,7 @@ export interface ExactPlannedSet {
 export interface AbsoluteLoad {
   type: "absolute";
   value: number;
-  unit: "kg" | "lb" | "g";
+  unit: NonEmptyString;
 }
 export interface TargetPlannedSet {
   type: "target";

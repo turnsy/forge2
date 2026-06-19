@@ -124,7 +124,7 @@ export function PlanSetTable({
             <tr className="border-b border-glass-border text-left text-xs font-medium uppercase tracking-wide text-surface-foreground/80">
               <th className="px-3 py-2 font-medium">Set</th>
               <th className="px-3 py-2 font-medium">Reps</th>
-              <th className="px-3 py-2 font-medium">Load</th>
+              <th className="px-3 py-2 font-medium">Target</th>
               <th className="px-3 py-2 font-medium">Notes</th>
             </tr>
           </thead>

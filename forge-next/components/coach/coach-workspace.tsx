@@ -10,8 +10,13 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
+  DESKTOP_CHAT_AREA_CLASS,
+  DESKTOP_CHAT_CLOSE_CLASS,
+  DESKTOP_CHAT_COLUMN_CLASS,
+  DESKTOP_WORKSPACE_HEIGHT_CLASS,
+} from "@/lib/coach/desktop-workspace-layout";
+import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -28,7 +33,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass } from "@/lib/theme";
+import { roleLinkClass, pageShellClass } from "@/lib/theme";
 
 function ArtifactPanel({
   state,
@@ -39,6 +44,8 @@ function ArtifactPanel({
   onBackClick,
   onTitleChange,
   onSave,
+  disabled,
+  onPlanChange,
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
@@ -48,13 +55,15 @@ function ArtifactPanel({
   onBackClick: (event: MouseEvent<HTMLAnchorElement>) => void;
   onTitleChange: (title: string) => void;
   onSave: () => void;
+  disabled: boolean;
+  onPlanChange: (plan: WorkoutPlan) => void;
 }) {
   return (
     <FadeIn
       key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden md:gap-4 md:pr-3"
+      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden max-md:gap-4"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden md:gap-4 md:pt-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-md:gap-4">
         <div className="flex shrink-0 items-center gap-2">
           {resolvedBackHref ? (
             <PageBackLink
@@ -74,17 +83,17 @@ function ArtifactPanel({
           </div>
         </div>
         {saveError ? (
-          <p className="px-2 text-sm text-red-400" role="alert">
+          <p className="text-sm text-red-400" role="alert">
             {saveError}
           </p>
         ) : null}
-        <div
-          className={`min-h-0 flex-1 md:overflow-hidden md:px-2 ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS} max-md:overflow-y-auto max-md:px-0`}
-        >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
             runStatus={state.runStatus}
             isAwaitingArtifact={false}
+            disabled={disabled}
+            onPlanChange={onPlanChange}
           />
         </div>
       </div>
@@ -109,7 +118,13 @@ export function CoachWorkspace({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [showArtifact, setShowArtifact] = useState(false);
+  const [showArtifact, setShowArtifact] = useState(() => {
+    if (!initialPlan || !initialPlanId || typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia("(max-width: 767px)").matches;
+  });
   const savedSnapshotRef = useRef<string | null>(
     initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
   );
@@ -128,6 +143,7 @@ export function CoachWorkspace({
     sendMessage,
     setArtifactTitle,
     setPlanId,
+    setArtifact,
     restart,
   } = useCoachPlanWorkspace(
     initialPlan && initialPlanId
@@ -158,6 +174,13 @@ export function CoachWorkspace({
       await sendMessage(...args);
     },
     [activePlanId, resetSaveStatus, sendMessage],
+  );
+
+  const handlePlanChange = useCallback(
+    (plan: WorkoutPlan) => {
+      setArtifact(plan);
+    },
+    [setArtifact],
   );
 
   const handleSave = useCallback(async () => {
@@ -321,6 +344,8 @@ export function CoachWorkspace({
                 onBackClick={handleBackClick}
                 onTitleChange={setArtifactTitle}
                 onSave={handleSave}
+                disabled={isChatRunning(state)}
+                onPlanChange={handlePlanChange}
               />
             </div>
           </div>
@@ -364,9 +389,11 @@ export function CoachWorkspace({
   }
 
   return (
-    <div className="mx-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
+    >
       <div
-        className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
+        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
@@ -378,7 +405,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? "min-h-0 min-w-0 overflow-hidden pb-4 md:pb-5"
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none`
               : "hidden"
           }
         >
@@ -392,23 +419,27 @@ export function CoachWorkspace({
               onBackClick={handleBackClick}
               onTitleChange={setArtifactTitle}
               onSave={handleSave}
+              disabled={isChatRunning(state)}
+              onPlanChange={handlePlanChange}
             />
           ) : null}
         </div>
 
         <div
-          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
+          className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
             showSplitPane
-              ? "animate-chat-panel-slide border-l border-glass-border"
+              ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
               : "w-full"
           }`}
         >
-          <WorkspaceCloseButton
-            className="absolute right-0 top-2 z-20"
-            disabled={isChatRunning(state)}
-            onClick={handleClose}
-          />
-          <div className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS}`}>
+          <div
+            className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
+          >
+            <WorkspaceCloseButton
+              className={DESKTOP_CHAT_CLOSE_CLASS}
+              disabled={isChatRunning(state)}
+              onClick={handleClose}
+            />
             <CoachConversationPanel
               state={state}
               onAttach={attachFiles}

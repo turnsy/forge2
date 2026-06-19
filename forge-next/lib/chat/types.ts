@@ -102,6 +102,7 @@ export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "RESTART"; sessionId: string }
   | { type: "SET_ARTIFACT_TITLE"; artifactTitle: string }
   | { type: "SET_PLAN_ID"; planId: string }
+  | { type: "SET_ARTIFACT"; artifact: TArtifact }
   | { type: "ATTACH_FILES"; attachments: ChatAttachment[] }
   | { type: "ATTACH_UPLOAD_START"; localIds: string[] }
   | {

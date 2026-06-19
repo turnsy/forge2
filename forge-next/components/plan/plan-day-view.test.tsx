@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlanDayView } from "@/components/plan/plan-day-view";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -183,5 +184,81 @@ describe("PlanDayView", () => {
     );
 
     expect(screen.getByText("Day not found")).toBeInTheDocument();
+  });
+
+  it("renders editable coach inputs when onPlanChange is provided", () => {
+    render(
+      <PlanDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Set 1 reps")[0]).toBeInTheDocument();
+  });
+
+  it("disables editable inputs when disabled is true", () => {
+    render(
+      <PlanDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly={false}
+        disabled
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByDisplayValue("Back Squat")).toHaveAttribute("readonly");
+  });
+
+  it("calls onPlanChange when editing set reps", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <PlanDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    const repsInput = screen.getAllByLabelText("Set 1 reps")[0];
+    await user.clear(repsInput);
+    await user.type(repsInput, "12");
+
+    expect(onPlanChange).toHaveBeenCalled();
+  });
+
+  it("still renders read-only coach table when readOnly is true", () => {
+    render(
+      <PlanDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        view="coach"
+        readOnly
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("still renders read-only coach table when onPlanChange is not provided", () => {
+    render(
+      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+    );
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 });

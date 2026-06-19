@@ -67,6 +67,7 @@ function mockWorkspaceReturn(state: PlanWorkspaceState) {
     sendMessage: vi.fn(),
     setArtifactTitle: vi.fn(),
     setPlanId: mockSetPlanId,
+    setArtifact: vi.fn(),
     restart: mockRestart,
   };
 }
@@ -88,7 +89,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reserves top padding for the close button in single-pane chat", () => {
+  it("uses modest padding around the desktop chat area", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -100,7 +101,10 @@ describe("CoachWorkspace layout", () => {
 
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
-    expect(container.querySelector(".md\\:pt-14")).toBeTruthy();
+    expect(container.querySelector(".md\\:pt-14")).toBeNull();
+    expect(container.innerHTML).toContain("p-4");
+    expect(container.innerHTML).not.toContain("md:p-8");
+    expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
   });
 
   it("shows centered chat without split when started but no artifact", () => {
@@ -131,10 +135,13 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
+    expect(container.querySelector(".md\\:pb-3")).toBeNull();
+    expect(container.innerHTML).toContain("md:p-8");
+    expect(container.innerHTML).toContain("!max-w-none");
   });
 
   it("restarts workspace on close from coach home", async () => {

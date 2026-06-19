@@ -100,11 +100,13 @@ class ForgePlanTests(unittest.TestCase):
             reps=5,
             load_type="percentage",
             load_value=85,
+            unit="kg",
         )
 
         load = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["load"]
         self.assertEqual(load["type"], "percentage")
         self.assertEqual(load["value"], 85)
+        self.assertEqual(load["absoluteUnit"], "kg")
         self.assertNotIn("basis", load)
 
     def test_move_week_renumbers_indices(self) -> None:

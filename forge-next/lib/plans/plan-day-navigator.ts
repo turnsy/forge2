@@ -51,8 +51,8 @@ export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
   return `W${weekIndex} D${dayIndex}`;
 }
 
-export function getMobileDayHeaderLabel(weekIndex: number, dayIndex: number): string {
-  return `Week ${weekIndex}, Day ${dayIndex}`;
+export function getMobileDayHeaderLabel(week: Week, day: Day): string {
+  return `Week ${week.index}, Day ${day.index}`;
 }
 
 export function findNavItemIndex(

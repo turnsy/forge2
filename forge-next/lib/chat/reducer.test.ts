@@ -75,6 +75,15 @@ describe("chatWorkspaceReducer", () => {
     expect(state.currentArtifact).toEqual(samplePlan);
   });
 
+  it("stores artifact updates from SET_ARTIFACT", () => {
+    const state = chatWorkspaceReducer(
+      createInitialChatWorkspaceState<WorkoutPlan>(),
+      { type: "SET_ARTIFACT", artifact: samplePlan },
+    );
+
+    expect(state.currentArtifact).toEqual(samplePlan);
+  });
+
   it("restarts workspace with a new draft id", () => {
     const state = chatWorkspaceReducer(
       {
