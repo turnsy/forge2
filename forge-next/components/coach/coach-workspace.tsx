@@ -10,6 +10,7 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
+  DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_CLOSE_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
@@ -428,23 +429,27 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none ${
+          className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
             showSplitPane
               ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
               : "w-full"
           }`}
         >
-          <WorkspaceCloseButton
-            className={DESKTOP_CHAT_CLOSE_CLASS}
-            disabled={isChatRunning(state)}
-            onClick={handleClose}
-          />
-          <CoachConversationPanel
-            state={state}
-            onAttach={attachFiles}
-            onSend={handleSendMessage}
-            promptEnabled={promptEnabled}
-          />
+          <div
+            className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
+          >
+            <WorkspaceCloseButton
+              className={DESKTOP_CHAT_CLOSE_CLASS}
+              disabled={isChatRunning(state)}
+              onClick={handleClose}
+            />
+            <CoachConversationPanel
+              state={state}
+              onAttach={attachFiles}
+              onSend={handleSendMessage}
+              promptEnabled={promptEnabled}
+            />
+          </div>
         </div>
       </div>
     </div>

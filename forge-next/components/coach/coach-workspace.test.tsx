@@ -89,7 +89,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("uses page shell padding on the desktop chat pane", () => {
+  it("uses modest padding around the desktop chat area", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -102,7 +102,8 @@ describe("CoachWorkspace layout", () => {
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
-    expect(container.innerHTML).toContain("md:p-8");
+    expect(container.innerHTML).toContain("p-4");
+    expect(container.innerHTML).not.toContain("md:p-8");
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
   });
 
