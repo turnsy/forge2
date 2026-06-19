@@ -1,6 +1,5 @@
 import { findCurrentDay } from "@/lib/athlete/plan/domain";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
-import { getDayTitle } from "@/lib/plans/display";
 import type { Day, Week, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type PlanDayNavItem = {
@@ -45,7 +44,7 @@ export function getWeekDropdownLabel(week: Week): string {
 }
 
 export function getDayDropdownLabel(day: Day): string {
-  return getDayTitle(day);
+  return `Day ${day.index}`;
 }
 
 export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
@@ -53,7 +52,7 @@ export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
 }
 
 export function getMobileDayHeaderLabel(day: Day): string {
-  return getDayTitle(day);
+  return `Day ${day.index}`;
 }
 
 export function findNavItemIndex(

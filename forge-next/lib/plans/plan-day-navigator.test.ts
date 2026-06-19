@@ -29,7 +29,7 @@ function makePlan(): WorkoutPlan {
 }
 
 describe("plan day navigator domain", () => {
-  it("formats the mobile header label", () => {
+  it("formats the mobile header label with day index only", () => {
     expect(
       getMobileDayHeaderLabel({ index: 1, code: "w1d1", exercises: [] as never }),
     ).toBe("Day 1");
@@ -40,7 +40,7 @@ describe("plan day navigator domain", () => {
         name: "Upper Body",
         exercises: [] as never,
       }),
-    ).toBe("Upper Body");
+    ).toBe("Day 2");
   });
 
   it("returns week labels without index prefixes", () => {
