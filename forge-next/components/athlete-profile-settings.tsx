@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Card, Input, Message } from "@/components/ui";
+import { Button, Card, CardFooter, CardHeader, Input, Message } from "@/components/ui";
 import {
   updateProfileEmailAction,
   updateProfileFullNameAction,
@@ -25,14 +25,14 @@ export function AthleteProfileSettings({
   const [emailPending, startEmailTransition] = useTransition();
 
   return (
-    <div className="space-y-4">
-      <Card role="athlete" className="space-y-4 p-5">
-        <div>
-          <h2 className="text-sm font-semibold text-surface-foreground">Profile</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+    <div className="flex flex-col gap-4">
+      <Card role="athlete">
+        <CardHeader className="space-y-1 text-left">
+          <h2 className="text-base font-semibold text-surface-foreground">Profile</h2>
+          <p className="text-sm text-surface-muted">
             Update how your name appears in the app.
           </p>
-        </div>
+        </CardHeader>
         <Input
           label="Full name"
           name="fullName"
@@ -45,34 +45,36 @@ export function AthleteProfileSettings({
         />
         {nameError ? <Message tone="error">{nameError}</Message> : null}
         {nameSuccess ? <Message tone="success">Name saved.</Message> : null}
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={namePending}
-          onClick={() => {
-            setNameError(null);
-            setNameSuccess(false);
-            startNameTransition(async () => {
-              const result = await updateProfileFullNameAction(name);
-              if (!result.ok) {
-                setNameError(result.message ?? "Something went wrong.");
-                return;
-              }
-              setNameSuccess(true);
-            });
-          }}
-        >
-          {namePending ? "Saving…" : "Save name"}
-        </Button>
+        <CardFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={namePending}
+            onClick={() => {
+              setNameError(null);
+              setNameSuccess(false);
+              startNameTransition(async () => {
+                const result = await updateProfileFullNameAction(name);
+                if (!result.ok) {
+                  setNameError(result.message ?? "Something went wrong.");
+                  return;
+                }
+                setNameSuccess(true);
+              });
+            }}
+          >
+            {namePending ? "Saving…" : "Save name"}
+          </Button>
+        </CardFooter>
       </Card>
 
-      <Card role="athlete" className="space-y-4 p-5">
-        <div>
-          <h2 className="text-sm font-semibold text-surface-foreground">Email</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+      <Card role="athlete">
+        <CardHeader className="space-y-1 text-left">
+          <h2 className="text-base font-semibold text-surface-foreground">Email</h2>
+          <p className="text-sm text-surface-muted">
             Changing your email sends a confirmation link to the new address.
           </p>
-        </div>
+        </CardHeader>
         <Input
           label="Email"
           name="email"
@@ -88,25 +90,27 @@ export function AthleteProfileSettings({
         {emailSuccess ? (
           <Message tone="success">Check your email to confirm the change.</Message>
         ) : null}
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={emailPending}
-          onClick={() => {
-            setEmailError(null);
-            setEmailSuccess(false);
-            startEmailTransition(async () => {
-              const result = await updateProfileEmailAction(nextEmail);
-              if (!result.ok) {
-                setEmailError(result.message ?? "Something went wrong.");
-                return;
-              }
-              setEmailSuccess(true);
-            });
-          }}
-        >
-          {emailPending ? "Sending…" : "Update email"}
-        </Button>
+        <CardFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={emailPending}
+            onClick={() => {
+              setEmailError(null);
+              setEmailSuccess(false);
+              startEmailTransition(async () => {
+                const result = await updateProfileEmailAction(nextEmail);
+                if (!result.ok) {
+                  setEmailError(result.message ?? "Something went wrong.");
+                  return;
+                }
+                setEmailSuccess(true);
+              });
+            }}
+          >
+            {emailPending ? "Sending…" : "Update email"}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
