@@ -24,7 +24,6 @@ import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input, Select } from "@/components/ui";
-import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { formatReps } from "@/lib/plans/display";
 import {
   CUSTOM_LOAD_UNIT_OPTION,
@@ -352,8 +351,7 @@ function SortableSetRow({
         }`}
       >
         <td className="px-2 py-2 text-surface-muted">⋮⋮</td>
-        <td className="px-2 py-2 font-medium text-surface-foreground">{setNumber}</td>
-        <td colSpan={3} className="px-2 py-2 text-sm text-surface-foreground">
+        <td colSpan={4} className="px-2 py-2 text-sm text-surface-foreground">
           {set.planned.instruction}
         </td>
       </tr>
@@ -385,7 +383,6 @@ function SortableSetRow({
           <GripIcon />
         </button>
       </td>
-      <td className="px-2 py-2 font-medium text-surface-foreground">{setNumber}</td>
       <td className="px-2 py-2">
         <Input
           ref={repsInputRef}
@@ -447,7 +444,6 @@ function EditableExerciseBlock({
   exerciseIndex,
   exerciseCount,
   disabled,
-  isMobile,
   onExerciseChange,
   onDeleteExercise,
   onMoveUp,
@@ -457,7 +453,6 @@ function EditableExerciseBlock({
   exerciseIndex: number;
   exerciseCount: number;
   disabled: boolean;
-  isMobile: boolean;
   onExerciseChange: (exercise: Exercise) => void;
   onDeleteExercise: () => void;
   onMoveUp: () => void;
@@ -564,11 +559,10 @@ function EditableExerciseBlock({
           onDragEnd={handleSetDragEnd}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] border-collapse text-sm">
+            <table className="w-full min-w-[24rem] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-glass-border text-left text-xs font-medium uppercase tracking-wide text-surface-foreground/80">
                   <th className="w-8 px-2 py-2" aria-label="Reorder" />
-                  <th className="px-2 py-2 font-medium">Set</th>
                   <th className="px-2 py-2 font-medium">Reps</th>
                   <th className="px-2 py-2 font-medium">Target</th>
                   <th className="px-2 py-2 font-medium">Notes</th>
@@ -677,14 +671,15 @@ function EditableExerciseBlock({
           </div>
         </DndContext>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          fullWidth={isMobile}
-          icon={<PlusIcon />}
-          disabled={disabled}
-          onClick={() => {
+        <div className="flex justify-center border-t border-glass-border/60 px-3 py-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            fullWidth={false}
+            icon={<PlusIcon />}
+            disabled={disabled}
+            onClick={() => {
             const lastSet = exercise.sets.at(-1);
             const nextSet = lastSet ? cloneSetFromPrevious(lastSet) : createDefaultSet();
             autoFocusSetIdRef.current = nextSet.id;
@@ -693,9 +688,10 @@ function EditableExerciseBlock({
               sets: [...exercise.sets, nextSet] as typeof exercise.sets,
             });
           }}
-        >
-          Set
-        </Button>
+          >
+            Set
+          </Button>
+        </div>
       </div>
     </section>
   );
@@ -703,7 +699,6 @@ function EditableExerciseBlock({
 
 export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProps) {
   const editableDay = cloneDayForEditing(day);
-  const isMobile = useIsMobile();
 
   function emitChange(nextDay: Day) {
     onChange(nextDay);
@@ -752,7 +747,6 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
           exerciseIndex={exerciseIndex}
           exerciseCount={editableDay.exercises.length}
           disabled={disabled}
-          isMobile={isMobile}
           onExerciseChange={(nextExercise) => updateExercise(exerciseIndex, nextExercise)}
           onDeleteExercise={() => {
             emitChange({
@@ -767,14 +761,15 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
         />
       ))}
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        fullWidth={isMobile}
-        icon={<PlusIcon />}
-        disabled={disabled}
-        onClick={() => {
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          icon={<PlusIcon />}
+          disabled={disabled}
+          onClick={() => {
           emitChange({
             ...editableDay,
             exercises: [
@@ -787,9 +782,10 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
             ] as Day["exercises"],
           });
         }}
-      >
-        Exercise
-      </Button>
+        >
+          Exercise
+        </Button>
+      </div>
     </div>
   );
 }
