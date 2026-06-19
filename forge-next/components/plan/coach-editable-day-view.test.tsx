@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { reorderSetsInExercise } from "@/components/plan/plan-editable-day";
@@ -69,6 +70,71 @@ describe("CoachEditableDayView", () => {
 
     expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
+  });
+
+  it("shows day index as placeholder and allows clearing the day name", () => {
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    const dayNameInput = screen.getByLabelText("Day name");
+    expect(dayNameInput).toHaveDisplayValue("Upper Body");
+    expect(dayNameInput).toHaveAttribute("placeholder", "Day 1");
+
+    fireEvent.change(dayNameInput, { target: { value: "" } });
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    expect(lastCall.weeks[0].days[0].name).toBeUndefined();
+  });
+
+  it("keeps the day name input empty after clearing when the plan updates", () => {
+    function Harness() {
+      const [plan, setPlan] = useState(makePlan());
+
+      return (
+        <CoachEditableDayView
+          plan={plan}
+          weekIndex={1}
+          dayIndex={1}
+          disabled={false}
+          onPlanChange={setPlan}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    const dayNameInput = screen.getByLabelText("Day name");
+    fireEvent.change(dayNameInput, { target: { value: "" } });
+
+    expect(dayNameInput).toHaveDisplayValue("");
+    expect(dayNameInput).toHaveAttribute("placeholder", "Day 1");
+  });
+
+  it("uses day index placeholder when the day has no name", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].name = undefined;
+
+    render(
+      <CoachEditableDayView
+        plan={plan}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    const dayNameInput = screen.getByLabelText("Day name");
+    expect(dayNameInput).toHaveDisplayValue("");
+    expect(dayNameInput).toHaveAttribute("placeholder", "Day 1");
   });
 
   it("changing exercise name calls onPlanChange with the updated plan", () => {

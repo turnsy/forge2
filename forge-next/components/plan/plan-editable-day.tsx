@@ -729,7 +729,8 @@ export function PlanEditableDay({ day, disabled, onChange }: PlanEditableDayProp
       data-plan-editable-day
     >
       <Input
-        value={editableDay.name ?? `Day ${editableDay.index}`}
+        value={editableDay.name ?? ""}
+        placeholder={`Day ${editableDay.index}`}
         readOnly={disabled}
         aria-label="Day name"
         className="text-lg font-semibold"
