@@ -378,7 +378,7 @@ function EditableExerciseBlock({
           onDragEnd={handleSetDragEnd}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[32rem] border-collapse text-sm">
+            <table className="w-full min-w-[24rem] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-glass-border text-left text-xs font-medium uppercase tracking-wide text-surface-foreground/80">
                   <th className="w-8 px-2 py-2" aria-label="Reorder" />

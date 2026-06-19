@@ -469,50 +469,7 @@ describe("CoachEditableDayView", () => {
     }
   });
 
-  it("edits percentage load operator, values, and basis", () => {
-    function Harness() {
-      const [plan, setPlan] = useState(makePercentagePlan());
-
-      return (
-        <CoachEditableDayView
-          plan={plan}
-          weekIndex={1}
-          dayIndex={1}
-          disabled={false}
-          onPlanChange={setPlan}
-        />
-      );
-    }
-
-    render(<Harness />);
-
-    expect(screen.getByLabelText("Set 1 target percentage")).toHaveValue("75");
-    expect(screen.getByLabelText("Percentage basis")).toHaveValue("back_squat_1rm");
-
-    fireEvent.change(screen.getByLabelText("Percentage operator"), {
-      target: { value: "range" },
-    });
-
-    expect(screen.getByLabelText("Set 1 minimum percentage")).toHaveValue("75");
-    expect(screen.getByLabelText("Set 1 maximum percentage")).toHaveValue("80");
-
-    fireEvent.change(screen.getByLabelText("Set 1 minimum percentage"), {
-      target: { value: "70" },
-    });
-    fireEvent.change(screen.getByLabelText("Set 1 maximum percentage"), {
-      target: { value: "80" },
-    });
-
-    fireEvent.change(screen.getByLabelText("Percentage basis"), {
-      target: { value: "snatch_1rm" },
-    });
-
-    expect(screen.getByLabelText("Percentage basis")).toHaveValue("snatch_1rm");
-    expect(screen.getByLabelText("Set 1 minimum percentage")).toHaveValue("70");
-    expect(screen.getByLabelText("Set 1 maximum percentage")).toHaveValue("80");
-  });
-
-  it("switches a set between absolute and percentage loads", () => {
+  it("toggles percentage load with the percent button", () => {
     function Harness() {
       const [plan, setPlan] = useState(makePlan());
 
@@ -529,18 +486,47 @@ describe("CoachEditableDayView", () => {
 
     render(<Harness />);
 
-    fireEvent.change(screen.getAllByLabelText("Load type")[0], {
-      target: { value: "percentage" },
-    });
+    const percentToggle = screen.getAllByLabelText("Use percentage load")[0];
+    expect(percentToggle).toHaveAttribute("aria-pressed", "false");
 
-    expect(screen.getByLabelText("Set 1 target percentage")).toHaveValue("100");
+    fireEvent.click(percentToggle);
 
-    fireEvent.change(screen.getAllByLabelText("Load type")[0], {
-      target: { value: "absolute" },
-    });
-
+    expect(percentToggle).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("100");
     expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
+
+    fireEvent.click(percentToggle);
+
+    expect(percentToggle).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("100");
+    expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
+  });
+
+  it("keeps the unit control visible for percentage sets", () => {
+    function Harness() {
+      const [plan, setPlan] = useState(makePercentagePlan());
+
+      return (
+        <CoachEditableDayView
+          plan={plan}
+          weekIndex={1}
+          dayIndex={1}
+          disabled={false}
+          onPlanChange={setPlan}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    expect(screen.getAllByLabelText("Use percentage load")[0]).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("75");
+    expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
+    expect(screen.queryByLabelText("Percentage basis")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Percentage operator")).not.toBeInTheDocument();
   });
 
   it("disables inputs and buttons when disabled", () => {

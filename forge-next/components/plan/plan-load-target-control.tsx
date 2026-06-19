@@ -8,34 +8,19 @@ import {
   PRESET_LOAD_UNITS,
 } from "@/lib/plans/load-units";
 import {
-  CUSTOM_PERCENTAGE_BASIS_OPTION,
-  isPresetPercentageBasis,
-  PERCENTAGE_LOAD_OPERATORS,
-  PRESET_PERCENTAGE_BASIS_KEYS,
-  switchLoadKind,
+  disablePercentageLoad,
+  enablePercentageLoad,
+  getAbsoluteUnitForLoad,
+  getLoadTargetValue,
+  isPercentageLoad,
   updateAbsoluteLoadUnit,
-  updateAbsoluteLoadValue,
-  updatePercentageBasis,
-  updatePercentageOperator,
-  updatePercentageScalar,
-  type LoadKind,
-  type PercentageLoadOperator,
+  updateLoadTargetValue,
 } from "@/lib/plans/percentage-load";
-import type { Load, PercentageLoad } from "@/lib/plans/workout-plan";
+import type { Load } from "@/lib/plans/workout-plan";
 
-const kindControlClass = "w-[5.5rem] shrink-0";
-const operatorControlClass = "w-[5.75rem] shrink-0";
 const unitControlClass = "w-[4.75rem] shrink-0";
-const basisControlClass = "min-w-0 flex-1";
 
-const OPERATOR_LABELS: Record<PercentageLoadOperator, string> = {
-  exact: "Exact",
-  "at-least": "At least",
-  "at-most": "At most",
-  range: "Range",
-};
-
-function AbsoluteUnitControl({
+function LoadUnitControl({
   unit,
   disabled,
   onChange,
@@ -137,99 +122,6 @@ function AbsoluteUnitControl({
   );
 }
 
-function PercentageBasisControl({
-  basis,
-  disabled,
-  setNumber,
-  onChange,
-}: {
-  basis: string | undefined;
-  disabled: boolean;
-  setNumber: number;
-  onChange: (basis: string) => void;
-}) {
-  const currentBasis = basis ?? "";
-  const [customActive, setCustomActive] = useState(
-    () => currentBasis !== "" && !isPresetPercentageBasis(currentBasis),
-  );
-  const [customDraft, setCustomDraft] = useState(() =>
-    customActive ? currentBasis : "",
-  );
-
-  function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    const next = event.target.value;
-    if (next === CUSTOM_PERCENTAGE_BASIS_OPTION) {
-      setCustomDraft(isPresetPercentageBasis(currentBasis) ? "" : currentBasis);
-      setCustomActive(true);
-      return;
-    }
-
-    setCustomActive(false);
-    onChange(next);
-  }
-
-  if (customActive) {
-    return (
-      <Input
-        size="sm"
-        value={customDraft}
-        disabled={disabled}
-        aria-label={`Set ${setNumber} percentage basis`}
-        placeholder="e.g. front_squat_1rm"
-        className={basisControlClass}
-        onChange={(event) => {
-          const next = event.target.value;
-          setCustomDraft(next);
-          onChange(next);
-        }}
-        onBlur={() => {
-          const trimmed = customDraft.trim();
-          if (!trimmed || isPresetPercentageBasis(trimmed)) {
-            setCustomActive(false);
-            onChange("");
-            return;
-          }
-
-          onChange(trimmed);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setCustomActive(false);
-            onChange("");
-          }
-        }}
-      />
-    );
-  }
-
-  const selectValue =
-    currentBasis === ""
-      ? ""
-      : isPresetPercentageBasis(currentBasis)
-        ? currentBasis
-        : CUSTOM_PERCENTAGE_BASIS_OPTION;
-
-  return (
-    <Select
-      hideLabel
-      label="Percentage basis"
-      size="sm"
-      value={selectValue}
-      disabled={disabled}
-      className={basisControlClass}
-      onChange={handleSelectChange}
-    >
-      <option value="">No basis</option>
-      {PRESET_PERCENTAGE_BASIS_KEYS.map((preset) => (
-        <option key={preset} value={preset}>
-          {preset}
-        </option>
-      ))}
-      <option value={CUSTOM_PERCENTAGE_BASIS_OPTION}>Custom basis</option>
-    </Select>
-  );
-}
-
 export type PlanLoadTargetControlProps = {
   load: Load;
   disabled: boolean;
@@ -243,141 +135,56 @@ export function PlanLoadTargetControl({
   setNumber,
   onChange,
 }: PlanLoadTargetControlProps) {
-  function handleKindChange(event: ChangeEvent<HTMLSelectElement>) {
-    onChange(switchLoadKind(load, event.target.value as LoadKind));
+  const [rememberedUnit, setRememberedUnit] = useState(() =>
+    getAbsoluteUnitForLoad(load),
+  );
+  const isPercentage = isPercentageLoad(load);
+  const displayUnit = isPercentage ? rememberedUnit : getAbsoluteUnitForLoad(load);
+
+  function handleTogglePercentage() {
+    if (isPercentage) {
+      onChange(disablePercentageLoad(load, rememberedUnit));
+      return;
+    }
+
+    const next = enablePercentageLoad(load, rememberedUnit);
+    setRememberedUnit(next.rememberedUnit);
+    onChange(next.load);
   }
 
   return (
-    <div className="flex min-w-[12rem] flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <div className={kindControlClass}>
-          <Select
-            hideLabel
-            label="Load type"
-            size="sm"
-            value={load.type}
-            disabled={disabled}
-            className="w-full"
-            onChange={handleKindChange}
-          >
-            <option value="absolute">Weight</option>
-            <option value="percentage">%</option>
-          </Select>
-        </div>
-
-        {load.type === "absolute" ? (
-          <>
-            <Input
-              size="sm"
-              value={String(load.value)}
-              readOnly={disabled}
-              aria-label={`Set ${setNumber} target`}
-              className="min-w-0 flex-1"
-              onChange={(event) =>
-                onChange(updateAbsoluteLoadValue(load, event.target.value))
-              }
-            />
-            <AbsoluteUnitControl
-              unit={load.unit}
-              disabled={disabled}
-              onChange={(unit) => onChange(updateAbsoluteLoadUnit(load, unit))}
-            />
-          </>
-        ) : (
-          <PercentageValueControls
-            load={load}
-            disabled={disabled}
-            setNumber={setNumber}
-            onChange={onChange}
-          />
-        )}
-      </div>
-
-      {load.type === "percentage" ? (
-        <PercentageBasisControl
-          basis={load.basis}
-          disabled={disabled}
-          setNumber={setNumber}
-          onChange={(basis) => onChange(updatePercentageBasis(load, basis))}
-        />
-      ) : null}
+    <div className="flex items-center gap-1.5">
+      <Input
+        size="sm"
+        value={getLoadTargetValue(load)}
+        readOnly={disabled}
+        aria-label={`Set ${setNumber} target`}
+        className="min-w-0 flex-1"
+        onChange={(event) => onChange(updateLoadTargetValue(load, event.target.value))}
+      />
+      <button
+        type="button"
+        aria-label="Use percentage load"
+        aria-pressed={isPercentage}
+        disabled={disabled}
+        className={`shrink-0 rounded-control border px-2 py-1 text-xs font-medium transition ${
+          isPercentage
+            ? "border-accent/40 bg-accent/15 text-accent"
+            : "border-glass-border bg-glass text-surface-muted hover:text-surface-foreground"
+        } disabled:cursor-not-allowed disabled:opacity-60`}
+        onClick={handleTogglePercentage}
+      >
+        %
+      </button>
+      <LoadUnitControl
+        unit={displayUnit}
+        disabled={disabled}
+        onChange={(unit) => {
+          const next = updateAbsoluteLoadUnit(load, unit, rememberedUnit);
+          setRememberedUnit(next.rememberedUnit);
+          onChange(next.load);
+        }}
+      />
     </div>
-  );
-}
-
-function PercentageValueControls({
-  load,
-  disabled,
-  setNumber,
-  onChange,
-}: {
-  load: PercentageLoad;
-  disabled: boolean;
-  setNumber: number;
-  onChange: (load: Load) => void;
-}) {
-  return (
-    <>
-      <div className={operatorControlClass}>
-        <Select
-          hideLabel
-          label="Percentage operator"
-          size="sm"
-          value={load.operator}
-          disabled={disabled}
-          className="w-full"
-          onChange={(event) =>
-            onChange(
-              updatePercentageOperator(load, event.target.value as PercentageLoadOperator),
-            )
-          }
-        >
-          {PERCENTAGE_LOAD_OPERATORS.map((operator) => (
-            <option key={operator} value={operator}>
-              {OPERATOR_LABELS[operator]}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      {load.operator === "range" ? (
-        <div className="flex min-w-0 flex-1 items-center gap-1">
-          <Input
-            size="sm"
-            value={String(load.minValue ?? "")}
-            readOnly={disabled}
-            aria-label={`Set ${setNumber} minimum percentage`}
-            className="min-w-0 flex-1"
-            onChange={(event) =>
-              onChange(updatePercentageScalar(load, "minValue", event.target.value))
-            }
-          />
-          <span className="shrink-0 text-xs text-surface-muted">–</span>
-          <Input
-            size="sm"
-            value={String(load.maxValue ?? "")}
-            readOnly={disabled}
-            aria-label={`Set ${setNumber} maximum percentage`}
-            className="min-w-0 flex-1"
-            onChange={(event) =>
-              onChange(updatePercentageScalar(load, "maxValue", event.target.value))
-            }
-          />
-        </div>
-      ) : (
-        <Input
-          size="sm"
-          value={String(load.value ?? "")}
-          readOnly={disabled}
-          aria-label={`Set ${setNumber} target percentage`}
-          className="min-w-0 flex-1"
-          onChange={(event) =>
-            onChange(updatePercentageScalar(load, "value", event.target.value))
-          }
-        />
-      )}
-
-      <span className="shrink-0 text-xs text-surface-muted">%</span>
-    </>
   );
 }
