@@ -30,7 +30,7 @@ export function CoachConversationPanel({
         phase={state.phase}
       />
       <div
-        className={`shrink-0 py-3 md:py-1${composerClassName ? ` ${composerClassName}` : ""}`}
+        className={`shrink-0 py-3 md:pb-2 md:pt-0${composerClassName ? ` ${composerClassName}` : ""}`}
       >
         {composerHeader}
         <ChatComposer

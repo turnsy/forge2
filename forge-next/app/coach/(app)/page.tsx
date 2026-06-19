@@ -63,7 +63,7 @@ export default async function CoachHomePage({
     const { detail } = result;
 
     return (
-      <PageContent className="flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden max-w-none !p-0">
+      <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
         <CoachWorkspace
           firstName={firstName(user.fullName)}
           role="coach"
@@ -77,7 +77,7 @@ export default async function CoachHomePage({
   }
 
   return (
-    <PageContent className="flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden max-w-none !p-0">
+    <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
       <CoachWorkspace
         firstName={firstName(user.fullName)}
         role="coach"

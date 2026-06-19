@@ -89,7 +89,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("places the close button in a compact header on desktop chat", () => {
+  it("overlays the desktop chat close button without top inset on the chat pane", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -102,6 +102,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
+    expect(container.querySelector(".md\\:pt-4")).toBeNull();
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
   });
 
@@ -138,6 +139,8 @@ describe("CoachWorkspace layout", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
+    expect(container.innerHTML).toContain("md:pr-4");
+    expect(container.innerHTML).toContain("md:pt-4");
   });
 
   it("restarts workspace on close from coach home", async () => {

@@ -10,6 +10,12 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
+  DESKTOP_ARTIFACT_COLUMN_CLASS,
+  DESKTOP_CHAT_CLOSE_CLASS,
+  DESKTOP_CHAT_COLUMN_CLASS,
+  DESKTOP_WORKSPACE_HEIGHT_CLASS,
+} from "@/lib/coach/desktop-workspace-layout";
+import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
@@ -386,9 +392,11 @@ export function CoachWorkspace({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4">
+    <div
+      className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
+    >
       <div
-        className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
+        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
@@ -400,7 +408,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? "flex min-h-0 min-w-0 flex-col overflow-hidden max-md:pb-4"
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${DESKTOP_ARTIFACT_COLUMN_CLASS}`
               : "hidden"
           }
         >
@@ -421,26 +429,23 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`flex min-h-0 min-w-0 flex-col overflow-hidden max-md:pb-4 ${
+          className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
             showSplitPane
-              ? "animate-chat-panel-slide border-l border-glass-border"
+              ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
               : "w-full"
           }`}
         >
-          <div className="flex shrink-0 items-center justify-end pt-1">
-            <WorkspaceCloseButton
-              disabled={isChatRunning(state)}
-              onClick={handleClose}
-            />
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <CoachConversationPanel
-              state={state}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              promptEnabled={promptEnabled}
-            />
-          </div>
+          <WorkspaceCloseButton
+            className={DESKTOP_CHAT_CLOSE_CLASS}
+            disabled={isChatRunning(state)}
+            onClick={handleClose}
+          />
+          <CoachConversationPanel
+            state={state}
+            onAttach={attachFiles}
+            onSend={handleSendMessage}
+            promptEnabled={promptEnabled}
+          />
         </div>
       </div>
     </div>
