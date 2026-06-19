@@ -302,6 +302,35 @@ describe("CoachEditableDayView", () => {
     expect(lastCall.weeks[0].days[0].exercises[1].name).toBe("Bench Press");
   });
 
+  it("allows entering a custom load unit", () => {
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    const unitSelect = screen.getAllByLabelText("Unit")[0];
+    fireEvent.change(unitSelect, { target: { value: "__custom__" } });
+
+    const customUnitInput = screen.getByLabelText("Custom unit");
+    expect(customUnitInput).toBeInTheDocument();
+    expect(customUnitInput).toHaveAttribute("placeholder", "e.g. mi");
+
+    fireEvent.change(customUnitInput, { target: { value: "mi" } });
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    expect(load.type).toBe("exact");
+    if (load.type === "exact" && load.load.type === "absolute") {
+      expect(load.load.unit).toBe("mi");
+    }
+  });
+
   it("disables inputs and buttons when disabled", () => {
     render(
       <CoachEditableDayView

@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useId, useRef, type RefObject } from "react";
+import { useId, useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
@@ -127,10 +127,22 @@ function updateLoadUnit(load: Load, unit: string): Load {
   }
 
   const trimmed = unit.trim();
+  if (!trimmed) {
+    return load;
+  }
+
   return {
     ...load,
-    unit: trimmed || "lb",
+    unit: trimmed,
   } satisfies AbsoluteLoad;
+}
+
+function getCustomUnitInputValue(unit: string, customActive: boolean): string {
+  if (!customActive || isPresetLoadUnit(unit)) {
+    return "";
+  }
+
+  return unit;
 }
 
 function createDefaultSet(): Set {
@@ -196,48 +208,66 @@ function LoadUnitControl({
   disabled: boolean;
   onChange: (unit: string) => void;
 }) {
-  const isPreset = isPresetLoadUnit(unit);
-  const selectValue = isPreset ? unit : CUSTOM_LOAD_UNIT_OPTION;
+  const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  function enterCustomMode() {
+    setCustomActive(true);
+    requestAnimationFrame(() => {
+      customInputRef.current?.focus();
+    });
+  }
+
+  function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
+    const next = event.target.value;
+    if (next === CUSTOM_LOAD_UNIT_OPTION) {
+      enterCustomMode();
+      return;
+    }
+
+    setCustomActive(false);
+    onChange(next);
+  }
+
+  function handleCustomBlur() {
+    const trimmed = unit.trim();
+    if (!trimmed || isPresetLoadUnit(trimmed)) {
+      setCustomActive(false);
+      onChange("lb");
+    }
+  }
+
+  const selectValue = customActive ? CUSTOM_LOAD_UNIT_OPTION : unit;
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
+    <div className="flex min-w-0 items-center gap-1.5">
       <Select
         hideLabel
         label="Unit"
         size="sm"
         value={selectValue}
         disabled={disabled}
-        className="w-[4.5rem] shrink-0"
-        onChange={(event) => {
-          const next = event.target.value;
-          if (next === CUSTOM_LOAD_UNIT_OPTION) {
-            onChange(isPreset ? "" : unit);
-            return;
-          }
-          onChange(next);
-        }}
+        className="w-[4.75rem] shrink-0"
+        onChange={handleSelectChange}
       >
         {PRESET_LOAD_UNITS.map((preset) => (
           <option key={preset} value={preset}>
             {preset}
           </option>
         ))}
-        <option value={CUSTOM_LOAD_UNIT_OPTION}>…</option>
+        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
       </Select>
-      {selectValue === CUSTOM_LOAD_UNIT_OPTION ? (
+      {customActive ? (
         <Input
+          ref={customInputRef}
           size="sm"
-          value={unit}
+          value={getCustomUnitInputValue(unit, customActive)}
           disabled={disabled}
           aria-label="Custom unit"
-          placeholder="unit"
-          className="w-14 min-w-0"
+          placeholder="e.g. mi"
+          className="w-20 min-w-0"
           onChange={(event) => onChange(event.target.value)}
-          onBlur={() => {
-            if (!unit.trim()) {
-              onChange("lb");
-            }
-          }}
+          onBlur={handleCustomBlur}
         />
       ) : null}
     </div>
