@@ -113,6 +113,7 @@ describe("athlete plan actions", () => {
     if (result.ok) {
       expect(result.allDaysDone).toBe(false);
       expect(result.nextDayIdx).toBe(1);
+      expect(result.plan).toEqual(minimalWorkoutPlan);
     }
   });
 

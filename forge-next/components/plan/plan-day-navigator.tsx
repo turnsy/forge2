@@ -23,7 +23,11 @@ export type PlanDayNavigatorProps = {
   assignmentId?: string;
   coachName?: string;
   readOnly?: boolean;
-  onDayCompleted?: (allDaysDone: boolean, completedDay: CurrentDayLocation) => void;
+  onDayCompleted?: (
+    allDaysDone: boolean,
+    completedDay: CurrentDayLocation,
+    plan: WorkoutPlan,
+  ) => void;
   onPlanChange?: (plan: WorkoutPlan) => void;
   disabled?: boolean;
 };
@@ -116,22 +120,23 @@ export function PlanDayNavigator({
     onPlanChange?.(nextPlan);
   };
 
-  const handleDayCompleted = (allDaysDone: boolean) => {
+  const handleDayCompleted = (allDaysDone: boolean, plan: WorkoutPlan) => {
     if (!onDayCompleted || !selectedWeek) {
       return;
     }
 
-    const day = selectedWeek.days.find((candidate) => candidate.index === selectedDayIndex);
-    if (!day) {
+    const week = plan.weeks.find((candidate) => candidate.index === selectedWeekIndex);
+    const day = week?.days.find((candidate) => candidate.index === selectedDayIndex);
+    if (!week || !day) {
       return;
     }
 
     onDayCompleted(allDaysDone, {
       weekIndex: selectedWeekIndex,
       dayIndex: selectedDayIndex,
-      week: selectedWeek,
+      week,
       day,
-    });
+    }, plan);
   };
 
   return (
@@ -226,7 +231,7 @@ export function PlanDayNavigator({
         disabled={disabled}
         onDayCompleted={
           view === "athlete" && !readOnly
-            ? (allDaysDone) => handleDayCompleted(allDaysDone)
+            ? handleDayCompleted
             : undefined
         }
         onSaveStatusChange={view === "athlete" && !readOnly ? setSaveStatus : undefined}

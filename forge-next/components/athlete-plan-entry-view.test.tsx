@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AthletePlanEntryView } from "@/components/athlete-plan-entry-view";
+import { completeDayInPlan } from "@/lib/athlete/plan/domain";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const mockSaveSetActualsAction = vi.fn();
@@ -84,13 +85,59 @@ function makePlan(): WorkoutPlan {
   };
 }
 
+function makeCompletedPlan(): WorkoutPlan {
+  const plan = makePlan();
+  const filled = {
+    ...plan,
+    weeks: plan.weeks.map((week) => ({
+      ...week,
+      days: week.days.map((day) => ({
+        ...day,
+        exercises: day.exercises.map((exercise) => ({
+          ...exercise,
+          sets: exercise.sets.map((set) => {
+            if (set.planned.type === "target") {
+              return set;
+            }
+
+            if (set.id === "w1d1-bs-1") {
+              return {
+                ...set,
+                actual: {
+                  reps: 8,
+                  load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+                },
+              };
+            }
+
+            return {
+              ...set,
+              actual: {
+                reps: 6,
+                load: { type: "absolute" as const, value: 75, unit: "kg" as const },
+              },
+            };
+          }),
+        })),
+      })),
+    })),
+  };
+
+  return completeDayInPlan(filled, 1, 1).plan;
+}
+
 describe("AthletePlanEntryView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
     mockUseIsMobile.mockReturnValue(false);
     mockSaveSetActualsAction.mockResolvedValue({ ok: true });
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: null,
+      allDaysDone: false,
+      plan: makeCompletedPlan(),
+    });
     Element.prototype.scrollIntoView = vi.fn();
   });
 
@@ -243,7 +290,12 @@ describe("AthletePlanEntryView", () => {
   it("completes the day directly when all non-target sets are filled", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: 2,
+      allDaysDone: false,
+      plan: makeCompletedPlan(),
+    });
 
     render(
       <AthletePlanEntryView
@@ -289,7 +341,12 @@ describe("AthletePlanEntryView", () => {
   it("confirms skip and completes the day", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: 2,
+      allDaysDone: false,
+      plan: makeCompletedPlan(),
+    });
 
     render(
       <AthletePlanEntryView
@@ -307,10 +364,52 @@ describe("AthletePlanEntryView", () => {
     });
   });
 
+  it("shows completed set values after finishing a day", async () => {
+    const user = userEvent.setup();
+    const plan = makePlan();
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: null,
+      allDaysDone: false,
+      plan: makeCompletedPlan(),
+    });
+
+    render(
+      <AthletePlanEntryView
+        assignmentId="assignment-1"
+        plan={plan}
+        coachName="Coach Alex"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("8"), { target: { value: "8" } });
+    fireEvent.change(screen.getByPlaceholderText("60"), { target: { value: "60" } });
+    fireEvent.change(screen.getByPlaceholderText("6"), { target: { value: "6" } });
+    fireEvent.change(screen.getByPlaceholderText("75%"), { target: { value: "75" } });
+
+    await user.click(screen.getByRole("button", { name: "Complete" }));
+    await waitFor(() => {
+      expect(screen.getByText("Day completed!")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.getByDisplayValue("8")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("60")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("6")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("75")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
+  });
+
   it("renders plan celebration when all days are done", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: null, allDaysDone: true });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: null,
+      allDaysDone: true,
+      plan: makeCompletedPlan(),
+    });
 
     render(
       <AthletePlanEntryView
@@ -335,7 +434,12 @@ describe("AthletePlanEntryView", () => {
   it("shows day completed after confirming skip", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    mockCompleteDayAction.mockResolvedValue({ ok: true, nextDayIdx: 2, allDaysDone: false });
+    mockCompleteDayAction.mockResolvedValue({
+      ok: true,
+      nextDayIdx: 2,
+      allDaysDone: false,
+      plan: makeCompletedPlan(),
+    });
 
     render(
       <AthletePlanEntryView

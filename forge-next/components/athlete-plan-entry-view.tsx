@@ -4,7 +4,6 @@ import { useState } from "react";
 import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import {
-  completeDayInPlan,
   type CurrentDayLocation,
   findCurrentDay,
 } from "@/lib/athlete/plan/domain";
@@ -30,22 +29,18 @@ export function AthletePlanEntryView({
   const [milestone, setMilestone] = useState<AthletePlanMilestone | null>(null);
   const [navigateToDay, setNavigateToDay] = useState<DaySelection | undefined>(undefined);
 
-  function handleDayCompleted(allDaysDone: boolean, completedDay: CurrentDayLocation) {
-    setPlan((previous) => {
-      const nextPlan = completeDayInPlan(
-        previous,
-        completedDay.weekIndex,
-        completedDay.dayIndex,
-      ).plan;
+  function handleDayCompleted(
+    allDaysDone: boolean,
+    completedDay: CurrentDayLocation,
+    nextPlan: WorkoutPlan,
+  ) {
+    setPlan(nextPlan);
 
-      if (allDaysDone) {
-        setMilestone(planCompletedMilestone(nextPlan, coachName));
-      } else {
-        setMilestone(dayCompletedMilestone(completedDay));
-      }
-
-      return nextPlan;
-    });
+    if (allDaysDone) {
+      setMilestone(planCompletedMilestone(nextPlan, coachName));
+    } else {
+      setMilestone(dayCompletedMilestone(completedDay));
+    }
   }
 
   function handleMilestoneDismiss() {
