@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useId, useRef, useState, type ChangeEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
@@ -211,11 +211,14 @@ function LoadUnitControl({
   const [customActive, setCustomActive] = useState(() => !isPresetLoadUnit(unit));
   const customInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (customActive) {
+      customInputRef.current?.focus();
+    }
+  }, [customActive]);
+
   function enterCustomMode() {
     setCustomActive(true);
-    requestAnimationFrame(() => {
-      customInputRef.current?.focus();
-    });
   }
 
   function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -239,38 +242,45 @@ function LoadUnitControl({
 
   const selectValue = customActive ? CUSTOM_LOAD_UNIT_OPTION : unit;
 
-  return (
-    <div className="flex min-w-0 items-center gap-1.5">
-      <Select
-        hideLabel
-        label="Unit"
+  if (customActive) {
+    return (
+      <Input
+        ref={customInputRef}
         size="sm"
-        value={selectValue}
+        value={getCustomUnitInputValue(unit, customActive)}
         disabled={disabled}
-        className="w-[4.75rem] shrink-0"
-        onChange={handleSelectChange}
-      >
-        {PRESET_LOAD_UNITS.map((preset) => (
-          <option key={preset} value={preset}>
-            {preset}
-          </option>
-        ))}
-        <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
-      </Select>
-      {customActive ? (
-        <Input
-          ref={customInputRef}
-          size="sm"
-          value={getCustomUnitInputValue(unit, customActive)}
-          disabled={disabled}
-          aria-label="Custom unit"
-          placeholder="e.g. mi"
-          className="w-20 min-w-0"
-          onChange={(event) => onChange(event.target.value)}
-          onBlur={handleCustomBlur}
-        />
-      ) : null}
-    </div>
+        aria-label="Custom unit"
+        placeholder="e.g. mi"
+        className="w-24 min-w-0"
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={handleCustomBlur}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setCustomActive(false);
+            onChange("lb");
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <Select
+      hideLabel
+      label="Unit"
+      size="sm"
+      value={selectValue}
+      disabled={disabled}
+      className="w-[4.75rem] shrink-0"
+      onChange={handleSelectChange}
+    >
+      {PRESET_LOAD_UNITS.map((preset) => (
+        <option key={preset} value={preset}>
+          {preset}
+        </option>
+      ))}
+      <option value={CUSTOM_LOAD_UNIT_OPTION}>Custom</option>
+    </Select>
   );
 }
 
