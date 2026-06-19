@@ -1,18 +1,15 @@
 import type { ReactNode } from "react";
-import type { UserRole } from "@/lib/auth/types";
 import { cardClass, cardFooterClass } from "@/lib/theme";
 
 export function Card({
-  role,
   className,
   children,
 }: {
-  role?: UserRole;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className={`${cardClass(role)}${className ? ` ${className}` : ""}`}>
+    <div className={`${cardClass()}${className ? ` ${className}` : ""}`}>
       {children}
     </div>
   );

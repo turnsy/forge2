@@ -143,7 +143,7 @@ export function PlanDayNavigator({
 
   return (
     <div className="flex flex-col gap-6">
-      {view === "athlete" ? (
+      {view === "athlete" && !readOnly ? (
         <PageHeader
           title={plan.name}
           actions={<SaveIndicator status={saveStatus} />}

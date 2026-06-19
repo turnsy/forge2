@@ -6,10 +6,12 @@ export function PageShell({
   back,
   className,
   children,
+  showMobileBack = true,
 }: {
   back?: PageBackConfig;
   className?: string;
   children: ReactNode;
+  showMobileBack?: boolean;
 }) {
   if (!back) {
     return (
@@ -21,7 +23,7 @@ export function PageShell({
 
   return (
     <div className={`${pageShellClass()}${className ? ` ${className}` : ""}`}>
-      <PageBackGutter back={back}>
+      <PageBackGutter back={back} showMobileBack={showMobileBack}>
         <main className="flex min-h-full flex-col gap-6">{children}</main>
       </PageBackGutter>
     </div>

@@ -19,6 +19,7 @@ vi.mock("@/utils/supabase/server", () => ({
 import {
   getActiveAthletePlan,
   listAthleteAssignedPlans,
+  listMyPlanHistory,
   mapAssignedPlanRow,
   savePlanActuals,
 } from "@/lib/athlete/plan/repository";
@@ -191,5 +192,68 @@ describe("athlete plan repository", () => {
     expect(mockEq).toHaveBeenCalledWith("athlete_id", "athlete-1");
     expect(mockEq).toHaveBeenCalledWith("coach_id", "coach-1");
     expect(mockNeq).toHaveBeenCalledWith("status", "active");
+  });
+
+  it("lists non-active plans via coach link discovery", async () => {
+    const mockRpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          relationship_id: "rel-1",
+          status: "active",
+          coach_id: "coach-1",
+          coach_name: "Coach Alex",
+          requested_at: "2026-01-01T00:00:00.000Z",
+          linked_at: "2026-01-02T00:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+
+    mockFrom.mockReturnValue({ select: mockSelect });
+    mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ eq: mockEq, neq: mockNeq });
+    mockNeq.mockReturnValue({ order: mockOrder });
+    mockOrder.mockResolvedValue({
+      data: [
+        {
+          id: "assignment-2",
+          athlete_id: "athlete-1",
+          coach_id: "coach-1",
+          plan_data: minimalWorkoutPlan,
+          status: "completed",
+          assigned_at: "2026-01-01T00:00:00.000Z",
+          completed_at: "2026-02-01T00:00:00.000Z",
+          unassigned_at: null,
+          plan_version_id: null,
+        },
+      ],
+      error: null,
+    });
+
+    const mockClient = {
+      from: mockFrom,
+      rpc: mockRpc,
+    };
+
+    const result = await listMyPlanHistory("athlete-1", mockClient as never);
+
+    expect(result).toEqual({
+      ok: true,
+      plans: [expect.objectContaining({ id: "assignment-2", status: "completed" })],
+    });
+    expect(mockRpc).toHaveBeenCalledWith("get_athlete_coach_link");
+  });
+
+  it("returns empty history when no coach link exists", async () => {
+    const mockRpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    const mockClient = {
+      from: mockFrom,
+      rpc: mockRpc,
+    };
+
+    const result = await listMyPlanHistory("athlete-1", mockClient as never);
+
+    expect(result).toEqual({ ok: true, plans: [] });
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 });

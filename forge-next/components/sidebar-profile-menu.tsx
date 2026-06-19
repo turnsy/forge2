@@ -83,15 +83,17 @@ export function SidebarProfileMenu({
             collapsed ? "left-0 w-48" : "left-0 right-0",
           ].join(" ")}
         >
-          <Link
-            href={settingsPath}
-            role="menuitem"
-            className={menuItemClass}
-            onClick={() => setOpen(false)}
-          >
-            <GearIcon />
-            Settings
-          </Link>
+          {role !== "athlete" ? (
+            <Link
+              href={settingsPath}
+              role="menuitem"
+              className={menuItemClass}
+              onClick={() => setOpen(false)}
+            >
+              <GearIcon />
+              Settings
+            </Link>
+          ) : null}
           <form action="/auth/logout" method="post">
             <button type="submit" role="menuitem" className={menuItemClass}>
               <LogOutIcon />

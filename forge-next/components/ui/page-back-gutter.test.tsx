@@ -46,4 +46,23 @@ describe("PageBackGutter", () => {
     expect(body.className).not.toContain("pl-12");
     expect(body.parentElement?.className ?? "").not.toContain("flex");
   });
+
+  it("can hide the mobile back link and header inset", () => {
+    render(
+      <PageBackGutter
+        back={{ href: "/athlete", ariaLabel: "Back to home" }}
+        showMobileBack={false}
+      >
+        <PageHeader title="History" />
+      </PageBackGutter>,
+    );
+
+    expect(
+      screen.getAllByRole("link", { name: "Back to home" }),
+    ).toHaveLength(1);
+    expect(
+      screen.getByRole("heading", { name: "History" }).closest("[data-page-header]")
+        ?.parentElement?.className ?? "",
+    ).not.toContain("[&_[data-page-header]]:max-md:pl-12");
+  });
 });

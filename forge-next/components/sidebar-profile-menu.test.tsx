@@ -109,6 +109,27 @@ describe("SidebarProfileMenu", () => {
     );
   });
 
+  it("hides settings for athlete role and keeps logout", async () => {
+    const user = userEvent.setup();
+    render(
+      <SidebarProfileMenu
+        role="athlete"
+        fullName="Athlete User"
+        email="athlete@example.com"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /Open profile menu/i });
+    await user.click(trigger);
+
+    expect(
+      screen.queryByRole("menuitem", { name: /Settings/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: /Log out/i }),
+    ).toBeInTheDocument();
+  });
+
   it("closes on outside click", async () => {
     const user = userEvent.setup();
     render(
