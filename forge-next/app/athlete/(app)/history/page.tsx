@@ -9,8 +9,13 @@ export default async function AthleteHistoryPage() {
   const result = await listMyPlanHistory(user.id);
 
   return (
-    <PageShell back={{ href: "/athlete", ariaLabel: "Back to home" }}>
-      <PageHeader title="History" />
+    <PageShell
+      back={{ href: "/athlete", ariaLabel: "Back to home" }}
+      showMobileBack={false}
+    >
+      <div className="hidden md:block">
+        <PageHeader title="History" />
+      </div>
       <div className={MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS}>
         {!result.ok ? (
           <ErrorState

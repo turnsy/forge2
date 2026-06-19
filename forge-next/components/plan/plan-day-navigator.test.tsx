@@ -207,6 +207,22 @@ describe("PlanDayNavigator", () => {
     render(<PlanDayNavigator plan={plan} view="athlete" assignmentId="assignment-1" />);
 
     expect(screen.getByText("Week 1 Day 2 Exercise")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: plan.name })).toBeInTheDocument();
+  });
+
+  it("hides the athlete title header in read-only history view", () => {
+    const plan = makeMultiWeekPlan();
+
+    render(
+      <PlanDayNavigator
+        plan={plan}
+        view="athlete"
+        readOnly
+        assignmentId="assignment-1"
+      />,
+    );
+
+    expect(screen.queryByRole("heading", { name: plan.name })).not.toBeInTheDocument();
   });
 
   it("defaults to Day 1 of Week 1 for coach view", () => {
