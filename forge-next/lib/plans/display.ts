@@ -26,18 +26,7 @@ function formatAbsoluteLoad(load: AbsoluteLoad): string {
 }
 
 export function formatPercentageLoad(load: PercentageLoad): string {
-  switch (load.operator) {
-    case "exact":
-      return `${load.value}%`;
-    case "at-least":
-      return `≥${load.value}%`;
-    case "at-most":
-      return `≤${load.value}%`;
-    case "range":
-      return `${load.minValue}–${load.maxValue}%`;
-    default:
-      return "%";
-  }
+  return `${load.value}% (${load.unit})`;
 }
 
 export function formatTargetInstruction(instruction: string): string {

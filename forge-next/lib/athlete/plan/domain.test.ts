@@ -51,9 +51,8 @@ function makePlan(): WorkoutPlan {
                       reps: 6,
                       load: {
                         type: "percentage",
-                        unit: "%",
-                        operator: "exact",
                         value: 75,
+                        unit: "kg",
                       },
                     },
                     actual: null,
@@ -138,9 +137,13 @@ describe("athlete plan domain", () => {
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
     });
+    expect(buildActualFromInputs("3+1", "185", percentageSet)).toEqual({
+      reps: "3+1",
+      load: { type: "absolute", value: 185, unit: "kg" },
+    });
     expect(buildActualFromInputs("3+1", "75%", percentageSet)).toEqual({
       reps: "3+1",
-      load: expect.objectContaining({ type: "percentage", value: 75 }),
+      load: { type: "percentage", value: 75, unit: "kg" },
     });
   });
 
@@ -237,13 +240,17 @@ describe("athlete plan domain", () => {
   it("parses reps and load inputs", () => {
     const percentageLoad = {
       type: "percentage" as const,
-      unit: "%" as const,
-      operator: "exact" as const,
       value: 80,
+      unit: "kg" as const,
     };
 
     expect(parseRepsInput("3+1")).toBe("3+1");
     expect(parseRepsInput("8")).toBe(8);
+    expect(parseLoadInput("185", percentageLoad)).toEqual({
+      type: "absolute",
+      value: 185,
+      unit: "kg",
+    });
     expect(parseLoadInput("75%", percentageLoad)?.value).toBe(75);
   });
 
@@ -281,7 +288,7 @@ describe("athlete plan domain", () => {
 
     exercise.sets[1].actual = {
       reps: 6,
-      load: { type: "percentage", unit: "%", operator: "exact", value: 75 },
+      load: { type: "absolute", value: 75, unit: "kg" },
     };
     expect(isExerciseComplete(exercise)).toBe(true);
   });
@@ -319,12 +326,7 @@ describe("athlete plan domain", () => {
     });
     const filledBoth = applySetActuals(filled, 1, 1, 0, 1, {
       reps: 6,
-      load: {
-        type: "percentage",
-        unit: "%",
-        operator: "exact",
-        value: 75,
-      },
+      load: { type: "absolute", value: 185, unit: "kg" },
     });
 
     const { plan: completed } = completeDayInPlan(filledBoth, 1, 1);
@@ -362,12 +364,7 @@ describe("athlete plan domain", () => {
     });
     const filledDay = applySetActuals(filled, 1, 1, 0, 1, {
       reps: 6,
-      load: {
-        type: "percentage",
-        unit: "%",
-        operator: "exact",
-        value: 75,
-      },
+      load: { type: "absolute", value: 185, unit: "kg" },
     }).weeks[0].days[0];
 
     expect(dayHasUnfilledNonTargetSets(filledDay)).toBe(false);

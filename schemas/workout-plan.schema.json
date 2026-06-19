@@ -308,91 +308,21 @@
       "additionalProperties": false,
       "required": [
         "type",
-        "unit",
-        "operator"
+        "value",
+        "unit"
       ],
       "properties": {
         "type": {
           "const": "percentage"
         },
-        "unit": {
-          "const": "%"
-        },
-        "basis": {
-          "$ref": "#/$defs/nonEmptyString"
-        },
-        "absoluteUnit": {
-          "$ref": "#/$defs/nonEmptyString"
-        },
-        "operator": {
-          "type": "string",
-          "enum": [
-            "exact",
-            "range",
-            "at-least",
-            "at-most"
-          ]
-        },
         "value": {
           "type": "number",
           "minimum": 0
         },
-        "minValue": {
-          "type": "number",
-          "minimum": 0
-        },
-        "maxValue": {
-          "type": "number",
-          "minimum": 0
+        "unit": {
+          "$ref": "#/$defs/nonEmptyString"
         }
-      },
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "properties": {
-                "operator": {
-                  "const": "exact"
-                }
-              },
-              "required": [
-                "value"
-              ]
-            },
-            {
-              "properties": {
-                "operator": {
-                  "const": "at-least"
-                }
-              },
-              "required": [
-                "value"
-              ]
-            },
-            {
-              "properties": {
-                "operator": {
-                  "const": "at-most"
-                }
-              },
-              "required": [
-                "value"
-              ]
-            },
-            {
-              "properties": {
-                "operator": {
-                  "const": "range"
-                }
-              },
-              "required": [
-                "minValue",
-                "maxValue"
-              ]
-            }
-          ]
-        }
-      ]
+      }
     }
   }
 }

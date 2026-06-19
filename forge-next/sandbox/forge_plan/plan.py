@@ -171,7 +171,6 @@ class Plan:
         load_value: float,
         load_type: str = "absolute",
         unit: str = "kg",
-        operator: str = "exact",
         notes: str | None = None,
         exercise_name: str | None = None,
         exercise_index: int | None = None,
@@ -183,7 +182,7 @@ class Plan:
         ``actual`` are filled automatically. Target the exercise by ``exercise_name``,
         ``exercise_index`` (0-based), or omit both to use the last exercise on that day.
 
-        For ``load_type="percentage"``, ``unit`` is stored as ``absoluteUnit`` on the load
+        For ``load_type="percentage"``, ``unit`` is the unit the resolved load will be in
         (e.g. ``unit="kg"`` for 85% of a kg-based max).
         """
         week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
@@ -204,7 +203,6 @@ class Plan:
                 load_type=load_type,
                 load_value=load_value,
                 unit=unit,
-                operator=operator,
                 notes=notes,
             )
         )

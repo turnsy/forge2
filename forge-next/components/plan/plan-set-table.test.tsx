@@ -90,10 +90,8 @@ describe("PlanSetTable", () => {
               reps: 5,
               load: {
                 type: "percentage",
-                unit: "%",
-                basis: "back_squat_1rm",
-                operator: "exact",
                 value: 80,
+                unit: "kg",
               },
             },
             actual: {

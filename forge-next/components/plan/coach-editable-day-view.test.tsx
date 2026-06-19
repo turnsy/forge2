@@ -47,10 +47,8 @@ function makePercentagePlan(): WorkoutPlan {
                       reps: 5,
                       load: {
                         type: "percentage",
-                        unit: "%",
-                        operator: "exact",
                         value: 75,
-                        basis: "back_squat_1rm",
+                        unit: "lb",
                       },
                     },
                     actual: null,

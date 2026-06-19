@@ -81,8 +81,8 @@ function getResolvedSetFormState(
   return formState[key] ?? setFormStateFromActual(set);
 }
 
-function getAbsoluteUnit(set: Set): string | null {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "absolute") {
+function getLoadUnitLabel(set: Set): string | null {
+  if (set.planned.type !== "exact") {
     return null;
   }
 
@@ -95,7 +95,7 @@ function getPercentagePlaceholder(set: Set): string {
   }
 
   const load = set.planned.load as PercentageLoad;
-  return `${load.value ?? ""}%`;
+  return `${load.value}%`;
 }
 
 function getAbsoluteLoadPlaceholder(set: Set): string {
@@ -189,7 +189,7 @@ function SetRowInputs({
     );
   }
 
-  const unit = getAbsoluteUnit(set);
+  const unit = getLoadUnitLabel(set);
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">

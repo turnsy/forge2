@@ -51,9 +51,8 @@ function makePlan(): WorkoutPlan {
                       reps: 6,
                       load: {
                         type: "percentage",
-                        unit: "%",
-                        operator: "exact",
                         value: 75,
+                        unit: "kg",
                       },
                     },
                     actual: null,
@@ -114,7 +113,7 @@ describe("AthletePlanEntryView", () => {
     expect(screen.getByPlaceholderText("8")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("60")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("75%")).toBeInTheDocument();
-    expect(screen.getByText("kg")).toBeInTheDocument();
+    expect(screen.getAllByText("kg")).toHaveLength(2);
     expect(screen.getAllByText("of")).toHaveLength(2);
     expect(screen.queryByText("Set 1")).not.toBeInTheDocument();
   });
@@ -362,12 +361,7 @@ describe("AthletePlanEntryView", () => {
     };
     plan.weeks[0].days[0].exercises[0].sets[1].actual = {
       reps: 6,
-      load: {
-        type: "percentage",
-        unit: "%",
-        operator: "exact",
-        value: 75,
-      },
+      load: { type: "absolute", value: 185, unit: "kg" },
     };
 
     render(
@@ -381,7 +375,7 @@ describe("AthletePlanEntryView", () => {
     expect(screen.getByPlaceholderText("8")).toHaveValue("8");
     expect(screen.getByPlaceholderText("60")).toHaveValue("60");
     expect(screen.getByPlaceholderText("6")).toHaveValue("6");
-    expect(screen.getByPlaceholderText("75%")).toHaveValue("75");
+    expect(screen.getByPlaceholderText("75%")).toHaveValue("185");
   });
 
   it("keeps local input values when parent props refresh for the same day", async () => {

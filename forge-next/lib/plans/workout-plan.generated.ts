@@ -7,33 +7,6 @@ export type PlannedSet = ExactPlannedSet | TargetPlannedSet;
  */
 export type RepsValue = number | string;
 export type Load = AbsoluteLoad | PercentageLoad;
-export type PercentageLoad = (
-  | {
-      operator?: "exact";
-      [k: string]: unknown;
-    }
-  | {
-      operator?: "at-least";
-      [k: string]: unknown;
-    }
-  | {
-      operator?: "at-most";
-      [k: string]: unknown;
-    }
-  | {
-      operator?: "range";
-      [k: string]: unknown;
-    }
-) & {
-  type: "percentage";
-  unit: "%";
-  basis?: NonEmptyString;
-  absoluteUnit?: NonEmptyString;
-  operator: "exact" | "range" | "at-least" | "at-most";
-  value?: number;
-  minValue?: number;
-  maxValue?: number;
-};
 
 /**
  * Athlete-facing workout plan schema with week/day structure and one entry per planned set.
@@ -97,6 +70,11 @@ export interface ExactPlannedSet {
 }
 export interface AbsoluteLoad {
   type: "absolute";
+  value: number;
+  unit: NonEmptyString;
+}
+export interface PercentageLoad {
+  type: "percentage";
   value: number;
   unit: NonEmptyString;
 }

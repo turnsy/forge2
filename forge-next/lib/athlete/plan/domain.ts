@@ -118,6 +118,8 @@ export function parseLoadInput(
     return null;
   }
 
+  const unit = plannedLoad.unit;
+
   if (plannedLoad.type === "absolute") {
     const numeric = Number(trimmed);
     if (!Number.isFinite(numeric)) {
@@ -127,20 +129,29 @@ export function parseLoadInput(
     return {
       type: "absolute",
       value: numeric,
-      unit: plannedLoad.unit,
+      unit,
     };
   }
 
-  const stripped = trimmed.replace(/%$/, "").trim();
+  const hasPercentSuffix = trimmed.endsWith("%");
+  const stripped = hasPercentSuffix ? trimmed.slice(0, -1).trim() : trimmed;
   const numeric = Number(stripped);
   if (!Number.isFinite(numeric)) {
     return null;
   }
 
+  if (hasPercentSuffix) {
+    return {
+      type: "percentage",
+      value: numeric,
+      unit,
+    };
+  }
+
   return {
-    ...plannedLoad,
-    type: "percentage",
+    type: "absolute",
     value: numeric,
+    unit,
   };
 }
 

@@ -10,10 +10,10 @@ import {
 import {
   disablePercentageLoad,
   enablePercentageLoad,
-  getAbsoluteUnitForLoad,
+  getLoadUnit,
   getLoadTargetValue,
   isPercentageLoad,
-  updateAbsoluteLoadUnit,
+  updateLoadUnit,
   updateLoadTargetValue,
 } from "@/lib/plans/percentage-load";
 import type { Load } from "@/lib/plans/workout-plan";
@@ -136,7 +136,7 @@ export function PlanLoadTargetControl({
   onChange,
 }: PlanLoadTargetControlProps) {
   const isPercentage = isPercentageLoad(load);
-  const displayUnit = getAbsoluteUnitForLoad(load);
+  const displayUnit = getLoadUnit(load);
 
   function handleTogglePercentage() {
     if (isPercentage) {
@@ -174,7 +174,7 @@ export function PlanLoadTargetControl({
       <LoadUnitControl
         unit={displayUnit}
         disabled={disabled}
-        onChange={(unit) => onChange(updateAbsoluteLoadUnit(load, unit))}
+        onChange={(unit) => onChange(updateLoadUnit(load, unit))}
       />
     </div>
   );

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  coerceToExactPercentageLoad,
   disablePercentageLoad,
   enablePercentageLoad,
   getLoadTargetValue,
-  updateAbsoluteLoadUnit,
+  updateLoadUnit,
   updateLoadTargetValue,
 } from "@/lib/plans/percentage-load";
 
@@ -16,43 +15,20 @@ describe("percentage-load", () => {
     expect(
       getLoadTargetValue({
         type: "percentage",
-        unit: "%",
-        operator: "exact",
         value: 75,
+        unit: "kg",
       }),
     ).toBe("75");
   });
 
-  it("coerces non-exact percentage loads to exact values", () => {
-    expect(
-      coerceToExactPercentageLoad({
-        type: "percentage",
-        unit: "%",
-        operator: "range",
-        minValue: 70,
-        maxValue: 80,
-        basis: "back_squat_1rm",
-        absoluteUnit: "kg",
-      }),
-    ).toEqual({
-      type: "percentage",
-      unit: "%",
-      operator: "exact",
-      value: 70,
-      absoluteUnit: "kg",
-    });
-  });
-
-  it("toggles between absolute and exact percentage loads", () => {
+  it("toggles between absolute and percentage loads", () => {
     const absolute = { type: "absolute" as const, value: 60, unit: "kg" as const };
 
     const enabled = enablePercentageLoad(absolute);
     expect(enabled).toEqual({
       type: "percentage",
-      unit: "%",
-      operator: "exact",
       value: 60,
-      absoluteUnit: "kg",
+      unit: "kg",
     });
 
     expect(disablePercentageLoad(enabled)).toEqual({
@@ -62,44 +38,52 @@ describe("percentage-load", () => {
     });
   });
 
-  it("updates percentage values without dropping absoluteUnit", () => {
+  it("updates percentage values without dropping unit", () => {
     expect(
       updateLoadTargetValue(
         {
           type: "percentage",
-          unit: "%",
-          operator: "exact",
           value: 75,
-          absoluteUnit: "kg",
+          unit: "kg",
         },
         "80",
       ),
     ).toEqual({
       type: "percentage",
-      unit: "%",
-      operator: "exact",
       value: 80,
-      absoluteUnit: "kg",
+      unit: "kg",
     });
   });
 
-  it("persists absoluteUnit on percentage loads", () => {
+  it("updates unit on both load types", () => {
     expect(
-      updateAbsoluteLoadUnit(
+      updateLoadUnit(
         {
           type: "percentage",
-          unit: "%",
-          operator: "exact",
           value: 75,
+          unit: "lb",
         },
         "kg",
       ),
     ).toEqual({
       type: "percentage",
-      unit: "%",
-      operator: "exact",
       value: 75,
-      absoluteUnit: "kg",
+      unit: "kg",
+    });
+
+    expect(
+      updateLoadUnit(
+        {
+          type: "absolute",
+          value: 100,
+          unit: "lb",
+        },
+        "kg",
+      ),
+    ).toEqual({
+      type: "absolute",
+      value: 100,
+      unit: "kg",
     });
   });
 });
