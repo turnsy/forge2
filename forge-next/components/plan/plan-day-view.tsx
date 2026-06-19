@@ -17,7 +17,7 @@ import {
   setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
 import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
-import { getDayTitle } from "@/lib/plans/display";
+import { getDayTitle, getSetNotes } from "@/lib/plans/display";
 import type {
   AbsoluteLoad,
   Day,
@@ -228,6 +228,71 @@ function SetRowInputs({
   );
 }
 
+function AthleteExerciseNotes({ notes }: { notes?: string }) {
+  if (!notes?.trim()) {
+    return null;
+  }
+
+  return <p className="text-sm text-surface-muted">{notes.trim()}</p>;
+}
+
+function AthleteSetNotes({ notes }: { notes?: string }) {
+  if (!notes) {
+    return null;
+  }
+
+  return <p className="pl-9 text-sm text-surface-muted">{notes}</p>;
+}
+
+function AthleteSetRow({
+  set,
+  setIdx,
+  reps,
+  load,
+  readOnly,
+  complete,
+  setRef,
+  onRepsChange,
+  onLoadChange,
+}: {
+  set: Set;
+  setIdx: number;
+  reps: string;
+  load: string;
+  readOnly?: boolean;
+  complete?: boolean;
+  setRef?: (node: HTMLDivElement | null) => void;
+  onRepsChange?: (value: string) => void;
+  onLoadChange?: (value: string) => void;
+}) {
+  const notes = getSetNotes(set);
+
+  return (
+    <div className="space-y-1">
+      <div
+        ref={setRef}
+        className={readOnly ? athleteReadOnlySetRowClassName(set) : setRowClassName(Boolean(complete))}
+        data-set-status={readOnly ? set.status : undefined}
+        data-set-complete={complete ? "true" : "false"}
+      >
+        <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
+          {setIdx + 1}
+        </span>
+        <SetRowInputs
+          set={set}
+          reps={reps}
+          load={load}
+          readOnly={readOnly}
+          onRepsChange={onRepsChange}
+          onLoadChange={onLoadChange}
+        />
+        <SetCheckmark complete={Boolean(complete)} />
+      </div>
+      <AthleteSetNotes notes={notes} />
+    </div>
+  );
+}
+
 function AthleteReadOnlyDayContent({ day }: { day: Day }) {
   return (
     <div className="space-y-4">
@@ -240,29 +305,22 @@ function AthleteReadOnlyDayContent({ day }: { day: Day }) {
           <h2 className="text-base font-semibold text-surface-foreground">
             {exercise.name}
           </h2>
+          <AthleteExerciseNotes notes={exercise.notes} />
           <div className="space-y-3">
             {exercise.sets.map((set, setIdx) => {
               const filled = set.status === "completed";
               const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
 
               return (
-                <div
+                <AthleteSetRow
                   key={set.id}
-                  className={athleteReadOnlySetRowClassName(set)}
-                  data-set-status={set.status}
-                  data-set-complete={filled ? "true" : "false"}
-                >
-                  <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
-                    {setIdx + 1}
-                  </span>
-                  <SetRowInputs
-                    set={set}
-                    reps={values.reps}
-                    load={values.load}
-                    readOnly
-                  />
-                  <SetCheckmark complete={filled} />
-                </div>
+                  set={set}
+                  setIdx={setIdx}
+                  reps={values.reps}
+                  load={values.load}
+                  readOnly
+                  complete={filled}
+                />
               );
             })}
           </div>
@@ -608,6 +666,7 @@ function AthleteEditableDayContent({
               <h2 className="text-base font-semibold text-surface-foreground">
                 {exercise.name}
               </h2>
+              <AthleteExerciseNotes notes={exercise.notes} />
               <div className="space-y-3">
                 {exercise.sets.map((savedSet, setIdx) => {
                   const key = getSetKey(exerciseIdx, setIdx);
@@ -619,40 +678,33 @@ function AthleteEditableDayContent({
                   const complete = isSetActualComplete(savedSet);
 
                   return (
-                    <div
+                    <AthleteSetRow
                       key={savedSet.id}
-                      ref={(node) => {
+                      set={day.exercises[exerciseIdx].sets[setIdx]}
+                      setIdx={setIdx}
+                      reps={local.reps}
+                      load={local.load}
+                      complete={complete}
+                      setRef={(node) => {
                         setRefs.current[key] = node;
                       }}
-                      className={setRowClassName(complete)}
-                      data-set-complete={complete ? "true" : "false"}
-                    >
-                      <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
-                        {setIdx + 1}
-                      </span>
-                      <SetRowInputs
-                        set={day.exercises[exerciseIdx].sets[setIdx]}
-                        reps={local.reps}
-                        load={local.load}
-                        onRepsChange={(value) =>
-                          handleInputChange(
-                            { exerciseIdx, setIdx },
-                            day.exercises[exerciseIdx].sets[setIdx],
-                            "reps",
-                            value,
-                          )
-                        }
-                        onLoadChange={(value) =>
-                          handleInputChange(
-                            { exerciseIdx, setIdx },
-                            day.exercises[exerciseIdx].sets[setIdx],
-                            "load",
-                            value,
-                          )
-                        }
-                      />
-                      <SetCheckmark complete={complete} />
-                    </div>
+                      onRepsChange={(value) =>
+                        handleInputChange(
+                          { exerciseIdx, setIdx },
+                          day.exercises[exerciseIdx].sets[setIdx],
+                          "reps",
+                          value,
+                        )
+                      }
+                      onLoadChange={(value) =>
+                        handleInputChange(
+                          { exerciseIdx, setIdx },
+                          day.exercises[exerciseIdx].sets[setIdx],
+                          "load",
+                          value,
+                        )
+                      }
+                    />
                   );
                 })}
               </div>
