@@ -135,21 +135,16 @@ export function PlanLoadTargetControl({
   setNumber,
   onChange,
 }: PlanLoadTargetControlProps) {
-  const [rememberedUnit, setRememberedUnit] = useState(() =>
-    getAbsoluteUnitForLoad(load),
-  );
   const isPercentage = isPercentageLoad(load);
-  const displayUnit = isPercentage ? rememberedUnit : getAbsoluteUnitForLoad(load);
+  const displayUnit = getAbsoluteUnitForLoad(load);
 
   function handleTogglePercentage() {
     if (isPercentage) {
-      onChange(disablePercentageLoad(load, rememberedUnit));
+      onChange(disablePercentageLoad(load));
       return;
     }
 
-    const next = enablePercentageLoad(load, rememberedUnit);
-    setRememberedUnit(next.rememberedUnit);
-    onChange(next.load);
+    onChange(enablePercentageLoad(load));
   }
 
   return (
@@ -179,11 +174,7 @@ export function PlanLoadTargetControl({
       <LoadUnitControl
         unit={displayUnit}
         disabled={disabled}
-        onChange={(unit) => {
-          const next = updateAbsoluteLoadUnit(load, unit, rememberedUnit);
-          setRememberedUnit(next.rememberedUnit);
-          onChange(next.load);
-        }}
+        onChange={(unit) => onChange(updateAbsoluteLoadUnit(load, unit))}
       />
     </div>
   );

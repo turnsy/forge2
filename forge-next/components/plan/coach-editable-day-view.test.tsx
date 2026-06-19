@@ -529,6 +529,37 @@ describe("CoachEditableDayView", () => {
     expect(screen.queryByLabelText("Percentage operator")).not.toBeInTheDocument();
   });
 
+  it("persists the selected unit on percentage loads", () => {
+    function Harness() {
+      const [plan, setPlan] = useState(makePercentagePlan());
+
+      return (
+        <CoachEditableDayView
+          plan={plan}
+          weekIndex={1}
+          dayIndex={1}
+          disabled={false}
+          onPlanChange={setPlan}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    fireEvent.change(screen.getAllByLabelText("Unit")[0], { target: { value: "kg" } });
+
+    const load = screen.getAllByLabelText("Set 1 target")[0];
+    fireEvent.change(load, { target: { value: "80" } });
+
+    const unitSelect = screen.getAllByLabelText("Unit")[0];
+    expect(unitSelect).toHaveValue("kg");
+
+    fireEvent.click(screen.getAllByLabelText("Use percentage load")[0]);
+    fireEvent.click(screen.getAllByLabelText("Use percentage load")[0]);
+
+    expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("kg");
+  });
+
   it("disables inputs and buttons when disabled", () => {
     render(
       <CoachEditableDayView

@@ -321,6 +321,9 @@
         "basis": {
           "$ref": "#/$defs/nonEmptyString"
         },
+        "absoluteUnit": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
         "operator": {
           "type": "string",
           "enum": [

@@ -21,7 +21,7 @@ export function getAbsoluteUnitForLoad(load: Load, fallback = "lb"): string {
     return load.unit;
   }
 
-  return fallback;
+  return load.absoluteUnit ?? fallback;
 }
 
 export function parseLoadTargetNumber(value: string): number | undefined {
@@ -38,13 +38,22 @@ export function parseLoadTargetNumber(value: string): number | undefined {
   return numeric;
 }
 
-export function toExactPercentageLoad(value: number): PercentageLoad {
-  return {
+export function toExactPercentageLoad(
+  value: number,
+  absoluteUnit?: string,
+): PercentageLoad {
+  const load: PercentageLoad = {
     type: "percentage",
     unit: "%",
     operator: "exact",
     value,
   };
+
+  if (absoluteUnit?.trim()) {
+    load.absoluteUnit = absoluteUnit.trim();
+  }
+
+  return load;
 }
 
 export function coerceToExactPercentageLoad(load: PercentageLoad): PercentageLoad {
@@ -53,7 +62,10 @@ export function coerceToExactPercentageLoad(load: PercentageLoad): PercentageLoa
       ? (load.minValue ?? load.value ?? 0)
       : (load.value ?? load.minValue ?? 0);
 
-  return toExactPercentageLoad(value);
+  return {
+    ...toExactPercentageLoad(value, load.absoluteUnit),
+    absoluteUnit: load.absoluteUnit,
+  };
 }
 
 export function updateLoadTargetValue(load: Load, rawValue: string): Load {
@@ -66,56 +78,39 @@ export function updateLoadTargetValue(load: Load, rawValue: string): Load {
     } satisfies AbsoluteLoad;
   }
 
-  return toExactPercentageLoad(parsed ?? load.value ?? 0);
+  return {
+    ...toExactPercentageLoad(parsed ?? load.value ?? 0, load.absoluteUnit),
+    absoluteUnit: load.absoluteUnit,
+  };
 }
 
-export function updateAbsoluteLoadUnit(
-  load: Load,
-  unit: string,
-  rememberedUnit: string,
-): { load: Load; rememberedUnit: string } {
+export function updateAbsoluteLoadUnit(load: Load, unit: string): Load {
   const trimmed = unit.trim();
 
   if (load.type === "absolute") {
     return {
-      load: {
-        ...load,
-        unit: trimmed,
-      },
-      rememberedUnit: trimmed || rememberedUnit,
+      ...load,
+      unit: trimmed,
     };
   }
 
   return {
-    load,
-    rememberedUnit: trimmed || rememberedUnit,
+    ...load,
+    absoluteUnit: trimmed || load.absoluteUnit,
   };
 }
 
-export function enablePercentageLoad(
-  load: Load,
-  rememberedUnit: string,
-): { load: Load; rememberedUnit: string } {
+export function enablePercentageLoad(load: Load): PercentageLoad {
   if (load.type === "percentage") {
-    return {
-      load: coerceToExactPercentageLoad(load),
-      rememberedUnit,
-    };
+    return coerceToExactPercentageLoad(load);
   }
 
-  const seed =
-    load.value > 0 ? Math.min(load.value, 100) : 75;
+  const seed = load.value > 0 ? Math.min(load.value, 100) : 75;
 
-  return {
-    load: toExactPercentageLoad(seed),
-    rememberedUnit: load.unit || rememberedUnit,
-  };
+  return toExactPercentageLoad(seed, load.unit);
 }
 
-export function disablePercentageLoad(
-  load: Load,
-  rememberedUnit: string,
-): Load {
+export function disablePercentageLoad(load: Load): AbsoluteLoad {
   if (load.type === "absolute") {
     return load;
   }
@@ -125,6 +120,6 @@ export function disablePercentageLoad(
   return {
     type: "absolute",
     value: coerced.value ?? 0,
-    unit: rememberedUnit || "lb",
+    unit: coerced.absoluteUnit || "lb",
   } satisfies AbsoluteLoad;
 }
