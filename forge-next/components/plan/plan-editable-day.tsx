@@ -122,6 +122,13 @@ export function reorderSetsInExercise(
   return arrayMove(sets, oldIndex, newIndex);
 }
 
+const mobileFieldLabelClass =
+  "mb-1 block text-xs font-medium uppercase tracking-wide text-surface-muted md:hidden";
+
+function MobileFieldLabel({ children }: { children: string }) {
+  return <span className={mobileFieldLabelClass}>{children}</span>;
+}
+
 function GripIcon() {
   return (
     <svg
@@ -197,11 +204,11 @@ function SortableSetRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-b border-glass-border/60 last:border-b-0 ${
+      className={`border-b border-glass-border/60 last:border-b-0 max-md:mb-3 max-md:grid max-md:grid-cols-[auto_1fr_auto] max-md:gap-x-2 max-md:gap-y-2.5 max-md:rounded-lg max-md:border max-md:p-3 max-md:last:mb-0 max-md:last:border-b ${
         isDragging ? "opacity-50" : ""
       }`}
     >
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 max-md:col-start-1 max-md:row-start-1 max-md:p-0">
         <button
           type="button"
           className={`flex items-center ${
@@ -215,17 +222,20 @@ function SortableSetRow({
           <GripIcon />
         </button>
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-2 max-md:p-0">
+        <MobileFieldLabel>Reps</MobileFieldLabel>
         <Input
           ref={repsInputRef}
           size="sm"
           value={formatReps(planned.reps)}
           readOnly={disabled}
           aria-label={`Set ${setNumber} reps`}
+          className="w-full"
           onChange={(event) => onRepsChange(event.target.value)}
         />
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-3 max-md:p-0">
+        <MobileFieldLabel>Target</MobileFieldLabel>
         <PlanLoadTargetControl
           load={planned.load}
           disabled={disabled}
@@ -233,16 +243,18 @@ function SortableSetRow({
           onChange={onLoadUpdate}
         />
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-4 max-md:p-0">
+        <MobileFieldLabel>Notes</MobileFieldLabel>
         <Input
           size="sm"
           value={notes}
           readOnly={disabled}
           aria-label={`Set ${setNumber} notes`}
+          className="w-full"
           onChange={(event) => onNotesChange(event.target.value)}
         />
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 max-md:col-start-3 max-md:row-start-1 max-md:flex max-md:justify-end max-md:p-0">
         {canDelete ? (
           <IconButton
             variant="danger"
@@ -377,9 +389,9 @@ function EditableExerciseBlock({
           collisionDetection={closestCenter}
           onDragEnd={handleSetDragEnd}
         >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[24rem] border-collapse text-sm">
-              <thead>
+          <div className="overflow-x-auto max-md:overflow-visible">
+            <table className="w-full border-collapse text-sm md:min-w-[24rem] max-md:block">
+              <thead className="max-md:hidden">
                 <tr className="border-b border-glass-border text-left text-xs font-medium uppercase tracking-wide text-surface-foreground/80">
                   <th className="w-8 px-2 py-2" aria-label="Reorder" />
                   <th className="px-2 py-2 font-medium">Reps</th>
@@ -388,7 +400,7 @@ function EditableExerciseBlock({
                   <th className="w-10 px-2 py-2" aria-label="Actions" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="max-md:block">
                 <SortableContext
                   items={exercise.sets.map((set) => set.id)}
                   strategy={verticalListSortingStrategy}

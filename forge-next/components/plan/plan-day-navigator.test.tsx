@@ -150,7 +150,7 @@ describe("PlanDayNavigator", () => {
 
     render(<PlanDayNavigator plan={makeMultiWeekPlan()} view="coach" readOnly />);
 
-    expect(screen.getByRole("button", { name: "Day 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Week 1, Day 1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Previous day" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next day" })).toBeInTheDocument();
   });
@@ -163,7 +163,7 @@ describe("PlanDayNavigator", () => {
 
     await user.click(screen.getByRole("button", { name: "Next day" }));
     expect(screen.getByText("Week 1 Day 2 Exercise")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Day 2" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Week 1, Day 2" })).toBeInTheDocument();
   });
 
   it("changing week resets day to Day 1", async () => {

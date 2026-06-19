@@ -148,7 +148,7 @@ export function PlanLoadTargetControl({
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex w-full items-center gap-1.5 max-md:gap-2">
       <Input
         size="sm"
         value={getLoadTargetValue(load)}
