@@ -18,13 +18,27 @@ vi.mock("@/components/athlete-coach-settings", () => ({
   AthleteCoachSettings: () => <div>Coach settings</div>,
 }));
 
+vi.mock("@/components/athlete-profile-settings", () => ({
+  AthleteProfileSettings: ({
+    fullName,
+    email,
+  }: {
+    fullName: string | null;
+    email: string | undefined;
+  }) => (
+    <div>
+      Profile settings: {fullName} / {email}
+    </div>
+  ),
+}));
+
 import AthleteSettingsPage from "@/app/athlete/(app)/settings/page";
 import { getAthleteCoachLink } from "@/lib/links/repository";
 
 const mockGetAthleteCoachLink = vi.mocked(getAthleteCoachLink);
 
 describe("AthleteSettingsPage", () => {
-  it("shows coach settings when actively linked", async () => {
+  it("shows profile and coach settings when actively linked", async () => {
     mockGetAthleteCoachLink.mockResolvedValue({
       relationshipId: "rel-1",
       status: "active",
@@ -37,6 +51,9 @@ describe("AthleteSettingsPage", () => {
     const ui = await AthleteSettingsPage();
     render(ui);
 
+    expect(
+      screen.getByText("Profile settings: Athlete One / athlete@example.com"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Coach settings")).toBeInTheDocument();
   });
 

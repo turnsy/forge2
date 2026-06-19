@@ -6,6 +6,7 @@ import {
 } from "@/lib/errors/service-error";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { getAthleteCoachLink } from "@/lib/links/repository";
 import { createClient } from "@/utils/supabase/server";
 import {
   areAllDaysComplete,
@@ -45,6 +46,7 @@ export type AssignedPlan = {
 export type ActiveAthletePlanResult = ServiceResult<{ plan: AssignedPlan | null }>;
 export type AssignedPlanByIdResult = ServiceResult<{ plan: AssignedPlan | null }>;
 export type ListAthleteAssignedPlansResult = ServiceResult<{ plans: AssignedPlan[] }>;
+export type ListMyPlanHistoryResult = ServiceResult<{ plans: AssignedPlan[] }>;
 export type SavePlanActualsResult = ServiceResult<Record<never, never>>;
 export type CompleteDayResult = ServiceResult<{
   allDaysDone: boolean;
@@ -149,6 +151,19 @@ export async function listAthleteAssignedPlans(
     .filter((plan): plan is AssignedPlan => plan !== null);
 
   return { ok: true, plans };
+}
+
+export async function listMyPlanHistory(
+  userId: string,
+  client?: AthletePlanClient,
+): Promise<ListMyPlanHistoryResult> {
+  const link = await getAthleteCoachLink(client);
+
+  if (!link) {
+    return { ok: true, plans: [] };
+  }
+
+  return listAthleteAssignedPlans(userId, link.coachId, client);
 }
 
 export async function savePlanActuals(

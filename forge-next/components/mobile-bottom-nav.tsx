@@ -130,15 +130,17 @@ function MobileBottomProfileButton({
           aria-label="Profile menu"
           className="absolute bottom-full right-0 z-50 mb-2 flex w-48 flex-col gap-1 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
         >
-          <Link
-            href={settingsPath}
-            role="menuitem"
-            className={menuItemClass}
-            onClick={() => setOpen(false)}
-          >
-            <GearIcon />
-            Settings
-          </Link>
+          {role !== "athlete" ? (
+            <Link
+              href={settingsPath}
+              role="menuitem"
+              className={menuItemClass}
+              onClick={() => setOpen(false)}
+            >
+              <GearIcon />
+              Settings
+            </Link>
+          ) : null}
           <form action="/auth/logout" method="post">
             <button type="submit" role="menuitem" className={menuItemClass}>
               <LogOutIcon />

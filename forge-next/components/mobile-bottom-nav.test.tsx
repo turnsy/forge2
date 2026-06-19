@@ -250,6 +250,25 @@ describe("MobileBottomNav", () => {
     );
   });
 
+  it("hides settings for athlete role and keeps logout", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MobileBottomNav
+        role="athlete"
+        fullName="Athlete User"
+        email="athlete@example.com"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open profile menu" }));
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Settings" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Log out" })).toBeInTheDocument();
+  });
+
   it("opens the profile menu from the profile button", async () => {
     const user = userEvent.setup();
 
