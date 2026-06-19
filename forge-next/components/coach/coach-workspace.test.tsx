@@ -89,7 +89,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reserves top padding for the close button in single-pane chat", () => {
+  it("places the close button in a compact header on desktop chat", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
         mockWorkspaceState({
@@ -101,7 +101,8 @@ describe("CoachWorkspace layout", () => {
 
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
-    expect(container.querySelector(".md\\:pt-14")).toBeTruthy();
+    expect(container.querySelector(".md\\:pt-14")).toBeNull();
+    expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
   });
 
   it("shows centered chat without split when started but no artifact", () => {

@@ -56,9 +56,9 @@ function ArtifactPanel({
   return (
     <FadeIn
       key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden md:gap-4 md:pr-3"
+      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden max-md:gap-4"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden md:gap-4 md:pt-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-md:gap-4">
         <div className="flex shrink-0 items-center gap-2">
           {resolvedBackHref ? (
             <PageBackLink
@@ -78,12 +78,12 @@ function ArtifactPanel({
           </div>
         </div>
         {saveError ? (
-          <p className="px-2 text-sm text-red-400" role="alert">
+          <p className="text-sm text-red-400" role="alert">
             {saveError}
           </p>
         ) : null}
         <div
-          className={`min-h-0 flex-1 md:overflow-hidden md:px-2 ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS} max-md:overflow-y-auto max-md:px-0`}
+          className={`min-h-0 flex-1 md:overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS} max-md:overflow-y-auto`}
         >
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
@@ -386,7 +386,7 @@ export function CoachWorkspace({
   }
 
   return (
-    <div className="mx-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4">
       <div
         className={`grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
@@ -400,7 +400,7 @@ export function CoachWorkspace({
         <div
           className={
             showSplitPane
-              ? "min-h-0 min-w-0 overflow-hidden pb-4 md:pb-5"
+              ? "min-h-0 min-w-0 overflow-hidden pb-4 md:pb-3"
               : "hidden"
           }
         >
@@ -421,18 +421,19 @@ export function CoachWorkspace({
         </div>
 
         <div
-          className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden px-2 pb-4 md:px-3 md:pb-5 ${
+          className={`flex min-h-0 min-w-0 flex-col overflow-hidden pb-4 md:pb-3 ${
             showSplitPane
               ? "animate-chat-panel-slide border-l border-glass-border"
               : "w-full"
           }`}
         >
-          <WorkspaceCloseButton
-            className="absolute right-0 top-2 z-20"
-            disabled={isChatRunning(state)}
-            onClick={handleClose}
-          />
-          <div className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS}`}>
+          <div className="flex shrink-0 items-center justify-end pt-1">
+            <WorkspaceCloseButton
+              disabled={isChatRunning(state)}
+              onClick={handleClose}
+            />
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col">
             <CoachConversationPanel
               state={state}
               onAttach={attachFiles}
