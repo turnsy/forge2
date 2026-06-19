@@ -12,7 +12,7 @@ export function AthleteCoachSettings({ link }: { link: AthleteCoachLink }) {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Card role="athlete">
+    <Card>
       <CardHeader className="space-y-1 text-left">
         <p className="text-sm text-surface-muted">Your coach</p>
         <h2 className="text-lg font-semibold text-surface-foreground">

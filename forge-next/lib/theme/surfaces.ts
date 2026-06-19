@@ -72,10 +72,8 @@ export function messageToneClass(tone: MessageTone): string {
   return `${radius.control} border px-4 py-3 text-sm ${messageToneClasses[tone]}`;
 }
 
-export function cardClass(role?: UserRole): string {
-  const borderClass = role ? roleBorderClass(role) : "border-surface-divider";
-
-  return `dark flex w-full max-w-md flex-col gap-6 ${radius.card} border bg-surface p-8 text-surface-foreground shadow-sm ${borderClass}`;
+export function cardClass(): string {
+  return `flex w-full max-w-md flex-col gap-6 p-8 text-surface-foreground ${glassSurfaceClass()}`;
 }
 
 export function cardFooterClass(): string {

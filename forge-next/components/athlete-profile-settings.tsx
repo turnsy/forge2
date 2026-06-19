@@ -26,7 +26,7 @@ export function AthleteProfileSettings({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card role="athlete">
+      <Card>
         <CardHeader className="space-y-1 text-left">
           <h2 className="text-base font-semibold text-surface-foreground">Profile</h2>
           <p className="text-sm text-surface-muted">
@@ -68,7 +68,7 @@ export function AthleteProfileSettings({
         </CardFooter>
       </Card>
 
-      <Card role="athlete">
+      <Card>
         <CardHeader className="space-y-1 text-left">
           <h2 className="text-base font-semibold text-surface-foreground">Email</h2>
           <p className="text-sm text-surface-muted">
