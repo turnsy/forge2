@@ -22,6 +22,21 @@ describe("WorkoutPlanArtifactPreview", () => {
     expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
   });
 
+  it("reserves scroll space under the mobile bottom nav", () => {
+    const { container } = render(
+      <WorkoutPlanArtifactPreview
+        plan={minimalWorkoutPlan}
+        runStatus="done"
+        disabled={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    const scrollContainer = container.firstElementChild;
+    expect(scrollContainer?.className).toContain("overflow-y-auto");
+    expect(scrollContainer?.className).toContain("max-md:pb-[calc(4.5rem");
+  });
+
   it("shows spinner overlay during sandbox runs", () => {
     render(
       <WorkoutPlanArtifactPreview

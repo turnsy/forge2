@@ -17,7 +17,6 @@ import {
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -88,9 +87,7 @@ function ArtifactPanel({
             {saveError}
           </p>
         ) : null}
-        <div
-          className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
-        >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
             runStatus={state.runStatus}
