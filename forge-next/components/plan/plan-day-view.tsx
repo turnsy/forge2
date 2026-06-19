@@ -115,24 +115,20 @@ function exerciseCardClassName(complete: boolean): string {
   return [accordionNestedClass(complete ? "success" : "default"), "space-y-4"].join(" ");
 }
 
-function setRowClassName(complete: boolean): string {
-  return [accordionClass(complete ? "success" : "default"), "flex items-center gap-3 !p-3"].join(
-    " ",
-  );
+function athleteSetCardClassName(complete: boolean): string {
+  return [accordionClass(complete ? "success" : "default"), "space-y-2 !p-3"].join(" ");
 }
 
-function athleteReadOnlySetRowClassName(set: Set): string {
-  const base = "flex items-center gap-3 !p-3";
-
+function athleteReadOnlySetCardClassName(set: Set): string {
   if (set.status === "skipped") {
     return [
       accordionClass("default"),
-      base,
+      "space-y-2 !p-3",
       "border-orange-500/35 bg-orange-500/10",
     ].join(" ");
   }
 
-  return setRowClassName(set.status === "completed" || isSetActualComplete(set));
+  return athleteSetCardClassName(set.status === "completed" || isSetActualComplete(set));
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {
@@ -241,7 +237,7 @@ function AthleteSetNotes({ notes }: { notes?: string }) {
     return null;
   }
 
-  return <p className="pl-9 text-sm text-surface-muted">{notes}</p>;
+  return <p className="text-sm text-surface-muted">{notes}</p>;
 }
 
 function AthleteSetRow({
@@ -268,13 +264,18 @@ function AthleteSetRow({
   const notes = getSetNotes(set);
 
   return (
-    <div className="space-y-1">
-      <div
-        ref={setRef}
-        className={readOnly ? athleteReadOnlySetRowClassName(set) : setRowClassName(Boolean(complete))}
-        data-set-status={readOnly ? set.status : undefined}
-        data-set-complete={complete ? "true" : "false"}
-      >
+    <div
+      ref={setRef}
+      className={
+        readOnly
+          ? athleteReadOnlySetCardClassName(set)
+          : athleteSetCardClassName(Boolean(complete))
+      }
+      data-set-status={readOnly ? set.status : undefined}
+      data-set-complete={complete ? "true" : "false"}
+    >
+      <AthleteSetNotes notes={notes} />
+      <div className="flex items-center gap-3">
         <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
           {setIdx + 1}
         </span>
@@ -288,7 +289,6 @@ function AthleteSetRow({
         />
         <SetCheckmark complete={Boolean(complete)} />
       </div>
-      <AthleteSetNotes notes={notes} />
     </div>
   );
 }
