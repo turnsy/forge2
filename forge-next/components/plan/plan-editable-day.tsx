@@ -304,6 +304,18 @@ function EditableExerciseBlock({
 }) {
   const autoFocusSetIdRef = useRef<string | null>(null);
   const dndId = useId();
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   if (!isExerciseEditable) {
     return (
@@ -344,19 +356,6 @@ function EditableExerciseBlock({
       onExerciseChange({ ...exercise, sets: nextSets as typeof exercise.sets });
     }
   }
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
   return (
     <section className={[accordionNestedClass(), "space-y-3 p-4"].join(" ")} data-exercise-editable="true">

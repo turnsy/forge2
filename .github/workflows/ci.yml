@@ -77,8 +77,4 @@ jobs:
         run: supabase db start
 
       - name: Verify generated database types
-        run: |
-          supabase gen types typescript --local \
-            | node -e "process.stdout.write('/* AUTO-GENERATED — do not edit */\\n' + require('fs').readFileSync(0,'utf8'))" \
-            > /tmp/database.types.ts
-          diff forge-next/lib/database.types.ts /tmp/database.types.ts
+        run: bash scripts/generate-database-types.sh && git diff --exit-code -- forge-next/lib/database.types.ts

@@ -1,6 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChatWorkspaceState } from "@/lib/chat/types";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const mockUpsert = vi.fn();
 const mockMaybeSingle = vi.fn();
@@ -20,58 +18,21 @@ vi.mock("@/utils/supabase/server", () => ({
 }));
 
 import {
-  buildSnapshotFromState,
   extractSessionPreview,
   listRecentChatSessions,
   loadChatSession,
   saveChatSession,
 } from "@/lib/chat/session-storage";
 
-function createWorkspaceState(
-  overrides: Partial<ChatWorkspaceState<WorkoutPlan>> = {},
-): ChatWorkspaceState<WorkoutPlan> {
+function createSnapshot() {
   return {
-    sessionId: "session-1",
-    hasStarted: true,
-    artifactTitle: "Strength Block",
-    planId: "plan-1",
-    messages: [{ role: "user", content: "Build a plan" }],
+    messages: [{ role: "user" as const, content: "Build a plan" }],
     currentArtifact: null,
+    planId: "plan-1",
+    artifactTitle: "Strength Block",
     contextFileIds: ["ctx-1"],
-    attachments: [],
-    runStatus: null,
-    warnings: [],
-    errors: [],
-    phase: "idle",
-    streamingAssistantText: "",
-    ...overrides,
   };
 }
-
-describe("buildSnapshotFromState", () => {
-  it("captures the terminal workspace fields", () => {
-    const state = createWorkspaceState({
-      phase: "streaming",
-      streamingAssistantText: "partial",
-      attachments: [
-        {
-          localId: "a-1",
-          file: new File(["x"], "notes.txt"),
-          status: "uploaded",
-          displayLabel: "notes.txt",
-        },
-      ],
-    });
-
-    expect(buildSnapshotFromState(state)).toEqual({
-      messages: state.messages,
-      currentArtifact: null,
-      planId: "plan-1",
-      artifactTitle: "Strength Block",
-      contextFileIds: ["ctx-1"],
-    });
-  });
-});
 
 describe("extractSessionPreview", () => {
   it("returns the first message content", () => {
@@ -108,7 +69,7 @@ describe("saveChatSession", () => {
   });
 
   it("upserts by session id and coach id", async () => {
-    const snapshot = buildSnapshotFromState(createWorkspaceState());
+    const snapshot = createSnapshot();
 
     const result = await saveChatSession("coach-1", "session-1", snapshot);
 
@@ -129,7 +90,7 @@ describe("saveChatSession", () => {
     const result = await saveChatSession(
       "coach-1",
       "session-1",
-      buildSnapshotFromState(createWorkspaceState()),
+      createSnapshot(),
     );
 
     expect(result).toEqual({ status: "error", message: "db down" });
@@ -149,7 +110,7 @@ describe("loadChatSession", () => {
   });
 
   it("returns a found session", async () => {
-    const snapshot = buildSnapshotFromState(createWorkspaceState());
+    const snapshot = createSnapshot();
     mockMaybeSingle.mockResolvedValue({
       data: {
         id: "session-1",
@@ -193,7 +154,7 @@ describe("listRecentChatSessions", () => {
       data: [
         {
           id: "session-1",
-          snapshot: buildSnapshotFromState(createWorkspaceState()),
+          snapshot: createSnapshot(),
           created_at: "2026-06-01T00:00:00.000Z",
           updated_at: "2026-06-02T00:00:00.000Z",
         },

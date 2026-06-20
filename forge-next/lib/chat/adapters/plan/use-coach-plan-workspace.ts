@@ -10,7 +10,7 @@ import {
 import { streamPlanChat } from "@/lib/chat/adapters/plan/plan-chat-client";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
-import { buildSnapshotFromState } from "@/lib/chat/session-storage";
+import { buildSnapshotFromState } from "@/lib/chat/session-snapshot";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";

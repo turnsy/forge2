@@ -1,9 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-
-const PREVIEW_MAX_LENGTH = 120;
 
 type ChatSessionRow = {
   id: string;
@@ -40,17 +36,9 @@ export type ListSessionsResult = {
   sessions: { id: string; createdAt: string; updatedAt: string; preview: string }[];
 };
 
-export function buildSnapshotFromState(
-  state: ChatWorkspaceState<WorkoutPlan>,
-): ChatSessionSnapshot {
-  return {
-    messages: state.messages,
-    currentArtifact: state.currentArtifact,
-    planId: state.planId,
-    artifactTitle: state.artifactTitle,
-    contextFileIds: state.contextFileIds,
-  };
-}
+const PREVIEW_MAX_LENGTH = 120;
+
+export { buildSnapshotFromState } from "@/lib/chat/session-snapshot";
 
 export function extractSessionPreview(snapshot: ChatSessionSnapshot): string {
   const firstMessage = snapshot.messages[0];
