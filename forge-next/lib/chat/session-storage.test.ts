@@ -1,0 +1,221 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ChatWorkspaceState } from "@/lib/chat/types";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+
+const mockUpsert = vi.fn();
+const mockMaybeSingle = vi.fn();
+const mockOrder = vi.fn();
+const mockLimit = vi.fn();
+const mockEqSecond = vi.fn();
+const mockEqFirst = vi.fn();
+const mockSelect = vi.fn();
+
+vi.mock("@/utils/supabase/server", () => ({
+  createClient: vi.fn(async () => ({
+    from: vi.fn(() => ({
+      upsert: mockUpsert,
+      select: mockSelect,
+    })),
+  })),
+}));
+
+import {
+  buildSnapshotFromState,
+  extractSessionPreview,
+  listRecentChatSessions,
+  loadChatSession,
+  saveChatSession,
+} from "@/lib/chat/session-storage";
+
+function createWorkspaceState(
+  overrides: Partial<ChatWorkspaceState<WorkoutPlan>> = {},
+): ChatWorkspaceState<WorkoutPlan> {
+  return {
+    sessionId: "session-1",
+    hasStarted: true,
+    artifactTitle: "Strength Block",
+    planId: "plan-1",
+    messages: [{ role: "user", content: "Build a plan" }],
+    currentArtifact: null,
+    contextFileIds: ["ctx-1"],
+    attachments: [],
+    runStatus: null,
+    warnings: [],
+    errors: [],
+    phase: "idle",
+    streamingAssistantText: "",
+    ...overrides,
+  };
+}
+
+describe("buildSnapshotFromState", () => {
+  it("captures the terminal workspace fields", () => {
+    const state = createWorkspaceState({
+      phase: "streaming",
+      streamingAssistantText: "partial",
+      attachments: [
+        {
+          localId: "a-1",
+          file: new File(["x"], "notes.txt"),
+          status: "uploaded",
+          displayLabel: "notes.txt",
+        },
+      ],
+    });
+
+    expect(buildSnapshotFromState(state)).toEqual({
+      messages: state.messages,
+      currentArtifact: null,
+      planId: "plan-1",
+      artifactTitle: "Strength Block",
+      contextFileIds: ["ctx-1"],
+    });
+  });
+});
+
+describe("extractSessionPreview", () => {
+  it("returns the first message content", () => {
+    expect(
+      extractSessionPreview({
+        messages: [{ role: "user", content: "Hello coach" }],
+        currentArtifact: null,
+        planId: null,
+        artifactTitle: "",
+        contextFileIds: [],
+      }),
+    ).toBe("Hello coach");
+  });
+
+  it("truncates long previews", () => {
+    const content = "a".repeat(150);
+    const preview = extractSessionPreview({
+      messages: [{ role: "user", content }],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      contextFileIds: [],
+    });
+
+    expect(preview).toHaveLength(121);
+    expect(preview.endsWith("…")).toBe(true);
+  });
+});
+
+describe("saveChatSession", () => {
+  beforeEach(() => {
+    mockUpsert.mockReset();
+    mockUpsert.mockResolvedValue({ error: null });
+  });
+
+  it("upserts by session id and coach id", async () => {
+    const snapshot = buildSnapshotFromState(createWorkspaceState());
+
+    const result = await saveChatSession("coach-1", "session-1", snapshot);
+
+    expect(result).toEqual({ status: "saved" });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        id: "session-1",
+        coach_id: "coach-1",
+        snapshot,
+      },
+      { onConflict: "id" },
+    );
+  });
+
+  it("returns an error when upsert fails", async () => {
+    mockUpsert.mockResolvedValue({ error: { message: "db down" } });
+
+    const result = await saveChatSession(
+      "coach-1",
+      "session-1",
+      buildSnapshotFromState(createWorkspaceState()),
+    );
+
+    expect(result).toEqual({ status: "error", message: "db down" });
+  });
+});
+
+describe("loadChatSession", () => {
+  beforeEach(() => {
+    mockMaybeSingle.mockReset();
+    mockEqSecond.mockReset();
+    mockEqFirst.mockReset();
+    mockSelect.mockReset();
+
+    mockEqSecond.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockEqFirst.mockReturnValue({ eq: mockEqSecond });
+    mockSelect.mockReturnValue({ eq: mockEqFirst });
+  });
+
+  it("returns a found session", async () => {
+    const snapshot = buildSnapshotFromState(createWorkspaceState());
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        id: "session-1",
+        snapshot,
+        created_at: "2026-06-01T00:00:00.000Z",
+        updated_at: "2026-06-02T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const result = await loadChatSession("coach-1", "session-1");
+
+    expect(result).toEqual({
+      status: "found",
+      session: {
+        id: "session-1",
+        snapshot,
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-02T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("returns not_found when no row exists", async () => {
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const result = await loadChatSession("coach-1", "missing");
+
+    expect(result).toEqual({ status: "not_found" });
+  });
+});
+
+describe("listRecentChatSessions", () => {
+  beforeEach(() => {
+    mockLimit.mockReset();
+    mockOrder.mockReset();
+    mockEqFirst.mockReset();
+    mockSelect.mockReset();
+
+    mockLimit.mockResolvedValue({
+      data: [
+        {
+          id: "session-1",
+          snapshot: buildSnapshotFromState(createWorkspaceState()),
+          created_at: "2026-06-01T00:00:00.000Z",
+          updated_at: "2026-06-02T00:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+    mockOrder.mockReturnValue({ limit: mockLimit });
+    mockEqFirst.mockReturnValue({ order: mockOrder });
+    mockSelect.mockReturnValue({ eq: mockEqFirst });
+  });
+
+  it("maps recent sessions with previews", async () => {
+    const result = await listRecentChatSessions("coach-1", 5);
+
+    expect(result.sessions).toEqual([
+      {
+        id: "session-1",
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-02T00:00:00.000Z",
+        preview: "Build a plan",
+      },
+    ]);
+    expect(mockLimit).toHaveBeenCalledWith(5);
+  });
+});

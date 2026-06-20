@@ -25,6 +25,7 @@ import {
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
+import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -106,6 +107,7 @@ export function CoachWorkspace({
   role,
   planId: initialPlanId,
   initialPlan,
+  initialSession,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -113,6 +115,12 @@ export function CoachWorkspace({
   role: UserRole;
   planId?: string;
   initialPlan?: WorkoutPlan;
+  initialSession?: {
+    id: string;
+    snapshot: ChatSessionSnapshot;
+    createdAt: string;
+    updatedAt: string;
+  };
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -152,7 +160,15 @@ export function CoachWorkspace({
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
         }
-      : { onArtifactCleared: handleArtifactCleared },
+      : initialSession
+        ? {
+            initialSession: {
+              id: initialSession.id,
+              snapshot: initialSession.snapshot,
+            },
+            onArtifactCleared: handleArtifactCleared,
+          }
+        : { onArtifactCleared: handleArtifactCleared },
   );
 
   const activePlanId = state.planId;

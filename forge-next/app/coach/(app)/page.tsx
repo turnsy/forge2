@@ -3,6 +3,7 @@ import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { ErrorState, PageContent, PageHeader, PageShell } from "@/components/ui";
 import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
+import { loadChatSession } from "@/lib/chat/session-storage";
 import { getCoachPlanById } from "@/lib/plans/repository";
 import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
@@ -26,10 +27,10 @@ function PlanValidationErrors({
 export default async function CoachHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ planId?: string }>;
+  searchParams: Promise<{ planId?: string; sessionId?: string }>;
 }) {
   const user = await requireRole("coach");
-  const { planId } = await searchParams;
+  const { planId, sessionId } = await searchParams;
   const promptEnabled = isPromptBetaEnabled(user.email);
 
   if (planId) {
@@ -74,6 +75,23 @@ export default async function CoachHomePage({
         />
       </PageContent>
     );
+  }
+
+  if (sessionId) {
+    const result = await loadChatSession(user.id, sessionId);
+
+    if (result.status === "found") {
+      return (
+        <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
+          <CoachWorkspace
+            firstName={firstName(user.fullName)}
+            role="coach"
+            initialSession={result.session}
+            promptEnabled={promptEnabled}
+          />
+        </PageContent>
+      );
+    }
   }
 
   return (

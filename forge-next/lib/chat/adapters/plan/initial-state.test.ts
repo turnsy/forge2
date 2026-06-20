@@ -1,16 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { createEditPlanWorkspaceState } from "@/lib/chat/adapters/plan/initial-state";
-import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
+import { createSessionWorkspaceState } from "@/lib/chat/adapters/plan/initial-state";
 
-describe("createEditPlanWorkspaceState", () => {
-  it("hydrates workspace for edit mode", () => {
-    const state = createEditPlanWorkspaceState(minimalWorkoutPlan);
-
-    expect(state).toMatchObject({
-      hasStarted: true,
-      artifactTitle: minimalWorkoutPlan.name,
-      currentArtifact: minimalWorkoutPlan,
-      messages: [],
+describe("createSessionWorkspaceState", () => {
+  it("hydrates persisted snapshot fields into workspace state", () => {
+    const state = createSessionWorkspaceState({
+      id: "session-42",
+      snapshot: {
+        messages: [
+          { role: "user", content: "Build me a plan" },
+          { role: "assistant", content: "Sure." },
+        ],
+        currentArtifact: null,
+        planId: null,
+        artifactTitle: "Draft",
+        contextFileIds: ["ctx-1"],
+      },
     });
+
+    expect(state.sessionId).toBe("session-42");
+    expect(state.hasStarted).toBe(true);
+    expect(state.messages).toHaveLength(2);
+    expect(state.artifactTitle).toBe("Draft");
+    expect(state.contextFileIds).toEqual(["ctx-1"]);
+    expect(state.phase).toBe("idle");
+    expect(state.streamingAssistantText).toBe("");
   });
 });

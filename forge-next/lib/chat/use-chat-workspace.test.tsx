@@ -39,6 +39,57 @@ describe("useChatWorkspace", () => {
     expect(streamChat).toHaveBeenCalledOnce();
   });
 
+  it("calls onSaveSnapshot with finalized state after streaming", async () => {
+    const onSaveSnapshot = vi.fn();
+    const streamChat = vi.fn(
+      async ({
+        onEvent,
+      }: {
+        onEvent: (event: ChatEvent<string>) => void;
+      }) => {
+        onEvent({ type: "assistantTextDelta", delta: "Saved." });
+        return null;
+      },
+    );
+
+    const { result } = renderHook(() =>
+      useChatWorkspace(
+        {
+          streamChat,
+          uploadFile: vi.fn(),
+          onSaveSnapshot,
+        },
+      ),
+    );
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+    });
+
+    expect(onSaveSnapshot).toHaveBeenCalledOnce();
+    expect(onSaveSnapshot.mock.calls[0][0].messages).toEqual([
+      { role: "user", content: "Hello" },
+      { role: "assistant", content: "Saved." },
+    ]);
+  });
+
+  it("exposes saveSnapshot for manual persistence", () => {
+    const onSaveSnapshot = vi.fn();
+    const { result } = renderHook(() =>
+      useChatWorkspace({
+        streamChat: vi.fn(),
+        uploadFile: vi.fn(),
+        onSaveSnapshot,
+      }),
+    );
+
+    act(() => {
+      result.current.saveSnapshot();
+    });
+
+    expect(onSaveSnapshot).toHaveBeenCalledWith(result.current.state);
+  });
+
   it("updates currentArtifact when setArtifact is called", () => {
     const { result } = renderHook(() =>
       useChatWorkspace({
