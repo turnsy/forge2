@@ -6,7 +6,7 @@ export function buildSnapshotFromState(
   state: ChatWorkspaceState<WorkoutPlan>,
 ): ChatSessionSnapshot {
   return {
-    title: null,
+    title: state.sessionTitle,
     messages: state.messages,
     currentArtifact: state.currentArtifact,
     planId: state.planId,

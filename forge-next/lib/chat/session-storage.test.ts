@@ -97,12 +97,30 @@ describe("saveChatSession", () => {
       generateTitle: true,
     });
 
-    expect(result).toEqual({ status: "saved" });
+    expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
     expect(mockUpsert).toHaveBeenCalledWith(
       {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "Bench Press Block" },
+      },
+      { onConflict: "id" },
+    );
+  });
+
+  it("uses a client-provided title without generating a new one", async () => {
+    const snapshot = { ...createSnapshot(), title: "Existing title" };
+
+    const result = await saveChatSession("coach-1", "session-1", snapshot, {
+      generateTitle: true,
+    });
+
+    expect(result).toEqual({ status: "saved", title: "Existing title" });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        id: "session-1",
+        coach_id: "coach-1",
+        snapshot: { ...snapshot, title: "Existing title" },
       },
       { onConflict: "id" },
     );

@@ -14,7 +14,7 @@ type ChatSessionRow = {
 };
 
 export type SaveSessionResult =
-  | { status: "saved" }
+  | { status: "saved"; title: string | null }
   | { status: "error"; message: string };
 
 export type LoadSessionResult =
@@ -58,6 +58,22 @@ export function extractSessionPreview(snapshot: ChatSessionSnapshot): string {
   return `${trimmed.slice(0, PREVIEW_MAX_LENGTH)}…`;
 }
 
+async function resolveSnapshotTitle(
+  snapshot: ChatSessionSnapshot,
+  options?: { generateTitle?: boolean },
+): Promise<string | null> {
+  const clientTitle = snapshot.title?.trim();
+  if (clientTitle) {
+    return clientTitle;
+  }
+
+  if (shouldGenerateSessionTitle(snapshot, options)) {
+    return generateSessionTitle(snapshot);
+  }
+
+  return null;
+}
+
 export async function saveChatSession(
   coachId: string,
   sessionId: string,
@@ -65,9 +81,7 @@ export async function saveChatSession(
   options?: { generateTitle?: boolean },
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
-  const title = shouldGenerateSessionTitle(snapshot, options)
-    ? await generateSessionTitle(snapshot)
-    : await getExistingSessionTitle(supabase, coachId, sessionId);
+  const title = await resolveSnapshotTitle(snapshot, options);
   const snapshotToSave: ChatSessionSnapshot = { ...snapshot, title };
 
   const { error } = await supabase.from("chat_sessions").upsert(
@@ -83,27 +97,7 @@ export async function saveChatSession(
     return { status: "error", message: error.message };
   }
 
-  return { status: "saved" };
-}
-
-async function getExistingSessionTitle(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  coachId: string,
-  sessionId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("chat_sessions")
-    .select("snapshot")
-    .eq("id", sessionId)
-    .eq("coach_id", coachId)
-    .maybeSingle();
-
-  if (error || !data) {
-    return null;
-  }
-
-  const snapshot = (data as { snapshot: ChatSessionSnapshot }).snapshot;
-  return snapshot.title?.trim() || null;
+  return { status: "saved", title };
 }
 
 export async function loadChatSession(

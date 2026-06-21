@@ -8,6 +8,7 @@ describe("buildSnapshotFromState", () => {
     const state: ChatWorkspaceState<WorkoutPlan> = {
       sessionId: "session-1",
       hasStarted: true,
+      sessionTitle: "Bench Press Block",
       artifactTitle: "Strength Block",
       planId: "plan-1",
       messages: [{ role: "user", content: "Build a plan" }],
@@ -22,7 +23,7 @@ describe("buildSnapshotFromState", () => {
     };
 
     expect(buildSnapshotFromState(state)).toEqual({
-      title: null,
+      title: "Bench Press Block",
       messages: state.messages,
       currentArtifact: null,
       planId: "plan-1",

@@ -21,7 +21,7 @@ describe("POST /api/coach/save-session", () => {
       ok: true,
       user: { id: "coach-1" },
     });
-    mockSaveChatSession.mockResolvedValue({ status: "saved" });
+    mockSaveChatSession.mockResolvedValue({ status: "saved", title: null });
   });
 
   it("returns 401 when unauthenticated", async () => {

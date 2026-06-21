@@ -23,6 +23,7 @@ describe("createSessionWorkspaceState", () => {
     expect(state.messages).toHaveLength(2);
     expect(state.artifactTitle).toBe("Draft");
     expect(state.contextFileIds).toEqual(["ctx-1"]);
+    expect(state.sessionTitle).toBe("Hypertrophy Block");
     expect(state.phase).toBe("idle");
     expect(state.streamingAssistantText).toBe("");
   });

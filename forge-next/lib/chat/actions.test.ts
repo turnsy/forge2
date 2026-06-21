@@ -21,7 +21,7 @@ describe("saveSessionSnapshot", () => {
   });
 
   it("saves a snapshot for the authenticated coach", async () => {
-    mockSaveChatSession.mockResolvedValue({ status: "saved" });
+    mockSaveChatSession.mockResolvedValue({ status: "saved", title: "Bench Press Block" });
     const snapshot = {
       title: null,
       messages: [{ role: "user" as const, content: "Hello" }],
@@ -33,12 +33,34 @@ describe("saveSessionSnapshot", () => {
 
     const result = await saveSessionSnapshot("session-1", snapshot);
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, title: "Bench Press Block" });
     expect(mockSaveChatSession).toHaveBeenCalledWith(
       "coach-1",
       "session-1",
       snapshot,
       { generateTitle: true },
+    );
+  });
+
+  it("skips title generation when the snapshot already has a title", async () => {
+    mockSaveChatSession.mockResolvedValue({ status: "saved", title: "Existing title" });
+    const snapshot = {
+      title: "Existing title",
+      messages: [{ role: "user" as const, content: "Hello" }],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      contextFileIds: [],
+    };
+
+    const result = await saveSessionSnapshot("session-1", snapshot);
+
+    expect(result).toEqual({ ok: true, title: "Existing title" });
+    expect(mockSaveChatSession).toHaveBeenCalledWith(
+      "coach-1",
+      "session-1",
+      snapshot,
+      { generateTitle: false },
     );
   });
 

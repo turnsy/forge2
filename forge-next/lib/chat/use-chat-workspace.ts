@@ -18,6 +18,10 @@ import type {
 
 export type ChatStreamError = { message: string };
 
+export type ChatSnapshotSaveResult = {
+  sessionTitle: string | null;
+};
+
 export type UseChatWorkspaceConfig<TArtifact> = {
   streamChat: (input: {
     sessionId: string;
@@ -36,7 +40,9 @@ export type UseChatWorkspaceConfig<TArtifact> = {
   validateFiles?: (
     files: File[],
   ) => { ok: true } | { ok: false; message: string };
-  onSaveSnapshot?: (state: ChatWorkspaceState<TArtifact>) => void;
+  onSaveSnapshot?: (
+    state: ChatWorkspaceState<TArtifact>,
+  ) => Promise<ChatSnapshotSaveResult | void> | ChatSnapshotSaveResult | void;
 };
 
 export type UseChatWorkspaceOptions<TArtifact> = {
@@ -148,7 +154,16 @@ export function useChatWorkspace<TArtifact>(
       }
 
       dispatch({ type: "STREAM_END" });
-      config.onSaveSnapshot?.(stateRef.current);
+      const saveResult = await config.onSaveSnapshot?.(stateRef.current);
+      if (
+        saveResult?.sessionTitle != null &&
+        stateRef.current.sessionTitle == null
+      ) {
+        dispatch({
+          type: "SET_SESSION_TITLE",
+          sessionTitle: saveResult.sessionTitle,
+        });
+      }
     },
     [config, dispatch],
   );

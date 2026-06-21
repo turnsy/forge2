@@ -78,7 +78,12 @@ export function useCoachPlanWorkspace(options?: {
           return;
         }
 
-        await saveSessionSnapshot(state.sessionId, snapshot);
+        const result = await saveSessionSnapshot(state.sessionId, snapshot);
+        if (!result.ok || result.title == null || state.sessionTitle != null) {
+          return;
+        }
+
+        return { sessionTitle: result.title };
       },
     },
     { initialState },

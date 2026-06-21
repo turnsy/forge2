@@ -28,5 +28,6 @@ export function createSessionWorkspaceState(session: {
     planId: session.snapshot.planId,
     artifactTitle: session.snapshot.artifactTitle,
     contextFileIds: session.snapshot.contextFileIds,
+    sessionTitle: session.snapshot.title,
   };
 }
