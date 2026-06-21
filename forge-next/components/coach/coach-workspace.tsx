@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
@@ -223,7 +223,9 @@ export function CoachWorkspace({
           },
   );
 
-  sessionIdRef.current = state.sessionId;
+  useEffect(() => {
+    sessionIdRef.current = state.sessionId;
+  }, [state.sessionId]);
 
   const activePlanId = state.planId;
   const resolvedBackHref = activePlanId
