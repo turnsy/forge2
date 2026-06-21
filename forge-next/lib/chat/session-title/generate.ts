@@ -1,4 +1,4 @@
-import { generateText, type ModelMessage } from "ai";
+import { generateText } from "ai";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import type { ChatMessage } from "@/lib/chat/types";
@@ -7,13 +7,6 @@ import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 export const SESSION_FALLBACK_TITLE = "Untitled conversation";
 
 const SESSION_TITLE_MAX_CHARS = 80;
-
-const SESSION_TITLE_PROMPT = `You label coaching chat threads in a workout-planning app.
-
-Write a short, specific title (3–8 words) for this conversation.
-- Focus on the athlete goal, plan type, or training topic.
-- Do not use quotes or trailing punctuation.
-- Return only the title text.`;
 
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
@@ -48,13 +41,8 @@ function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
   return formatMessageForTitle(firstUserMessage);
 }
 
-function buildTitleMessages(snapshot: ChatSessionSnapshot): ModelMessage[] {
-  const firstMessage = getFirstUserMessageText(snapshot);
-  if (!firstMessage) {
-    return [];
-  }
-
-  return [{ role: "user", content: firstMessage }];
+export function buildSessionTitlePrompt(firstMessage: string): string {
+  return `Summarize the following in 3-4 words: ${firstMessage}`;
 }
 
 function normalizeSessionTitle(raw: string): string | null {
@@ -66,6 +54,15 @@ function normalizeSessionTitle(raw: string): string | null {
     .trim();
 
   if (!cleaned) {
+    return null;
+  }
+
+  const lower = cleaned.toLowerCase();
+  if (
+    lower.startsWith("summarize") ||
+    lower.includes("3-4 words") ||
+    lower.includes("the following")
+  ) {
     return null;
   }
 
@@ -89,9 +86,9 @@ export async function generateSessionTitle(
 ): Promise<string> {
   const isGatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const generateTextFn = deps.generateTextFn ?? generateText;
-  const messages = buildTitleMessages(snapshot);
+  const firstMessage = getFirstUserMessageText(snapshot);
 
-  if (!isGatewayConfigured() || messages.length === 0) {
+  if (!isGatewayConfigured() || !firstMessage) {
     return SESSION_FALLBACK_TITLE;
   }
 
@@ -99,9 +96,8 @@ export async function generateSessionTitle(
     const createModel = deps.createModel ?? createPlanChatGatewayModel;
     const result = await generateTextFn({
       model: createModel(),
-      system: SESSION_TITLE_PROMPT,
-      messages,
-      maxOutputTokens: 32,
+      prompt: buildSessionTitlePrompt(firstMessage),
+      maxOutputTokens: 24,
       temperature: 0.2,
     });
 

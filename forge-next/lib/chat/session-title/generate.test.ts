@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
+  buildSessionTitlePrompt,
   generateSessionTitle,
   shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title/generate";
@@ -44,7 +45,7 @@ describe("generateSessionTitle", () => {
     expect(title).toBe("Bench Press Block");
   });
 
-  it("sends the first user message to the model", async () => {
+  it("embeds the first user message in the title prompt", async () => {
     const generateTextFn = vi
       .fn()
       .mockResolvedValue({ text: "Sky Color Question" });
@@ -65,9 +66,25 @@ describe("generateSessionTitle", () => {
 
     expect(generateTextFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: [{ role: "user", content: "what color is the sky" }],
+        prompt: buildSessionTitlePrompt("what color is the sky"),
       }),
     );
+  });
+
+  it("rejects prompt-echo titles", async () => {
+    const title = await generateSessionTitle(
+      snapshot({
+        messages: [{ role: "user", content: "what color is the sky" }],
+      }),
+      {
+        ...aiDeps,
+        generateTextFn: vi.fn().mockResolvedValue({
+          text: "Summarize the following in 3-4 words",
+        }),
+      },
+    );
+
+    expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 
   it("falls back when gateway is unavailable", async () => {
