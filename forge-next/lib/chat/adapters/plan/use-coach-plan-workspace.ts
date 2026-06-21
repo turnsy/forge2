@@ -1,31 +1,49 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { saveSessionSnapshot } from "@/lib/chat/actions";
 import { useChatWorkspace } from "@/lib/chat/use-chat-workspace";
-import { createEditPlanWorkspaceState } from "@/lib/chat/adapters/plan/initial-state";
+import {
+  createEditPlanWorkspaceState,
+  createSessionWorkspaceState,
+} from "@/lib/chat/adapters/plan/initial-state";
 import { streamPlanChat } from "@/lib/chat/adapters/plan/plan-chat-client";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
+import { buildSnapshotFromState } from "@/lib/chat/session-types";
+import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function useCoachPlanWorkspace(options?: {
   initialPlan?: WorkoutPlan;
   planId?: string;
+  initialSession?: { id: string; snapshot: ChatSessionSnapshot };
   onArtifactCleared?: () => void;
+  onSessionPersisted?: (sessionId: string) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const planId = options?.planId;
+  const initialSession = options?.initialSession;
   const onArtifactCleared = options?.onArtifactCleared;
+  const onSessionPersisted = options?.onSessionPersisted;
+  const hasSyncedSessionUrlRef = useRef(false);
   const initialState = useMemo(
-    () =>
-      initialPlan && planId
-        ? createEditPlanWorkspaceState(initialPlan, planId)
-        : undefined,
-    [initialPlan, planId],
+    () => {
+      if (initialPlan && planId) {
+        return createEditPlanWorkspaceState(initialPlan, planId);
+      }
+
+      if (initialSession) {
+        return createSessionWorkspaceState(initialSession);
+      }
+
+      return undefined;
+    },
+    [initialPlan, planId, initialSession],
   );
 
-  return useChatWorkspace<WorkoutPlan>(
+  const workspace = useChatWorkspace<WorkoutPlan>(
     {
       validateFiles: validateClientFiles,
       uploadFile: uploadContextFile,
@@ -57,9 +75,69 @@ export function useCoachPlanWorkspace(options?: {
 
         return { message: error.message };
       },
+      onSaveSnapshot: async (state) => {
+        const snapshot = buildSnapshotFromState(state);
+        if (snapshot.messages.length === 0) {
+          return;
+        }
+
+        const result = await saveSessionSnapshot(state.sessionId, snapshot);
+        if (!result.ok) {
+          return;
+        }
+
+        if (!hasSyncedSessionUrlRef.current && onSessionPersisted) {
+          hasSyncedSessionUrlRef.current = true;
+          onSessionPersisted(state.sessionId);
+        }
+
+        if (result.title == null) {
+          return;
+        }
+
+        return { sessionTitle: result.title };
+      },
     },
     { initialState },
   );
+
+  const { state } = workspace;
+
+  useEffect(() => {
+    hasSyncedSessionUrlRef.current = false;
+  }, [state.sessionId]);
+
+  useEffect(() => {
+    const persistOnUnload = () => {
+      if (state.messages.length === 0) {
+        return;
+      }
+
+      const snapshot = buildSnapshotFromState(state);
+      const payload = JSON.stringify({
+        sessionId: state.sessionId,
+        snapshot,
+      });
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon("/api/coach/save-session", blob);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        persistOnUnload();
+      }
+    };
+
+    window.addEventListener("beforeunload", persistOnUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", persistOnUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state]);
+
+  return workspace;
 }
 
 export type { PlanWorkspaceState };

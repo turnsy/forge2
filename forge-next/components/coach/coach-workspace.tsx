@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
@@ -11,12 +11,13 @@ import { EyeIcon } from "@/components/icons/eye-icon";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_CHAT_AREA_CLASS,
-  DESKTOP_CHAT_CLOSE_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
+  DESKTOP_CHAT_HEADER_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
+  MOBILE_CHAT_HEADER_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -25,6 +26,8 @@ import {
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
+import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import { syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -34,6 +37,34 @@ import {
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
+import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
+
+function ChatWorkspaceShell({
+  state,
+  onReset,
+  children,
+  headerClassName,
+  className = "",
+}: {
+  state: PlanWorkspaceState;
+  onReset: () => void;
+  children: ReactNode;
+  headerClassName: string;
+  className?: string;
+}) {
+  return (
+    <div className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}>
+      <div className={headerClassName}>
+        <WorkspaceCloseButton
+          variant="reset"
+          disabled={isChatRunning(state)}
+          onClick={onReset}
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+    </div>
+  );
+}
 
 function ArtifactPanel({
   state,
@@ -106,6 +137,7 @@ export function CoachWorkspace({
   role,
   planId: initialPlanId,
   initialPlan,
+  initialSession,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -113,6 +145,12 @@ export function CoachWorkspace({
   role: UserRole;
   planId?: string;
   initialPlan?: WorkoutPlan;
+  initialSession?: {
+    id: string;
+    snapshot: ChatSessionSnapshot;
+    createdAt: string;
+    updatedAt: string;
+  };
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -125,17 +163,34 @@ export function CoachWorkspace({
 
     return window.matchMedia("(max-width: 767px)").matches;
   });
-  const savedSnapshotRef = useRef<string | null>(
-    initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
-  );
+  const initialSavedSnapshot =
+    initialPlan != null
+      ? createPlanSnapshot(initialPlan, initialPlan.name)
+      : initialSession?.snapshot.planId && initialSession.snapshot.currentArtifact
+        ? createPlanSnapshot(
+            initialSession.snapshot.currentArtifact,
+            initialSession.snapshot.artifactTitle,
+          )
+        : null;
+  const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
+  const sessionIdRef = useRef("");
+
+  const shouldSyncSessionUrl = !initialPlanId && !initialSession;
 
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
     if (stripPlanIdOnClear) {
-      router.replace("/coach");
+      syncCoachWorkspaceUrl({
+        sessionId: sessionIdRef.current,
+        planId: null,
+      });
     }
-  }, [router, stripPlanIdOnClear]);
+  }, [stripPlanIdOnClear]);
+
+  const handleSessionPersisted = useCallback((sessionId: string) => {
+    syncCoachWorkspaceUrl({ sessionId });
+  }, []);
 
   const {
     state,
@@ -152,8 +207,25 @@ export function CoachWorkspace({
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
         }
-      : { onArtifactCleared: handleArtifactCleared },
+      : initialSession
+        ? {
+            initialSession: {
+              id: initialSession.id,
+              snapshot: initialSession.snapshot,
+            },
+            onArtifactCleared: handleArtifactCleared,
+          }
+        : {
+            onArtifactCleared: handleArtifactCleared,
+            onSessionPersisted: shouldSyncSessionUrl
+              ? handleSessionPersisted
+              : undefined,
+          },
   );
+
+  useEffect(() => {
+    sessionIdRef.current = state.sessionId;
+  }, [state.sessionId]);
 
   const activePlanId = state.planId;
   const resolvedBackHref = activePlanId
@@ -161,7 +233,9 @@ export function CoachWorkspace({
     : undefined;
 
   const { saveStatus, saveError, savePlan, resetSaveStatus } =
-    useSavePlan(activePlanId);
+    useSavePlan(activePlanId, {
+      initialStatus: initialSavedSnapshot ? "saved" : undefined,
+    });
 
   const showSplitPane = Boolean(state.currentArtifact);
 
@@ -199,14 +273,17 @@ export function CoachWorkspace({
 
     if (!activePlanId) {
       setPlanId(result.planId);
-      router.replace(`/coach?planId=${result.planId}`);
+      syncCoachWorkspaceUrl({
+        sessionId: state.sessionId,
+        planId: result.planId,
+      });
     }
 
     savedSnapshotRef.current = createPlanSnapshot(
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [activePlanId, router, savePlan, setPlanId, state]);
+  }, [activePlanId, savePlan, setPlanId, state]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -249,7 +326,10 @@ export function CoachWorkspace({
     }
 
     restart();
-  }, [activePlanId, restart, router, state]);
+    if (!initialPlanId) {
+      syncCoachSessionUrl(null);
+    }
+  }, [activePlanId, initialPlanId, restart, router, state]);
 
   if (!state.hasStarted) {
     if (isMobile) {
@@ -302,24 +382,20 @@ export function CoachWorkspace({
   if (isMobile) {
     if (!showSplitPane) {
       return (
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-          <WorkspaceCloseButton
-            className={MOBILE_OVERLAY_CLOSE_CLASS}
-            disabled={isChatRunning(state)}
-            onClick={handleClose}
+        <ChatWorkspaceShell
+          state={state}
+          onReset={handleClose}
+          headerClassName={MOBILE_CHAT_HEADER_CLASS}
+          className={MOBILE_WORKSPACE_X_PADDING_CLASS}
+        >
+          <CoachConversationPanel
+            state={state}
+            onAttach={attachFiles}
+            onSend={handleSendMessage}
+            promptEnabled={promptEnabled}
+            composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
           />
-          <div
-            className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
-          >
-            <CoachConversationPanel
-              state={state}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              promptEnabled={promptEnabled}
-              composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-            />
-          </div>
-        </div>
+        </ChatWorkspaceShell>
       );
     }
 
@@ -329,6 +405,7 @@ export function CoachWorkspace({
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <WorkspaceCloseButton
               className={MOBILE_OVERLAY_CLOSE_CLASS}
+              variant="close"
               ariaLabel="Close artifact"
               onClick={() => setShowArtifact(false)}
             />
@@ -350,39 +427,35 @@ export function CoachWorkspace({
             </div>
           </div>
         ) : (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            <WorkspaceCloseButton
-              className={MOBILE_OVERLAY_CLOSE_CLASS}
-              disabled={isChatRunning(state)}
-              onClick={handleClose}
+          <ChatWorkspaceShell
+            state={state}
+            onReset={handleClose}
+            headerClassName={MOBILE_CHAT_HEADER_CLASS}
+            className={MOBILE_WORKSPACE_X_PADDING_CLASS}
+          >
+            <CoachConversationPanel
+              state={state}
+              onAttach={attachFiles}
+              onSend={handleSendMessage}
+              promptEnabled={promptEnabled}
+              composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
+              composerHeader={
+                <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    fullWidth={false}
+                    icon={<EyeIcon />}
+                    aria-label="View artifact"
+                    onClick={() => setShowArtifact(true)}
+                  >
+                    View
+                  </Button>
+                </div>
+              }
             />
-            <div
-              className={`flex min-h-0 flex-1 flex-col ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
-            >
-              <CoachConversationPanel
-                state={state}
-                onAttach={attachFiles}
-                onSend={handleSendMessage}
-                promptEnabled={promptEnabled}
-                composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-                composerHeader={
-                  <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      fullWidth={false}
-                      icon={<EyeIcon />}
-                      aria-label="View artifact"
-                      onClick={() => setShowArtifact(true)}
-                    >
-                      View
-                    </Button>
-                  </div>
-                }
-              />
-            </div>
-          </div>
+          </ChatWorkspaceShell>
         )}
       </div>
     );
@@ -433,19 +506,20 @@ export function CoachWorkspace({
           }`}
         >
           <div
-            className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
+            className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
           >
-            <WorkspaceCloseButton
-              className={DESKTOP_CHAT_CLOSE_CLASS}
-              disabled={isChatRunning(state)}
-              onClick={handleClose}
-            />
-            <CoachConversationPanel
+            <ChatWorkspaceShell
               state={state}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              promptEnabled={promptEnabled}
-            />
+              onReset={handleClose}
+              headerClassName={DESKTOP_CHAT_HEADER_CLASS}
+            >
+              <CoachConversationPanel
+                state={state}
+                onAttach={attachFiles}
+                onSend={handleSendMessage}
+                promptEnabled={promptEnabled}
+              />
+            </ChatWorkspaceShell>
           </div>
         </div>
       </div>

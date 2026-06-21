@@ -11,8 +11,11 @@ export type SaveArtifactResult<T> =
 export function useSaveArtifact<TInput, TResult>(options: {
   save: (input: TInput) => Promise<SaveArtifactResult<TResult>>;
   successStatus?: SaveArtifactStatus | ((result: TResult) => SaveArtifactStatus);
+  initialStatus?: SaveArtifactStatus;
 }) {
-  const [saveStatus, setSaveStatus] = useState<SaveArtifactStatus>("idle");
+  const [saveStatus, setSaveStatus] = useState<SaveArtifactStatus>(
+    options.initialStatus ?? "idle",
+  );
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const save = useCallback(

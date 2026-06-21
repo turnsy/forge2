@@ -85,7 +85,7 @@ describe("CoachWorkspace layout", () => {
 
     expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Close workspace" }),
+      screen.queryByRole("button", { name: "Reset conversation" }),
     ).not.toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe("CoachWorkspace layout", () => {
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
     expect(container.innerHTML).toContain("p-4");
     expect(container.innerHTML).not.toContain("md:p-8");
-    expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
   });
 
   it("shows centered chat without split when started but no artifact", () => {
@@ -120,7 +120,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(container.querySelector(".max-w-3xl")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
   });
 
@@ -138,7 +138,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
 
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Close workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
     expect(container.innerHTML).toContain("md:p-8");
     expect(container.innerHTML).toContain("!max-w-none");
@@ -156,7 +156,7 @@ describe("CoachWorkspace layout", () => {
     );
 
     render(<CoachWorkspace firstName="Alex" role="coach" />);
-    await user.click(screen.getByRole("button", { name: "Close workspace" }));
+    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
     expect(mockRestart).toHaveBeenCalledOnce();
     expect(mockPush).not.toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe("CoachWorkspace layout", () => {
 
     expect(container.innerHTML).toContain("px-4");
     expect(container.innerHTML).toContain("pb-[calc(4.5rem");
-    expect(screen.getByRole("button", { name: "Close workspace" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeVisible();
   });
 
   it("adds mobile chat padding and composer inset when chatting with an artifact", () => {
@@ -303,7 +303,7 @@ describe("CoachWorkspace layout", () => {
     );
 
     render(<CoachWorkspace firstName="Alex" role="coach" />);
-    await user.click(screen.getByRole("button", { name: "Close workspace" }));
+    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
     expect(mockPush).toHaveBeenCalledWith("/coach/plans/plan-1");
     expect(mockRestart).not.toHaveBeenCalled();

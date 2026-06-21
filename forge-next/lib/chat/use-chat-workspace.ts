@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, type Dispatch } from "react";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -9,9 +9,18 @@ import type { PromptSegment } from "@/lib/prompts/mentions/types";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
-import type { ChatEvent, ChatMessage, ChatWorkspaceState } from "@/lib/chat/types";
+import type {
+  ChatEvent,
+  ChatMessage,
+  ChatWorkspaceAction,
+  ChatWorkspaceState,
+} from "@/lib/chat/types";
 
 export type ChatStreamError = { message: string };
+
+export type ChatSnapshotSaveResult = {
+  sessionTitle: string | null;
+};
 
 export type UseChatWorkspaceConfig<TArtifact> = {
   streamChat: (input: {
@@ -31,6 +40,9 @@ export type UseChatWorkspaceConfig<TArtifact> = {
   validateFiles?: (
     files: File[],
   ) => { ok: true } | { ok: false; message: string };
+  onSaveSnapshot?: (
+    state: ChatWorkspaceState<TArtifact>,
+  ) => Promise<ChatSnapshotSaveResult | void> | ChatSnapshotSaveResult | void;
 };
 
 export type UseChatWorkspaceOptions<TArtifact> = {
@@ -41,12 +53,19 @@ export function useChatWorkspace<TArtifact>(
   config: UseChatWorkspaceConfig<TArtifact>,
   options: UseChatWorkspaceOptions<TArtifact> = {},
 ) {
-  const [state, dispatch] = useReducer(
+  const [state, baseDispatch] = useReducer(
     chatWorkspaceReducer<TArtifact>,
     undefined,
     () => options.initialState ?? createInitialChatWorkspaceState<TArtifact>(),
   );
   const stateRef = useRef(state);
+  const dispatch = useCallback<Dispatch<ChatWorkspaceAction<TArtifact>>>(
+    (action) => {
+      stateRef.current = chatWorkspaceReducer(stateRef.current, action);
+      baseDispatch(action);
+    },
+    [],
+  );
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -102,7 +121,7 @@ export function useChatWorkspace<TArtifact>(
         });
       }
     },
-    [config],
+    [config, dispatch],
   );
 
   const sendMessage = useCallback(
@@ -135,25 +154,35 @@ export function useChatWorkspace<TArtifact>(
       }
 
       dispatch({ type: "STREAM_END" });
+      const saveResult = await config.onSaveSnapshot?.(stateRef.current);
+      if (
+        saveResult?.sessionTitle != null &&
+        stateRef.current.sessionTitle == null
+      ) {
+        dispatch({
+          type: "SET_SESSION_TITLE",
+          sessionTitle: saveResult.sessionTitle,
+        });
+      }
     },
-    [config],
+    [config, dispatch],
   );
 
   const restart = useCallback(() => {
     dispatch({ type: "RESTART", sessionId: createSessionId() });
-  }, []);
+  }, [dispatch]);
 
   const setArtifactTitle = useCallback((artifactTitle: string) => {
     dispatch({ type: "SET_ARTIFACT_TITLE", artifactTitle });
-  }, []);
+  }, [dispatch]);
 
   const setPlanId = useCallback((planId: string) => {
     dispatch({ type: "SET_PLAN_ID", planId });
-  }, []);
+  }, [dispatch]);
 
   const setArtifact = useCallback((artifact: TArtifact) => {
     dispatch({ type: "SET_ARTIFACT", artifact });
-  }, []);
+  }, [dispatch]);
 
   return {
     state,

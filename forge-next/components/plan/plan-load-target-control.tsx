@@ -141,11 +141,13 @@ export function PlanLoadTargetControl({
   const isPercentage = isPercentageLoad(load);
   const displayUnit = getLoadUnit(load);
   const loadKey = `${load.type}-${load.value}-${load.unit}`;
+  const [syncedLoadKey, setSyncedLoadKey] = useState(loadKey);
   const [draft, setDraft] = useState(() => getLoadTargetValue(load));
 
-  useEffect(() => {
+  if (loadKey !== syncedLoadKey) {
+    setSyncedLoadKey(loadKey);
     setDraft(getLoadTargetValue(load));
-  }, [loadKey]);
+  }
 
   function handleTogglePercentage() {
     if (isPercentage) {

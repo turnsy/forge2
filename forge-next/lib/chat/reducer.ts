@@ -36,7 +36,10 @@ export function chatWorkspaceReducer<TArtifact>(
         phase: "idle",
         streamingAssistantText: "",
         artifactTitle: "",
+        sessionTitle: null,
       };
+    case "SET_SESSION_TITLE":
+      return { ...state, sessionTitle: action.sessionTitle };
     case "SET_ARTIFACT_TITLE":
       return { ...state, artifactTitle: action.artifactTitle };
     case "SET_PLAN_ID":

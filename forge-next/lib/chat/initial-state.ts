@@ -7,6 +7,7 @@ export function createInitialChatWorkspaceState<TArtifact = unknown>(
   return {
     sessionId,
     hasStarted: false,
+    sessionTitle: null,
     artifactTitle: "",
     planId: null,
     messages: [],

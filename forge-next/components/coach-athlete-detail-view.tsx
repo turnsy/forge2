@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PencilIcon } from "@/components/icons/pencil-icon";
 import { CoachAthleteDetailActions } from "@/components/coach-athlete-detail-actions";
 import { CoachAthletePlanActions } from "@/components/coach-athlete-plan-actions";
@@ -82,35 +82,33 @@ function CoachAssignedPlanPanel({
   allowEditing?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [baselinePlan, setBaselinePlan] = useState<WorkoutPlan>(assignedPlan.plan);
-  const [plan, setPlan] = useState<WorkoutPlan>(assignedPlan.plan);
+  const [editPlan, setEditPlan] = useState<WorkoutPlan | null>(null);
   const { saveAssignedPlan, saveStatus, saveError } = useSaveAssignedPlan(assignedPlan.id);
 
-  useEffect(() => {
-    setBaselinePlan(assignedPlan.plan);
-    if (!isEditing) {
-      setPlan(assignedPlan.plan);
-    }
-  }, [assignedPlan.id, assignedPlan.plan, isEditing]);
+  const plan = isEditing && editPlan ? editPlan : assignedPlan.plan;
 
   const completionPercent = computePlanCompletionPercent(plan);
   const isSaving = saveStatus === "saving";
 
   function handleEnterEditMode() {
-    setPlan(structuredClone(baselinePlan));
+    setEditPlan(structuredClone(assignedPlan.plan));
     setIsEditing(true);
   }
 
   function handleCancelEdit() {
-    setPlan(baselinePlan);
+    setEditPlan(null);
     setIsEditing(false);
   }
 
   async function handleSave() {
-    const result = await saveAssignedPlan({ plan });
+    if (!editPlan) {
+      return;
+    }
+
+    const result = await saveAssignedPlan({ plan: editPlan });
     if (result !== null) {
-      setBaselinePlan(plan);
       setIsEditing(false);
+      setEditPlan(null);
     }
   }
 
@@ -181,7 +179,7 @@ function CoachAssignedPlanPanel({
         plan={plan}
         view="coach"
         readOnly={!isEditing}
-        onPlanChange={isEditing ? setPlan : undefined}
+        onPlanChange={isEditing ? setEditPlan : undefined}
         disabled={isSaving}
         canEditDay={isEditing ? isDayEditable : undefined}
       />

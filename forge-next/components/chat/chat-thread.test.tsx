@@ -43,4 +43,38 @@ describe("ChatThread", () => {
     );
     expect(screen.getByText(/Required/)).toBeInTheDocument();
   });
+
+  it("does not render whitespace-only assistant messages", () => {
+    const { container } = render(
+      <ChatThread
+        messages={[
+          { role: "user", content: "Hi" },
+          { role: "assistant", content: "   " },
+        ]}
+        streamingAssistantText=""
+        runStatus={null}
+        errors={[]}
+        phase="idle"
+      />,
+    );
+
+    expect(screen.getByText("Hi")).toBeInTheDocument();
+    expect(container.querySelectorAll(".justify-start .rounded-card")).toHaveLength(0);
+  });
+
+  it("does not render a streaming bubble for whitespace-only text", () => {
+    const { container } = render(
+      <ChatThread
+        messages={[{ role: "user", content: "Hi" }]}
+        streamingAssistantText="   "
+        runStatus="generating"
+        errors={[]}
+        phase="streaming"
+      />,
+    );
+
+    const scrollPane = container.querySelector(".overflow-y-auto");
+    expect(scrollPane?.textContent).toMatch(/Hi[\s\S]*Generating/);
+    expect(scrollPane?.textContent).not.toMatch(/\s{3,}/);
+  });
 });

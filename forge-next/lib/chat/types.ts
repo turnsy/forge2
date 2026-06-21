@@ -37,6 +37,7 @@ export type ChatAttachment = {
 export type ChatWorkspaceState<TArtifact = unknown> = {
   sessionId: string;
   hasStarted: boolean;
+  sessionTitle: string | null;
   artifactTitle: string;
   planId: string | null;
   messages: ChatMessage[];
@@ -100,6 +101,7 @@ export type ChatEvent<TArtifact = unknown> =
 
 export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "RESTART"; sessionId: string }
+  | { type: "SET_SESSION_TITLE"; sessionTitle: string | null }
   | { type: "SET_ARTIFACT_TITLE"; artifactTitle: string }
   | { type: "SET_PLAN_ID"; planId: string }
   | { type: "SET_ARTIFACT"; artifact: TArtifact }

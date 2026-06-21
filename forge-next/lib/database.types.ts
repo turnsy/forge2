@@ -103,6 +103,38 @@ export type Database = {
           },
         ]
       }
+      chat_sessions: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          snapshot: Json
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          snapshot?: Json
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          snapshot?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_athletes: {
         Row: {
           athlete_id: string
@@ -320,7 +352,7 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: {
           athlete_id: string
-          completion_percent: number | null
+          completion_percent: number
           current_assignment_status: Database["public"]["Enums"]["assignment_status"]
           current_plan_id: string
           current_plan_name: string
@@ -528,4 +560,3 @@ export const Constants = {
     },
   },
 } as const
-
