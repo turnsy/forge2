@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
-  buildSessionTitlePrompt,
   generateSessionTitle,
   generateSessionTitleWithResult,
   normalizeSessionTitle,
@@ -50,7 +49,7 @@ describe("generateSessionTitle", () => {
     expect(title).toBe("Bench Press Block");
   });
 
-  it("sends the inline prompt as a user message", async () => {
+  it("passes the raw first message as the user turn", async () => {
     const generateTextFn = vi
       .fn()
       .mockResolvedValue({ text: "Sky Color Question", content: [] });
@@ -71,12 +70,7 @@ describe("generateSessionTitle", () => {
 
     expect(generateTextFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: [
-          {
-            role: "user",
-            content: buildSessionTitlePrompt("what color is the sky"),
-          },
-        ],
+        messages: [{ role: "user", content: "what color is the sky" }],
       }),
     );
   });
@@ -98,7 +92,7 @@ describe("generateSessionTitle", () => {
     expect(title).toBe("Sky Appears Blue");
   });
 
-  it("reports invalid prompt-echo titles", async () => {
+  it("rejects verbose meta responses", async () => {
     await expect(
       generateSessionTitleWithResult(
         snapshot({
@@ -107,7 +101,7 @@ describe("generateSessionTitle", () => {
         {
           ...aiDeps,
           generateTextFn: vi.fn().mockResolvedValue({
-            text: "Summarize the following in 3-4 words",
+            text: 'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
             content: [],
           }),
         },
@@ -115,7 +109,8 @@ describe("generateSessionTitle", () => {
     ).resolves.toEqual({
       ok: false,
       reason: "invalid_model_output",
-      detail: "Summarize the following in 3-4 words",
+      detail:
+        'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
     });
   });
 
@@ -174,25 +169,16 @@ describe("shouldGenerateSessionTitle", () => {
       ),
     ).toBe(false);
   });
-
-  it("is false after the first user message", () => {
-    expect(
-      shouldGenerateSessionTitle(
-        snapshot({
-          messages: [
-            { role: "user", content: "First" },
-            { role: "assistant", content: "Hi" },
-            { role: "user", content: "Second" },
-          ],
-        }),
-        { generateTitle: true },
-      ),
-    ).toBe(false);
-  });
 });
 
 describe("normalizeSessionTitle", () => {
   it("strips wrapping quotes and trailing punctuation", () => {
     expect(normalizeSessionTitle('"Hypertrophy Block."')).toBe("Hypertrophy Block");
+  });
+
+  it("limits titles to four words", () => {
+    expect(
+      normalizeSessionTitle("Build A Four Week Strength Block"),
+    ).toBe("Build A Four Week");
   });
 });

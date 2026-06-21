@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
+import { createSessionTitleGatewayModel } from "@/lib/chat/session-title/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import type { ChatMessage } from "@/lib/chat/types";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
@@ -7,6 +7,11 @@ import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 export const SESSION_FALLBACK_TITLE = "Untitled conversation";
 
 const SESSION_TITLE_MAX_CHARS = 80;
+const SESSION_TITLE_MAX_WORDS = 4;
+
+const SESSION_TITLE_SYSTEM = `You label coaching chat threads.
+Reply with only a short title (maximum ${SESSION_TITLE_MAX_WORDS} words).
+No quotes, labels, or explanation.`;
 
 export type SessionTitleFailureReason =
   | "gateway_unconfigured"
@@ -22,7 +27,7 @@ export type SessionTitleGenerationResult =
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
   isGatewayConfigured?: () => boolean;
-  createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
+  createModel?: () => ReturnType<typeof createSessionTitleGatewayModel>;
   onFailure?: (result: Extract<SessionTitleGenerationResult, { ok: false }>) => void;
 };
 
@@ -53,10 +58,6 @@ function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
   return formatMessageForTitle(firstUserMessage);
 }
 
-export function buildSessionTitlePrompt(firstMessage: string): string {
-  return `Summarize the following in 3-4 words: ${firstMessage}`;
-}
-
 function readGeneratedText(result: Awaited<ReturnType<typeof generateText>>): string {
   const direct = result.text.trim();
   if (direct) {
@@ -70,32 +71,46 @@ function readGeneratedText(result: Awaited<ReturnType<typeof generateText>>): st
     .trim();
 }
 
+function looksLikeMetaResponse(text: string): boolean {
+  const lower = text.toLowerCase();
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+  return (
+    wordCount > SESSION_TITLE_MAX_WORDS + 2 ||
+    lower.startsWith("we need to") ||
+    lower.startsWith("the message") ||
+    lower.startsWith("this message") ||
+    lower.startsWith("the question") ||
+    lower.includes("typical answer") ||
+    lower.includes("in 3-4 words") ||
+    lower.includes("maximum 4 words")
+  );
+}
+
 export function normalizeSessionTitle(raw: string): string | null {
-  const cleaned = raw
-    .trim()
+  const firstLine = raw.split(/\r?\n/)[0]?.trim() ?? raw.trim();
+  const cleaned = firstLine
+    .replace(/^title:\s*/i, "")
     .replace(/^["'`]+|["'`]+$/g, "")
     .replace(/[.?!]+$/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!cleaned) {
+  if (!cleaned || looksLikeMetaResponse(cleaned)) {
     return null;
   }
 
-  const lower = cleaned.toLowerCase();
-  if (
-    lower.startsWith("summarize") ||
-    lower.includes("3-4 words") ||
-    lower.includes("the following")
-  ) {
-    return null;
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const trimmed =
+    words.length > SESSION_TITLE_MAX_WORDS
+      ? words.slice(0, SESSION_TITLE_MAX_WORDS).join(" ")
+      : cleaned;
+
+  if (trimmed.length <= SESSION_TITLE_MAX_CHARS) {
+    return trimmed;
   }
 
-  if (cleaned.length <= SESSION_TITLE_MAX_CHARS) {
-    return cleaned;
-  }
-
-  return `${cleaned.slice(0, SESSION_TITLE_MAX_CHARS - 1).trimEnd()}…`;
+  return `${trimmed.slice(0, SESSION_TITLE_MAX_CHARS - 1).trimEnd()}…`;
 }
 
 export function shouldGenerateSessionTitle(
@@ -122,17 +137,13 @@ export async function generateSessionTitleWithResult(
   }
 
   try {
-    const createModel = deps.createModel ?? createPlanChatGatewayModel;
+    const createModel = deps.createModel ?? createSessionTitleGatewayModel;
     const result = await generateTextFn({
       model: createModel(),
-      messages: [
-        {
-          role: "user",
-          content: buildSessionTitlePrompt(firstMessage),
-        },
-      ],
-      maxOutputTokens: 32,
-      temperature: 0.2,
+      system: SESSION_TITLE_SYSTEM,
+      messages: [{ role: "user", content: firstMessage }],
+      maxOutputTokens: 16,
+      temperature: 0,
     });
 
     const raw = readGeneratedText(result);
