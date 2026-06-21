@@ -33,6 +33,7 @@ import {
   listRecentChatSessions,
   loadChatSession,
   saveChatSession,
+  saveSessionSnapshot,
 } from "@/lib/chat/session-storage";
 
 function createSnapshot() {
@@ -136,6 +137,65 @@ describe("saveChatSession", () => {
     );
 
     expect(result).toEqual({ status: "error", message: "db down" });
+  });
+
+  it("generates a title by default when the snapshot has none", async () => {
+    const snapshot = createSnapshot();
+
+    const result = await saveChatSession("coach-1", "session-1", snapshot);
+
+    expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        id: "session-1",
+        coach_id: "coach-1",
+        snapshot: { ...snapshot, title: "Bench Press Block" },
+      },
+      { onConflict: "id" },
+    );
+  });
+});
+
+describe("saveSessionSnapshot", () => {
+  beforeEach(() => {
+    mockUpsert.mockReset();
+    mockUpsert.mockResolvedValue({ error: null });
+  });
+
+  it("returns an ok result with the saved title", async () => {
+    const snapshot = createSnapshot();
+
+    const result = await saveSessionSnapshot("coach-1", "session-1", snapshot);
+
+    expect(result).toEqual({ ok: true, title: "Bench Press Block" });
+  });
+
+  it("skips title generation when the snapshot already has a title", async () => {
+    const snapshot = { ...createSnapshot(), title: "Existing title" };
+
+    const result = await saveSessionSnapshot("coach-1", "session-1", snapshot);
+
+    expect(result).toEqual({ ok: true, title: "Existing title" });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        id: "session-1",
+        coach_id: "coach-1",
+        snapshot: { ...snapshot, title: "Existing title" },
+      },
+      { onConflict: "id" },
+    );
+  });
+
+  it("returns an error when persistence fails", async () => {
+    mockUpsert.mockResolvedValue({ error: { message: "db down" } });
+
+    const result = await saveSessionSnapshot(
+      "coach-1",
+      "session-1",
+      createSnapshot(),
+    );
+
+    expect(result).toEqual({ ok: false, message: "db down" });
   });
 });
 

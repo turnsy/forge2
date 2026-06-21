@@ -72,6 +72,10 @@ async function resolveSnapshotTitle(
   return null;
 }
 
+export type SaveSessionSnapshotResult =
+  | { ok: true; title: string | null }
+  | { ok: false; message: string };
+
 export async function saveChatSession(
   coachId: string,
   sessionId: string,
@@ -79,7 +83,8 @@ export async function saveChatSession(
   options?: { generateTitle?: boolean },
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
-  const title = await resolveSnapshotTitle(snapshot, options);
+  const generateTitle = options?.generateTitle ?? snapshot.title == null;
+  const title = await resolveSnapshotTitle(snapshot, { generateTitle });
   const snapshotToSave: ChatSessionSnapshot = { ...snapshot, title };
 
   const { error } = await supabase.from("chat_sessions").upsert(
@@ -96,6 +101,20 @@ export async function saveChatSession(
   }
 
   return { status: "saved", title };
+}
+
+export async function saveSessionSnapshot(
+  coachId: string,
+  sessionId: string,
+  snapshot: ChatSessionSnapshot,
+): Promise<SaveSessionSnapshotResult> {
+  const result = await saveChatSession(coachId, sessionId, snapshot);
+
+  if (result.status === "error") {
+    return { ok: false, message: result.message };
+  }
+
+  return { ok: true, title: result.title };
 }
 
 export async function loadChatSession(
