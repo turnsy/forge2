@@ -1,14 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
-  buildTitleMessages,
-  countUserMessages,
-  formatMessageForTitle,
   generateSessionTitle,
-  getFirstUserMessageText,
-  normalizeSessionTitle,
   shouldGenerateSessionTitle,
-} from "@/lib/chat/session-title";
+} from "@/lib/chat/session-title/generate";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 
 function snapshot(
@@ -30,67 +25,6 @@ const aiDeps = {
   generateTextFn: vi.fn().mockResolvedValue({ text: "Bench Press Block" }),
   createModel: () => "mock-model" as never,
 };
-
-describe("formatMessageForTitle", () => {
-  it("uses mention labels from segments", () => {
-    expect(
-      formatMessageForTitle({
-        role: "user",
-        content: "Update @Summer Block",
-        segments: [
-          { type: "text", value: "Update " },
-          { type: "mention", id: "p1", label: "Summer Block", kind: "plan" },
-        ],
-      }),
-    ).toBe("Update Summer Block");
-  });
-});
-
-describe("getFirstUserMessageText", () => {
-  it("returns the first user message content", () => {
-    expect(
-      getFirstUserMessageText(
-        snapshot({
-          messages: [
-            { role: "user", content: "what color is the sky" },
-            { role: "assistant", content: "Blue." },
-          ],
-        }),
-      ),
-    ).toBe("what color is the sky");
-  });
-});
-
-describe("buildTitleMessages", () => {
-  it("passes the first user message as the user turn", () => {
-    expect(
-      buildTitleMessages(
-        snapshot({
-          messages: [
-            { role: "user", content: "what color is the sky" },
-            { role: "assistant", content: "Blue." },
-          ],
-        }),
-      ),
-    ).toEqual([{ role: "user", content: "what color is the sky" }]);
-  });
-});
-
-describe("countUserMessages", () => {
-  it("counts only user messages", () => {
-    expect(
-      countUserMessages(
-        snapshot({
-          messages: [
-            { role: "user", content: "Hi" },
-            { role: "assistant", content: "Hello" },
-            { role: "user", content: "Again" },
-          ],
-        }),
-      ),
-    ).toBe(2);
-  });
-});
 
 describe("generateSessionTitle", () => {
   it("returns a normalized model title", async () => {
@@ -187,11 +121,5 @@ describe("shouldGenerateSessionTitle", () => {
         { generateTitle: true },
       ),
     ).toBe(false);
-  });
-});
-
-describe("normalizeSessionTitle", () => {
-  it("strips wrapping quotes and trailing punctuation", () => {
-    expect(normalizeSessionTitle('"Hypertrophy Block."')).toBe("Hypertrophy Block");
   });
 });

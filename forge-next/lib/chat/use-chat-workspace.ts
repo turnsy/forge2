@@ -168,10 +168,6 @@ export function useChatWorkspace<TArtifact>(
     [config, dispatch],
   );
 
-  const saveSnapshot = useCallback(() => {
-    config.onSaveSnapshot?.(stateRef.current);
-  }, [config]);
-
   const restart = useCallback(() => {
     dispatch({ type: "RESTART", sessionId: createSessionId() });
   }, [dispatch]);
@@ -192,7 +188,6 @@ export function useChatWorkspace<TArtifact>(
     state,
     attachFiles,
     sendMessage,
-    saveSnapshot,
     restart,
     setArtifactTitle,
     setPlanId,

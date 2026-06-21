@@ -10,7 +10,7 @@ import {
 import { streamPlanChat } from "@/lib/chat/adapters/plan/plan-chat-client";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
-import { buildSnapshotFromState } from "@/lib/chat/session-snapshot";
+import { buildSnapshotFromState } from "@/lib/chat/session-types";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -79,7 +79,7 @@ export function useCoachPlanWorkspace(options?: {
         }
 
         const result = await saveSessionSnapshot(state.sessionId, snapshot);
-        if (!result.ok || result.title == null || state.sessionTitle != null) {
+        if (!result.ok || result.title == null) {
           return;
         }
 

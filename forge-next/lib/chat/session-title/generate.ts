@@ -1,13 +1,19 @@
 import { generateText, type ModelMessage } from "ai";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
-import {
-  SESSION_FALLBACK_TITLE,
-  SESSION_TITLE_MAX_CHARS,
-  SESSION_TITLE_PROMPT,
-} from "@/lib/chat/session-title/constants";
 import type { ChatMessage } from "@/lib/chat/types";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+
+export const SESSION_FALLBACK_TITLE = "Untitled conversation";
+
+const SESSION_TITLE_MAX_CHARS = 80;
+
+const SESSION_TITLE_PROMPT = `You label coaching chat threads in a workout-planning app.
+
+Write a short, specific title (3–8 words) for this conversation.
+- Focus on the athlete goal, plan type, or training topic.
+- Do not use quotes or trailing punctuation.
+- Return only the title text.`;
 
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
@@ -15,11 +21,11 @@ export type GenerateSessionTitleDeps = {
   createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
 };
 
-export function countUserMessages(snapshot: ChatSessionSnapshot): number {
+function countUserMessages(snapshot: ChatSessionSnapshot): number {
   return snapshot.messages.filter((message) => message.role === "user").length;
 }
 
-export function formatMessageForTitle(message: ChatMessage): string {
+function formatMessageForTitle(message: ChatMessage): string {
   if (message.segments?.length) {
     return message.segments
       .map((segment) => (segment.type === "text" ? segment.value : segment.label))
@@ -30,7 +36,7 @@ export function formatMessageForTitle(message: ChatMessage): string {
   return message.content.trim();
 }
 
-export function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
+function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
   const firstUserMessage = snapshot.messages.find(
     (message) => message.role === "user",
   );
@@ -42,7 +48,7 @@ export function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
   return formatMessageForTitle(firstUserMessage);
 }
 
-export function buildTitleMessages(snapshot: ChatSessionSnapshot): ModelMessage[] {
+function buildTitleMessages(snapshot: ChatSessionSnapshot): ModelMessage[] {
   const firstMessage = getFirstUserMessageText(snapshot);
   if (!firstMessage) {
     return [];
@@ -51,7 +57,7 @@ export function buildTitleMessages(snapshot: ChatSessionSnapshot): ModelMessage[
   return [{ role: "user", content: firstMessage }];
 }
 
-export function normalizeSessionTitle(raw: string): string | null {
+function normalizeSessionTitle(raw: string): string | null {
   const cleaned = raw
     .trim()
     .replace(/^["'`]+|["'`]+$/g, "")
@@ -68,6 +74,13 @@ export function normalizeSessionTitle(raw: string): string | null {
   }
 
   return `${cleaned.slice(0, SESSION_TITLE_MAX_CHARS - 1).trimEnd()}…`;
+}
+
+export function shouldGenerateSessionTitle(
+  snapshot: ChatSessionSnapshot,
+  options?: { generateTitle?: boolean },
+): boolean {
+  return options?.generateTitle === true && countUserMessages(snapshot) === 1;
 }
 
 export async function generateSessionTitle(
@@ -96,11 +109,4 @@ export async function generateSessionTitle(
   } catch {
     return SESSION_FALLBACK_TITLE;
   }
-}
-
-export function shouldGenerateSessionTitle(
-  snapshot: ChatSessionSnapshot,
-  options?: { generateTitle?: boolean },
-): boolean {
-  return options?.generateTitle === true && countUserMessages(snapshot) === 1;
 }

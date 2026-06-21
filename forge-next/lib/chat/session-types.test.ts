@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSnapshotFromState } from "@/lib/chat/session-snapshot";
+import { buildSnapshotFromState } from "@/lib/chat/session-types";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 

@@ -8,7 +8,7 @@ const mockEqSecond = vi.fn();
 const mockEqFirst = vi.fn();
 const mockSelect = vi.fn();
 
-vi.mock("@/lib/chat/session-title", () => ({
+vi.mock("@/lib/chat/session-title/generate", () => ({
   SESSION_FALLBACK_TITLE: "Untitled conversation",
   shouldGenerateSessionTitle: vi.fn(
     (

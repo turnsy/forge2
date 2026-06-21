@@ -4,7 +4,7 @@ import {
   SESSION_FALLBACK_TITLE,
   generateSessionTitle,
   shouldGenerateSessionTitle,
-} from "@/lib/chat/session-title";
+} from "@/lib/chat/session-title/generate";
 
 type ChatSessionRow = {
   id: string;
@@ -41,8 +41,6 @@ export type ListSessionsResult = {
 };
 
 const PREVIEW_MAX_LENGTH = 120;
-
-export { buildSnapshotFromState } from "@/lib/chat/session-snapshot";
 
 export function extractSessionPreview(snapshot: ChatSessionSnapshot): string {
   const firstMessage = snapshot.messages[0];

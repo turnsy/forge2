@@ -73,23 +73,6 @@ describe("useChatWorkspace", () => {
     ]);
   });
 
-  it("exposes saveSnapshot for manual persistence", () => {
-    const onSaveSnapshot = vi.fn();
-    const { result } = renderHook(() =>
-      useChatWorkspace({
-        streamChat: vi.fn(),
-        uploadFile: vi.fn(),
-        onSaveSnapshot,
-      }),
-    );
-
-    act(() => {
-      result.current.saveSnapshot();
-    });
-
-    expect(onSaveSnapshot).toHaveBeenCalledWith(result.current.state);
-  });
-
   it("updates currentArtifact when setArtifact is called", () => {
     const { result } = renderHook(() =>
       useChatWorkspace({
