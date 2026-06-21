@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
+  buildTitleMessages,
   countUserMessages,
-  formatConversationForTitle,
   formatMessageForTitle,
   generateSessionTitle,
+  getFirstUserMessageText,
   normalizeSessionTitle,
   resolveSessionTitle,
 } from "@/lib/chat/session-title";
@@ -45,6 +46,36 @@ describe("formatMessageForTitle", () => {
   });
 });
 
+describe("getFirstUserMessageText", () => {
+  it("returns the first user message content", () => {
+    expect(
+      getFirstUserMessageText(
+        snapshot({
+          messages: [
+            { role: "user", content: "what color is the sky" },
+            { role: "assistant", content: "Blue." },
+          ],
+        }),
+      ),
+    ).toBe("what color is the sky");
+  });
+});
+
+describe("buildTitleMessages", () => {
+  it("passes the first user message as the user turn", () => {
+    expect(
+      buildTitleMessages(
+        snapshot({
+          messages: [
+            { role: "user", content: "what color is the sky" },
+            { role: "assistant", content: "Blue." },
+          ],
+        }),
+      ),
+    ).toEqual([{ role: "user", content: "what color is the sky" }]);
+  });
+});
+
 describe("countUserMessages", () => {
   it("counts only user messages", () => {
     expect(
@@ -77,6 +108,32 @@ describe("generateSessionTitle", () => {
     );
 
     expect(title).toBe("Bench Press Block");
+  });
+
+  it("sends the first user message to the model", async () => {
+    const generateTextFn = vi
+      .fn()
+      .mockResolvedValue({ text: "Sky Color Question" });
+
+    await generateSessionTitle(
+      snapshot({
+        messages: [
+          { role: "user", content: "what color is the sky" },
+          { role: "assistant", content: "Blue." },
+        ],
+      }),
+      {
+        isGatewayConfigured: () => true,
+        generateTextFn,
+        createModel: () => "mock-model" as never,
+      },
+    );
+
+    expect(generateTextFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [{ role: "user", content: "what color is the sky" }],
+      }),
+    );
   });
 
   it("falls back when gateway is unavailable", async () => {
@@ -145,24 +202,6 @@ describe("resolveSessionTitle", () => {
         aiDeps,
       ),
     ).resolves.toBe(SESSION_FALLBACK_TITLE);
-  });
-});
-
-describe("formatConversationForTitle", () => {
-  it("includes recent messages and artifact title", () => {
-    expect(
-      formatConversationForTitle(
-        snapshot({
-          artifactTitle: "Summer Block",
-          messages: [
-            { role: "user", content: "Add a deload week" },
-            { role: "assistant", content: "Done." },
-          ],
-        }),
-      ),
-    ).toBe(
-      "Coach: Add a deload week\nAssistant: Done.\nPlan title: Summer Block",
-    );
   });
 });
 

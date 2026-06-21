@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText, type ModelMessage } from "ai";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import {
@@ -30,20 +30,25 @@ export function formatMessageForTitle(message: ChatMessage): string {
   return message.content.trim();
 }
 
-export function formatConversationForTitle(snapshot: ChatSessionSnapshot): string {
-  const lines = snapshot.messages
-    .slice(0, 6)
-    .map((message) => {
-      const label = message.role === "user" ? "Coach" : "Assistant";
-      return `${label}: ${formatMessageForTitle(message)}`;
-    })
-    .filter((line) => line.length > "Coach: ".length);
+export function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
+  const firstUserMessage = snapshot.messages.find(
+    (message) => message.role === "user",
+  );
 
-  if (snapshot.artifactTitle.trim()) {
-    lines.push(`Plan title: ${snapshot.artifactTitle.trim()}`);
+  if (!firstUserMessage) {
+    return "";
   }
 
-  return lines.join("\n");
+  return formatMessageForTitle(firstUserMessage);
+}
+
+export function buildTitleMessages(snapshot: ChatSessionSnapshot): ModelMessage[] {
+  const firstMessage = getFirstUserMessageText(snapshot);
+  if (!firstMessage) {
+    return [];
+  }
+
+  return [{ role: "user", content: firstMessage }];
 }
 
 export function normalizeSessionTitle(raw: string): string | null {
@@ -71,18 +76,18 @@ export async function generateSessionTitle(
 ): Promise<string> {
   const isGatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const generateTextFn = deps.generateTextFn ?? generateText;
+  const messages = buildTitleMessages(snapshot);
 
-  if (!isGatewayConfigured()) {
+  if (!isGatewayConfigured() || messages.length === 0) {
     return SESSION_FALLBACK_TITLE;
   }
 
   try {
     const createModel = deps.createModel ?? createPlanChatGatewayModel;
-    const conversation = formatConversationForTitle(snapshot);
     const result = await generateTextFn({
       model: createModel(),
       system: SESSION_TITLE_PROMPT,
-      prompt: conversation,
+      messages,
       maxOutputTokens: 32,
       temperature: 0.2,
     });

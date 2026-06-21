@@ -4,10 +4,11 @@ export {
   SESSION_TITLE_PROMPT,
 } from "@/lib/chat/session-title/constants";
 export {
+  buildTitleMessages,
   countUserMessages,
-  formatConversationForTitle,
   formatMessageForTitle,
   generateSessionTitle,
+  getFirstUserMessageText,
   normalizeSessionTitle,
   resolveSessionTitle,
   type GenerateSessionTitleDeps,
