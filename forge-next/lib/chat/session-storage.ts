@@ -66,7 +66,11 @@ async function resolveSnapshotTitle(
   }
 
   if (shouldGenerateSessionTitle(snapshot, options)) {
-    return generateSessionTitle(snapshot);
+    return generateSessionTitle(snapshot, {
+      onFailure: (failure) => {
+        console.warn("[session-title] generation failed", failure);
+      },
+    });
   }
 
   return null;

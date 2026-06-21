@@ -3,6 +3,8 @@ import {
   SESSION_FALLBACK_TITLE,
   buildSessionTitlePrompt,
   generateSessionTitle,
+  generateSessionTitleWithResult,
+  normalizeSessionTitle,
   shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title/generate";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
@@ -23,7 +25,7 @@ function snapshot(
 
 const aiDeps = {
   isGatewayConfigured: () => true,
-  generateTextFn: vi.fn().mockResolvedValue({ text: "Bench Press Block" }),
+  generateTextFn: vi.fn().mockResolvedValue({ text: "Bench Press Block", content: [] }),
   createModel: () => "mock-model" as never,
 };
 
@@ -38,17 +40,20 @@ describe("generateSessionTitle", () => {
       }),
       {
         ...aiDeps,
-        generateTextFn: vi.fn().mockResolvedValue({ text: '"Bench Press Block"' }),
+        generateTextFn: vi.fn().mockResolvedValue({
+          text: '"Bench Press Block"',
+          content: [],
+        }),
       },
     );
 
     expect(title).toBe("Bench Press Block");
   });
 
-  it("embeds the first user message in the title prompt", async () => {
+  it("sends the inline prompt as a user message", async () => {
     const generateTextFn = vi
       .fn()
-      .mockResolvedValue({ text: "Sky Color Question" });
+      .mockResolvedValue({ text: "Sky Color Question", content: [] });
 
     await generateSessionTitle(
       snapshot({
@@ -66,12 +71,17 @@ describe("generateSessionTitle", () => {
 
     expect(generateTextFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        prompt: buildSessionTitlePrompt("what color is the sky"),
+        messages: [
+          {
+            role: "user",
+            content: buildSessionTitlePrompt("what color is the sky"),
+          },
+        ],
       }),
     );
   });
 
-  it("rejects prompt-echo titles", async () => {
+  it("reads text from content parts when text is empty", async () => {
     const title = await generateSessionTitle(
       snapshot({
         messages: [{ role: "user", content: "what color is the sky" }],
@@ -79,23 +89,63 @@ describe("generateSessionTitle", () => {
       {
         ...aiDeps,
         generateTextFn: vi.fn().mockResolvedValue({
-          text: "Summarize the following in 3-4 words",
+          text: "",
+          content: [{ type: "text", text: "Sky Appears Blue" }],
         }),
       },
     );
 
-    expect(title).toBe(SESSION_FALLBACK_TITLE);
+    expect(title).toBe("Sky Appears Blue");
+  });
+
+  it("reports invalid prompt-echo titles", async () => {
+    await expect(
+      generateSessionTitleWithResult(
+        snapshot({
+          messages: [{ role: "user", content: "what color is the sky" }],
+        }),
+        {
+          ...aiDeps,
+          generateTextFn: vi.fn().mockResolvedValue({
+            text: "Summarize the following in 3-4 words",
+            content: [],
+          }),
+        },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "invalid_model_output",
+      detail: "Summarize the following in 3-4 words",
+    });
   });
 
   it("falls back when gateway is unavailable", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [{ role: "user", content: "Build a plan" }],
-      }),
-      { isGatewayConfigured: () => false },
-    );
+    await expect(
+      generateSessionTitleWithResult(
+        snapshot({
+          messages: [{ role: "user", content: "Build a plan" }],
+        }),
+        { isGatewayConfigured: () => false },
+      ),
+    ).resolves.toEqual({ ok: false, reason: "gateway_unconfigured" });
+  });
 
-    expect(title).toBe(SESSION_FALLBACK_TITLE);
+  it("reports api errors", async () => {
+    await expect(
+      generateSessionTitleWithResult(
+        snapshot({
+          messages: [{ role: "user", content: "Build a plan" }],
+        }),
+        {
+          ...aiDeps,
+          generateTextFn: vi.fn().mockRejectedValue(new Error("gateway down")),
+        },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "api_error",
+      detail: "gateway down",
+    });
   });
 });
 
@@ -138,5 +188,11 @@ describe("shouldGenerateSessionTitle", () => {
         { generateTitle: true },
       ),
     ).toBe(false);
+  });
+});
+
+describe("normalizeSessionTitle", () => {
+  it("strips wrapping quotes and trailing punctuation", () => {
+    expect(normalizeSessionTitle('"Hypertrophy Block."')).toBe("Hypertrophy Block");
   });
 });
