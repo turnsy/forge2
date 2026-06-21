@@ -135,6 +135,10 @@
         "notes": {
           "type": "string"
         },
+        "videoUrl": {
+          "type": "string",
+          "format": "uri"
+        },
         "sets": {
           "type": "array",
           "minItems": 1,

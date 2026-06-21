@@ -305,4 +305,76 @@ describe("PlanDayView", () => {
     expect(screen.queryByRole("button", { name: "Add exercise" })).not.toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
+
+  it("shows athlete video button when exercise has a videoUrl", async () => {
+    const user = userEvent.setup();
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    const plan = makePlan();
+    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+
+    render(
+      <PlanDayView
+        plan={plan}
+        weekIndex={1}
+        dayIndex={1}
+        view="athlete"
+        assignmentId="assignment-1"
+      />,
+    );
+
+    const videoButton = screen.getByLabelText("Watch exercise video");
+    expect(videoButton).toBeInTheDocument();
+
+    await user.click(videoButton);
+    expect(openSpy).toHaveBeenCalledWith(
+      "https://youtu.be/demo",
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    openSpy.mockRestore();
+  });
+
+  it("hides athlete video button when exercise has no videoUrl", () => {
+    render(
+      <PlanDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        view="athlete"
+        assignmentId="assignment-1"
+      />,
+    );
+
+    expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();
+  });
+
+  it("shows athlete video button in read-only completed day view", () => {
+    const plan = makePlan({ dayComplete: true });
+    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+
+    render(
+      <PlanDayView
+        plan={plan}
+        weekIndex={1}
+        dayIndex={1}
+        view="athlete"
+        assignmentId="assignment-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Watch exercise video")).toBeInTheDocument();
+  });
+
+  it("does not show video button in coach read-only view", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+
+    render(
+      <PlanDayView plan={plan} weekIndex={1} dayIndex={1} view="coach" />,
+    );
+
+    expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Add video link")).not.toBeInTheDocument();
+  });
 });

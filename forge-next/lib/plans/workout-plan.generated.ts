@@ -47,6 +47,7 @@ export interface Exercise {
   id?: NonEmptyString;
   name: NonEmptyString;
   notes?: string;
+  videoUrl?: string;
   /**
    * @minItems 1
    */
