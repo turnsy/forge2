@@ -64,6 +64,14 @@ describe("useSavePlan", () => {
     expect(result.current.saveStatus).toBe("saved");
   });
 
+  it("starts in the saved state when requested", () => {
+    const { result } = renderHook(() =>
+      useSavePlan("plan-1", { initialStatus: "saved" }),
+    );
+
+    expect(result.current.saveStatus).toBe("saved");
+  });
+
   it("resets save status after edit save", async () => {
     const { result } = renderHook(() => useSavePlan("plan-1"));
 

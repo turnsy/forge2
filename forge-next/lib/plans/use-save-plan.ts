@@ -1,6 +1,6 @@
 "use client";
 
-import { useSaveArtifact } from "@/lib/chat/use-save-artifact";
+import { useSaveArtifact, type SaveArtifactStatus } from "@/lib/chat/use-save-artifact";
 import {
   createCoachPlanClient,
   saveCoachPlanVersionClient,
@@ -9,11 +9,15 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type { SaveArtifactStatus as SavePlanStatus } from "@/lib/chat/use-save-artifact";
 
-export function useSavePlan(planId: string | null) {
+export function useSavePlan(
+  planId: string | null,
+  options?: { initialStatus?: SaveArtifactStatus },
+) {
   const { save, ...rest } = useSaveArtifact<
     { plan: WorkoutPlan; title: string },
     { planId: string; versionId: string }
   >({
+    initialStatus: options?.initialStatus,
     successStatus: "saved",
     save: async (input) => {
       const result = planId

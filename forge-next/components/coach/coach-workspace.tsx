@@ -163,9 +163,16 @@ export function CoachWorkspace({
 
     return window.matchMedia("(max-width: 767px)").matches;
   });
-  const savedSnapshotRef = useRef<string | null>(
-    initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
-  );
+  const initialSavedSnapshot =
+    initialPlan != null
+      ? createPlanSnapshot(initialPlan, initialPlan.name)
+      : initialSession?.snapshot.planId && initialSession.snapshot.currentArtifact
+        ? createPlanSnapshot(
+            initialSession.snapshot.currentArtifact,
+            initialSession.snapshot.artifactTitle,
+          )
+        : null;
+  const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
 
   const shouldSyncSessionUrl = !initialPlanId && !initialSession;
@@ -224,7 +231,9 @@ export function CoachWorkspace({
     : undefined;
 
   const { saveStatus, saveError, savePlan, resetSaveStatus } =
-    useSavePlan(activePlanId);
+    useSavePlan(activePlanId, {
+      initialStatus: initialSavedSnapshot ? "saved" : undefined,
+    });
 
   const showSplitPane = Boolean(state.currentArtifact);
 
