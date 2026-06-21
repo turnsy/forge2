@@ -98,23 +98,9 @@ export async function generateSessionTitle(
   }
 }
 
-export async function resolveSessionTitle(
+export function shouldGenerateSessionTitle(
   snapshot: ChatSessionSnapshot,
-  existingTitle: string | null | undefined,
   options?: { generateTitle?: boolean },
-  deps?: GenerateSessionTitleDeps,
-): Promise<string | null> {
-  if (existingTitle?.trim()) {
-    return existingTitle.trim();
-  }
-
-  if (options?.generateTitle !== true) {
-    return null;
-  }
-
-  if (countUserMessages(snapshot) !== 1) {
-    return SESSION_FALLBACK_TITLE;
-  }
-
-  return generateSessionTitle(snapshot, deps);
+): boolean {
+  return options?.generateTitle === true && countUserMessages(snapshot) === 1;
 }

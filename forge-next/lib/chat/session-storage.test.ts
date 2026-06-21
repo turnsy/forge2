@@ -10,23 +10,13 @@ const mockSelect = vi.fn();
 
 vi.mock("@/lib/chat/session-title", () => ({
   SESSION_FALLBACK_TITLE: "Untitled conversation",
-  resolveSessionTitle: vi.fn(
-    async (
-      snapshot: { title?: string | null; messages: { role: string; content: string }[] },
-      existingTitle?: string | null,
+  shouldGenerateSessionTitle: vi.fn(
+    (
+      _snapshot: { messages: { role: string; content: string }[] },
       options?: { generateTitle?: boolean },
-    ) => {
-      if (existingTitle?.trim()) {
-        return existingTitle.trim();
-      }
-
-      if (options?.generateTitle !== true) {
-        return null;
-      }
-
-      return "Bench Press Block";
-    },
+    ) => options?.generateTitle === true,
   ),
+  generateSessionTitle: vi.fn(async () => "Bench Press Block"),
 }));
 
 vi.mock("@/utils/supabase/server", () => ({

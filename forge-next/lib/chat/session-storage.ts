@@ -2,17 +2,11 @@ import { createClient } from "@/utils/supabase/server";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import {
   SESSION_FALLBACK_TITLE,
-  resolveSessionTitle,
+  generateSessionTitle,
+  shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title";
 
 type ChatSessionRow = {
-  id: string;
-  snapshot: ChatSessionSnapshot;
-  created_at: string;
-  updated_at: string;
-};
-
-type ChatSessionListRow = {
   id: string;
   snapshot: ChatSessionSnapshot;
   created_at: string;
@@ -71,8 +65,9 @@ export async function saveChatSession(
   options?: { generateTitle?: boolean },
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
-  const existingTitle = await getExistingSessionTitle(supabase, coachId, sessionId);
-  const title = await resolveSessionTitle(snapshot, existingTitle, options);
+  const title = shouldGenerateSessionTitle(snapshot, options)
+    ? await generateSessionTitle(snapshot)
+    : await getExistingSessionTitle(supabase, coachId, sessionId);
   const snapshotToSave: ChatSessionSnapshot = { ...snapshot, title };
 
   const { error } = await supabase.from("chat_sessions").upsert(
@@ -160,7 +155,7 @@ export async function listRecentChatSessions(
     throw new Error(error.message);
   }
 
-  const rows = (data ?? []) as ChatSessionListRow[];
+  const rows = (data ?? []) as ChatSessionRow[];
 
   return {
     sessions: rows.map((row) => ({

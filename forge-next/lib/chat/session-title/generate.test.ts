@@ -7,7 +7,7 @@ import {
   generateSessionTitle,
   getFirstUserMessageText,
   normalizeSessionTitle,
-  resolveSessionTitle,
+  shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 
@@ -148,48 +148,35 @@ describe("generateSessionTitle", () => {
   });
 });
 
-describe("resolveSessionTitle", () => {
-  it("preserves an existing stored title", async () => {
-    await expect(
-      resolveSessionTitle(
-        snapshot({ messages: [{ role: "user", content: "New prompt" }] }),
-        "Existing title",
+describe("shouldGenerateSessionTitle", () => {
+  it("is true only for the first user message on main saves", () => {
+    expect(
+      shouldGenerateSessionTitle(
+        snapshot({
+          messages: [
+            { role: "user", content: "Build a plan" },
+            { role: "assistant", content: "Sure." },
+          ],
+        }),
         { generateTitle: true },
       ),
-    ).resolves.toBe("Existing title");
+    ).toBe(true);
   });
 
-  it("does not write a title on beacon saves", async () => {
-    await expect(
-      resolveSessionTitle(
+  it("is false for beacon saves", () => {
+    expect(
+      shouldGenerateSessionTitle(
         snapshot({
           messages: [{ role: "user", content: "Build a plan" }],
         }),
-        null,
         { generateTitle: false },
       ),
-    ).resolves.toBeNull();
+    ).toBe(false);
   });
 
-  it("generates an AI title once after the first user message", async () => {
-    await expect(
-      resolveSessionTitle(
-        snapshot({
-          messages: [
-            { role: "user", content: "Build a 4-week bench press plan" },
-            { role: "assistant", content: "I can help with that." },
-          ],
-        }),
-        null,
-        { generateTitle: true },
-        aiDeps,
-      ),
-    ).resolves.toBe("Bench Press Block");
-  });
-
-  it("uses the fallback title after the first message window", async () => {
-    await expect(
-      resolveSessionTitle(
+  it("is false after the first user message", () => {
+    expect(
+      shouldGenerateSessionTitle(
         snapshot({
           messages: [
             { role: "user", content: "First" },
@@ -197,11 +184,9 @@ describe("resolveSessionTitle", () => {
             { role: "user", content: "Second" },
           ],
         }),
-        null,
         { generateTitle: true },
-        aiDeps,
       ),
-    ).resolves.toBe(SESSION_FALLBACK_TITLE);
+    ).toBe(false);
   });
 });
 

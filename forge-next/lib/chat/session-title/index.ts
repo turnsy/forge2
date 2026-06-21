@@ -10,6 +10,6 @@ export {
   generateSessionTitle,
   getFirstUserMessageText,
   normalizeSessionTitle,
-  resolveSessionTitle,
+  shouldGenerateSessionTitle,
   type GenerateSessionTitleDeps,
 } from "@/lib/chat/session-title/generate";
