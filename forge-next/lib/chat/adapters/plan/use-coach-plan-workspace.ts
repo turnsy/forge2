@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { saveSessionSnapshot } from "@/lib/chat/actions";
 import { useChatWorkspace } from "@/lib/chat/use-chat-workspace";
 import {
@@ -20,11 +20,14 @@ export function useCoachPlanWorkspace(options?: {
   planId?: string;
   initialSession?: { id: string; snapshot: ChatSessionSnapshot };
   onArtifactCleared?: () => void;
+  onSessionPersisted?: (sessionId: string) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const planId = options?.planId;
   const initialSession = options?.initialSession;
   const onArtifactCleared = options?.onArtifactCleared;
+  const onSessionPersisted = options?.onSessionPersisted;
+  const hasSyncedSessionUrlRef = useRef(false);
   const initialState = useMemo(
     () => {
       if (initialPlan && planId) {
@@ -79,7 +82,16 @@ export function useCoachPlanWorkspace(options?: {
         }
 
         const result = await saveSessionSnapshot(state.sessionId, snapshot);
-        if (!result.ok || result.title == null) {
+        if (!result.ok) {
+          return;
+        }
+
+        if (!hasSyncedSessionUrlRef.current && onSessionPersisted) {
+          hasSyncedSessionUrlRef.current = true;
+          onSessionPersisted(state.sessionId);
+        }
+
+        if (result.title == null) {
           return;
         }
 
@@ -90,6 +102,10 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const { state } = workspace;
+
+  useEffect(() => {
+    hasSyncedSessionUrlRef.current = false;
+  }, [state.sessionId]);
 
   useEffect(() => {
     const persistOnUnload = () => {

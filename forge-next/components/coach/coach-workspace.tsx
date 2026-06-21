@@ -26,6 +26,7 @@ import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import { syncCoachSessionUrl } from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -137,6 +138,8 @@ export function CoachWorkspace({
     initialPlan ? createPlanSnapshot(initialPlan, initialPlan.name) : null,
   );
 
+  const shouldSyncSessionUrl = !initialPlanId && !initialSession;
+
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
@@ -144,6 +147,10 @@ export function CoachWorkspace({
       router.replace("/coach");
     }
   }, [router, stripPlanIdOnClear]);
+
+  const handleSessionPersisted = useCallback((sessionId: string) => {
+    syncCoachSessionUrl(sessionId);
+  }, []);
 
   const {
     state,
@@ -168,7 +175,12 @@ export function CoachWorkspace({
             },
             onArtifactCleared: handleArtifactCleared,
           }
-        : { onArtifactCleared: handleArtifactCleared },
+        : {
+            onArtifactCleared: handleArtifactCleared,
+            onSessionPersisted: shouldSyncSessionUrl
+              ? handleSessionPersisted
+              : undefined,
+          },
   );
 
   const activePlanId = state.planId;
@@ -265,7 +277,10 @@ export function CoachWorkspace({
     }
 
     restart();
-  }, [activePlanId, restart, router, state]);
+    if (!initialPlanId) {
+      syncCoachSessionUrl(null);
+    }
+  }, [activePlanId, initialPlanId, restart, router, state]);
 
   if (!state.hasStarted) {
     if (isMobile) {
