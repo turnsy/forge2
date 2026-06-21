@@ -8,6 +8,21 @@ const mockEqSecond = vi.fn();
 const mockEqFirst = vi.fn();
 const mockSelect = vi.fn();
 
+vi.mock("@/lib/chat/session-title", () => ({
+  deriveFallbackSessionTitle: (snapshot: { messages: { content: string }[] }) =>
+    snapshot.messages[0]?.content ?? "Untitled conversation",
+  resolveSessionTitle: vi.fn(
+    async (
+      snapshot: { title?: string | null; messages: { content: string }[] },
+      existingTitle?: string | null,
+    ) =>
+      snapshot.title?.trim() ||
+      existingTitle?.trim() ||
+      snapshot.messages[0]?.content ||
+      "Untitled conversation",
+  ),
+}));
+
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     from: vi.fn(() => ({
@@ -26,6 +41,7 @@ import {
 
 function createSnapshot() {
   return {
+    title: null,
     messages: [{ role: "user" as const, content: "Build a plan" }],
     currentArtifact: null,
     planId: "plan-1",
@@ -38,6 +54,7 @@ describe("extractSessionPreview", () => {
   it("returns the first message content", () => {
     expect(
       extractSessionPreview({
+        title: null,
         messages: [{ role: "user", content: "Hello coach" }],
         currentArtifact: null,
         planId: null,
@@ -50,6 +67,7 @@ describe("extractSessionPreview", () => {
   it("truncates long previews", () => {
     const content = "a".repeat(150);
     const preview = extractSessionPreview({
+      title: null,
       messages: [{ role: "user", content }],
       currentArtifact: null,
       planId: null,
@@ -65,7 +83,15 @@ describe("extractSessionPreview", () => {
 describe("saveChatSession", () => {
   beforeEach(() => {
     mockUpsert.mockReset();
+    mockMaybeSingle.mockReset();
+    mockEqSecond.mockReset();
+    mockEqFirst.mockReset();
+    mockSelect.mockReset();
     mockUpsert.mockResolvedValue({ error: null });
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockEqSecond.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockEqFirst.mockReturnValue({ eq: mockEqSecond });
+    mockSelect.mockReturnValue({ eq: mockEqFirst });
   });
 
   it("upserts by session id and coach id", async () => {
@@ -78,7 +104,7 @@ describe("saveChatSession", () => {
       {
         id: "session-1",
         coach_id: "coach-1",
-        snapshot,
+        snapshot: { ...snapshot, title: "Build a plan" },
       },
       { onConflict: "id" },
     );
@@ -172,6 +198,7 @@ describe("listRecentChatSessions", () => {
     expect(result.sessions).toEqual([
       {
         id: "session-1",
+        title: "Build a plan",
         createdAt: "2026-06-01T00:00:00.000Z",
         updatedAt: "2026-06-02T00:00:00.000Z",
         preview: "Build a plan",

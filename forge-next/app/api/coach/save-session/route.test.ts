@@ -44,6 +44,7 @@ describe("POST /api/coach/save-session", () => {
 
   it("saves a snapshot for the authenticated coach", async () => {
     const snapshot = {
+      title: null,
       messages: [{ role: "user", content: "Hello" }],
       currentArtifact: null,
       planId: null,
@@ -65,6 +66,7 @@ describe("POST /api/coach/save-session", () => {
       "coach-1",
       "session-1",
       snapshot,
+      { generateTitle: false },
     );
   });
 
@@ -76,6 +78,7 @@ describe("POST /api/coach/save-session", () => {
         body: JSON.stringify({
           sessionId: "session-1",
           snapshot: {
+            title: null,
             messages: [],
             currentArtifact: null,
             planId: null,

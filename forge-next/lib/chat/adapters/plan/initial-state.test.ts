@@ -14,6 +14,7 @@ describe("createSessionWorkspaceState", () => {
         planId: null,
         artifactTitle: "Draft",
         contextFileIds: ["ctx-1"],
+        title: "Hypertrophy Block",
       },
     });
 

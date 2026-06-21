@@ -22,6 +22,7 @@ describe("buildSnapshotFromState", () => {
     };
 
     expect(buildSnapshotFromState(state)).toEqual({
+      title: null,
       messages: state.messages,
       currentArtifact: null,
       planId: "plan-1",

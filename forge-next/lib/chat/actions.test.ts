@@ -23,6 +23,7 @@ describe("saveSessionSnapshot", () => {
   it("saves a snapshot for the authenticated coach", async () => {
     mockSaveChatSession.mockResolvedValue({ status: "saved" });
     const snapshot = {
+      title: null,
       messages: [{ role: "user" as const, content: "Hello" }],
       currentArtifact: null,
       planId: null,
@@ -37,6 +38,7 @@ describe("saveSessionSnapshot", () => {
       "coach-1",
       "session-1",
       snapshot,
+      { generateTitle: true },
     );
   });
 
@@ -47,6 +49,7 @@ describe("saveSessionSnapshot", () => {
     });
 
     const result = await saveSessionSnapshot("session-1", {
+      title: null,
       messages: [{ role: "user", content: "Hello" }],
       currentArtifact: null,
       planId: null,

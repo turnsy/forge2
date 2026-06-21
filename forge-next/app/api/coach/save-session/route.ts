@@ -36,7 +36,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const result = await saveChatSession(auth.user.id, sessionId, snapshot);
+  const result = await saveChatSession(auth.user.id, sessionId, snapshot, {
+    generateTitle: false,
+  });
   if (result.status === "error") {
     return NextResponse.json(
       { ok: false, message: result.message },

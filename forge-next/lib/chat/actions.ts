@@ -9,7 +9,9 @@ export async function saveSessionSnapshot(
   snapshot: ChatSessionSnapshot,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const user = await requireRole("coach");
-  const result = await saveChatSession(user.id, sessionId, snapshot);
+  const result = await saveChatSession(user.id, sessionId, snapshot, {
+    generateTitle: true,
+  });
 
   if (result.status === "error") {
     return { ok: false, message: result.message };

@@ -1,5 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import {
+  deriveFallbackSessionTitle,
+  resolveSessionTitle,
+} from "@/lib/chat/session-title";
 
 type ChatSessionRow = {
   id: string;
@@ -33,7 +37,13 @@ export type LoadSessionResult =
   | { status: "error"; message: string };
 
 export type ListSessionsResult = {
-  sessions: { id: string; createdAt: string; updatedAt: string; preview: string }[];
+  sessions: {
+    id: string;
+    title: string;
+    createdAt: string;
+    updatedAt: string;
+    preview: string;
+  }[];
 };
 
 const PREVIEW_MAX_LENGTH = 120;
@@ -58,13 +68,18 @@ export async function saveChatSession(
   coachId: string,
   sessionId: string,
   snapshot: ChatSessionSnapshot,
+  options?: { generateTitle?: boolean },
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
+  const existingTitle = await getExistingSessionTitle(supabase, coachId, sessionId);
+  const title = await resolveSessionTitle(snapshot, existingTitle, options);
+  const snapshotToSave: ChatSessionSnapshot = { ...snapshot, title };
+
   const { error } = await supabase.from("chat_sessions").upsert(
     {
       id: sessionId,
       coach_id: coachId,
-      snapshot,
+      snapshot: snapshotToSave,
     },
     { onConflict: "id" },
   );
@@ -74,6 +89,26 @@ export async function saveChatSession(
   }
 
   return { status: "saved" };
+}
+
+async function getExistingSessionTitle(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  coachId: string,
+  sessionId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .select("snapshot")
+    .eq("id", sessionId)
+    .eq("coach_id", coachId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const snapshot = (data as { snapshot: ChatSessionSnapshot }).snapshot;
+  return snapshot.title?.trim() || null;
 }
 
 export async function loadChatSession(
@@ -130,6 +165,8 @@ export async function listRecentChatSessions(
   return {
     sessions: rows.map((row) => ({
       id: row.id,
+      title:
+        row.snapshot.title?.trim() || deriveFallbackSessionTitle(row.snapshot),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       preview: extractSessionPreview(row.snapshot),
