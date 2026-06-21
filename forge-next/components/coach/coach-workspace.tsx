@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
+import { SessionHistoryMobile } from "@/components/coach/session-history-mobile";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
@@ -45,16 +46,19 @@ function ChatWorkspaceShell({
   children,
   headerClassName,
   className = "",
+  headerStart,
 }: {
   state: PlanWorkspaceState;
   onReset: () => void;
   children: ReactNode;
   headerClassName: string;
   className?: string;
+  headerStart?: ReactNode;
 }) {
   return (
     <div className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}>
       <div className={headerClassName}>
+        {headerStart ?? <span />}
         <WorkspaceCloseButton
           variant="reset"
           disabled={isChatRunning(state)}
@@ -340,10 +344,26 @@ export function CoachWorkspace({
     }
   }, [activePlanId, initialPlanId, restart, router, state]);
 
+  const handleActiveSessionDeleted = useCallback(() => {
+    restart();
+  }, [restart]);
+
+  const mobileHistoryControl = isMobile ? (
+    <SessionHistoryMobile
+      activeSessionId={state.sessionId}
+      onActiveSessionDeleted={handleActiveSessionDeleted}
+    />
+  ) : null;
+
+  const mobileChatHeaderClass = `${MOBILE_CHAT_HEADER_CLASS} justify-between`;
+
   if (!state.hasStarted) {
     if (isMobile) {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
+          <div className={`${mobileChatHeaderClass} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}>
+            {mobileHistoryControl}
+          </div>
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
               Welcome back,{" "}
@@ -394,7 +414,8 @@ export function CoachWorkspace({
         <ChatWorkspaceShell
           state={state}
           onReset={handleClose}
-          headerClassName={MOBILE_CHAT_HEADER_CLASS}
+          headerClassName={mobileChatHeaderClass}
+          headerStart={mobileHistoryControl}
           className={MOBILE_WORKSPACE_X_PADDING_CLASS}
         >
           <CoachConversationPanel
@@ -439,7 +460,8 @@ export function CoachWorkspace({
           <ChatWorkspaceShell
             state={state}
             onReset={handleClose}
-            headerClassName={MOBILE_CHAT_HEADER_CLASS}
+            headerClassName={mobileChatHeaderClass}
+            headerStart={mobileHistoryControl}
             className={MOBILE_WORKSPACE_X_PADDING_CLASS}
           >
             <CoachConversationPanel

@@ -4,13 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const usePathname = vi.fn();
 const mockUseIsMobile = vi.fn(() => false);
+const mockPush = vi.fn();
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => mockUseIsMobile(),
 }));
 
+vi.mock("@/lib/chat/actions", () => ({
+  listTaskSessions: vi.fn(async () => ({ ok: true, sessions: [] })),
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => usePathname(),
+  useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("next/link", () => ({

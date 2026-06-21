@@ -150,6 +150,62 @@ export async function loadChatSession(
   };
 }
 
+export type RenameSessionResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export type DeleteSessionResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export async function renameChatSession(
+  coachId: string,
+  sessionId: string,
+  title: string,
+): Promise<RenameSessionResult> {
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    return { ok: false, message: "Title cannot be empty." };
+  }
+
+  const loadResult = await loadChatSession(coachId, sessionId);
+  if (loadResult.status === "not_found") {
+    return { ok: false, message: "Session not found." };
+  }
+  if (loadResult.status === "error") {
+    return { ok: false, message: loadResult.message };
+  }
+
+  const saveResult = await saveChatSession(coachId, sessionId, {
+    ...loadResult.session.snapshot,
+    title: trimmedTitle,
+  });
+
+  if (saveResult.status === "error") {
+    return { ok: false, message: saveResult.message };
+  }
+
+  return { ok: true };
+}
+
+export async function deleteChatSession(
+  coachId: string,
+  sessionId: string,
+): Promise<DeleteSessionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("chat_sessions")
+    .delete()
+    .eq("id", sessionId)
+    .eq("coach_id", coachId);
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  return { ok: true };
+}
+
 export async function listRecentChatSessions(
   coachId: string,
   limit = 20,

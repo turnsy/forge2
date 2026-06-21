@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockUpsert = vi.fn();
 const mockMaybeSingle = vi.fn();
+const mockDelete = vi.fn();
 const mockOrder = vi.fn();
 const mockLimit = vi.fn();
 const mockEqSecond = vi.fn();
@@ -24,14 +25,17 @@ vi.mock("@/utils/supabase/server", () => ({
     from: vi.fn(() => ({
       upsert: mockUpsert,
       select: mockSelect,
+      delete: mockDelete,
     })),
   })),
 }));
 
 import {
+  deleteChatSession,
   extractSessionPreview,
   listRecentChatSessions,
   loadChatSession,
+  renameChatSession,
   saveChatSession,
   saveSessionSnapshot,
 } from "@/lib/chat/session-storage";
@@ -281,5 +285,64 @@ describe("listRecentChatSessions", () => {
       },
     ]);
     expect(mockLimit).toHaveBeenCalledWith(5);
+  });
+});
+
+describe("renameChatSession", () => {
+  beforeEach(() => {
+    mockMaybeSingle.mockReset();
+    mockEqSecond.mockReset();
+    mockEqFirst.mockReset();
+    mockSelect.mockReset();
+    mockUpsert.mockReset();
+
+    mockEqSecond.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockEqFirst.mockReturnValue({ eq: mockEqSecond });
+    mockSelect.mockReturnValue({ eq: mockEqFirst });
+    mockUpsert.mockResolvedValue({ error: null });
+  });
+
+  it("updates the snapshot title", async () => {
+    const snapshot = createSnapshot();
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        id: "session-1",
+        snapshot,
+        created_at: "2026-06-01T00:00:00.000Z",
+        updated_at: "2026-06-02T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const result = await renameChatSession("coach-1", "session-1", "New title");
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      {
+        id: "session-1",
+        coach_id: "coach-1",
+        snapshot: { ...snapshot, title: "New title" },
+      },
+      { onConflict: "id" },
+    );
+  });
+});
+
+describe("deleteChatSession", () => {
+  beforeEach(() => {
+    mockDelete.mockReset();
+    mockEqSecond.mockReset();
+    mockEqFirst.mockReset();
+    mockDelete.mockReturnValue({ eq: mockEqFirst });
+    mockEqFirst.mockReturnValue({ eq: mockEqSecond });
+    mockEqSecond.mockResolvedValue({ error: null });
+  });
+
+  it("deletes the session for the coach", async () => {
+    const result = await deleteChatSession("coach-1", "session-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(mockEqFirst).toHaveBeenCalledWith("id", "session-1");
+    expect(mockEqSecond).toHaveBeenCalledWith("coach_id", "coach-1");
   });
 });
