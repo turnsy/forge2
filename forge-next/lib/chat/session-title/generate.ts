@@ -13,22 +13,10 @@ const SESSION_TITLE_SYSTEM = `You label coaching chat threads.
 Reply with only a short title (maximum ${SESSION_TITLE_MAX_WORDS} words).
 No quotes, labels, or explanation.`;
 
-export type SessionTitleFailureReason =
-  | "gateway_unconfigured"
-  | "empty_first_message"
-  | "api_error"
-  | "empty_model_output"
-  | "invalid_model_output";
-
-export type SessionTitleGenerationResult =
-  | { ok: true; title: string }
-  | { ok: false; reason: SessionTitleFailureReason; detail?: string };
-
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
   isGatewayConfigured?: () => boolean;
   createModel?: () => ReturnType<typeof createSessionTitleGatewayModel>;
-  onFailure?: (result: Extract<SessionTitleGenerationResult, { ok: false }>) => void;
 };
 
 function countUserMessages(snapshot: ChatSessionSnapshot): number {
@@ -120,20 +108,16 @@ export function shouldGenerateSessionTitle(
   return options?.generateTitle === true && countUserMessages(snapshot) === 1;
 }
 
-export async function generateSessionTitleWithResult(
+export async function generateSessionTitle(
   snapshot: ChatSessionSnapshot,
   deps: GenerateSessionTitleDeps = {},
-): Promise<SessionTitleGenerationResult> {
+): Promise<string> {
   const isGatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const generateTextFn = deps.generateTextFn ?? generateText;
   const firstMessage = getFirstUserMessageText(snapshot);
 
-  if (!isGatewayConfigured()) {
-    return { ok: false, reason: "gateway_unconfigured" };
-  }
-
-  if (!firstMessage) {
-    return { ok: false, reason: "empty_first_message" };
+  if (!isGatewayConfigured() || !firstMessage) {
+    return SESSION_FALLBACK_TITLE;
   }
 
   try {
@@ -147,44 +131,8 @@ export async function generateSessionTitleWithResult(
     });
 
     const raw = readGeneratedText(result);
-    if (!raw) {
-      return { ok: false, reason: "empty_model_output" };
-    }
-
-    const title = normalizeSessionTitle(raw);
-    if (!title) {
-      return {
-        ok: false,
-        reason: "invalid_model_output",
-        detail: raw,
-      };
-    }
-
-    return { ok: true, title };
-  } catch (error) {
-    return {
-      ok: false,
-      reason: "api_error",
-      detail: error instanceof Error ? error.message : "Unknown error",
-    };
+    return normalizeSessionTitle(raw) ?? SESSION_FALLBACK_TITLE;
+  } catch {
+    return SESSION_FALLBACK_TITLE;
   }
-}
-
-export async function generateSessionTitle(
-  snapshot: ChatSessionSnapshot,
-  deps: GenerateSessionTitleDeps = {},
-): Promise<string> {
-  const result = await generateSessionTitleWithResult(snapshot, deps);
-
-  if (result.ok) {
-    return result.title;
-  }
-
-  deps.onFailure?.(result);
-
-  if (process.env.NODE_ENV === "development") {
-    console.warn("[session-title] falling back to untitled", result);
-  }
-
-  return SESSION_FALLBACK_TITLE;
 }

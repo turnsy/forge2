@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
   generateSessionTitle,
-  generateSessionTitleWithResult,
   normalizeSessionTitle,
   shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title/generate";
@@ -92,55 +91,46 @@ describe("generateSessionTitle", () => {
     expect(title).toBe("Sky Appears Blue");
   });
 
-  it("rejects verbose meta responses", async () => {
-    await expect(
-      generateSessionTitleWithResult(
-        snapshot({
-          messages: [{ role: "user", content: "what color is the sky" }],
+  it("falls back for verbose meta responses", async () => {
+    const title = await generateSessionTitle(
+      snapshot({
+        messages: [{ role: "user", content: "what color is the sky" }],
+      }),
+      {
+        ...aiDeps,
+        generateTextFn: vi.fn().mockResolvedValue({
+          text: 'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
+          content: [],
         }),
-        {
-          ...aiDeps,
-          generateTextFn: vi.fn().mockResolvedValue({
-            text: 'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
-            content: [],
-          }),
-        },
-      ),
-    ).resolves.toEqual({
-      ok: false,
-      reason: "invalid_model_output",
-      detail:
-        'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
-    });
+      },
+    );
+
+    expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 
   it("falls back when gateway is unavailable", async () => {
-    await expect(
-      generateSessionTitleWithResult(
-        snapshot({
-          messages: [{ role: "user", content: "Build a plan" }],
-        }),
-        { isGatewayConfigured: () => false },
-      ),
-    ).resolves.toEqual({ ok: false, reason: "gateway_unconfigured" });
+    const title = await generateSessionTitle(
+      snapshot({
+        messages: [{ role: "user", content: "Build a plan" }],
+      }),
+      { isGatewayConfigured: () => false },
+    );
+
+    expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 
-  it("reports api errors", async () => {
-    await expect(
-      generateSessionTitleWithResult(
-        snapshot({
-          messages: [{ role: "user", content: "Build a plan" }],
-        }),
-        {
-          ...aiDeps,
-          generateTextFn: vi.fn().mockRejectedValue(new Error("gateway down")),
-        },
-      ),
-    ).resolves.toEqual({
-      ok: false,
-      reason: "api_error",
-      detail: "gateway down",
-    });
+  it("falls back on api errors", async () => {
+    const title = await generateSessionTitle(
+      snapshot({
+        messages: [{ role: "user", content: "Build a plan" }],
+      }),
+      {
+        ...aiDeps,
+        generateTextFn: vi.fn().mockRejectedValue(new Error("gateway down")),
+      },
+    );
+
+    expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 });
 
