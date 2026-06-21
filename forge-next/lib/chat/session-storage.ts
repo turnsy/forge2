@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 import {
-  deriveFallbackSessionTitle,
+  SESSION_FALLBACK_TITLE,
   resolveSessionTitle,
 } from "@/lib/chat/session-title";
 
@@ -165,8 +165,7 @@ export async function listRecentChatSessions(
   return {
     sessions: rows.map((row) => ({
       id: row.id,
-      title:
-        row.snapshot.title?.trim() || deriveFallbackSessionTitle(row.snapshot),
+      title: row.snapshot.title?.trim() || SESSION_FALLBACK_TITLE,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       preview: extractSessionPreview(row.snapshot),

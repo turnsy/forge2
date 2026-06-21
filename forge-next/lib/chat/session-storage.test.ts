@@ -9,17 +9,23 @@ const mockEqFirst = vi.fn();
 const mockSelect = vi.fn();
 
 vi.mock("@/lib/chat/session-title", () => ({
-  deriveFallbackSessionTitle: (snapshot: { messages: { content: string }[] }) =>
-    snapshot.messages[0]?.content ?? "Untitled conversation",
+  SESSION_FALLBACK_TITLE: "Untitled conversation",
   resolveSessionTitle: vi.fn(
     async (
-      snapshot: { title?: string | null; messages: { content: string }[] },
+      snapshot: { title?: string | null; messages: { role: string; content: string }[] },
       existingTitle?: string | null,
-    ) =>
-      snapshot.title?.trim() ||
-      existingTitle?.trim() ||
-      snapshot.messages[0]?.content ||
-      "Untitled conversation",
+      options?: { generateTitle?: boolean },
+    ) => {
+      if (existingTitle?.trim()) {
+        return existingTitle.trim();
+      }
+
+      if (options?.generateTitle !== true) {
+        return null;
+      }
+
+      return "Bench Press Block";
+    },
   ),
 }));
 
@@ -97,14 +103,16 @@ describe("saveChatSession", () => {
   it("upserts by session id and coach id", async () => {
     const snapshot = createSnapshot();
 
-    const result = await saveChatSession("coach-1", "session-1", snapshot);
+    const result = await saveChatSession("coach-1", "session-1", snapshot, {
+      generateTitle: true,
+    });
 
     expect(result).toEqual({ status: "saved" });
     expect(mockUpsert).toHaveBeenCalledWith(
       {
         id: "session-1",
         coach_id: "coach-1",
-        snapshot: { ...snapshot, title: "Build a plan" },
+        snapshot: { ...snapshot, title: "Bench Press Block" },
       },
       { onConflict: "id" },
     );
@@ -198,7 +206,7 @@ describe("listRecentChatSessions", () => {
     expect(result.sessions).toEqual([
       {
         id: "session-1",
-        title: "Build a plan",
+        title: "Untitled conversation",
         createdAt: "2026-06-01T00:00:00.000Z",
         updatedAt: "2026-06-02T00:00:00.000Z",
         preview: "Build a plan",

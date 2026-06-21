@@ -1,3 +1,5 @@
+export const SESSION_FALLBACK_TITLE = "Untitled conversation";
+
 export const SESSION_TITLE_MAX_CHARS = 80;
 
 export const SESSION_TITLE_PROMPT = `You label coaching chat threads in a workout-planning app.

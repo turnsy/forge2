@@ -2,13 +2,12 @@ import { generateText } from "ai";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import {
+  SESSION_FALLBACK_TITLE,
   SESSION_TITLE_MAX_CHARS,
   SESSION_TITLE_PROMPT,
 } from "@/lib/chat/session-title/constants";
 import type { ChatMessage } from "@/lib/chat/types";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-
-const PREVIEW_FALLBACK_MAX_LENGTH = 60;
 
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
@@ -16,8 +15,8 @@ export type GenerateSessionTitleDeps = {
   createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
 };
 
-export function hasAssistantReply(snapshot: ChatSessionSnapshot): boolean {
-  return snapshot.messages.some((message) => message.role === "assistant");
+export function countUserMessages(snapshot: ChatSessionSnapshot): number {
+  return snapshot.messages.filter((message) => message.role === "user").length;
 }
 
 export function formatMessageForTitle(message: ChatMessage): string {
@@ -66,27 +65,6 @@ export function normalizeSessionTitle(raw: string): string | null {
   return `${cleaned.slice(0, SESSION_TITLE_MAX_CHARS - 1).trimEnd()}…`;
 }
 
-export function deriveFallbackSessionTitle(snapshot: ChatSessionSnapshot): string {
-  const artifactTitle = snapshot.artifactTitle.trim();
-  if (artifactTitle) {
-    return artifactTitle;
-  }
-
-  const firstUserMessage = snapshot.messages.find(
-    (message) => message.role === "user",
-  );
-  if (firstUserMessage) {
-    const content = formatMessageForTitle(firstUserMessage);
-    if (content.length <= PREVIEW_FALLBACK_MAX_LENGTH) {
-      return content;
-    }
-
-    return `${content.slice(0, PREVIEW_FALLBACK_MAX_LENGTH - 1).trimEnd()}…`;
-  }
-
-  return "Untitled conversation";
-}
-
 export async function generateSessionTitle(
   snapshot: ChatSessionSnapshot,
   deps: GenerateSessionTitleDeps = {},
@@ -95,7 +73,7 @@ export async function generateSessionTitle(
   const generateTextFn = deps.generateTextFn ?? generateText;
 
   if (!isGatewayConfigured()) {
-    return deriveFallbackSessionTitle(snapshot);
+    return SESSION_FALLBACK_TITLE;
   }
 
   try {
@@ -109,19 +87,10 @@ export async function generateSessionTitle(
       temperature: 0.2,
     });
 
-    return (
-      normalizeSessionTitle(result.text) ?? deriveFallbackSessionTitle(snapshot)
-    );
+    return normalizeSessionTitle(result.text) ?? SESSION_FALLBACK_TITLE;
   } catch {
-    return deriveFallbackSessionTitle(snapshot);
+    return SESSION_FALLBACK_TITLE;
   }
-}
-
-export function isPersistedFallbackTitle(
-  title: string,
-  snapshot: ChatSessionSnapshot,
-): boolean {
-  return title === deriveFallbackSessionTitle(snapshot);
 }
 
 export async function resolveSessionTitle(
@@ -130,18 +99,16 @@ export async function resolveSessionTitle(
   options?: { generateTitle?: boolean },
   deps?: GenerateSessionTitleDeps,
 ): Promise<string | null> {
-  const preserved = snapshot.title?.trim() || existingTitle?.trim() || null;
-
-  if (options?.generateTitle === false) {
-    return preserved;
+  if (existingTitle?.trim()) {
+    return existingTitle.trim();
   }
 
-  if (preserved && !isPersistedFallbackTitle(preserved, snapshot)) {
-    return preserved;
-  }
-
-  if (!hasAssistantReply(snapshot)) {
+  if (options?.generateTitle !== true) {
     return null;
+  }
+
+  if (countUserMessages(snapshot) !== 1) {
+    return SESSION_FALLBACK_TITLE;
   }
 
   return generateSessionTitle(snapshot, deps);
