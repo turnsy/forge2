@@ -6,6 +6,9 @@ import {
 /** Positions the bordered overlay close control; inset matches mobile page padding. */
 export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-4 top-1 z-20";
 
+/** Mobile chat header row for the reset control. */
+export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
+
 /** Light separation between the view-artifact control and the composer. */
 export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "pb-2.5";
 

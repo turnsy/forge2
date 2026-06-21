@@ -5,12 +5,21 @@ import {
   getRunStatusLabel,
   isActiveRunStatus,
 } from "@/lib/chat/run-status-copy";
+import { hasVisibleChatContent } from "@/lib/chat/message-content";
 import type {
   ChatDisplayError,
   ChatMessage,
   ChatStatus,
   ChatWorkspacePhase,
 } from "@/lib/chat/types";
+
+function isRenderableMessage(message: ChatMessage): boolean {
+  if (message.role === "user") {
+    return true;
+  }
+
+  return hasVisibleChatContent(message.content);
+}
 
 export function ChatThread({
   messages,
@@ -25,11 +34,12 @@ export function ChatThread({
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
 }) {
+  const visibleStreamingText = streamingAssistantText.trim();
   const showStreaming =
-    streamingAssistantText.length > 0 &&
+    visibleStreamingText.length > 0 &&
     (messages.length === 0 ||
       messages[messages.length - 1]?.role !== "assistant" ||
-      messages[messages.length - 1]?.content !== streamingAssistantText);
+      messages[messages.length - 1]?.content.trim() !== visibleStreamingText);
 
   const showRunStatus =
     phase === "uploading" ||
@@ -50,14 +60,14 @@ export function ChatThread({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0">
-        {messages.map((message, index) => (
+        {messages.filter(isRenderableMessage).map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>
             <ChatMessageBody message={message} />
           </ChatBubble>
         ))}
         {showStreaming ? (
           <ChatBubble role="assistant" isStreaming>
-            <p className="whitespace-pre-wrap">{streamingAssistantText}</p>
+            <p className="whitespace-pre-wrap">{visibleStreamingText}</p>
           </ChatBubble>
         ) : null}
         {showRunStatus && statusLabel ? (
