@@ -1,6 +1,3 @@
-/** Fast/cheap model for one-shot session titles. Override with SESSION_TITLE_MODEL. */
-export const SESSION_TITLE_DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
-
 export const SESSION_TITLE_MAX_CHARS = 80;
 
 export const SESSION_TITLE_PROMPT = `You label coaching chat threads in a workout-planning app.

@@ -5,6 +5,7 @@ import {
   formatMessageForTitle,
   generateSessionTitle,
   hasAssistantReply,
+  isPersistedFallbackTitle,
   normalizeSessionTitle,
   resolveSessionTitle,
 } from "@/lib/chat/session-title";
@@ -103,7 +104,19 @@ describe("resolveSessionTitle", () => {
     ).resolves.toBe("Existing title");
   });
 
-  it("uses fallback when AI generation is disabled", async () => {
+  it("does not persist a fallback title on beacon saves", async () => {
+    await expect(
+      resolveSessionTitle(
+        snapshot({
+          messages: [{ role: "user", content: "Build a plan" }],
+        }),
+        null,
+        { generateTitle: false },
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it("keeps an existing title on beacon saves", async () => {
     await expect(
       resolveSessionTitle(
         snapshot({
@@ -112,10 +125,55 @@ describe("resolveSessionTitle", () => {
             { role: "assistant", content: "Sure." },
           ],
         }),
-        null,
+        "Bench Press Block",
         { generateTitle: false },
       ),
-    ).resolves.toBe("Build a plan");
+    ).resolves.toBe("Bench Press Block");
+  });
+
+  it("upgrades a persisted fallback title when AI generation is enabled", async () => {
+    const conversation = snapshot({
+      messages: [
+        { role: "user", content: "Build a 4-week bench press plan" },
+        { role: "assistant", content: "I can help with that." },
+      ],
+    });
+    const deps = {
+      isGatewayConfigured: () => true,
+      generateTextFn: vi.fn().mockResolvedValue({ text: "Bench Press Block" }),
+      createModel: () => "mock-model" as never,
+    };
+
+    await expect(
+      resolveSessionTitle(
+        conversation,
+        "Build a 4-week bench press plan",
+        { generateTitle: true },
+        deps,
+      ),
+    ).resolves.toBe("Bench Press Block");
+  });
+
+  it("generates an AI title after the first assistant reply", async () => {
+    const deps = {
+      isGatewayConfigured: () => true,
+      generateTextFn: vi.fn().mockResolvedValue({ text: "Bench Press Block" }),
+      createModel: () => "mock-model" as never,
+    };
+
+    await expect(
+      resolveSessionTitle(
+        snapshot({
+          messages: [
+            { role: "user", content: "Build a 4-week bench press plan" },
+            { role: "assistant", content: "I can help with that." },
+          ],
+        }),
+        null,
+        { generateTitle: true },
+        deps,
+      ),
+    ).resolves.toBe("Bench Press Block");
   });
 });
 
@@ -155,5 +213,20 @@ describe("hasAssistantReply", () => {
         }),
       ),
     ).toBe(true);
+  });
+});
+
+describe("isPersistedFallbackTitle", () => {
+  it("matches titles derived from the snapshot", () => {
+    const conversation = snapshot({
+      messages: [{ role: "user", content: "Build a hypertrophy block" }],
+    });
+
+    expect(
+      isPersistedFallbackTitle("Build a hypertrophy block", conversation),
+    ).toBe(true);
+    expect(isPersistedFallbackTitle("Hypertrophy Block", conversation)).toBe(
+      false,
+    );
   });
 });

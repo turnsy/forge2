@@ -1,6 +1,6 @@
 import { generateText } from "ai";
+import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
-import { createSessionTitleGatewayModel } from "@/lib/chat/session-title/gateway";
 import {
   SESSION_TITLE_MAX_CHARS,
   SESSION_TITLE_PROMPT,
@@ -13,7 +13,7 @@ const PREVIEW_FALLBACK_MAX_LENGTH = 60;
 export type GenerateSessionTitleDeps = {
   generateTextFn?: typeof generateText;
   isGatewayConfigured?: () => boolean;
-  createModel?: () => ReturnType<typeof createSessionTitleGatewayModel>;
+  createModel?: () => ReturnType<typeof createPlanChatGatewayModel>;
 };
 
 export function hasAssistantReply(snapshot: ChatSessionSnapshot): boolean {
@@ -99,7 +99,7 @@ export async function generateSessionTitle(
   }
 
   try {
-    const createModel = deps.createModel ?? createSessionTitleGatewayModel;
+    const createModel = deps.createModel ?? createPlanChatGatewayModel;
     const conversation = formatConversationForTitle(snapshot);
     const result = await generateTextFn({
       model: createModel(),
@@ -117,19 +117,32 @@ export async function generateSessionTitle(
   }
 }
 
+export function isPersistedFallbackTitle(
+  title: string,
+  snapshot: ChatSessionSnapshot,
+): boolean {
+  return title === deriveFallbackSessionTitle(snapshot);
+}
+
 export async function resolveSessionTitle(
   snapshot: ChatSessionSnapshot,
   existingTitle: string | null | undefined,
   options?: { generateTitle?: boolean },
-): Promise<string> {
-  const preserved = snapshot.title?.trim() || existingTitle?.trim();
-  if (preserved) {
+  deps?: GenerateSessionTitleDeps,
+): Promise<string | null> {
+  const preserved = snapshot.title?.trim() || existingTitle?.trim() || null;
+
+  if (options?.generateTitle === false) {
     return preserved;
   }
 
-  if (options?.generateTitle === false || !hasAssistantReply(snapshot)) {
-    return deriveFallbackSessionTitle(snapshot);
+  if (preserved && !isPersistedFallbackTitle(preserved, snapshot)) {
+    return preserved;
   }
 
-  return generateSessionTitle(snapshot);
+  if (!hasAssistantReply(snapshot)) {
+    return null;
+  }
+
+  return generateSessionTitle(snapshot, deps);
 }
