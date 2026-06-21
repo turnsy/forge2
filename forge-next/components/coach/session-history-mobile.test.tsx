@@ -1,20 +1,35 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SessionHistoryMobile } from "@/components/coach/session-history-mobile";
+import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
+import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
 
 const mockListTaskSessions = vi.fn();
+const mockPush = vi.fn();
 
 vi.mock("@/lib/chat/actions", () => ({
   listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
-describe("SessionHistoryMobile", () => {
+describe("SessionHistoryMobileToggle", () => {
+  it("toggles pressed state", async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+
+    render(<SessionHistoryMobileToggle open={false} onToggle={onToggle} />);
+
+    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+
+    expect(onToggle).toHaveBeenCalled();
+  });
+});
+
+describe("SessionHistoryMobilePanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListTaskSessions.mockResolvedValue({
@@ -29,38 +44,31 @@ describe("SessionHistoryMobile", () => {
     });
   });
 
-  it("opens the history modal from the History button", async () => {
-    const user = userEvent.setup();
+  it("renders the inline session list with fade rows", async () => {
+    render(<SessionHistoryMobilePanel onClose={vi.fn()} />);
 
-    render(<SessionHistoryMobile />);
-
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      await screen.findByText("Adjust weekly volume"),
-    ).toBeInTheDocument();
+    const row = await screen.findByText("Adjust weekly volume");
+    expect(row).toBeInTheDocument();
+    expect(row.closest("li")).toHaveClass("animate-fade-in");
   });
 
-  it("shows loading state in the modal", async () => {
-    const user = userEvent.setup();
+  it("shows loading state inline", () => {
     mockListTaskSessions.mockReturnValue(new Promise(() => {}));
 
-    render(<SessionHistoryMobile />);
-
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+    render(<SessionHistoryMobilePanel onClose={vi.fn()} />);
 
     expect(screen.getByLabelText("Loading conversations")).toBeInTheDocument();
   });
 
-  it("shows empty state in the modal", async () => {
+  it("closes history and navigates when a conversation is opened", async () => {
     const user = userEvent.setup();
-    mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
+    const onClose = vi.fn();
 
-    render(<SessionHistoryMobile />);
+    render(<SessionHistoryMobilePanel onClose={onClose} />);
 
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+    await user.click(await screen.findByText("Adjust weekly volume"));
 
-    expect(await screen.findByText("No conversations yet")).toBeInTheDocument();
+    expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(onClose).toHaveBeenCalled();
   });
 });

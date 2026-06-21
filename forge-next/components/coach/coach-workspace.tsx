@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
-import { SessionHistoryMobile } from "@/components/coach/session-history-mobile";
+import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
+import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
@@ -18,7 +19,7 @@ import {
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_CHAT_HEADER_CLASS,
+  MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -167,6 +168,7 @@ export function CoachWorkspace({
 
     return window.matchMedia("(max-width: 767px)").matches;
   });
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const initialSavedSnapshot =
     initialPlan != null
       ? createPlanSnapshot(initialPlan, initialPlan.name)
@@ -346,29 +348,94 @@ export function CoachWorkspace({
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();
+    setMobileHistoryOpen(false);
   }, [restart]);
 
-  const mobileHistoryControl = isMobile ? (
-    <SessionHistoryMobile
-      activeSessionId={state.sessionId}
-      onActiveSessionDeleted={handleActiveSessionDeleted}
+  const toggleMobileHistory = useCallback(() => {
+    setMobileHistoryOpen((current) => !current);
+  }, []);
+
+  const closeMobileHistory = useCallback(() => {
+    setMobileHistoryOpen(false);
+  }, []);
+
+  const mobileHistoryToggle = isMobile ? (
+    <SessionHistoryMobileToggle
+      open={mobileHistoryOpen}
+      onToggle={toggleMobileHistory}
     />
   ) : null;
 
-  const mobileChatHeaderClass = `${MOBILE_CHAT_HEADER_CLASS} justify-between`;
+  const mobileHistoryPanel = isMobile ? (
+    <SessionHistoryMobilePanel
+      activeSessionId={state.sessionId}
+      onActiveSessionDeleted={handleActiveSessionDeleted}
+      onClose={closeMobileHistory}
+    />
+  ) : null;
+
+  const mobileChatHeaderClass =
+    "flex shrink-0 items-center justify-between pb-2";
+
+  const mobileComposer = (
+    <ChatComposer
+      compact={state.hasStarted}
+      state={state}
+      composerKey={`${state.sessionId}-${state.messages.length}`}
+      onAttach={attachFiles}
+      onSend={handleSendMessage}
+      promptEnabled={promptEnabled}
+    />
+  );
+
+  const renderMobileChatBody = (
+    composerHeader?: ReactNode,
+  ) =>
+    mobileHistoryOpen ? (
+      <>
+        <div
+          className={`min-h-0 flex-1 overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
+        >
+          {mobileHistoryPanel}
+        </div>
+        <div
+          className={`shrink-0 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
+        >
+          {composerHeader}
+          {mobileComposer}
+        </div>
+      </>
+    ) : (
+      <CoachConversationPanel
+        state={state}
+        onAttach={attachFiles}
+        onSend={handleSendMessage}
+        promptEnabled={promptEnabled}
+        composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
+        composerHeader={composerHeader}
+      />
+    );
 
   if (!state.hasStarted) {
     if (isMobile) {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className={`${mobileChatHeaderClass} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}>
-            {mobileHistoryControl}
+            {mobileHistoryToggle}
           </div>
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
-            <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
-              Welcome back,{" "}
-              <span className={roleLinkClass(role)}>{firstName}</span>
-            </h1>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {mobileHistoryOpen ? (
+              <div className={`min-h-0 flex-1 overflow-hidden px-4 ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}>
+                {mobileHistoryPanel}
+              </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
+                <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
+                  Welcome back,{" "}
+                  <span className={roleLinkClass(role)}>{firstName}</span>
+                </h1>
+              </div>
+            )}
           </div>
           <div
             className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
@@ -415,16 +482,10 @@ export function CoachWorkspace({
           state={state}
           onReset={handleClose}
           headerClassName={mobileChatHeaderClass}
-          headerStart={mobileHistoryControl}
+          headerStart={mobileHistoryToggle}
           className={MOBILE_WORKSPACE_X_PADDING_CLASS}
         >
-          <CoachConversationPanel
-            state={state}
-            onAttach={attachFiles}
-            onSend={handleSendMessage}
-            promptEnabled={promptEnabled}
-            composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-          />
+          {renderMobileChatBody()}
         </ChatWorkspaceShell>
       );
     }
@@ -461,31 +522,24 @@ export function CoachWorkspace({
             state={state}
             onReset={handleClose}
             headerClassName={mobileChatHeaderClass}
-            headerStart={mobileHistoryControl}
+            headerStart={mobileHistoryToggle}
             className={MOBILE_WORKSPACE_X_PADDING_CLASS}
           >
-            <CoachConversationPanel
-              state={state}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              promptEnabled={promptEnabled}
-              composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-              composerHeader={
-                <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    fullWidth={false}
-                    icon={<EyeIcon />}
-                    aria-label="View artifact"
-                    onClick={() => setShowArtifact(true)}
-                  >
-                    View
-                  </Button>
-                </div>
-              }
-            />
+            {renderMobileChatBody(
+              <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  fullWidth={false}
+                  icon={<EyeIcon />}
+                  aria-label="View artifact"
+                  onClick={() => setShowArtifact(true)}
+                >
+                  View
+                </Button>
+              </div>,
+            )}
           </ChatWorkspaceShell>
         )}
       </div>

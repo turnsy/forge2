@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SessionListItem, type SessionListItemData } from "@/components/coach/session-list-item";
-import { Button, Spinner } from "@/components/ui";
+import { Button, List, Spinner } from "@/components/ui";
 import { listTaskSessions } from "@/lib/chat/actions";
 import { syncCoachSessionUrl } from "@/lib/chat/session-url";
+import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
 const EXPANDED_LIST_LIMIT = 50;
@@ -14,11 +15,15 @@ export function SessionHistoryList({
   activeSessionId,
   onActiveSessionDeleted,
   onExpand,
+  onSessionOpen,
+  variant = "compact",
   className = "",
 }: {
   activeSessionId?: string | null;
   onActiveSessionDeleted?: () => void;
   onExpand?: () => void;
+  onSessionOpen?: (sessionId: string) => void;
+  variant?: "compact" | "mobile";
   className?: string;
 }) {
   const router = useRouter();
@@ -53,7 +58,11 @@ export function SessionHistoryList({
   }, [loadSessions]);
 
   function handleOpen(sessionId: string) {
-    router.push(`/coach?sessionId=${sessionId}`);
+    if (sessionId !== resolvedActiveSessionId) {
+      router.push(`/coach?sessionId=${sessionId}`);
+    }
+
+    onSessionOpen?.(sessionId);
   }
 
   function handleRenamed(sessionId: string, title: string) {
@@ -107,23 +116,59 @@ export function SessionHistoryList({
     );
   }
 
-  const visibleSessions = showAll
-    ? sessions
-    : sessions.slice(0, INITIAL_VISIBLE_COUNT);
-  const canShowMore = !showAll && sessions.length > INITIAL_VISIBLE_COUNT;
+  const visibleSessions =
+    variant === "mobile" || showAll
+      ? sessions
+      : sessions.slice(0, INITIAL_VISIBLE_COUNT);
+  const canShowMore =
+    variant !== "mobile" && !showAll && sessions.length > INITIAL_VISIBLE_COUNT;
+
+  const listItems = visibleSessions.map((session, index) => (
+    <SessionListItem
+      key={session.id}
+      session={session}
+      isActive={session.id === resolvedActiveSessionId}
+      onOpen={handleOpen}
+      onRenamed={handleRenamed}
+      onDeleted={handleDeleted}
+      variant={variant}
+      appearIndex={variant === "mobile" ? index : undefined}
+    />
+  ));
+
+  if (variant === "mobile") {
+    return (
+      <List className={className}>
+        {listItems.map((item, index) => (
+          <li
+            key={visibleSessions[index].id}
+            className="list-none animate-fade-in"
+            style={{ animationDelay: `${staggerDelayMs(index)}ms` }}
+          >
+            {item}
+          </li>
+        ))}
+        {canShowMore ? (
+          <li className="list-none">
+            <button
+              type="button"
+              className="px-2 py-1.5 text-left text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
+              onClick={() => {
+                onExpand?.();
+                setShowAll(true);
+              }}
+            >
+              Show more →
+            </button>
+          </li>
+        ) : null}
+      </List>
+    );
+  }
 
   return (
     <div className={`flex flex-col gap-0.5 ${className}`.trim()}>
-      {visibleSessions.map((session) => (
-        <SessionListItem
-          key={session.id}
-          session={session}
-          isActive={session.id === resolvedActiveSessionId}
-          onOpen={handleOpen}
-          onRenamed={handleRenamed}
-          onDeleted={handleDeleted}
-        />
-      ))}
+      {listItems}
       {canShowMore ? (
         <button
           type="button"

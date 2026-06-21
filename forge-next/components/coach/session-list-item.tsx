@@ -18,12 +18,15 @@ export function SessionListItem({
   onOpen,
   onRenamed,
   onDeleted,
+  variant = "compact",
 }: {
   session: SessionListItemData;
   isActive?: boolean;
   onOpen: (sessionId: string) => void;
   onRenamed: (sessionId: string, title: string) => void;
   onDeleted: (sessionId: string) => void;
+  variant?: "compact" | "mobile";
+  appearIndex?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -45,10 +48,6 @@ export function SessionListItem({
   }, [isRenaming]);
 
   function handleOpen() {
-    if (isActive) {
-      return;
-    }
-
     onOpen(session.id);
   }
 
@@ -93,22 +92,26 @@ export function SessionListItem({
     }
   }
 
-  return (
-    <>
-      <div
-        role={isRenaming ? undefined : "button"}
-        tabIndex={isRenaming || isActive ? -1 : 0}
-        aria-current={isActive ? "true" : undefined}
-        className={[
-          "group flex items-center gap-1 rounded-xl px-2 py-1.5 text-sm transition",
-          isActive
-            ? "bg-glass text-surface-foreground"
-            : "text-surface-muted hover:bg-glass hover:text-surface-foreground",
-          isRenaming ? "" : "cursor-pointer",
-        ].join(" ")}
-        onClick={isRenaming ? undefined : handleOpen}
-        onKeyDown={handleRowKeyDown}
-      >
+  const rowClassName = [
+    "group flex items-center gap-1 text-sm transition",
+    variant === "mobile"
+      ? "rounded-[calc(var(--radius-card)-0.25rem)] px-3 py-3"
+      : "rounded-xl px-2 py-1.5",
+    isActive
+      ? "bg-glass text-surface-foreground"
+      : "text-surface-muted hover:bg-glass hover:text-surface-foreground",
+    isRenaming ? "" : "cursor-pointer",
+  ].join(" ");
+
+  const row = (
+    <div
+      role={isRenaming ? undefined : "button"}
+      tabIndex={isRenaming ? -1 : 0}
+      aria-current={isActive ? "true" : undefined}
+      className={rowClassName}
+      onClick={isRenaming ? undefined : handleOpen}
+      onKeyDown={handleRowKeyDown}
+    >
         {isRenaming ? (
           <>
             <input
@@ -194,6 +197,17 @@ export function SessionListItem({
           </>
         )}
       </div>
+  );
+
+  return (
+    <>
+      {variant === "mobile" ? (
+        <article className="rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+          {row}
+        </article>
+      ) : (
+        row
+      )}
 
       {deleteOpen ? (
         <SessionDeleteDialog

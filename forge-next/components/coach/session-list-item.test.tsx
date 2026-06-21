@@ -125,7 +125,7 @@ describe("SessionListItem", () => {
     expect(onDeleted).toHaveBeenCalledWith("session-1");
   });
 
-  it("does not open an active session", async () => {
+  it("still notifies onOpen for the active session", async () => {
     const user = userEvent.setup();
     const onOpen = vi.fn();
 
@@ -141,6 +141,6 @@ describe("SessionListItem", () => {
 
     await user.click(screen.getByText("Build a strength block"));
 
-    expect(onOpen).not.toHaveBeenCalled();
+    expect(onOpen).toHaveBeenCalledWith("session-1");
   });
 });
