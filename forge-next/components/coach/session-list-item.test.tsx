@@ -104,7 +104,7 @@ describe("SessionListItem", () => {
     expect(mockRenameTaskSession).not.toHaveBeenCalled();
   });
 
-  it("calls onDeleted after confirming delete", async () => {
+  it("calls onDeleted when delete is selected", async () => {
     const user = userEvent.setup();
     const onDeleted = vi.fn();
 
@@ -119,7 +119,6 @@ describe("SessionListItem", () => {
 
     await user.click(screen.getByRole("button", { name: "Conversation actions" }));
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
-    await user.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(mockDeleteTaskSession).toHaveBeenCalledWith("session-1");
     expect(onDeleted).toHaveBeenCalledWith("session-1");

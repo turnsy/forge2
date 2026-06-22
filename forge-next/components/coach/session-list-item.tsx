@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { EllipsisIcon } from "@/components/icons/ellipsis-icon";
-import { SessionDeleteDialog } from "@/components/coach/session-delete-dialog";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { IconButton, Spinner } from "@/components/ui";
-import { renameTaskSession } from "@/lib/chat/actions";
+import { deleteTaskSession, renameTaskSession } from "@/lib/chat/actions";
 import {
   sidebarItemActiveClassName,
   sidebarItemClassName,
@@ -36,7 +35,6 @@ export function SessionListItem({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(session.title);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -83,6 +81,15 @@ export function SessionListItem({
 
       setDraftTitle(session.title);
       setIsRenaming(false);
+    });
+  }
+
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteTaskSession(session.id);
+      if (result.ok) {
+        onDeleted(session.id);
+      }
     });
   }
 
@@ -197,7 +204,7 @@ export function SessionListItem({
             >
               <DropdownItem onSelect={handleOpen}>Open</DropdownItem>
               <DropdownItem onSelect={startRename}>Rename</DropdownItem>
-              <DropdownItem destructive onSelect={() => setDeleteOpen(true)}>
+              <DropdownItem destructive onSelect={handleDelete}>
                 Delete
               </DropdownItem>
             </Dropdown>
@@ -206,24 +213,11 @@ export function SessionListItem({
       </div>
   );
 
-  return (
-    <>
-      {variant === "mobile" ? (
-        <article className="rounded-card border border-glass-border bg-glass px-2 py-1.5 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
-          {row}
-        </article>
-      ) : (
-        row
-      )}
-
-      {deleteOpen ? (
-        <SessionDeleteDialog
-          sessionId={session.id}
-          title={session.title}
-          onClose={() => setDeleteOpen(false)}
-          onDeleted={() => onDeleted(session.id)}
-        />
-      ) : null}
-    </>
+  return variant === "mobile" ? (
+    <article className="rounded-card border border-glass-border bg-glass px-2 py-1.5 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+      {row}
+    </article>
+  ) : (
+    row
   );
 }
