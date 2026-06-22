@@ -44,6 +44,26 @@ describe("ChatThread", () => {
     expect(screen.getByText(/Required/)).toBeInTheDocument();
   });
 
+  it("shows interrupted-run errors after the stream ends", () => {
+    render(
+      <ChatThread
+        messages={[{ role: "user", content: "Build from my sheet" }]}
+        streamingAssistantText=""
+        runStatus="error"
+        errors={[
+          {
+            code: "STREAM_INTERRUPTED",
+            message: "The request stopped before finishing.",
+          },
+        ]}
+        phase="error"
+      />,
+    );
+
+    expect(screen.getByText(/stopped before finishing/i)).toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
+  });
+
   it("does not render whitespace-only assistant messages", () => {
     const { container } = render(
       <ChatThread
