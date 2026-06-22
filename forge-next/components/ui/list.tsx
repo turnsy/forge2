@@ -18,8 +18,18 @@ const mainContentClass =
 const interactiveClass =
   "rounded-[calc(var(--radius-card)-0.25rem)] transition hover:bg-glass-focus/40 md:-m-1 md:p-1";
 
-export function List({ children }: { children: ReactNode }) {
-  return <ul className="flex flex-col gap-3">{children}</ul>;
+export function List({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <ul className={`flex flex-col gap-3${className ? ` ${className}` : ""}`}>
+      {children}
+    </ul>
+  );
 }
 
 export function ListRow({

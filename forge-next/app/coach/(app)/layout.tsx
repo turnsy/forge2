@@ -1,4 +1,7 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
+import { CoachAppContent } from "@/components/coach/coach-app-content";
+import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { requireRole } from "@/lib/auth/session";
 
 export default async function CoachAppLayout({
@@ -10,9 +13,9 @@ export default async function CoachAppLayout({
 
   return (
     <AppShell role="coach" fullName={user.fullName} email={user.email}>
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-x-visible overflow-y-auto">
-        {children}
-      </div>
+      <Suspense fallback={<CoachSessionLoadingView />}>
+        <CoachAppContent>{children}</CoachAppContent>
+      </Suspense>
     </AppShell>
   );
 }

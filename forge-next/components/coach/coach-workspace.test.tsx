@@ -6,6 +6,8 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
+const mockRefresh = vi.fn();
 const mockUseIsMobile = vi.fn(() => false);
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
@@ -17,7 +19,16 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace,
+    refresh: mockRefresh,
+  }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock("@/lib/chat/actions", () => ({
+  listTaskSessions: vi.fn(async () => ({ ok: true, sessions: [] })),
 }));
 
 const mockSavePlan = vi.fn();
@@ -157,7 +168,7 @@ describe("CoachWorkspace layout", () => {
     expect(container.innerHTML).toContain("!max-w-none");
   });
 
-  it("restarts workspace on close from coach home", async () => {
+  it("navigates to coach home on reset", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -171,7 +182,9 @@ describe("CoachWorkspace layout", () => {
     render(<CoachWorkspace firstName="Alex" role="coach" />);
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
-    expect(mockRestart).toHaveBeenCalledOnce();
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalledOnce();
+    expect(mockRestart).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
   });
 
@@ -300,6 +313,35 @@ describe("CoachWorkspace layout", () => {
     expect(
       screen.queryByRole("button", { name: "Close artifact" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("closes mobile history when reset is pressed while history is open", async () => {
+    const user = userEvent.setup();
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+    expect(screen.getByRole("button", { name: "Conversation history" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
+
+    expect(screen.getByRole("button", { name: "Conversation history" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(mockRestart).not.toHaveBeenCalled();
   });
 
   it("navigates to plan detail on close when a saved plan is loaded", async () => {

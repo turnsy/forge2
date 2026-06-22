@@ -30,4 +30,5 @@ export { List, ListRow } from "./list";
 export { Tabs, TabList, Tab, TabPanel } from "./tabs";
 export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
+export { Dropdown, DropdownItem } from "./dropdown";
 export { ChatBubble } from "./chat-bubble";

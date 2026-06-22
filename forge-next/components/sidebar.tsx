@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
+import { SessionHistorySidebar } from "@/components/coach/session-history-sidebar";
 import { SidebarProfileMenu } from "@/components/sidebar-profile-menu";
 import { IconButton } from "@/components/ui";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
@@ -21,7 +22,9 @@ export function Sidebar({
 }) {
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const navItems = roleNavItems[role];
+  const showHistory = role === "coach";
 
   if (isMobile) {
     return null;
@@ -36,7 +39,7 @@ export function Sidebar({
     >
       <div
         className={[
-          "flex items-center px-3 py-4",
+          "flex shrink-0 items-center px-3 py-4",
           collapsed ? "justify-center" : "justify-between gap-2",
         ].join(" ")}
       >
@@ -55,27 +58,46 @@ export function Sidebar({
         />
       </div>
 
-      <nav
+      <div
         className={[
-          "flex flex-1 flex-col gap-1 py-3",
-          collapsed ? "px-2" : "px-3",
+          "flex min-h-0 flex-1 flex-col",
+          historyExpanded ? "overflow-y-auto" : "",
         ].join(" ")}
       >
-        {navItems.map((item) => (
-          <SidebarNavLink
-            key={item.href}
-            href={item.href}
-            icon={renderNavIcon(item.icon)}
-            exact={item.exact}
-            collapsed={collapsed}
-          >
-            {item.label}
-          </SidebarNavLink>
-        ))}
-      </nav>
+        <nav
+          className={[
+            "flex shrink-0 flex-col gap-1 py-3",
+            collapsed ? "px-2" : "px-3",
+          ].join(" ")}
+        >
+          {navItems.map((item) => (
+            <SidebarNavLink
+              key={item.href}
+              href={item.href}
+              icon={renderNavIcon(item.icon)}
+              exact={item.exact}
+              collapsed={collapsed}
+            >
+              {item.label}
+            </SidebarNavLink>
+          ))}
+
+          {showHistory ? (
+            <SessionHistorySidebar
+              collapsed={collapsed}
+              expanded={historyExpanded}
+              onExpand={() => setHistoryExpanded(true)}
+            />
+          ) : null}
+        </nav>
+
+        {historyExpanded ? null : <div className="flex-1" />}
+      </div>
 
       <div
-        className={["mt-auto py-3", collapsed ? "px-2" : "px-3"].join(" ")}
+        className={["mt-auto shrink-0 py-3", collapsed ? "px-2" : "px-3"].join(
+          " ",
+        )}
       >
         <SidebarProfileMenu
           role={role}

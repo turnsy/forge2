@@ -119,3 +119,25 @@ describe("syncCoachSessionUrl", () => {
     expect(replaceState).not.toHaveBeenCalled();
   });
 });
+
+describe("hasCoachSessionInUrl", () => {
+  it("returns false when sessionId is absent", () => {
+    vi.stubGlobal("window", {
+      location: {
+        href: "https://example.com/coach",
+      },
+    });
+
+    expect(hasCoachSessionInUrl()).toBe(false);
+  });
+
+  it("returns true when sessionId is present", () => {
+    vi.stubGlobal("window", {
+      location: {
+        href: "https://example.com/coach?sessionId=session-42",
+      },
+    });
+
+    expect(hasCoachSessionInUrl()).toBe(true);
+  });
+});
