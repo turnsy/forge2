@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  hasCoachSessionInUrl,
   syncCoachSessionUrl,
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";

@@ -37,3 +37,11 @@ export function syncCoachWorkspaceUrl(update: CoachWorkspaceUrlUpdate = {}): voi
 export function syncCoachSessionUrl(sessionId: string | null): void {
   syncCoachWorkspaceUrl({ sessionId });
 }
+
+export function hasCoachSessionInUrl(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return new URL(window.location.href).searchParams.has("sessionId");
+}

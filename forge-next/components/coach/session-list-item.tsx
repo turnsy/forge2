@@ -39,12 +39,6 @@ export function SessionListItem({
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!isRenaming) {
-      setDraftTitle(session.title);
-    }
-  }, [isRenaming, session.title]);
-
-  useEffect(() => {
     if (isRenaming) {
       inputRef.current?.focus();
       inputRef.current?.select();

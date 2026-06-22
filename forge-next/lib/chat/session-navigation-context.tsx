@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -20,22 +19,16 @@ const SessionNavigationContext =
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
-  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const currentSessionId = searchParams.get("sessionId");
+  const pendingSessionId =
+    targetSessionId !== null && targetSessionId !== currentSessionId
+      ? targetSessionId
+      : null;
 
   const startSessionNavigation = useCallback((sessionId: string) => {
-    setPendingSessionId(sessionId);
+    setTargetSessionId(sessionId);
   }, []);
-
-  useEffect(() => {
-    if (!pendingSessionId) {
-      return;
-    }
-
-    const currentSessionId = searchParams.get("sessionId");
-    if (currentSessionId === pendingSessionId) {
-      setPendingSessionId(null);
-    }
-  }, [pendingSessionId, searchParams]);
 
   return (
     <SessionNavigationContext.Provider

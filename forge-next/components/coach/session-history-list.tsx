@@ -66,8 +66,31 @@ export function SessionHistoryList({
   }, []);
 
   useEffect(() => {
-    void loadSessions();
-  }, [loadSessions]);
+    let cancelled = false;
+
+    async function load() {
+      const result = await listTaskSessions(EXPANDED_LIST_LIMIT);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!result.ok) {
+        setError(result.message);
+        setSessions([]);
+      } else {
+        setSessions(result.sessions);
+      }
+
+      setLoading(false);
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleOpen(sessionId: string) {
     if (sessionId !== resolvedActiveSessionId) {
