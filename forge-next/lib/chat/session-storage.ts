@@ -92,6 +92,7 @@ export async function saveChatSession(
       id: sessionId,
       coach_id: coachId,
       snapshot: snapshotToSave,
+      updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },
   );

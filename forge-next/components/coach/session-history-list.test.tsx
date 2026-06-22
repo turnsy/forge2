@@ -65,4 +65,30 @@ describe("SessionHistoryList integration", () => {
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
     expect(mockRefresh).toHaveBeenCalled();
   });
+
+  it("sorts sessions by updatedAt descending", async () => {
+    mockListTaskSessions.mockResolvedValue({
+      ok: true,
+      sessions: [
+        {
+          id: "session-2",
+          title: "Older conversation",
+          updatedAt: "2026-06-20T00:00:00.000Z",
+        },
+        {
+          id: "session-1",
+          title: "Newer conversation",
+          updatedAt: "2026-06-21T00:00:00.000Z",
+        },
+      ],
+    });
+
+    render(<SessionHistoryList />);
+
+    const titles = await screen.findAllByText(/conversation$/i);
+    expect(titles.map((node) => node.textContent)).toEqual([
+      "Newer conversation",
+      "Older conversation",
+    ]);
+  });
 });

@@ -12,7 +12,11 @@ vi.mock("@/lib/chat/actions", () => ({
 }));
 
 describe("SessionListItem", () => {
-  const session = { id: "session-1", title: "Build a strength block" };
+  const session = {
+    id: "session-1",
+    title: "Build a strength block",
+    updatedAt: "2026-06-02T00:00:00.000Z",
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();

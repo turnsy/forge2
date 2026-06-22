@@ -61,7 +61,12 @@ export function SessionHistoryList({
       return;
     }
 
-    setSessions(result.sessions);
+    setSessions(
+      [...result.sessions].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      ),
+    );
     setLoading(false);
   }, []);
 
@@ -81,9 +86,16 @@ export function SessionHistoryList({
 
   function handleRenamed(sessionId: string, title: string) {
     setSessions((current) =>
-      current.map((session) =>
-        session.id === sessionId ? { ...session, title } : session,
-      ),
+      [...current]
+        .map((session) =>
+          session.id === sessionId
+            ? { ...session, title, updatedAt: new Date().toISOString() }
+            : session,
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        ),
     );
   }
 

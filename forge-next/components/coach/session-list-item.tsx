@@ -14,6 +14,7 @@ import {
 export type SessionListItemData = {
   id: string;
   title: string;
+  updatedAt: string;
 };
 
 export function SessionListItem({
