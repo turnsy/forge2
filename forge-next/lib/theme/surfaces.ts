@@ -2,7 +2,7 @@ import type { UserRole } from "@/lib/auth/types";
 import { radius } from "@/lib/theme/tokens";
 import { roleBorderClass } from "@/lib/theme/roles";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "plain" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "plain" | "dashed" | "danger";
 export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
 export type PillTone = "default" | "danger";
@@ -16,6 +16,8 @@ const buttonVariantClasses: Record<ButtonVariant, string> = {
     "border border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md hover:bg-glass-focus",
   ghost: "glass-button-ghost",
   plain: plainIconControlClasses,
+  dashed:
+    "border border-dashed border-glass-border text-surface-muted hover:bg-glass hover:text-surface-foreground",
   danger:
     "border border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md hover:bg-danger-muted/80",
 };

@@ -596,4 +596,128 @@ describe("CoachEditableDayView", () => {
       "pointer-events-none",
     );
   });
+
+  it("opens video link modal when the video button is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getAllByLabelText("Add video link")[0]);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Video Link")).toBeInTheDocument();
+    expect(screen.getByLabelText("Video link")).toHaveValue("");
+    expect(
+      screen.getByLabelText("Add to all occurrences of this exercise"),
+    ).not.toBeChecked();
+  });
+
+  it("prefills the modal when editing an existing video link", async () => {
+    const user = userEvent.setup();
+    const plan = makePlan();
+    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/existing";
+
+    render(
+      <CoachEditableDayView
+        plan={plan}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getAllByLabelText("Add video link")[0]);
+
+    expect(screen.getByLabelText("Video link")).toHaveValue("https://youtu.be/existing");
+  });
+
+  it("sets videoUrl on confirm for the current exercise", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getAllByLabelText("Add video link")[0]);
+    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/demo");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/demo");
+    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("applies videoUrl to all same-named exercises when add to all is checked", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    const plan = makePlan();
+    plan.weeks[0].days.push({
+      index: 2,
+      code: "w1d2",
+      exercises: [
+        {
+          name: "Bench Press",
+          sets: [makeSet("set-4", 5, 225)],
+        },
+      ],
+    });
+
+    render(
+      <CoachEditableDayView
+        plan={plan}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getAllByLabelText("Add video link")[0]);
+    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/shared");
+    await user.click(
+      screen.getByLabelText("Add to all occurrences of this exercise"),
+    );
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[1].exercises[0].videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+  });
+
+  it("closes the modal without changes when cancel is clicked", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makePlan()}
+        weekIndex={1}
+        dayIndex={1}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getAllByLabelText("Add video link")[0]);
+    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/demo");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onPlanChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });

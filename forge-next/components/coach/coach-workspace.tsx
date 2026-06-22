@@ -253,8 +253,17 @@ export function CoachWorkspace({
   const handlePlanChange = useCallback(
     (plan: WorkoutPlan) => {
       setArtifact(plan);
+      resetSaveStatus();
     },
-    [setArtifact],
+    [resetSaveStatus, setArtifact],
+  );
+
+  const handleTitleChange = useCallback(
+    (title: string) => {
+      setArtifactTitle(title);
+      resetSaveStatus();
+    },
+    [resetSaveStatus, setArtifactTitle],
   );
 
   const handleSave = useCallback(async () => {
@@ -419,7 +428,7 @@ export function CoachWorkspace({
                 saveStatus={saveStatus}
                 saveError={saveError}
                 onBackClick={handleBackClick}
-                onTitleChange={setArtifactTitle}
+                onTitleChange={handleTitleChange}
                 onSave={handleSave}
                 disabled={isChatRunning(state)}
                 onPlanChange={handlePlanChange}
@@ -490,7 +499,7 @@ export function CoachWorkspace({
               saveStatus={saveStatus}
               saveError={saveError}
               onBackClick={handleBackClick}
-              onTitleChange={setArtifactTitle}
+              onTitleChange={handleTitleChange}
               onSave={handleSave}
               disabled={isChatRunning(state)}
               onPlanChange={handlePlanChange}

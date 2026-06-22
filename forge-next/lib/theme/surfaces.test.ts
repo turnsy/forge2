@@ -48,6 +48,11 @@ describe("surface theme helpers", () => {
     );
   });
 
+  it("returns dashed icon button styling for empty-state controls", () => {
+    expect(iconButtonVariantClass("dashed", "sm")).toContain("border-dashed");
+    expect(iconButtonVariantClass("dashed", "sm")).toContain("text-surface-muted");
+  });
+
   it("reserves left padding for the overlay back control", () => {
     expect(pageBackGutterReserveClass()).toBe("pl-12");
   });

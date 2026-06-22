@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
+import { VideoIcon } from "@/components/icons/video-icon";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { CoachLockedDayView } from "@/components/plan/coach-locked-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
-import { Button, Input, Message } from "@/components/ui";
+import { Button, IconButton, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
 import {
   buildActualFromInputs,
@@ -232,6 +233,33 @@ function AthleteExerciseNotes({ notes }: { notes?: string }) {
   return <p className="text-sm text-surface-muted">{notes.trim()}</p>;
 }
 
+function AthleteExerciseHeader({
+  name,
+  videoUrl,
+}: {
+  name: string;
+  videoUrl?: string;
+}) {
+  if (!videoUrl) {
+    return (
+      <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
+      <IconButton
+        variant="ghost"
+        size="sm"
+        icon={<VideoIcon className="h-4 w-4" />}
+        aria-label="Watch exercise video"
+        onClick={() => window.open(videoUrl, "_blank", "noopener,noreferrer")}
+      />
+    </div>
+  );
+}
+
 function AthleteSetNotes({ notes }: { notes?: string }) {
   if (!notes) {
     return null;
@@ -302,9 +330,7 @@ function AthleteReadOnlyDayContent({ day }: { day: Day }) {
           key={`${exercise.name}-${exerciseIdx}`}
           className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
         >
-          <h2 className="text-base font-semibold text-surface-foreground">
-            {exercise.name}
-          </h2>
+          <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
           <AthleteExerciseNotes notes={exercise.notes} />
           <div className="space-y-3">
             {exercise.sets.map((set, setIdx) => {
@@ -663,9 +689,7 @@ function AthleteEditableDayContent({
               className={exerciseCardClassName(exerciseComplete)}
               data-exercise-complete={exerciseComplete ? "true" : "false"}
             >
-              <h2 className="text-base font-semibold text-surface-foreground">
-                {exercise.name}
-              </h2>
+              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
               <AthleteExerciseNotes notes={exercise.notes} />
               <div className="space-y-3">
                 {exercise.sets.map((savedSet, setIdx) => {
