@@ -25,6 +25,7 @@ export function applyExerciseVideoLink(
     for (const week of newPlan.weeks) {
       for (const day of week.days) {
         for (const exercise of day.exercises) {
+          // Match by name for now; switch to exercise IDs once all exercises have stable ids.
           if (exercise.name === options.exerciseName) {
             exercise.videoUrl = normalizedUrl;
           }

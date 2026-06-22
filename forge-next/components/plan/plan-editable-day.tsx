@@ -384,16 +384,11 @@ function EditableExerciseBlock({
         <div className="flex shrink-0 items-center gap-1">
           {onNeedVideoLink ? (
             <IconButton
-              variant={exercise.videoUrl ? "ghost" : "plain"}
+              variant={exercise.videoUrl ? "ghost" : "dashed"}
               size="sm"
               icon={<VideoIcon className="h-4 w-4" />}
               aria-label="Add video link"
               disabled={disabled || !isExerciseEditable}
-              className={
-                exercise.videoUrl
-                  ? undefined
-                  : "border border-dashed border-glass-border text-surface-muted"
-              }
               onClick={() =>
                 onNeedVideoLink(exerciseIndex, exercise.name, exercise.videoUrl)
               }
