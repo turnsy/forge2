@@ -104,6 +104,25 @@ describe("SessionListItem", () => {
     expect(mockRenameTaskSession).not.toHaveBeenCalled();
   });
 
+  it("renders delete in red in the dropdown", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionListItem
+        session={session}
+        onOpen={vi.fn()}
+        onRenamed={vi.fn()}
+        onDeleted={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Conversation actions" }));
+
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveClass(
+      "text-danger",
+    );
+  });
+
   it("calls onDeleted when delete is selected", async () => {
     const user = userEvent.setup();
     const onDeleted = vi.fn();

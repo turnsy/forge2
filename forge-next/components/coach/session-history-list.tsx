@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem, type SessionListItemData } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
 import { listTaskSessions } from "@/lib/chat/actions";
@@ -11,6 +12,19 @@ import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
 const EXPANDED_LIST_LIMIT = 50;
+
+function ShowMoreButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Show more conversations"
+      className="flex w-full min-h-9 items-center justify-center rounded-xl px-4 py-1.5 text-surface-muted transition hover:bg-glass hover:text-surface-foreground"
+      onClick={onClick}
+    >
+      <ChevronDownIcon className="h-4 w-4" />
+    </button>
+  );
+}
 
 export function SessionHistoryList({
   activeSessionId,
@@ -154,16 +168,12 @@ export function SessionHistoryList({
         ))}
         {canShowMore ? (
           <li className="list-none">
-            <button
-              type="button"
-              className="px-2 py-1.5 text-left text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
+            <ShowMoreButton
               onClick={() => {
                 onExpand?.();
                 setShowAll(true);
               }}
-            >
-              Show more →
-            </button>
+            />
           </li>
         ) : null}
       </List>
@@ -174,16 +184,12 @@ export function SessionHistoryList({
     <div className={`flex flex-col gap-1 ${className}`.trim()}>
       {listItems}
       {canShowMore ? (
-        <button
-          type="button"
-          className="rounded-xl px-4 py-1.5 text-left text-sm font-semibold min-h-9 text-surface-muted transition hover:bg-glass hover:text-surface-foreground"
+        <ShowMoreButton
           onClick={() => {
             onExpand?.();
             setShowAll(true);
           }}
-        >
-          Show more →
-        </button>
+        />
       ) : null}
     </div>
   );

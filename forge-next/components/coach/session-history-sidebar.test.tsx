@@ -103,7 +103,9 @@ describe("SessionHistorySidebar", () => {
     expect(screen.getByText("Conversation 5")).toBeInTheDocument();
     expect(screen.queryByText("Conversation 6")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Show more/i }));
+    await user.click(
+      screen.getByRole("button", { name: "Show more conversations" }),
+    );
 
     expect(onExpand).toHaveBeenCalled();
     await waitFor(() => {

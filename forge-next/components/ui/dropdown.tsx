@@ -15,7 +15,13 @@ import {
 import { createPortal } from "react-dom";
 
 const menuItemClass =
-  "flex w-full items-center rounded-lg px-3 py-1.5 text-left text-sm font-medium text-surface-muted transition hover:bg-glass hover:text-surface-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+  "flex w-full items-center rounded-lg px-3 py-1.5 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+
+const defaultMenuItemClass =
+  `${menuItemClass} text-surface-muted hover:bg-glass hover:text-surface-foreground`;
+
+const destructiveMenuItemClass =
+  `${menuItemClass} text-danger hover:bg-glass hover:text-danger`;
 
 const DropdownMenuContext = createContext<(() => void) | null>(null);
 
@@ -188,10 +194,7 @@ export function DropdownItem({
     <button
       type="button"
       role="menuitem"
-      className={[
-        menuItemClass,
-        destructive ? "text-red-400 hover:text-red-300" : "",
-      ].join(" ")}
+      className={destructive ? destructiveMenuItemClass : defaultMenuItemClass}
       onClick={(event) => {
         event.stopPropagation();
         onSelect();
