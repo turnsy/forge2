@@ -66,9 +66,8 @@ export function Sidebar({
       >
         <nav
           className={[
-            "flex flex-col gap-1 py-3",
+            "flex shrink-0 flex-col gap-1 py-3",
             collapsed ? "px-2" : "px-3",
-            historyExpanded ? "" : "flex-1",
           ].join(" ")}
         >
           {navItems.map((item) => (
@@ -82,15 +81,17 @@ export function Sidebar({
               {item.label}
             </SidebarNavLink>
           ))}
+
+          {showHistory ? (
+            <SessionHistorySidebar
+              collapsed={collapsed}
+              expanded={historyExpanded}
+              onExpand={() => setHistoryExpanded(true)}
+            />
+          ) : null}
         </nav>
 
-        {showHistory ? (
-          <SessionHistorySidebar
-            collapsed={collapsed}
-            expanded={historyExpanded}
-            onExpand={() => setHistoryExpanded(true)}
-          />
-        ) : null}
+        {historyExpanded ? null : <div className="flex-1" />}
       </div>
 
       <div

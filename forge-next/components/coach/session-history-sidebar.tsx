@@ -5,7 +5,6 @@ import { SessionHistoryList } from "@/components/coach/session-history-list";
 
 export function SessionHistorySidebar({
   collapsed,
-  expanded,
   onExpand,
 }: {
   collapsed: boolean;
@@ -18,17 +17,14 @@ export function SessionHistorySidebar({
 
   return (
     <section
-      className={[
-        "flex min-h-0 flex-col gap-1 border-t border-surface-divider pt-3",
-        expanded ? "" : "",
-      ].join(" ")}
+      className="flex flex-col gap-1"
       aria-label="Conversation history"
     >
-      <div className="flex items-center gap-2 px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-surface-muted">
-        <HistoryIcon className="h-3.5 w-3.5" />
+      <div className="flex items-center gap-3 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-surface-muted">
+        <HistoryIcon className="h-4 w-4 shrink-0" />
         <span>History</span>
       </div>
-      <SessionHistoryList className="px-1" onExpand={onExpand} />
+      <SessionHistoryList onExpand={onExpand} />
     </section>
   );
 }

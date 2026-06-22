@@ -93,10 +93,10 @@ export function SessionListItem({
   }
 
   const rowClassName = [
-    "group flex items-center gap-1 text-sm transition",
+    "group flex w-full items-center text-sm transition",
     variant === "mobile"
-      ? "rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
-      : "rounded-xl px-2 py-1.5",
+      ? "gap-1 rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
+      : "gap-3 rounded-xl px-4 py-1.5 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
     isActive
       ? "bg-glass text-surface-foreground"
       : "text-surface-muted hover:bg-glass hover:text-surface-foreground",
@@ -165,7 +165,7 @@ export function SessionListItem({
           </>
         ) : (
           <>
-            <span className="min-w-0 flex-1 truncate px-1">{session.title}</span>
+            <span className="min-w-0 flex-1 truncate">{session.title}</span>
             <Dropdown
               menuLabel="Conversation actions"
               side={variant === "mobile" ? "bottom" : "top"}

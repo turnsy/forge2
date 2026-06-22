@@ -171,12 +171,12 @@ export function SessionHistoryList({
   }
 
   return (
-    <div className={`flex flex-col gap-0.5 ${className}`.trim()}>
+    <div className={`flex flex-col gap-1 ${className}`.trim()}>
       {listItems}
       {canShowMore ? (
         <button
           type="button"
-          className="px-2 py-1.5 text-left text-sm font-medium text-surface-muted transition hover:text-surface-foreground"
+          className="rounded-xl px-4 py-1.5 text-left text-sm font-semibold text-surface-muted transition hover:bg-glass hover:text-surface-foreground"
           onClick={() => {
             onExpand?.();
             setShowAll(true);
