@@ -107,8 +107,8 @@ export function SessionListItem({
   const rowClassName = [
     "group w-full text-sm transition",
     variant === "mobile"
-      ? "flex items-center gap-1 rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
-      : sidebarItemClassName,
+      ? "flex items-center gap-1 rounded-[calc(var(--radius-card)-0.25rem)] py-1 pl-1 pr-0"
+      : `${sidebarItemClassName} !gap-1 !pr-2`,
     isActive ? sidebarItemActiveClassName : sidebarItemInactiveClassName,
     isRenaming ? "" : "cursor-pointer",
   ].join(" ");
@@ -190,7 +190,7 @@ export function SessionListItem({
                   aria-controls={menuId}
                   className={[
                     "shrink-0 transition",
-                    variant === "compact" ? "!h-7 !w-7" : "",
+                    variant === "compact" ? "!h-7 !w-7 -mr-1" : "",
                     variant === "mobile" || open
                       ? "opacity-100"
                       : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
