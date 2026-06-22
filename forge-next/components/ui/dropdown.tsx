@@ -91,7 +91,6 @@ export function Dropdown({
 
   useLayoutEffect(() => {
     if (!open) {
-      setMenuPosition(null);
       return;
     }
 
