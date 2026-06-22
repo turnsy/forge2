@@ -4,14 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { isNavItemActive } from "@/lib/navigation/active-path";
+import {
+  sidebarItemActiveClassName,
+  sidebarItemClassName,
+  sidebarItemInactiveClassName,
+} from "@/lib/navigation/sidebar-item-styles";
 
-const baseClass =
-  "flex w-full items-center gap-3 rounded-xl px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+const baseClass = sidebarItemClassName;
 
-const inactiveClass =
-  "text-surface-muted hover:bg-glass hover:text-surface-foreground";
+const inactiveClass = sidebarItemInactiveClassName;
 
-const activeClass = "bg-glass text-surface-foreground";
+const activeClass = sidebarItemActiveClassName;
 
 export function SidebarNavLink({
   href,

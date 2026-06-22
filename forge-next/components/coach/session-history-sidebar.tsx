@@ -17,7 +17,7 @@ export function SessionHistorySidebar({
 
   return (
     <section
-      className="flex flex-col gap-1"
+      className="mt-3 flex flex-col gap-1"
       aria-label="Conversation history"
     >
       <div className="flex items-center gap-3 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-surface-muted">

@@ -6,6 +6,11 @@ import { SessionDeleteDialog } from "@/components/coach/session-delete-dialog";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { IconButton, Spinner } from "@/components/ui";
 import { renameTaskSession } from "@/lib/chat/actions";
+import {
+  sidebarItemActiveClassName,
+  sidebarItemClassName,
+  sidebarItemInactiveClassName,
+} from "@/lib/navigation/sidebar-item-styles";
 
 export type SessionListItemData = {
   id: string;
@@ -93,13 +98,11 @@ export function SessionListItem({
   }
 
   const rowClassName = [
-    "group flex w-full items-center text-sm transition",
+    "group w-full text-sm transition",
     variant === "mobile"
-      ? "gap-1 rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
-      : "gap-3 rounded-xl px-4 py-1.5 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
-    isActive
-      ? "bg-glass text-surface-foreground"
-      : "text-surface-muted hover:bg-glass hover:text-surface-foreground",
+      ? "flex items-center gap-1 rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
+      : sidebarItemClassName,
+    isActive ? sidebarItemActiveClassName : sidebarItemInactiveClassName,
     isRenaming ? "" : "cursor-pointer",
   ].join(" ");
 
@@ -180,6 +183,7 @@ export function SessionListItem({
                   aria-controls={menuId}
                   className={[
                     "shrink-0 transition",
+                    variant === "compact" ? "!h-7 !w-7" : "",
                     variant === "mobile" || open
                       ? "opacity-100"
                       : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",

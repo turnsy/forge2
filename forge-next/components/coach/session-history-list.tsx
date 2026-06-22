@@ -176,7 +176,7 @@ export function SessionHistoryList({
       {canShowMore ? (
         <button
           type="button"
-          className="rounded-xl px-4 py-1.5 text-left text-sm font-semibold text-surface-muted transition hover:bg-glass hover:text-surface-foreground"
+          className="rounded-xl px-4 py-1.5 text-left text-sm font-semibold min-h-9 text-surface-muted transition hover:bg-glass hover:text-surface-foreground"
           onClick={() => {
             onExpand?.();
             setShowAll(true);
