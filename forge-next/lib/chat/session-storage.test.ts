@@ -104,12 +104,11 @@ describe("saveChatSession", () => {
 
     expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "Bench Press Block" },
-        updated_at: expect.any(String),
-      }),
+      },
       { onConflict: "id" },
     );
   });
@@ -123,12 +122,11 @@ describe("saveChatSession", () => {
 
     expect(result).toEqual({ status: "saved", title: "Existing title" });
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "Existing title" },
-        updated_at: expect.any(String),
-      }),
+      },
       { onConflict: "id" },
     );
   });
@@ -152,12 +150,11 @@ describe("saveChatSession", () => {
 
     expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "Bench Press Block" },
-        updated_at: expect.any(String),
-      }),
+      },
       { onConflict: "id" },
     );
   });
@@ -184,12 +181,11 @@ describe("saveSessionSnapshot", () => {
 
     expect(result).toEqual({ ok: true, title: "Existing title" });
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "Existing title" },
-        updated_at: expect.any(String),
-      }),
+      },
       { onConflict: "id" },
     );
   });
@@ -323,12 +319,11 @@ describe("renameChatSession", () => {
 
     expect(result).toEqual({ ok: true });
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         id: "session-1",
         coach_id: "coach-1",
         snapshot: { ...snapshot, title: "New title" },
-        updated_at: expect.any(String),
-      }),
+      },
       { onConflict: "id" },
     );
   });
