@@ -359,6 +359,15 @@ export function CoachWorkspace({
     setMobileHistoryOpen(false);
   }, []);
 
+  const handleMobileReset = useCallback(() => {
+    if (mobileHistoryOpen) {
+      setMobileHistoryOpen(false);
+      return;
+    }
+
+    handleClose();
+  }, [handleClose, mobileHistoryOpen]);
+
   const mobileHistoryToggle = isMobile ? (
     <SessionHistoryMobileToggle
       open={mobileHistoryOpen}
@@ -479,7 +488,7 @@ export function CoachWorkspace({
       return (
         <ChatWorkspaceShell
           state={state}
-          onReset={handleClose}
+          onReset={handleMobileReset}
           headerClassName={mobileChatHeaderClass}
           headerStart={mobileHistoryToggle}
           className={MOBILE_WORKSPACE_X_PADDING_CLASS}
@@ -519,7 +528,7 @@ export function CoachWorkspace({
         ) : (
           <ChatWorkspaceShell
             state={state}
-            onReset={handleClose}
+            onReset={handleMobileReset}
             headerClassName={mobileChatHeaderClass}
             headerStart={mobileHistoryToggle}
             className={MOBILE_WORKSPACE_X_PADDING_CLASS}
@@ -594,7 +603,7 @@ export function CoachWorkspace({
           >
             <ChatWorkspaceShell
               state={state}
-              onReset={handleClose}
+              onReset={handleMobileReset}
               headerClassName={DESKTOP_CHAT_HEADER_CLASS}
             >
               <CoachConversationPanel
