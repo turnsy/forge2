@@ -125,6 +125,22 @@ describe("SessionListItem", () => {
     expect(onDeleted).toHaveBeenCalledWith("session-1");
   });
 
+  it("shows the actions menu on mobile rows", () => {
+    render(
+      <SessionListItem
+        session={session}
+        variant="mobile"
+        onOpen={vi.fn()}
+        onRenamed={vi.fn()}
+        onDeleted={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Conversation actions" }),
+    ).toBeVisible();
+  });
+
   it("still notifies onOpen for the active session", async () => {
     const user = userEvent.setup();
     const onOpen = vi.fn();

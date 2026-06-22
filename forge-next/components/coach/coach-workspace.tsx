@@ -368,7 +368,7 @@ export function CoachWorkspace({
 
   const mobileHistoryPanel = isMobile ? (
     <SessionHistoryMobilePanel
-      activeSessionId={state.sessionId}
+      activeSessionId={initialSession?.id}
       onActiveSessionDeleted={handleActiveSessionDeleted}
       onClose={closeMobileHistory}
     />
@@ -393,11 +393,7 @@ export function CoachWorkspace({
   ) =>
     mobileHistoryOpen ? (
       <>
-        <div
-          className={`min-h-0 flex-1 overflow-hidden ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
-        >
-          {mobileHistoryPanel}
-        </div>
+        {mobileHistoryPanel}
         <div
           className={`shrink-0 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
         >
@@ -425,9 +421,12 @@ export function CoachWorkspace({
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {mobileHistoryOpen ? (
-              <div className={`min-h-0 flex-1 overflow-hidden px-4 ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}>
-                {mobileHistoryPanel}
-              </div>
+              <SessionHistoryMobilePanel
+                activeSessionId={initialSession?.id}
+                onActiveSessionDeleted={handleActiveSessionDeleted}
+                onClose={closeMobileHistory}
+                className="px-3"
+              />
             ) : (
               <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
                 <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">

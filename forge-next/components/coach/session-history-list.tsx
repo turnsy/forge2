@@ -60,6 +60,7 @@ export function SessionHistoryList({
   function handleOpen(sessionId: string) {
     if (sessionId !== resolvedActiveSessionId) {
       router.push(`/coach?sessionId=${sessionId}`);
+      router.refresh();
     }
 
     onSessionOpen?.(sessionId);
@@ -138,7 +139,7 @@ export function SessionHistoryList({
 
   if (variant === "mobile") {
     return (
-      <List className={className}>
+      <List className={`gap-2${className ? ` ${className}` : ""}`}>
         {listItems.map((item, index) => (
           <li
             key={visibleSessions[index].id}

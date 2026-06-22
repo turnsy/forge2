@@ -6,26 +6,35 @@ import { SessionHistoryMobileToggle } from "@/components/coach/session-history-m
 
 const mockListTaskSessions = vi.fn();
 const mockPush = vi.fn();
+const mockRefresh = vi.fn();
 
 vi.mock("@/lib/chat/actions", () => ({
   listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 describe("SessionHistoryMobileToggle", () => {
-  it("toggles pressed state", async () => {
+  it("toggles pressed state and active styling", async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
 
-    render(<SessionHistoryMobileToggle open={false} onToggle={onToggle} />);
+    const { rerender } = render(
+      <SessionHistoryMobileToggle open={false} onToggle={onToggle} />,
+    );
 
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+    const button = screen.getByRole("button", { name: "Conversation history" });
+    expect(button).toHaveAttribute("aria-pressed", "false");
 
+    await user.click(button);
     expect(onToggle).toHaveBeenCalled();
+
+    rerender(<SessionHistoryMobileToggle open onToggle={onToggle} />);
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button.className).toContain("text-white");
   });
 });
 
@@ -69,6 +78,7 @@ describe("SessionHistoryMobilePanel", () => {
     await user.click(await screen.findByText("Adjust weekly volume"));
 
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 });

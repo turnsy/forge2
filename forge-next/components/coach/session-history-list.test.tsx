@@ -11,7 +11,7 @@ vi.mock("@/lib/chat/actions", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams("sessionId=session-2"),
 }));
 

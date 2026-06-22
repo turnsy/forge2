@@ -19,6 +19,11 @@ export function SessionHistoryMobileToggle({
       icon={<HistoryIcon />}
       aria-label="Conversation history"
       aria-pressed={open}
+      className={
+        open
+          ? "border-white/30 bg-white/15 text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.2)]"
+          : "text-surface-muted"
+      }
       onClick={onToggle}
     >
       History

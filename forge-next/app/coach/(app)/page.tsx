@@ -66,6 +66,7 @@ export default async function CoachHomePage({
     return (
       <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
         <CoachWorkspace
+          key={`plan-${detail.id}`}
           firstName={firstName(user.fullName)}
           role="coach"
           planId={detail.id}
@@ -84,6 +85,7 @@ export default async function CoachHomePage({
       return (
         <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
           <CoachWorkspace
+            key={`session-${result.session.id}`}
             firstName={firstName(user.fullName)}
             role="coach"
             initialSession={result.session}
@@ -97,6 +99,7 @@ export default async function CoachHomePage({
   return (
     <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
       <CoachWorkspace
+        key="coach-home"
         firstName={firstName(user.fullName)}
         role="coach"
         promptEnabled={promptEnabled}

@@ -95,7 +95,7 @@ export function SessionListItem({
   const rowClassName = [
     "group flex items-center gap-1 text-sm transition",
     variant === "mobile"
-      ? "rounded-[calc(var(--radius-card)-0.25rem)] px-3 py-3"
+      ? "rounded-[calc(var(--radius-card)-0.25rem)] px-1 py-1"
       : "rounded-xl px-2 py-1.5",
     isActive
       ? "bg-glass text-surface-foreground"
@@ -178,8 +178,10 @@ export function SessionListItem({
                   aria-expanded={open}
                   aria-controls={menuId}
                   className={[
-                    "shrink-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100",
-                    open ? "opacity-100" : "",
+                    "shrink-0 transition",
+                    variant === "mobile" || open
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
                   ].join(" ")}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -202,7 +204,7 @@ export function SessionListItem({
   return (
     <>
       {variant === "mobile" ? (
-        <article className="rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+        <article className="rounded-card border border-glass-border bg-glass px-2 py-1.5 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
           {row}
         </article>
       ) : (
