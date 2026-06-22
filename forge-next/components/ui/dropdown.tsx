@@ -21,7 +21,7 @@ const defaultMenuItemClass =
   `${menuItemClass} text-surface-muted hover:bg-glass hover:text-surface-foreground`;
 
 const destructiveMenuItemClass =
-  `${menuItemClass} text-danger hover:bg-glass hover:text-danger`;
+  `${menuItemClass} !text-danger hover:bg-danger-muted/40 hover:!text-danger`;
 
 const DropdownMenuContext = createContext<(() => void) | null>(null);
 

@@ -119,7 +119,7 @@ describe("SessionListItem", () => {
     await user.click(screen.getByRole("button", { name: "Conversation actions" }));
 
     expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveClass(
-      "text-danger",
+      "!text-danger",
     );
   });
 
