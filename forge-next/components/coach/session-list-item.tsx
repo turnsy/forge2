@@ -168,7 +168,7 @@ export function SessionListItem({
             <span className="min-w-0 flex-1 truncate px-1">{session.title}</span>
             <Dropdown
               menuLabel="Conversation actions"
-              side="top"
+              side={variant === "mobile" ? "bottom" : "top"}
               trigger={({ toggle, menuId, open }) => (
                 <IconButton
                   variant="plain"
