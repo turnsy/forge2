@@ -366,7 +366,9 @@ describe("PlanDayView", () => {
     expect(screen.getByLabelText("Watch exercise video")).toBeInTheDocument();
   });
 
-  it("does not show video button in coach read-only view", () => {
+  it("shows video link indicator in coach read-only view when videoUrl is set", async () => {
+    const user = userEvent.setup();
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const plan = makePlan();
     plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
 
@@ -374,7 +376,26 @@ describe("PlanDayView", () => {
       <PlanDayView plan={plan} weekIndex={1} dayIndex={1} view="coach" />,
     );
 
-    expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();
+    const videoButton = screen.getByLabelText("Video link attached");
+    expect(videoButton).toBeInTheDocument();
     expect(screen.queryByLabelText("Add video link")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();
+
+    await user.click(videoButton);
+    expect(openSpy).toHaveBeenCalledWith(
+      "https://youtu.be/demo",
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    openSpy.mockRestore();
+  });
+
+  it("hides video indicator in coach read-only view when no videoUrl is set", () => {
+    render(
+      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+    );
+
+    expect(screen.queryByLabelText("Video link attached")).not.toBeInTheDocument();
   });
 });
