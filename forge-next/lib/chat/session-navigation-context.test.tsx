@@ -13,13 +13,22 @@ vi.mock("next/navigation", () => ({
 }));
 
 function Probe() {
-  const { pendingSessionId, startSessionNavigation } = useSessionNavigation();
+  const {
+    pendingSessionId,
+    activeSessionId,
+    startSessionNavigation,
+    clearActiveSession,
+  } = useSessionNavigation();
 
   return (
     <div>
-      <span>{pendingSessionId ?? "idle"}</span>
+      <span data-testid="pending">{pendingSessionId ?? "idle"}</span>
+      <span data-testid="active">{activeSessionId ?? "none"}</span>
       <button type="button" onClick={() => startSessionNavigation("session-1")}>
         Navigate
+      </button>
+      <button type="button" onClick={clearActiveSession}>
+        Clear
       </button>
     </div>
   );
@@ -40,7 +49,8 @@ describe("SessionNavigationProvider", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Navigate" }));
-    expect(screen.getByText("session-1")).toBeInTheDocument();
+    expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
+    expect(screen.getByTestId("active")).toHaveTextContent("session-1");
 
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
     rerender(
@@ -50,7 +60,24 @@ describe("SessionNavigationProvider", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("idle")).toBeInTheDocument();
+      expect(screen.getByTestId("pending")).toHaveTextContent("idle");
     });
+  });
+
+  it("keeps the sidebar cleared after reset when the URL is still stale", async () => {
+    const user = userEvent.setup();
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
+
+    render(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    expect(screen.getByTestId("active")).toHaveTextContent("session-1");
+
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(screen.getByTestId("active")).toHaveTextContent("none");
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
@@ -29,11 +29,8 @@ import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-import {
-  hasCoachSessionInUrl,
-  syncCoachSessionUrl,
-  syncCoachWorkspaceUrl,
-} from "@/lib/chat/session-url";
+import { syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -164,7 +161,7 @@ export function CoachWorkspace({
   promptEnabled?: boolean;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const sessionNavigation = useOptionalSessionNavigation();
   const isMobile = useIsMobile();
   const [showArtifact, setShowArtifact] = useState(() => {
     if (!initialPlan || !initialPlanId || typeof window === "undefined") {
@@ -348,24 +345,14 @@ export function CoachWorkspace({
     restart();
     if (!initialPlanId) {
       syncCoachSessionUrl(null);
-
-      const shouldReturnToCoachHome =
-        Boolean(initialSession) ||
-        searchParams.has("sessionId") ||
-        hasCoachSessionInUrl();
-
-      if (shouldReturnToCoachHome) {
-        router.push("/coach");
-        router.refresh();
-      }
+      sessionNavigation?.clearActiveSession();
     }
   }, [
     activePlanId,
     initialPlanId,
-    initialSession,
     restart,
     router,
-    searchParams,
+    sessionNavigation,
     state,
   ]);
 

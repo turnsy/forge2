@@ -49,8 +49,9 @@ export function SessionHistoryList({
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const resolvedActiveSessionId =
-    activeSessionId ?? searchParams.get("sessionId");
+  const resolvedActiveSessionId = sessionNavigation
+    ? sessionNavigation.activeSessionId
+    : (activeSessionId ?? searchParams.get("sessionId"));
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -96,8 +97,8 @@ export function SessionHistoryList({
 
     if (sessionId === resolvedActiveSessionId) {
       syncCoachSessionUrl(null);
+      sessionNavigation?.clearActiveSession();
       onActiveSessionDeleted?.();
-      router.push("/coach");
     }
   }
 

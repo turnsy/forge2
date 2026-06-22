@@ -21,7 +21,9 @@ vi.mock("@/lib/chat/session-navigation-context", async () => {
     ...actual,
     useOptionalSessionNavigation: () => ({
       pendingSessionId: null,
+      activeSessionId: "session-2",
       startSessionNavigation: mockStartSessionNavigation,
+      clearActiveSession: vi.fn(),
     }),
   };
 });
