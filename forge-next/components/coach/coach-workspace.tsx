@@ -29,8 +29,7 @@ import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-import { syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
-import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -161,7 +160,6 @@ export function CoachWorkspace({
   promptEnabled?: boolean;
 }) {
   const router = useRouter();
-  const sessionNavigation = useOptionalSessionNavigation();
   const isMobile = useIsMobile();
   const [showArtifact, setShowArtifact] = useState(() => {
     if (!initialPlan || !initialPlanId || typeof window === "undefined") {
@@ -342,19 +340,9 @@ export function CoachWorkspace({
       return;
     }
 
-    restart();
-    if (!initialPlanId) {
-      syncCoachSessionUrl(null);
-      sessionNavigation?.clearActiveSession();
-    }
-  }, [
-    activePlanId,
-    initialPlanId,
-    restart,
-    router,
-    sessionNavigation,
-    state,
-  ]);
+    router.replace("/coach");
+    router.refresh();
+  }, [activePlanId, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();
@@ -387,7 +375,6 @@ export function CoachWorkspace({
 
   const mobileHistoryPanel = isMobile ? (
     <SessionHistoryMobilePanel
-      activeSessionId={initialSession?.id}
       onActiveSessionDeleted={handleActiveSessionDeleted}
       onClose={closeMobileHistory}
     />
@@ -441,7 +428,6 @@ export function CoachWorkspace({
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {mobileHistoryOpen ? (
               <SessionHistoryMobilePanel
-                activeSessionId={initialSession?.id}
                 onActiveSessionDeleted={handleActiveSessionDeleted}
                 onClose={closeMobileHistory}
                 className="px-3"

@@ -4,12 +4,10 @@ import { SessionHistoryList } from "@/components/coach/session-history-list";
 import { MOBILE_BOTTOM_NAV_SCROLL_END_CLASS } from "@/lib/coach/mobile-workspace-layout";
 
 export function SessionHistoryMobilePanel({
-  activeSessionId,
   onActiveSessionDeleted,
   onClose,
   className = "",
 }: {
-  activeSessionId?: string;
   onActiveSessionDeleted?: () => void;
   onClose: () => void;
   className?: string;
@@ -24,7 +22,6 @@ export function SessionHistoryMobilePanel({
     >
       <SessionHistoryList
         variant="mobile"
-        activeSessionId={activeSessionId}
         onActiveSessionDeleted={onActiveSessionDeleted}
         onSessionOpen={() => onClose()}
         className="pb-4"

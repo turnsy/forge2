@@ -6,10 +6,9 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 const mockRefresh = vi.fn();
-const mockClearActiveSession = vi.fn();
 const mockUseIsMobile = vi.fn(() => false);
-let mockSearchParams = new URLSearchParams();
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => mockUseIsMobile(),
@@ -19,18 +18,13 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
   useCoachPlanWorkspace: (...args: unknown[]) => mockUseCoachPlanWorkspace(...args),
 }));
 
-vi.mock("@/lib/chat/session-navigation-context", () => ({
-  useOptionalSessionNavigation: () => ({
-    pendingSessionId: null,
-    activeSessionId: null,
-    startSessionNavigation: vi.fn(),
-    clearActiveSession: mockClearActiveSession,
-  }),
-}));
-
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn(), refresh: mockRefresh }),
-  useSearchParams: () => mockSearchParams,
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace,
+    refresh: mockRefresh,
+  }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -106,7 +100,6 @@ describe("CoachWorkspace layout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseIsMobile.mockReturnValue(false);
-    mockSearchParams = new URLSearchParams();
   });
 
   it("shows welcome before first message", () => {
@@ -175,7 +168,7 @@ describe("CoachWorkspace layout", () => {
     expect(container.innerHTML).toContain("!max-w-none");
   });
 
-  it("restarts workspace on close from coach home", async () => {
+  it("navigates to coach home on reset", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -189,43 +182,10 @@ describe("CoachWorkspace layout", () => {
     render(<CoachWorkspace firstName="Alex" role="coach" />);
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
-    expect(mockRestart).toHaveBeenCalledOnce();
-    expect(mockClearActiveSession).toHaveBeenCalledOnce();
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalledOnce();
+    expect(mockRestart).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
-    expect(mockRefresh).not.toHaveBeenCalled();
-  });
-
-  it("clears the active session on reset without navigating away", async () => {
-    const user = userEvent.setup();
-    mockSearchParams = new URLSearchParams("sessionId=session-2");
-    mockUseCoachPlanWorkspace.mockReturnValue(
-      mockWorkspaceReturn(
-        mockWorkspaceState({
-          hasStarted: true,
-          messages: [{ role: "user", content: "Hello" }],
-        }),
-      ),
-    );
-
-    render(
-      <CoachWorkspace
-        firstName="Alex"
-        role="coach"
-        initialSession={{
-          id: "session-2",
-          snapshot: { messages: [{ role: "user", content: "Hello" }] },
-          createdAt: "2026-01-01T00:00:00.000Z",
-          updatedAt: "2026-01-01T00:00:00.000Z",
-        }}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
-
-    expect(mockRestart).toHaveBeenCalledOnce();
-    expect(mockClearActiveSession).toHaveBeenCalledOnce();
-    expect(mockPush).not.toHaveBeenCalled();
-    expect(mockRefresh).not.toHaveBeenCalled();
   });
 
   it("shows the back link when a saved plan is in workspace state", () => {

@@ -7,7 +7,6 @@ import { SessionListItem, type SessionListItemData } from "@/components/coach/se
 import { Button, List, Spinner } from "@/components/ui";
 import { listTaskSessions } from "@/lib/chat/actions";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { syncCoachSessionUrl } from "@/lib/chat/session-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -27,14 +26,12 @@ function ShowMoreButton({ onClick }: { onClick: () => void }) {
 }
 
 export function SessionHistoryList({
-  activeSessionId,
   onActiveSessionDeleted,
   onExpand,
   onSessionOpen,
   variant = "compact",
   className = "",
 }: {
-  activeSessionId?: string | null;
   onActiveSessionDeleted?: () => void;
   onExpand?: () => void;
   onSessionOpen?: (sessionId: string) => void;
@@ -49,9 +46,7 @@ export function SessionHistoryList({
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const resolvedActiveSessionId = sessionNavigation
-    ? sessionNavigation.activeSessionId
-    : (activeSessionId ?? searchParams.get("sessionId"));
+  const resolvedActiveSessionId = searchParams.get("sessionId");
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -96,9 +91,8 @@ export function SessionHistoryList({
     setSessions((current) => current.filter((session) => session.id !== sessionId));
 
     if (sessionId === resolvedActiveSessionId) {
-      syncCoachSessionUrl(null);
-      sessionNavigation?.clearActiveSession();
       onActiveSessionDeleted?.();
+      router.push("/coach");
     }
   }
 

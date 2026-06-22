@@ -12,9 +12,7 @@ import { useSearchParams } from "next/navigation";
 
 type SessionNavigationContextValue = {
   pendingSessionId: string | null;
-  activeSessionId: string | null;
   startSessionNavigation: (sessionId: string) => void;
-  clearActiveSession: () => void;
 };
 
 const SessionNavigationContext =
@@ -22,43 +20,26 @@ const SessionNavigationContext =
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
-  const urlSessionId = searchParams.get("sessionId");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(
-    () => urlSessionId,
-  );
 
   const startSessionNavigation = useCallback((sessionId: string) => {
     setPendingSessionId(sessionId);
-    setActiveSessionId(sessionId);
   }, []);
-
-  const clearActiveSession = useCallback(() => {
-    setActiveSessionId(null);
-  }, []);
-
-  useEffect(() => {
-    setActiveSessionId(urlSessionId);
-  }, [urlSessionId]);
 
   useEffect(() => {
     if (!pendingSessionId) {
       return;
     }
 
-    if (urlSessionId === pendingSessionId) {
+    const currentSessionId = searchParams.get("sessionId");
+    if (currentSessionId === pendingSessionId) {
       setPendingSessionId(null);
     }
-  }, [pendingSessionId, urlSessionId]);
+  }, [pendingSessionId, searchParams]);
 
   return (
     <SessionNavigationContext.Provider
-      value={{
-        pendingSessionId,
-        activeSessionId,
-        startSessionNavigation,
-        clearActiveSession,
-      }}
+      value={{ pendingSessionId, startSessionNavigation }}
     >
       {children}
     </SessionNavigationContext.Provider>
