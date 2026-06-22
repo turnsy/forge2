@@ -23,14 +23,27 @@ vi.mock("next/navigation", () => ({
 const mockSavePlan = vi.fn();
 const mockSetPlanId = vi.fn();
 const mockRestart = vi.fn();
+const mockResetSaveStatus = vi.fn();
 
 vi.mock("@/lib/plans/use-save-plan", () => ({
   useSavePlan: () => ({
     saveStatus: "idle",
     saveError: null,
     savePlan: mockSavePlan,
-    resetSaveStatus: vi.fn(),
+    resetSaveStatus: mockResetSaveStatus,
   }),
+}));
+
+vi.mock("@/components/artifact/artifact-preview", () => ({
+  ArtifactPreview: ({
+    onPlanChange,
+  }: {
+    onPlanChange: (plan: typeof samplePlan) => void;
+  }) => (
+    <button type="button" onClick={() => onPlanChange(samplePlan)}>
+      Edit plan
+    </button>
+  ),
 }));
 
 const samplePlan = {
@@ -307,5 +320,24 @@ describe("CoachWorkspace layout", () => {
 
     expect(mockPush).toHaveBeenCalledWith("/coach/plans/plan-1");
     expect(mockRestart).not.toHaveBeenCalled();
+  });
+
+  it("resets save status when the plan is edited", async () => {
+    const user = userEvent.setup();
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          planId: "plan-1",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    await user.click(screen.getByRole("button", { name: "Edit plan" }));
+
+    expect(mockResetSaveStatus).toHaveBeenCalled();
   });
 });
