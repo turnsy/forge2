@@ -1,6 +1,5 @@
-import { PDFParse } from "pdf-parse";
 import * as XLSX from "xlsx";
-import { ensurePdfParseWorker } from "@/lib/uploads/pdf-worker";
+import { getPDFParse } from "@/lib/uploads/pdf-runtime";
 import { getAllowedExtension } from "@/lib/uploads/file-utils";
 import type { ParseUploadResult, UploadWarning } from "@/lib/uploads/types";
 
@@ -54,7 +53,7 @@ export async function parsePdfUpload(
   filename: string,
   buffer: Buffer,
 ): Promise<ParseUploadResult> {
-  ensurePdfParseWorker();
+  const PDFParse = await getPDFParse();
   const parser = new PDFParse({ data: buffer });
 
   try {
