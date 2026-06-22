@@ -34,7 +34,7 @@ describe("SessionHistoryMobileToggle", () => {
 
     rerender(<SessionHistoryMobileToggle open onToggle={onToggle} />);
     expect(button).toHaveAttribute("aria-pressed", "true");
-    expect(button.className).toContain("text-white");
+    expect(button.className).toContain("glass-button-primary");
   });
 });
 

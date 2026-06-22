@@ -5,13 +5,29 @@ import { SessionHistoryList } from "@/components/coach/session-history-list";
 
 const mockListTaskSessions = vi.fn();
 const mockPush = vi.fn();
+const mockRefresh = vi.fn();
+const mockStartSessionNavigation = vi.fn();
 
 vi.mock("@/lib/chat/actions", () => ({
   listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
 }));
 
+vi.mock("@/lib/chat/session-navigation-context", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/chat/session-navigation-context")
+  >("@/lib/chat/session-navigation-context");
+
+  return {
+    ...actual,
+    useOptionalSessionNavigation: () => ({
+      pendingSessionId: null,
+      startSessionNavigation: mockStartSessionNavigation,
+    }),
+  };
+});
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
   useSearchParams: () => new URLSearchParams("sessionId=session-2"),
 }));
 
@@ -45,6 +61,8 @@ describe("SessionHistoryList integration", () => {
 
     await user.click(screen.getByText("Build a plan"));
 
+    expect(mockStartSessionNavigation).toHaveBeenCalledWith("session-1");
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalled();
   });
 });

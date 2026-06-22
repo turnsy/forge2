@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SessionListItem, type SessionListItemData } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
 import { listTaskSessions } from "@/lib/chat/actions";
+import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import { syncCoachSessionUrl } from "@/lib/chat/session-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
@@ -28,6 +29,7 @@ export function SessionHistoryList({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const sessionNavigation = useOptionalSessionNavigation();
   const [sessions, setSessions] = useState<SessionListItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function SessionHistoryList({
 
   function handleOpen(sessionId: string) {
     if (sessionId !== resolvedActiveSessionId) {
+      sessionNavigation?.startSessionNavigation(sessionId);
       router.push(`/coach?sessionId=${sessionId}`);
       router.refresh();
     }

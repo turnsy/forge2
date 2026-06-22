@@ -13,17 +13,13 @@ export function SessionHistoryMobileToggle({
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant={open ? "primary" : "ghost"}
       size="sm"
       fullWidth={false}
       icon={<HistoryIcon />}
       aria-label="Conversation history"
       aria-pressed={open}
-      className={
-        open
-          ? "border-white/30 bg-white/15 text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.2)]"
-          : "text-surface-muted"
-      }
+      className={open ? undefined : "text-surface-muted"}
       onClick={onToggle}
     >
       History
