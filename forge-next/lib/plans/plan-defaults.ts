@@ -1,4 +1,4 @@
-import type { Day, Exercise, Set } from "@/lib/plans/workout-plan";
+import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function createSetId(): string {
   return crypto.randomUUID();
@@ -27,6 +27,19 @@ export function createDefaultExercise(): Exercise {
     id: createExerciseId(),
     name: "New Exercise",
     sets: [createDefaultSet()],
+  };
+}
+
+export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
+  return {
+    schemaVersion: "2.0.0",
+    name,
+    weeks: [
+      {
+        index: 1,
+        days: [createDefaultDay()],
+      },
+    ],
   };
 }
 

@@ -262,6 +262,32 @@ describe("CoachWorkspace layout", () => {
     expect(container.innerHTML).toContain("pb-[calc(4.5rem");
   });
 
+  it("opens the artifact editor on mobile when a draft plan is provided", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "New Plan",
+        }),
+      ),
+    );
+
+    render(
+      <CoachWorkspace
+        firstName="Alex"
+        role="coach"
+        initialPlan={samplePlan}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Close artifact" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "View artifact" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows View above the composer on mobile when an artifact exists", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);

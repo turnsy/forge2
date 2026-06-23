@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
+import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 
 const { saveSessionSnapshot, streamPlanChat } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
@@ -26,6 +27,19 @@ describe("useCoachPlanWorkspace", () => {
       ok: true,
       title: "Strength block",
     });
+  });
+
+  it("initializes with a draft plan when initialPlan is provided without planId", () => {
+    const draftPlan = createEmptyWorkoutPlan();
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({ initialPlan: draftPlan }),
+    );
+
+    expect(result.current.state.hasStarted).toBe(true);
+    expect(result.current.state.currentArtifact).toEqual(draftPlan);
+    expect(result.current.state.planId).toBeNull();
+    expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
   it("calls onSessionPersisted once after the first successful save", async () => {

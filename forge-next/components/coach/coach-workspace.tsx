@@ -160,16 +160,11 @@ export function CoachWorkspace({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [showArtifact, setShowArtifact] = useState(() => {
-    if (!initialPlan || !initialPlanId || typeof window === "undefined") {
-      return false;
-    }
-
-    return window.matchMedia("(max-width: 767px)").matches;
-  });
+  const [showArtifact, setShowArtifact] = useState(false);
+  const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const initialSavedSnapshot =
-    initialPlan != null
+    initialPlan != null && initialPlanId
       ? createPlanSnapshot(initialPlan, initialPlan.name)
       : initialSession?.snapshot.planId && initialSession.snapshot.currentArtifact
         ? createPlanSnapshot(
@@ -206,7 +201,7 @@ export function CoachWorkspace({
     setArtifact,
     restart,
   } = useCoachPlanWorkspace(
-    initialPlan && initialPlanId
+    initialPlan
       ? {
           initialPlan,
           planId: initialPlanId,
@@ -231,6 +226,15 @@ export function CoachWorkspace({
   useEffect(() => {
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
+
+  useEffect(() => {
+    if (!openArtifactOnMobileRef.current || !isMobile) {
+      return;
+    }
+
+    setShowArtifact(true);
+    openArtifactOnMobileRef.current = false;
+  }, [isMobile]);
 
   const activePlanId = state.planId;
   const resolvedBackHref = activePlanId

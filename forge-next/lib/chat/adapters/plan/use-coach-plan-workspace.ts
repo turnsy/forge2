@@ -30,7 +30,7 @@ export function useCoachPlanWorkspace(options?: {
   const hasSyncedSessionUrlRef = useRef(false);
   const initialState = useMemo(
     () => {
-      if (initialPlan && planId) {
+      if (initialPlan) {
         return createEditPlanWorkspaceState(initialPlan, planId);
       }
 

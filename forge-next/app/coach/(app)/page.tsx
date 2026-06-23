@@ -4,6 +4,7 @@ import { ErrorState, PageContent, PageHeader, PageShell } from "@/components/ui"
 import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
 import { loadChatSession } from "@/lib/chat/session-storage";
+import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 import { getCoachPlanById } from "@/lib/plans/repository";
 import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
@@ -27,10 +28,10 @@ function PlanValidationErrors({
 export default async function CoachHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ planId?: string; sessionId?: string }>;
+  searchParams: Promise<{ planId?: string; sessionId?: string; new?: string }>;
 }) {
   const user = await requireRole("coach");
-  const { planId, sessionId } = await searchParams;
+  const { planId, sessionId, new: newPlan } = await searchParams;
   const promptEnabled = isPromptBetaEnabled(user.email);
 
   if (planId) {
@@ -72,6 +73,20 @@ export default async function CoachHomePage({
           planId={detail.id}
           initialPlan={detail.plan}
           stripPlanIdOnClear
+          promptEnabled={promptEnabled}
+        />
+      </PageContent>
+    );
+  }
+
+  if (newPlan !== undefined) {
+    return (
+      <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
+        <CoachWorkspace
+          key="coach-new-plan"
+          firstName={firstName(user.fullName)}
+          role="coach"
+          initialPlan={createEmptyWorkoutPlan()}
           promptEnabled={promptEnabled}
         />
       </PageContent>

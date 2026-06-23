@@ -7,7 +7,7 @@ export function PlansPageHeader() {
       title="Plans"
       actions={
         <ButtonLink
-          href="/coach"
+          href="/coach?new=1"
           variant="secondary"
           size="sm"
           className="inline-flex items-center gap-2"
