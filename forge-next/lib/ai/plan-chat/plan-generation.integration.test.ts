@@ -50,8 +50,7 @@ function mockStreamTextWithTools(
       }
     })(),
     then(resolve: (value: unknown) => void) {
-      void runTools(opts.tools).then(() => resolve({}));
-      return Promise.resolve();
+      return runTools(opts.tools).then(() => resolve({}));
     },
     tools: opts.tools,
   });

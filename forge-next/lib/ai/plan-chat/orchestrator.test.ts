@@ -28,20 +28,21 @@ function mockStreamText(options: {
       }
     })(),
     then(resolve: (value: unknown) => void) {
-      if (options.clearArtifact && options.tools?.clear_current_artifact?.execute) {
-        void options.tools.clear_current_artifact.execute(
-          {},
-          { messages: [], toolCallId: "test" },
-        );
-      }
-      if (options.submitPython && options.tools?.submit_plan_code?.execute) {
-        void options.tools.submit_plan_code.execute(
-          { python: options.submitPython },
-          { messages: [], toolCallId: "test" },
-        );
-      }
-      resolve({});
-      return Promise.resolve();
+      return (async () => {
+        if (options.clearArtifact && options.tools?.clear_current_artifact?.execute) {
+          await options.tools.clear_current_artifact.execute(
+            {},
+            { messages: [], toolCallId: "test" },
+          );
+        }
+        if (options.submitPython && options.tools?.submit_plan_code?.execute) {
+          await options.tools.submit_plan_code.execute(
+            { python: options.submitPython },
+            { messages: [], toolCallId: "test" },
+          );
+        }
+        resolve({});
+      })();
     },
     tools: options.tools,
   };
@@ -116,11 +117,12 @@ describe("runPlanChat", () => {
     });
   });
 
-  it("runs sandbox only after submit_plan_code", async () => {
+  it("emits artifact when submit_plan_code succeeds during the tool loop", async () => {
     const events: unknown[] = [];
+    const plan = buildMinimalWorkoutPlan();
     const runSandbox = vi.fn().mockResolvedValue({
       ok: true,
-      plan: buildMinimalWorkoutPlan(),
+      plan,
     });
 
     await runPlanChat(
@@ -156,6 +158,10 @@ describe("runPlanChat", () => {
     expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
       true,
     );
+    expect(events.filter((e) => (e as { type?: string }).type === "runStatus").at(-1)).toEqual({
+      type: "runStatus",
+      status: "done",
+    });
   });
 
   it("emits errors without artifact when sandbox output fails validation", async () => {
@@ -239,6 +245,63 @@ describe("runPlanChat", () => {
     expect(events.filter((e) => (e as { type?: string }).type === "runStatus").at(-1)).toEqual({
       type: "runStatus",
       status: "error",
+    });
+  });
+
+  it("clears last submit errors when a later submit succeeds", async () => {
+    const events: unknown[] = [];
+    const plan = buildMinimalWorkoutPlan();
+    const runSandbox = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        code: "SANDBOX_FAILED",
+        message: "SyntaxError",
+      })
+      .mockResolvedValueOnce({ ok: true, plan });
+
+    await runPlanChat(
+      {
+        coachId: "coach-1",
+        sessionId: "session-1",
+        prompt: "Build plan",
+        messages: [],
+        currentArtifact: null,
+        emit: (event) => events.push(event),
+      },
+      {
+        isGatewayConfigured: () => true,
+        createModel: () => ({}) as never,
+        listSessionUploads: async () => [],
+        streamTextFn: (opts) => ({
+          textStream: (async function* () {
+            yield "";
+          })(),
+          then(resolve: (value: unknown) => void) {
+            return (async () => {
+              await opts.tools?.submit_plan_code?.execute!(
+                { python: "bad(" },
+                { messages: [], toolCallId: "1" },
+              );
+              await opts.tools?.submit_plan_code?.execute!(
+                { python: "print('plan')" },
+                { messages: [], toolCallId: "2" },
+              );
+              resolve({});
+            })();
+          },
+          tools: opts.tools,
+        }),
+        runSandbox,
+      },
+    );
+
+    expect(events.some((e) => (e as { type?: string }).type === "artifact")).toBe(
+      true,
+    );
+    expect(events.filter((e) => (e as { type?: string }).type === "runStatus").at(-1)).toEqual({
+      type: "runStatus",
+      status: "done",
     });
   });
 

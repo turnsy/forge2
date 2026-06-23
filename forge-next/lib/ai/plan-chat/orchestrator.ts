@@ -4,7 +4,6 @@ import {
   streamText,
 } from "ai";
 import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
-import { loadWorkoutPlan } from "@/lib/plans/validate";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import { createPlanChatGatewayModel } from "@/lib/ai/plan-chat/gateway";
 import {
@@ -12,10 +11,10 @@ import {
 } from "@/lib/ai/plan-chat/constants";
 import { createCoachAgentTools } from "@/lib/ai/coach-agent/tools/create-coach-agent-tools";
 import { buildCoachAgentSystemPrompt } from "@/lib/ai/plan-chat/prompts/system-prompts";
+import type { SubmitPlanCodeError } from "@/lib/ai/plan-chat/tools/execute-submit-plan-code";
 import type { PlanChatEmit, PlanChatMessage } from "@/lib/ai/plan-chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { runSandbox } from "@/lib/sandbox";
-import { logSubmittedPlanCode } from "@/lib/ai/plan-chat/log-submitted-code";
 
 
 export type RunPlanChatInput = {
@@ -80,18 +79,23 @@ export async function runPlanChat(
     hasSessionUploads,
   });
 
-  let submittedPython: string | null = null;
+  let producedArtifact: WorkoutPlan | null = null;
+  let lastSubmitErrors: SubmitPlanCodeError[] | null = null;
   let clearedArtifact = false;
   const tools = createCoachAgentTools({
     coachId: input.coachId,
     sessionId: input.sessionId,
     currentArtifact: input.currentArtifact,
-    onSubmitPlanCode: (python) => {
-      submittedPython = python;
-      logSubmittedPlanCode(python, {
-        coachId: input.coachId,
-        sessionId: input.sessionId,
-      });
+    runSandbox: executeSandbox,
+    onRunStatus: (status) => {
+      input.emit({ type: "runStatus", status });
+    },
+    onPlanArtifactReady: (plan) => {
+      producedArtifact = plan;
+      lastSubmitErrors = null;
+    },
+    onSubmitPlanCodeFailed: (errors) => {
+      lastSubmitErrors = errors;
     },
     onSetCurrentArtifact: ({ planId, plan, title }) => {
       input.emit({
@@ -138,41 +142,17 @@ export async function runPlanChat(
     input.emit({ type: "clearArtifact" });
   }
 
-  if (!submittedPython) {
+  if (producedArtifact) {
+    input.emit({ type: "artifact", plan: producedArtifact });
     input.emit({ type: "runStatus", status: "done" });
     return;
   }
 
-  input.emit({ type: "runStatus", status: "sandbox" });
-
-  const sandboxResult = await executeSandbox({
-    artifact: {
-      type: "plan",
-      currentPlan: input.currentArtifact,
-      generatedPython: submittedPython,
-    },
-  });
-
-  if (!sandboxResult.ok) {
-    input.emit({
-      type: "errors",
-      errors: [
-        { code: sandboxResult.code, message: sandboxResult.message },
-      ],
-    });
+  if (lastSubmitErrors) {
+    input.emit({ type: "errors", errors: lastSubmitErrors });
     input.emit({ type: "runStatus", status: "error" });
     return;
   }
 
-  input.emit({ type: "runStatus", status: "validating" });
-
-  const validated = loadWorkoutPlan(sandboxResult.plan);
-  if (!validated.ok) {
-    input.emit({ type: "errors", errors: validated.errors });
-    input.emit({ type: "runStatus", status: "error" });
-    return;
-  }
-
-  input.emit({ type: "artifact", plan: validated.plan });
   input.emit({ type: "runStatus", status: "done" });
 }
