@@ -49,6 +49,7 @@ describe("chatWorkspaceReducer", () => {
     state = {
       ...state,
       streamingAssistantText: "Here is your plan.",
+      runStatus: "done",
     };
     state = chatWorkspaceReducer(state, { type: "STREAM_END" });
     expect(state.messages).toHaveLength(2);
@@ -58,6 +59,24 @@ describe("chatWorkspaceReducer", () => {
     });
     expect(state.streamingAssistantText).toBe("");
     expect(state.phase).toBe("idle");
+  });
+
+  it("surfaces an error when the stream ends before runStatus is done", () => {
+    let state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "SEND_START",
+      userMessage: "Build a full plan from my sheet",
+    });
+    state = chatWorkspaceReducer(state, {
+      type: "APPLY_EVENT",
+      event: { type: "runStatus", status: "generating" },
+    });
+
+    state = chatWorkspaceReducer(state, { type: "STREAM_END" });
+
+    expect(state.phase).toBe("error");
+    expect(state.runStatus).toBe("error");
+    expect(state.errors[0]?.code).toBe("STREAM_INTERRUPTED");
+    expect(state.errors[0]?.message).toMatch(/stopped before finishing/i);
   });
 
   it("keeps prior artifact when errors arrive after a valid artifact", () => {

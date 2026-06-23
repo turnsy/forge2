@@ -1,4 +1,8 @@
 import { applyChatEvent } from "@/lib/chat/apply-chat-event";
+import {
+  STREAM_INTERRUPTED_MESSAGE,
+  wasChatRunInterrupted,
+} from "@/lib/chat/stream-completion";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 
 function mergeContextFileIds(
@@ -130,6 +134,26 @@ export function chatWorkspaceReducer<TArtifact>(
               { role: "assistant" as const, content: assistantText },
             ]
           : state.messages;
+
+      if (wasChatRunInterrupted(state.runStatus)) {
+        return {
+          ...state,
+          messages,
+          streamingAssistantText: "",
+          phase: "error",
+          runStatus: "error",
+          errors:
+            state.errors.length > 0
+              ? state.errors
+              : [
+                  ...state.errors,
+                  {
+                    code: "STREAM_INTERRUPTED",
+                    message: STREAM_INTERRUPTED_MESSAGE,
+                  },
+                ],
+        };
+      }
 
       return {
         ...state,

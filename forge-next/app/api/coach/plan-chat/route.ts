@@ -7,6 +7,9 @@ import {
 } from "@/lib/ai/plan-chat";
 import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
+/** LLM tool loop + sandbox can exceed the default 60s Vercel limit. */
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
   if (!auth.ok) {
