@@ -60,14 +60,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "index",
         "days"
       ],
       "properties": {
-        "index": {
-          "type": "integer",
-          "minimum": 1
-        },
         "label": {
           "type": "string"
         },
@@ -90,15 +85,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "index",
         "code",
         "blocks"
       ],
       "properties": {
-        "index": {
-          "type": "integer",
-          "minimum": 1
-        },
         "code": {
           "type": "string",
           "pattern": "^w[0-9]+d[0-9]+$"

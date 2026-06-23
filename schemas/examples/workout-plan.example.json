@@ -6,11 +6,9 @@
   "description": "Minimal v3 example: Plan → Week → Day → Block → Exercise → Set.",
   "weeks": [
     {
-      "index": 1,
       "label": "Week 1",
       "days": [
         {
-          "index": 1,
           "code": "w1d1",
           "name": "Lower",
           "blocks": [
