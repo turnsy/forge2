@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from forge_plan import Plan  # noqa: E402
+from forge_plan import Plan, SupersetRef  # noqa: E402
 from forge_plan.schema_rules import validation_rules_cheat_sheet  # noqa: E402
 
 PUBLIC_METHODS = [
@@ -21,6 +21,7 @@ PUBLIC_METHODS = [
     "add_week",
     "add_day",
     "add_exercise",
+    "add_superset",
     "add_set",
     "move_week",
     "remove_week",
@@ -45,6 +46,16 @@ def _format_method(name: str, method: object) -> str:
     return f"Plan.{name}{signature}\n  {summary}"
 
 
+def _format_ref_method(class_name: str, name: str, method: object) -> str:
+    try:
+        signature = str(inspect.signature(method))
+    except (TypeError, ValueError):
+        signature = "(...)"
+    doc = inspect.getdoc(method) or ""
+    summary = doc.split("\n", 1)[0].strip()
+    return f"{class_name}.{name}{signature}\n  {summary}"
+
+
 def build_cheat_sheet() -> str:
     lines = [
         "forge_plan public API (use these names in submit_plan_code):",
@@ -53,6 +64,17 @@ def build_cheat_sheet() -> str:
     for name in PUBLIC_METHODS:
         method = getattr(Plan, name)
         lines.append(_format_method(name, method))
+        lines.append("")
+
+    lines.extend(
+        [
+            "SupersetRef (returned by Plan.add_superset):",
+            "",
+        ]
+    )
+    for name in ("add_exercise",):
+        method = getattr(SupersetRef, name)
+        lines.append(_format_ref_method("SupersetRef", name, method))
         lines.append("")
 
     lines.extend(
@@ -91,6 +113,20 @@ def build_cheat_sheet() -> str:
             '  plan.add_day(week_index=1, name="Day 1")',
             '  plan.add_exercise(week_index=1, day_index=1, name="Back Squat")',
             "  plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit=\"kg\")",
+            '  plan.write_json("output/plan.json")',
+            "",
+            "Example run.py (superset — use add_superset, not two separate add_exercise calls):",
+            "",
+            "  from forge_plan import Plan",
+            "",
+            '  plan = Plan.from_json_file("current_plan.json")',
+            "  if plan.is_empty():",
+            '      plan = Plan.empty("Superset Day")',
+            '  plan.add_week(label="Week 1")',
+            '  plan.add_day(week_index=1, name="Upper")',
+            "  superset = plan.add_superset(1, 1, rounds=3, notes=\"Rest 90s between rounds\")",
+            "  # Creates a superset block with 2 exercises, 3 sets each (default names Exercise A / B; coach renames in app)",
+            "  superset.add_exercise(\"Face Pull\")  # optional: append a 3rd exercise with matching round count",
             '  plan.write_json("output/plan.json")',
             "",
             "Example run.py (reorder a day):",

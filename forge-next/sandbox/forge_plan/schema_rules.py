@@ -1,4 +1,4 @@
-"""Human-readable validation rules aligned with workout-plan.schema.json v2.0.0."""
+"""Human-readable validation rules aligned with workout-plan.schema.json v2.1.0."""
 
 from __future__ import annotations
 
@@ -27,10 +27,10 @@ def validation_rules_cheat_sheet() -> str:
     """Return validation rules text for LLM cheat sheets and prompts."""
     return "\n".join(
         [
-            "Schema validation rules (workout-plan.schema.json v2.0.0 — sandbox output must pass):",
+            "Schema validation rules (workout-plan.schema.json v2.1.0 — sandbox output must pass):",
             "",
             "Plan root:",
-            '- schemaVersion must be exactly "2.0.0"',
+            '- schemaVersion must be exactly "2.1.0"',
             "- name: non-empty string (required)",
             "- weeks: array with at least 1 week for a valid saved plan",
             "",
@@ -43,8 +43,15 @@ def validation_rules_cheat_sheet() -> str:
             f"- code: {DAY_CODE_PATTERN_DESCRIPTION}",
             f"  - OK: {', '.join(repr(x) for x in DAY_CODE_EXAMPLES_OK)}",
             f"  - Invalid: {', '.join(repr(x) for x in DAY_CODE_EXAMPLES_BAD)}",
-            "- exercises: at least 1 exercise per day",
+            "- blocks: at least 1 block per day (exercise block or superset block)",
             "- day.code and day.index are assigned by forge_plan from array order (do not pass codes to add_day)",
+            "",
+            "Day block (one of):",
+            '- type "exercise": { type: "exercise", exercise: Exercise } — standalone exercise',
+            '- type "superset": { type: "superset", notes?: string, exercises: Exercise[] } — grouped exercises',
+            "  - superset must have >= 2 exercises",
+            "  - rounds = number of sets on each exercise (must match across all exercises in the superset)",
+            "  - rest between rounds goes in superset notes (plain text), not a separate field",
             "",
             "Exercise:",
             "- name: non-empty string (required)",
@@ -72,9 +79,13 @@ def validation_rules_cheat_sheet() -> str:
             "- add_week() / add_day(): omit index to append; optional index upserts that slot",
             "- week_index / day_index on add_*: schema indices (1-based after sync), not 0-based array slots",
             "- move_* / remove_*: 0-based array positions within the parent list",
+            "- add_exercise: appends a standalone exercise block (type: exercise)",
+            "- add_superset(week_index, day_index, rounds=3, notes=None) -> SupersetRef: appends a superset block with 2 default exercises and N rounds each",
+            "- SupersetRef.add_exercise(name): append another exercise to the superset (inherits round count)",
+            "- For supersets, use add_superset — do NOT simulate with two separate add_exercise calls",
             "- add_set: set id/status/locked/actual are automatic; pass notes= for per-side/time/detail; "
             "omit exercise_index to target last exercise, or pass exercise_name",
             '- add_set load_type: only "absolute" or "percentage" (default absolute)',
-            "- Call add_week → add_day → add_exercise → add_set in order for new content",
+            "- Call add_week → add_day → add_exercise or add_superset → add_set in order for new content",
         ]
     ).strip()

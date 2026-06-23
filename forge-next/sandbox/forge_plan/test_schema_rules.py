@@ -20,6 +20,12 @@ class SchemaRulesTests(unittest.TestCase):
         self.assertIn('notes="per side"', text)
         self.assertIn("3/side", text)
 
+    def test_cheat_sheet_mentions_superset_api(self) -> None:
+        text = validation_rules_cheat_sheet()
+        self.assertIn("add_superset", text)
+        self.assertIn("SupersetRef.add_exercise", text)
+        self.assertIn("2.1.0", text)
+
 
 if __name__ == "__main__":
     unittest.main()
