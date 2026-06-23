@@ -182,9 +182,9 @@ describe("CoachWorkspace layout", () => {
     render(<CoachWorkspace firstName="Alex" role="coach" />);
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
+    expect(mockRestart).toHaveBeenCalledOnce();
     expect(mockReplace).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalledOnce();
-    expect(mockRestart).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
   });
 

@@ -339,9 +339,13 @@ export function CoachWorkspace({
       return;
     }
 
+    restart();
+    savedSnapshotRef.current = null;
+    setShowArtifact(false);
+    syncCoachWorkspaceUrl({ sessionId: null, planId: null });
     router.replace("/coach");
     router.refresh();
-  }, [activePlanId, router, state]);
+  }, [activePlanId, restart, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();
