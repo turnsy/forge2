@@ -1,4 +1,12 @@
-import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type {
+  Day,
+  Exercise,
+  ExerciseBlock,
+  Set,
+  SupersetGroup,
+  WorkoutPlan,
+} from "@/lib/plans/workout-plan";
+import { createExerciseBlock, migrateDayToBlocks } from "@/lib/plans/day-blocks";
 
 export function createSetId(): string {
   return crypto.randomUUID();
@@ -22,17 +30,34 @@ export function createDefaultSet(): Set {
   };
 }
 
-export function createDefaultExercise(): Exercise {
+export function createDefaultExercise(name = "New Exercise"): Exercise {
   return {
     id: createExerciseId(),
-    name: "New Exercise",
+    name,
     sets: [createDefaultSet()],
+  };
+}
+
+export function createDefaultExerciseBlock(): ExerciseBlock {
+  return createExerciseBlock(createDefaultExercise());
+}
+
+export function createDefaultSuperset(): SupersetGroup {
+  return {
+    type: "superset",
+    exercises: [
+      createDefaultExercise("Exercise A"),
+      createDefaultExercise("Exercise B"),
+    ].map((exercise) => ({
+      ...exercise,
+      sets: [createDefaultSet(), createDefaultSet(), createDefaultSet()] as Exercise["sets"],
+    })) as SupersetGroup["exercises"],
   };
 }
 
 export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name,
     weeks: [
       {
@@ -47,16 +72,23 @@ export function createDefaultDay(): Day {
   return {
     index: 1,
     code: "w1d1",
-    exercises: [createDefaultExercise()],
+    blocks: [createDefaultExerciseBlock()],
   };
 }
 
 export function isDefaultDayContent(day: Day): boolean {
-  if (day.exercises.length !== 1) {
+  const normalized = migrateDayToBlocks(day);
+
+  if (normalized.blocks.length !== 1) {
     return false;
   }
 
-  const exercise = day.exercises[0];
+  const block = normalized.blocks[0];
+  if (block.type !== "exercise") {
+    return false;
+  }
+
+  const exercise = block.exercise;
   if (exercise.name !== "New Exercise" || exercise.sets.length !== 1) {
     return false;
   }

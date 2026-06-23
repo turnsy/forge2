@@ -12,6 +12,7 @@ import {
 import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 type VideoLinkModalState = {
+  blockIndex: number;
   exerciseIndex: number;
   exerciseName: string;
   currentVideoUrl?: string;
@@ -66,11 +67,12 @@ export function CoachEditableDayView({
   }
 
   function openVideoLinkModal(
+    blockIndex: number,
     exerciseIndex: number,
     exerciseName: string,
     currentVideoUrl?: string,
   ) {
-    setVideoLinkModal({ exerciseIndex, exerciseName, currentVideoUrl });
+    setVideoLinkModal({ blockIndex, exerciseIndex, exerciseName, currentVideoUrl });
     setVideoUrlInput(currentVideoUrl ?? "");
     setAddToAllExercises(false);
   }
@@ -89,6 +91,7 @@ export function CoachEditableDayView({
     const updatedPlan = applyExerciseVideoLink(plan, {
       weekIndex,
       dayIndex,
+      blockIndex: videoLinkModal.blockIndex,
       exerciseIndex: videoLinkModal.exerciseIndex,
       exerciseName: videoLinkModal.exerciseName,
       videoUrl: videoUrlInput,

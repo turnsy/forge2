@@ -1,6 +1,7 @@
 /* AUTO-GENERATED — do not edit */
 
 export type NonEmptyString = string;
+export type DayBlock = ExerciseBlock | SupersetGroup;
 export type PlannedSet = ExactPlannedSet | TargetPlannedSet;
 /**
  * Supports simple reps (5) and combined reps (3+1).
@@ -12,7 +13,7 @@ export type Load = AbsoluteLoad | PercentageLoad;
  * Athlete-facing workout plan schema with week/day structure and one entry per planned set.
  */
 export interface WorkoutPlan {
-  schemaVersion: "2.0.0";
+  schemaVersion: "2.1.0";
   id?: NonEmptyString;
   name: NonEmptyString;
   discipline?: NonEmptyString;
@@ -41,7 +42,11 @@ export interface Day {
   /**
    * @minItems 1
    */
-  exercises: [Exercise, ...Exercise[]];
+  blocks: [DayBlock, ...DayBlock[]];
+}
+export interface ExerciseBlock {
+  type: "exercise";
+  exercise: Exercise;
 }
 export interface Exercise {
   id?: NonEmptyString;
@@ -91,4 +96,12 @@ export interface ActualSet {
   load?: Load;
   completedAt?: string;
   notes?: string;
+}
+export interface SupersetGroup {
+  type: "superset";
+  notes?: string;
+  /**
+   * @minItems 2
+   */
+  exercises: [Exercise, Exercise, ...Exercise[]];
 }

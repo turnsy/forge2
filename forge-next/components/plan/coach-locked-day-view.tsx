@@ -1,9 +1,13 @@
 import { LockIcon } from "@/components/icons/lock-icon";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { PlanSupersetBlock } from "@/components/plan/plan-superset-block";
+import { getDayBlocks, isExerciseBlock } from "@/lib/plans/day-blocks";
 import { getDayTitle } from "@/lib/plans/display";
 import type { Day } from "@/lib/plans/workout-plan";
 
 export function CoachLockedDayView({ day }: { day: Day }) {
+  const blocks = getDayBlocks(day);
+
   return (
     <div
       className="space-y-6 rounded-lg bg-zinc-100/80 p-4 dark:bg-zinc-800/50"
@@ -19,14 +23,26 @@ export function CoachLockedDayView({ day }: { day: Day }) {
           </span>
         </div>
       </div>
-      {day.exercises.map((exercise, index) => (
-        <PlanExerciseBlock
-          key={`${day.code}-${exercise.id ?? exercise.name}-${index}`}
-          exercise={exercise}
-          view="coach"
-          surfaceVariant="default"
-        />
-      ))}
+      {blocks.map((block, index) => {
+        if (isExerciseBlock(block)) {
+          return (
+            <PlanExerciseBlock
+              key={`${day.code}-${block.exercise.id ?? block.exercise.name}-${index}`}
+              exercise={block.exercise}
+              view="coach"
+              surfaceVariant="default"
+            />
+          );
+        }
+
+        return (
+          <PlanSupersetBlock
+            key={`${day.code}-superset-${index}`}
+            superset={block}
+            view="coach"
+          />
+        );
+      })}
     </div>
   );
 }

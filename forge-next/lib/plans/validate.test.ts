@@ -3,7 +3,7 @@ import { loadWorkoutPlan } from "@/lib/plans/validate";
 
 function minimalValidPlan() {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name: "Test Plan",
     weeks: [
       {
@@ -12,22 +12,25 @@ function minimalValidPlan() {
           {
             index: 1,
             code: "w1d1",
-            exercises: [
+            blocks: [
               {
-                name: "Back Squat",
-                sets: [
-                  {
-                    id: "w1d1-bs-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
+                type: "exercise",
+                exercise: {
+                  name: "Back Squat",
+                  sets: [
+                    {
+                      id: "w1d1-bs-1",
+                      planned: {
+                        type: "exact",
+                        reps: 5,
+                        load: { type: "absolute", value: 100, unit: "kg" },
+                      },
+                      actual: null,
+                      status: "planned",
+                      locked: false,
                     },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
-                ],
+                  ],
+                },
               },
             ],
           },
@@ -47,8 +50,51 @@ describe("loadWorkoutPlan", () => {
     }
   });
 
+  it("migrates legacy 2.0.0 exercises to blocks", () => {
+    const legacy = {
+      schemaVersion: "2.0.0",
+      name: "Legacy Plan",
+      weeks: [
+        {
+          index: 1,
+          days: [
+            {
+              index: 1,
+              code: "w1d1",
+              exercises: [
+                {
+                  name: "Back Squat",
+                  sets: [
+                    {
+                      id: "w1d1-bs-1",
+                      planned: {
+                        type: "exact",
+                        reps: 5,
+                        load: { type: "absolute", value: 100, unit: "kg" },
+                      },
+                      actual: null,
+                      status: "planned",
+                      locked: false,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = loadWorkoutPlan(legacy);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.schemaVersion).toBe("2.1.0");
+      expect(result.plan.weeks[0].days[0].blocks[0].type).toBe("exercise");
+    }
+  });
+
   it("rejects missing required fields", () => {
-    const result = loadWorkoutPlan({ schemaVersion: "2.0.0" });
+    const result = loadWorkoutPlan({ schemaVersion: "2.1.0" });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

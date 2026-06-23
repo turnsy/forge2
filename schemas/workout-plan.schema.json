@@ -13,7 +13,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "const": "2.0.0"
+      "const": "2.1.0"
     },
     "id": {
       "$ref": "#/$defs/nonEmptyString"
@@ -92,7 +92,7 @@
       "required": [
         "index",
         "code",
-        "exercises"
+        "blocks"
       ],
       "properties": {
         "index": {
@@ -109,9 +109,58 @@
         "notes": {
           "type": "string"
         },
-        "exercises": {
+        "blocks": {
           "type": "array",
           "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/dayBlock"
+          }
+        }
+      }
+    },
+    "dayBlock": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/exerciseBlock"
+        },
+        {
+          "$ref": "#/$defs/supersetGroup"
+        }
+      ]
+    },
+    "exerciseBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "exercise"
+      ],
+      "properties": {
+        "type": {
+          "const": "exercise"
+        },
+        "exercise": {
+          "$ref": "#/$defs/exercise"
+        }
+      }
+    },
+    "supersetGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "exercises"
+      ],
+      "properties": {
+        "type": {
+          "const": "superset"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "exercises": {
+          "type": "array",
+          "minItems": 2,
           "items": {
             "$ref": "#/$defs/exercise"
           }

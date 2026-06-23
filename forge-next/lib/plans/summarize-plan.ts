@@ -1,4 +1,5 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { getDayBlocks, isExerciseBlock } from "@/lib/plans/day-blocks";
 import { getPlanStats } from "@/lib/plans/stats";
 
 /**
@@ -25,13 +26,20 @@ export function summarizePlan(plan: WorkoutPlan | null | undefined): string {
     const weekLabel = week.label ?? week.name ?? `Week ${week.index}`;
     lines.push(`- ${weekLabel} (${dayCount} days)`);
     for (const day of (week.days ?? []).slice(0, 7)) {
-      const exerciseNames = (day.exercises ?? [])
+      const blockLabels = getDayBlocks(day)
         .slice(0, 12)
-        .map((exercise) => exercise.name)
+        .map((block) => {
+          if (isExerciseBlock(block)) {
+            return block.exercise.name;
+          }
+
+          const names = block.exercises.map((exercise) => exercise.name).join(" + ");
+          return `Superset: ${names}`;
+        })
         .join(", ");
       const dayLabel = day.name ?? day.code;
       lines.push(
-        `  - Day ${day.index} (${dayLabel}): ${exerciseNames || "no exercises"}`,
+        `  - Day ${day.index} (${dayLabel}): ${blockLabels || "no blocks"}`,
       );
     }
     if ((week.days?.length ?? 0) > 7) {

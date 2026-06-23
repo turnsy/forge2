@@ -7,6 +7,12 @@ import type {
   Week,
   WorkoutPlan,
 } from "@/lib/plans/workout-plan";
+import {
+  getDayBlocks,
+  isExerciseBlock,
+  iterateDayExercises,
+  migrateDayToBlocks,
+} from "@/lib/plans/day-blocks";
 
 export type CurrentDayLocation = {
   weekIndex: number;
@@ -15,14 +21,19 @@ export type CurrentDayLocation = {
   day: Day;
 };
 
+function dayHasIncompleteSets(day: Day): boolean {
+  return getDayBlocks(day).some((block) => {
+    const exercises = isExerciseBlock(block) ? [block.exercise] : block.exercises;
+    return exercises.some((exercise) =>
+      exercise.sets.some((set) => set.status === "planned"),
+    );
+  });
+}
+
 export function findCurrentDay(plan: WorkoutPlan): CurrentDayLocation | null {
   for (const week of plan.weeks) {
     for (const day of week.days) {
-      const hasIncomplete = day.exercises.some((exercise) =>
-        exercise.sets.some((set) => set.status === "planned"),
-      );
-
-      if (hasIncomplete) {
+      if (dayHasIncompleteSets(day)) {
         return {
           weekIndex: week.index,
           dayIndex: day.index,
@@ -47,7 +58,7 @@ export function computePlanCompletionPercent(plan: WorkoutPlan): number {
   for (const week of plan.weeks) {
     for (const day of week.days) {
       totalDays += 1;
-      const dayComplete = day.exercises.every((exercise) =>
+      const dayComplete = iterateDayExercises(day).every((exercise) =>
         exercise.sets.every((set) => set.status === "completed"),
       );
       if (dayComplete) {
@@ -89,7 +100,7 @@ export function isExerciseComplete(exercise: Exercise): boolean {
 }
 
 export function dayHasUnfilledNonTargetSets(day: Day): boolean {
-  return day.exercises.some((exercise) =>
+  return iterateDayExercises(day).some((exercise) =>
     exercise.sets.some(
       (set) => set.planned.type !== "target" && !isSetActualComplete(set),
     ),
@@ -260,6 +271,7 @@ export function applySetActuals(
   plan: WorkoutPlan,
   weekIdx: number,
   dayIdx: number,
+  blockIdx: number,
   exerciseIdx: number,
   setIdx: number,
   actual: ActualSet | null,
@@ -278,30 +290,67 @@ export function applySetActuals(
             return day;
           }
 
+          const normalizedDay = migrateDayToBlocks(day);
+
           return {
-            ...day,
-            exercises: day.exercises.map((exercise, currentExerciseIdx) => {
-              if (currentExerciseIdx !== exerciseIdx) {
-                return exercise;
+            ...normalizedDay,
+            blocks: normalizedDay.blocks.map((block, currentBlockIdx) => {
+              if (currentBlockIdx !== blockIdx) {
+                return block;
+              }
+
+              if (isExerciseBlock(block)) {
+                if (exerciseIdx !== 0) {
+                  return block;
+                }
+
+                return {
+                  ...block,
+                  exercise: {
+                    ...block.exercise,
+                    sets: block.exercise.sets.map((set, currentSetIdx) => {
+                      if (currentSetIdx !== setIdx) {
+                        return set;
+                      }
+
+                      return {
+                        ...set,
+                        actual:
+                          actual === null
+                            ? null
+                            : mergeSavedActual(set.actual, actual),
+                      };
+                    }) as typeof block.exercise.sets,
+                  },
+                };
               }
 
               return {
-                ...exercise,
-                sets: exercise.sets.map((set, currentSetIdx) => {
-                  if (currentSetIdx !== setIdx) {
-                    return set;
+                ...block,
+                exercises: block.exercises.map((exercise, currentExerciseIdx) => {
+                  if (currentExerciseIdx !== exerciseIdx) {
+                    return exercise;
                   }
 
                   return {
-                    ...set,
-                    actual:
-                      actual === null
-                        ? null
-                        : mergeSavedActual(set.actual, actual),
+                    ...exercise,
+                    sets: exercise.sets.map((set, currentSetIdx) => {
+                      if (currentSetIdx !== setIdx) {
+                        return set;
+                      }
+
+                      return {
+                        ...set,
+                        actual:
+                          actual === null
+                            ? null
+                            : mergeSavedActual(set.actual, actual),
+                      };
+                    }) as typeof exercise.sets,
                   };
-                }) as typeof exercise.sets,
+                }) as typeof block.exercises,
               };
-            }) as typeof day.exercises,
+            }) as typeof day.blocks,
           };
         }) as typeof week.days,
       };
@@ -321,6 +370,14 @@ function buildTargetCompletionActual(set: Set, completedAt: string): ActualSet {
   }
 
   return { completedAt };
+}
+
+function mapBlockSets<T>(
+  block: Day["blocks"][number],
+  mapper: (set: Set) => T,
+): T[] {
+  const exercises = isExerciseBlock(block) ? [block.exercise] : block.exercises;
+  return exercises.flatMap((exercise) => exercise.sets.map(mapper));
 }
 
 export function completeDayInPlan(
@@ -347,33 +404,71 @@ export function completeDayInPlan(
 
           let daySetIndex = 0;
 
+          const normalizedDay = migrateDayToBlocks(day);
+
           return {
-            ...day,
-            exercises: day.exercises.map((exercise) => ({
-              ...exercise,
-              sets: exercise.sets.map((set) => {
-                const status = resolveSetCompletionStatus(set);
-                setStatuses.push({ setIndex: daySetIndex, status });
-                daySetIndex += 1;
-
-                if (status === "skipped") {
-                  return { ...set, status };
-                }
-
-                const actual =
-                  set.planned.type === "target"
-                    ? buildTargetCompletionActual(set, completedAt)
-                    : set.actual
-                      ? { ...set.actual, completedAt }
-                      : set.actual;
-
+            ...normalizedDay,
+            blocks: normalizedDay.blocks.map((block) => {
+              if (isExerciseBlock(block)) {
                 return {
-                  ...set,
-                  status: "completed" as const,
-                  actual,
+                  ...block,
+                  exercise: {
+                    ...block.exercise,
+                    sets: block.exercise.sets.map((set) => {
+                      const status = resolveSetCompletionStatus(set);
+                      setStatuses.push({ setIndex: daySetIndex, status });
+                      daySetIndex += 1;
+
+                      if (status === "skipped") {
+                        return { ...set, status };
+                      }
+
+                      const actual =
+                        set.planned.type === "target"
+                          ? buildTargetCompletionActual(set, completedAt)
+                          : set.actual
+                            ? { ...set.actual, completedAt }
+                            : set.actual;
+
+                      return {
+                        ...set,
+                        status: "completed" as const,
+                        actual,
+                      };
+                    }) as typeof block.exercise.sets,
+                  },
                 };
-              }) as typeof exercise.sets,
-            })) as typeof day.exercises,
+              }
+
+              return {
+                ...block,
+                exercises: block.exercises.map((exercise) => ({
+                  ...exercise,
+                  sets: exercise.sets.map((set) => {
+                    const status = resolveSetCompletionStatus(set);
+                    setStatuses.push({ setIndex: daySetIndex, status });
+                    daySetIndex += 1;
+
+                    if (status === "skipped") {
+                      return { ...set, status };
+                    }
+
+                    const actual =
+                      set.planned.type === "target"
+                        ? buildTargetCompletionActual(set, completedAt)
+                        : set.actual
+                          ? { ...set.actual, completedAt }
+                          : set.actual;
+
+                    return {
+                      ...set,
+                      status: "completed" as const,
+                      actual,
+                    };
+                  }) as typeof exercise.sets,
+                })) as typeof block.exercises,
+              };
+            }) as typeof day.blocks,
           };
         }) as typeof week.days,
       };
@@ -411,11 +506,7 @@ export function findNextDayAfter(
         continue;
       }
 
-      const hasIncomplete = day.exercises.some((exercise) =>
-        exercise.sets.some((set) => set.status === "planned"),
-      );
-
-      if (hasIncomplete) {
+      if (dayHasIncompleteSets(day)) {
         return {
           weekIndex: week.index,
           dayIndex: day.index,
@@ -427,4 +518,17 @@ export function findNextDayAfter(
   }
 
   return findCurrentDay(plan);
+}
+
+// Exported for tests that assert block set iteration order.
+export function collectDaySetStatuses(day: Day): SetCompletionStatus[] {
+  const statuses: SetCompletionStatus[] = [];
+
+  for (const block of getDayBlocks(day)) {
+    for (const result of mapBlockSets(block, (set) => resolveSetCompletionStatus(set))) {
+      statuses.push(result);
+    }
+  }
+
+  return statuses;
 }

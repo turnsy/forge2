@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
+import { dayFromExercises, getBlockExercise, minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import { isDefaultDayContent } from "@/lib/plans/plan-defaults";
 import {
   addDay,
@@ -17,16 +17,14 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makeTwoWeekPlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name: "Block",
     weeks: [
       {
         index: 1,
         days: [
-          {
-            index: 1,
-            code: "w1d1",
-            exercises: [
+          dayFromExercises(
+            [
               {
                 name: "Squat",
                 sets: [
@@ -44,11 +42,10 @@ function makeTwoWeekPlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
-          {
-            index: 2,
-            code: "w1d2",
-            exercises: [
+            { index: 1, code: "w1d1" },
+          ),
+          dayFromExercises(
+            [
               {
                 name: "Bench",
                 sets: [
@@ -66,17 +63,16 @@ function makeTwoWeekPlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
+            { index: 2, code: "w1d2" },
+          ),
         ],
       },
       {
         index: 2,
         label: "Week 2",
         days: [
-          {
-            index: 1,
-            code: "w2d1",
-            exercises: [
+          dayFromExercises(
+            [
               {
                 name: "Deadlift",
                 sets: [
@@ -94,7 +90,8 @@ function makeTwoWeekPlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
+            { index: 1, code: "w2d1" },
+          ),
         ],
       },
     ],
@@ -161,11 +158,11 @@ describe("plan-structure", () => {
 
     const movedWeek = moveWeek(plan, 1, 1);
     expect(movedWeek?.weeks[0].index).toBe(1);
-    expect(movedWeek?.weeks[0].days[0].exercises[0].name).toBe("Deadlift");
+    expect(getBlockExercise(movedWeek!.weeks[0].days[0], 0).name).toBe("Deadlift");
     expectValidPlan(movedWeek!);
 
     const movedDay = moveDay(plan, 1, 2, -1);
-    expect(movedDay?.weeks[0].days[0].exercises[0].name).toBe("Bench");
+    expect(getBlockExercise(movedDay!.weeks[0].days[0], 0).name).toBe("Bench");
     expect(movedDay?.weeks[0].days[0].code).toBe("w1d1");
     expectValidPlan(movedDay!);
   });

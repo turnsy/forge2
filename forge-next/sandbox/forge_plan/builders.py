@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "2.0.0"
+SCHEMA_VERSION = "2.1.0"
 DAY_CODE_PATTERN = re.compile(r"^w[0-9]+d[0-9]+$")
 
 
@@ -35,7 +35,7 @@ def load_seed_from_file(path: str) -> dict[str, Any]:
     if not isinstance(raw, dict):
         return empty_plan_template()
 
-    if raw.get("schemaVersion") != SCHEMA_VERSION:
+    if raw.get("schemaVersion") not in (SCHEMA_VERSION, "2.0.0"):
         return empty_plan_template()
 
     weeks = raw.get("weeks")

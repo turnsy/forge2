@@ -6,6 +6,7 @@ import { VideoIcon } from "@/components/icons/video-icon";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { CoachLockedDayView } from "@/components/plan/coach-locked-day-view";
+import { PlanSupersetBlock } from "@/components/plan/plan-superset-block";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { Button, IconButton, Input, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
@@ -17,6 +18,13 @@ import {
   resolveSaveActual,
   setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
+import {
+  getDayBlocks,
+  getSetKey,
+  isExerciseBlock,
+  migrateDayToBlocks,
+  type SetLocation,
+} from "@/lib/plans/day-blocks";
 import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import { getDayTitle, getSetNotes } from "@/lib/plans/display";
 import type {
@@ -24,6 +32,7 @@ import type {
   Day,
   PercentageLoad,
   Set,
+  SupersetGroup,
   WorkoutPlan,
 } from "@/lib/plans/workout-plan";
 import {
@@ -40,11 +49,6 @@ type SetFormState = {
   load: string;
 };
 
-type SetLocation = {
-  exerciseIdx: number;
-  setIdx: number;
-};
-
 export type PlanDayViewProps = {
   plan: WorkoutPlan | null;
   weekIndex: number;
@@ -59,16 +63,16 @@ export type PlanDayViewProps = {
   disabled?: boolean;
 };
 
-function getSetKey(exerciseIdx: number, setIdx: number): string {
-  return `${exerciseIdx}-${setIdx}`;
-}
-
 function buildInitialFormState(day: Day): Record<string, SetFormState> {
   const state: Record<string, SetFormState> = {};
+  const normalized = migrateDayToBlocks(day);
 
-  day.exercises.forEach((exercise, exerciseIdx) => {
-    exercise.sets.forEach((set, setIdx) => {
-      state[getSetKey(exerciseIdx, setIdx)] = setFormStateFromActual(set);
+  normalized.blocks.forEach((block, blockIdx) => {
+    const exercises = isExerciseBlock(block) ? [block.exercise] : block.exercises;
+    exercises.forEach((exercise, exerciseIdx) => {
+      exercise.sets.forEach((set, setIdx) => {
+        state[getSetKey(blockIdx, exerciseIdx, setIdx)] = setFormStateFromActual(set);
+      });
     });
   });
 
@@ -109,7 +113,7 @@ function getAbsoluteLoadPlaceholder(set: Set): string {
 }
 
 function cloneDay(day: Day): Day {
-  return structuredClone(day);
+  return structuredClone(migrateDayToBlocks(day));
 }
 
 function exerciseCardClassName(complete: boolean): string {
@@ -144,27 +148,55 @@ function applyLocalActualsToDay(
   day: Day,
   formState: Record<string, SetFormState>,
 ): Day {
-  return {
-    ...day,
-    exercises: day.exercises.map((exercise, exerciseIdx) => ({
-      ...exercise,
-      sets: exercise.sets.map((set, setIdx) => {
-        const local = formState[getSetKey(exerciseIdx, setIdx)];
-        if (!local) {
-          return set;
-        }
+  const normalized = migrateDayToBlocks(day);
 
-        const actual = buildActualFromInputs(local.reps, local.load, set);
+  return {
+    ...normalized,
+    blocks: normalized.blocks.map((block, blockIdx) => {
+      if (isExerciseBlock(block)) {
         return {
-          ...set,
-          actual: actual ?? set.actual,
+          ...block,
+          exercise: {
+            ...block.exercise,
+            sets: block.exercise.sets.map((set, setIdx) => {
+              const local = formState[getSetKey(blockIdx, 0, setIdx)];
+              if (!local) {
+                return set;
+              }
+
+              const actual = buildActualFromInputs(local.reps, local.load, set);
+              return {
+                ...set,
+                actual: actual ?? set.actual,
+              };
+            }) as typeof block.exercise.sets,
+          },
         };
-      }) as typeof exercise.sets,
-    })) as typeof day.exercises,
+      }
+
+      return {
+        ...block,
+        exercises: block.exercises.map((exercise, exerciseIdx) => ({
+          ...exercise,
+          sets: exercise.sets.map((set, setIdx) => {
+            const local = formState[getSetKey(blockIdx, exerciseIdx, setIdx)];
+            if (!local) {
+              return set;
+            }
+
+            const actual = buildActualFromInputs(local.reps, local.load, set);
+            return {
+              ...set,
+              actual: actual ?? set.actual,
+            };
+          }) as typeof exercise.sets,
+        })) as typeof block.exercises,
+      };
+    }) as typeof normalized.blocks,
   };
 }
 
-function SetRowInputs({
+export function SetRowInputs({
   set,
   reps,
   load,
@@ -321,37 +353,200 @@ function AthleteSetRow({
   );
 }
 
+function AthleteSupersetRoundRow({
+  roundNumber,
+  exercises,
+  blockIdx,
+  roundIdx,
+  formState,
+  savedSets,
+  sourceSets,
+  readOnly,
+  setRefs,
+  onInputChange,
+}: {
+  roundNumber: number;
+  exercises: SupersetGroup["exercises"];
+  blockIdx: number;
+  roundIdx: number;
+  formState: Record<string, SetFormState>;
+  savedSets: SupersetGroup["exercises"];
+  sourceSets: SupersetGroup["exercises"];
+  readOnly?: boolean;
+  setRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+  onInputChange?: (
+    location: SetLocation,
+    set: Set,
+    field: "reps" | "load",
+    value: string,
+  ) => void;
+}) {
+  return (
+    <div
+      className={[
+        accordionClass("default"),
+        "space-y-3 !p-3",
+      ].join(" ")}
+      data-superset-round={roundNumber}
+    >
+      <p className="text-sm font-medium text-surface-muted">Round {roundNumber}</p>
+      <div className="grid gap-3 md:grid-cols-2">
+        {exercises.map((exercise, exerciseIdx) => {
+          const set = sourceSets[exerciseIdx].sets[roundIdx];
+          const savedSet = savedSets[exerciseIdx].sets[roundIdx];
+          const key = getSetKey(blockIdx, exerciseIdx, roundIdx);
+          const local = getResolvedSetFormState(formState, set, key);
+          const complete = isSetActualComplete(savedSet);
+
+          return (
+            <div key={`${exercise.name}-${exerciseIdx}`} className="space-y-2">
+              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+              <div
+                ref={setRefs ? (node) => { setRefs.current[key] = node; } : undefined}
+                className={
+                  readOnly
+                    ? athleteReadOnlySetCardClassName(savedSet)
+                    : athleteSetCardClassName(complete)
+                }
+                data-set-complete={complete ? "true" : "false"}
+              >
+                <AthleteSetNotes notes={getSetNotes(set)} />
+                <SetRowInputs
+                  set={set}
+                  reps={local.reps}
+                  load={local.load}
+                  readOnly={readOnly}
+                  onRepsChange={
+                    readOnly
+                      ? undefined
+                      : (value) => onInputChange?.({ blockIdx, exerciseIdx, setIdx: roundIdx }, set, "reps", value)
+                  }
+                  onLoadChange={
+                    readOnly
+                      ? undefined
+                      : (value) => onInputChange?.({ blockIdx, exerciseIdx, setIdx: roundIdx }, set, "load", value)
+                  }
+                />
+                {!readOnly ? <SetCheckmark complete={complete} /> : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AthleteSupersetSection({
+  superset,
+  blockIdx,
+  savedSuperset,
+  sourceSuperset,
+  formState,
+  readOnly,
+  setRefs,
+  onInputChange,
+}: {
+  superset: SupersetGroup;
+  blockIdx: number;
+  savedSuperset: SupersetGroup;
+  sourceSuperset: SupersetGroup;
+  formState: Record<string, SetFormState>;
+  readOnly?: boolean;
+  setRefs?: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+  onInputChange?: (
+    location: SetLocation,
+    set: Set,
+    field: "reps" | "load",
+    value: string,
+  ) => void;
+}) {
+  const roundCount = superset.exercises[0]?.sets.length ?? 0;
+  const supersetComplete = superset.exercises.every((exercise) => isExerciseComplete(exercise));
+
+  return (
+    <section
+      className={[exerciseCardClassName(supersetComplete), "border border-glass-border"].join(" ")}
+      data-superset-block
+      data-exercise-complete={supersetComplete ? "true" : "false"}
+    >
+      <div>
+        <h2 className="text-base font-semibold text-surface-foreground">Superset</h2>
+        {superset.notes ? (
+          <p className="mt-1 text-sm text-surface-muted">{superset.notes}</p>
+        ) : null}
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: roundCount }, (_, roundIdx) => (
+          <AthleteSupersetRoundRow
+            key={`round-${roundIdx}`}
+            roundNumber={roundIdx + 1}
+            exercises={superset.exercises}
+            blockIdx={blockIdx}
+            roundIdx={roundIdx}
+            formState={formState}
+            savedSets={savedSuperset.exercises}
+            sourceSets={sourceSuperset.exercises}
+            readOnly={readOnly}
+            setRefs={setRefs}
+            onInputChange={onInputChange}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function AthleteReadOnlyDayContent({ day }: { day: Day }) {
+  const blocks = getDayBlocks(day);
+
   return (
     <div className="space-y-4">
       <PlanDayHeader day={day} />
-      {day.exercises.map((exercise, exerciseIdx) => (
-        <section
-          key={`${exercise.name}-${exerciseIdx}`}
-          className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
-        >
-          <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-          <AthleteExerciseNotes notes={exercise.notes} />
-          <div className="space-y-3">
-            {exercise.sets.map((set, setIdx) => {
-              const filled = set.status === "completed";
-              const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
+      {blocks.map((block, blockIdx) => {
+        if (isExerciseBlock(block)) {
+          const exercise = block.exercise;
+          return (
+            <section
+              key={`${exercise.name}-${blockIdx}`}
+              className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
+            >
+              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+              <AthleteExerciseNotes notes={exercise.notes} />
+              <div className="space-y-3">
+                {exercise.sets.map((set, setIdx) => {
+                  const filled = set.status === "completed";
+                  const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
 
-              return (
-                <AthleteSetRow
-                  key={set.id}
-                  set={set}
-                  setIdx={setIdx}
-                  reps={values.reps}
-                  load={values.load}
-                  readOnly
-                  complete={filled}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                  return (
+                    <AthleteSetRow
+                      key={set.id}
+                      set={set}
+                      setIdx={setIdx}
+                      reps={values.reps}
+                      load={values.load}
+                      readOnly
+                      complete={filled}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        }
+
+        return (
+          <AthleteSupersetSection
+            key={`superset-${blockIdx}`}
+            superset={block}
+            blockIdx={blockIdx}
+            savedSuperset={block}
+            sourceSuperset={block}
+            formState={{}}
+            readOnly
+          />
+        );
+      })}
     </div>
   );
 }
@@ -363,17 +558,31 @@ function PlanDayHeader({ day }: { day: Day }) {
 }
 
 function CoachDayContent({ day }: { day: Day }) {
+  const blocks = getDayBlocks(day);
+
   return (
     <div className="space-y-6">
       <PlanDayHeader day={day} />
-      {day.exercises.map((exercise, index) => (
-        <PlanExerciseBlock
-          key={`${day.code}-${exercise.id ?? exercise.name}-${index}`}
-          exercise={exercise}
-          view="coach"
-          surfaceVariant="default"
-        />
-      ))}
+      {blocks.map((block, index) => {
+        if (isExerciseBlock(block)) {
+          return (
+            <PlanExerciseBlock
+              key={`${day.code}-${block.exercise.id ?? block.exercise.name}-${index}`}
+              exercise={block.exercise}
+              view="coach"
+              surfaceVariant="default"
+            />
+          );
+        }
+
+        return (
+          <PlanSupersetBlock
+            key={`${day.code}-superset-${index}`}
+            superset={block}
+            view="coach"
+          />
+        );
+      })}
     </div>
   );
 }
@@ -393,10 +602,11 @@ function AthleteEditableDayContent({
   onDayCompleted?: (allDaysDone: boolean, plan: WorkoutPlan) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
 }) {
+  const normalizedDay = migrateDayToBlocks(day);
   const [formState, setFormState] = useState<Record<string, SetFormState>>(() =>
-    buildInitialFormState(day),
+    buildInitialFormState(normalizedDay),
   );
-  const [savedDay, setSavedDay] = useState<Day>(() => cloneDay(day));
+  const [savedDay, setSavedDay] = useState<Day>(() => cloneDay(normalizedDay));
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [confirmSkipOpen, setConfirmSkipOpen] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
@@ -418,24 +628,29 @@ function AthleteEditableDayContent({
   }, [onSaveStatusChange, saveStatus]);
 
   const firstIncompleteKey = useMemo(() => {
-    for (let exerciseIdx = 0; exerciseIdx < day.exercises.length; exerciseIdx += 1) {
-      const exercise = day.exercises[exerciseIdx];
-      for (let setIdx = 0; setIdx < exercise.sets.length; setIdx += 1) {
-        const set = exercise.sets[setIdx];
-        const key = getSetKey(exerciseIdx, setIdx);
-        const local = formState[key];
-        const actual = local
-          ? buildActualFromInputs(local.reps, local.load, set)
-          : set.actual;
+    for (let blockIdx = 0; blockIdx < normalizedDay.blocks.length; blockIdx += 1) {
+      const block = normalizedDay.blocks[blockIdx];
+      const exercises = isExerciseBlock(block) ? [block.exercise] : block.exercises;
 
-        if (!actual) {
-          return key;
+      for (let exerciseIdx = 0; exerciseIdx < exercises.length; exerciseIdx += 1) {
+        const exercise = exercises[exerciseIdx];
+        for (let setIdx = 0; setIdx < exercise.sets.length; setIdx += 1) {
+          const set = exercise.sets[setIdx];
+          const key = getSetKey(blockIdx, exerciseIdx, setIdx);
+          const local = formState[key];
+          const actual = local
+            ? buildActualFromInputs(local.reps, local.load, set)
+            : set.actual;
+
+          if (!actual) {
+            return key;
+          }
         }
       }
     }
 
     return null;
-  }, [day, formState]);
+  }, [normalizedDay, formState]);
 
   useEffect(() => {
     if (!firstIncompleteKey) {
@@ -457,8 +672,18 @@ function AthleteEditableDayContent({
   const applySavedActual = useCallback((location: SetLocation, actual: Set["actual"]) => {
     setSavedDay((previous) => {
       const next = cloneDay(previous);
-      next.exercises[location.exerciseIdx].sets[location.setIdx] = {
-        ...next.exercises[location.exerciseIdx].sets[location.setIdx],
+      const block = next.blocks[location.blockIdx];
+
+      if (isExerciseBlock(block)) {
+        block.exercise.sets[location.setIdx] = {
+          ...block.exercise.sets[location.setIdx],
+          actual,
+        };
+        return next;
+      }
+
+      block.exercises[location.exerciseIdx].sets[location.setIdx] = {
+        ...block.exercises[location.exerciseIdx].sets[location.setIdx],
         actual,
       };
       return next;
@@ -481,6 +706,7 @@ function AthleteEditableDayContent({
         assignmentId,
         weekIndex,
         dayIndex,
+        location.blockIdx,
         location.exerciseIdx,
         location.setIdx,
         actual,
@@ -531,7 +757,7 @@ function AthleteEditableDayContent({
     reps: string,
     load: string,
   ) {
-    const key = getSetKey(location.exerciseIdx, location.setIdx);
+    const key = getSetKey(location.blockIdx, location.exerciseIdx, location.setIdx);
     const existingTimer = debounceTimers.current[key];
     if (existingTimer) {
       clearTimeout(existingTimer);
@@ -552,7 +778,7 @@ function AthleteEditableDayContent({
     field: "reps" | "load",
     value: string,
   ) {
-    const key = getSetKey(location.exerciseIdx, location.setIdx);
+    const key = getSetKey(location.blockIdx, location.exerciseIdx, location.setIdx);
     setFormState((previous) => {
       const current = previous[key] ?? { reps: "", load: "" };
       const next = { ...current, [field]: value };
@@ -575,35 +801,41 @@ function AthleteEditableDayContent({
 
     const saves: Array<Promise<SaveSetActualsActionResult>> = [];
     const savedUpdates: Array<{ location: SetLocation; actual: Set["actual"] }> = [];
-    day.exercises.forEach((exercise, exerciseIdx) => {
-      exercise.sets.forEach((set, setIdx) => {
-        if (set.planned.type === "target") {
-          return;
-        }
 
-        const local = latestFormState.current[getSetKey(exerciseIdx, setIdx)];
-        if (!local) {
-          return;
-        }
+    normalizedDay.blocks.forEach((block, blockIdx) => {
+      const exercises = isExerciseBlock(block) ? [block.exercise] : block.exercises;
 
-        const resolution = resolveSaveActual(local.reps, local.load, set);
-        if (resolution.type === "skip") {
-          return;
-        }
+      exercises.forEach((exercise, exerciseIdx) => {
+        exercise.sets.forEach((set, setIdx) => {
+          if (set.planned.type === "target") {
+            return;
+          }
 
-        const { actual } = resolution;
-        const location = { exerciseIdx, setIdx };
-        savedUpdates.push({ location, actual });
-        saves.push(
-          saveSetActualsAction(
-            assignmentId,
-            weekIndex,
-            dayIndex,
-            exerciseIdx,
-            setIdx,
-            actual,
-          ),
-        );
+          const local = latestFormState.current[getSetKey(blockIdx, exerciseIdx, setIdx)];
+          if (!local) {
+            return;
+          }
+
+          const resolution = resolveSaveActual(local.reps, local.load, set);
+          if (resolution.type === "skip") {
+            return;
+          }
+
+          const { actual } = resolution;
+          const location = { blockIdx, exerciseIdx, setIdx };
+          savedUpdates.push({ location, actual });
+          saves.push(
+            saveSetActualsAction(
+              assignmentId,
+              weekIndex,
+              dayIndex,
+              blockIdx,
+              exerciseIdx,
+              setIdx,
+              actual,
+            ),
+          );
+        });
       });
     });
 
@@ -616,15 +848,23 @@ function AthleteEditableDayContent({
       setSavedDay((previous) => {
         const next = cloneDay(previous);
         for (const { location, actual } of savedUpdates) {
-          next.exercises[location.exerciseIdx].sets[location.setIdx] = {
-            ...next.exercises[location.exerciseIdx].sets[location.setIdx],
-            actual,
-          };
+          const block = next.blocks[location.blockIdx];
+          if (isExerciseBlock(block)) {
+            block.exercise.sets[location.setIdx] = {
+              ...block.exercise.sets[location.setIdx],
+              actual,
+            };
+          } else {
+            block.exercises[location.exerciseIdx].sets[location.setIdx] = {
+              ...block.exercises[location.exerciseIdx].sets[location.setIdx],
+              actual,
+            };
+          }
         }
         return next;
       });
     }
-  }, [assignmentId, day, dayIndex, weekIndex]);
+  }, [assignmentId, normalizedDay, dayIndex, weekIndex]);
 
   function handleCompleteSuccess(allDaysDone: boolean, plan: WorkoutPlan) {
     onDayCompleted?.(allDaysDone, plan);
@@ -633,7 +873,7 @@ function AthleteEditableDayContent({
   function handleCompleteDay() {
     setCompleteError(null);
 
-    const dayWithLocalActuals = applyLocalActualsToDay(day, latestFormState.current);
+    const dayWithLocalActuals = applyLocalActualsToDay(normalizedDay, latestFormState.current);
     if (dayHasUnfilledNonTargetSets(dayWithLocalActuals)) {
       setConfirmSkipOpen(true);
       return;
@@ -678,62 +918,84 @@ function AthleteEditableDayContent({
 
   return (
     <>
-      <PlanDayHeader day={day} />
+      <PlanDayHeader day={normalizedDay} />
       <div className="space-y-4">
-        {savedDay.exercises.map((exercise, exerciseIdx) => {
-          const exerciseComplete = isExerciseComplete(exercise);
+        {savedDay.blocks.map((savedBlock, blockIdx) => {
+          const sourceBlock = normalizedDay.blocks[blockIdx];
 
-          return (
-            <section
-              key={`${exercise.name}-${exerciseIdx}`}
-              className={exerciseCardClassName(exerciseComplete)}
-              data-exercise-complete={exerciseComplete ? "true" : "false"}
-            >
-              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-              <AthleteExerciseNotes notes={exercise.notes} />
-              <div className="space-y-3">
-                {exercise.sets.map((savedSet, setIdx) => {
-                  const key = getSetKey(exerciseIdx, setIdx);
-                  const local = getResolvedSetFormState(
-                    formState,
-                    day.exercises[exerciseIdx].sets[setIdx],
-                    key,
-                  );
-                  const complete = isSetActualComplete(savedSet);
+          if (isExerciseBlock(savedBlock) && isExerciseBlock(sourceBlock)) {
+            const exercise = savedBlock.exercise;
+            const exerciseComplete = isExerciseComplete(exercise);
 
-                  return (
-                    <AthleteSetRow
-                      key={savedSet.id}
-                      set={day.exercises[exerciseIdx].sets[setIdx]}
-                      setIdx={setIdx}
-                      reps={local.reps}
-                      load={local.load}
-                      complete={complete}
-                      setRef={(node) => {
-                        setRefs.current[key] = node;
-                      }}
-                      onRepsChange={(value) =>
-                        handleInputChange(
-                          { exerciseIdx, setIdx },
-                          day.exercises[exerciseIdx].sets[setIdx],
-                          "reps",
-                          value,
-                        )
-                      }
-                      onLoadChange={(value) =>
-                        handleInputChange(
-                          { exerciseIdx, setIdx },
-                          day.exercises[exerciseIdx].sets[setIdx],
-                          "load",
-                          value,
-                        )
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </section>
-          );
+            return (
+              <section
+                key={`${exercise.name}-${blockIdx}`}
+                className={exerciseCardClassName(exerciseComplete)}
+                data-exercise-complete={exerciseComplete ? "true" : "false"}
+              >
+                <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+                <AthleteExerciseNotes notes={exercise.notes} />
+                <div className="space-y-3">
+                  {exercise.sets.map((savedSet, setIdx) => {
+                    const key = getSetKey(blockIdx, 0, setIdx);
+                    const local = getResolvedSetFormState(
+                      formState,
+                      sourceBlock.exercise.sets[setIdx],
+                      key,
+                    );
+                    const complete = isSetActualComplete(savedSet);
+
+                    return (
+                      <AthleteSetRow
+                        key={savedSet.id}
+                        set={sourceBlock.exercise.sets[setIdx]}
+                        setIdx={setIdx}
+                        reps={local.reps}
+                        load={local.load}
+                        complete={complete}
+                        setRef={(node) => {
+                          setRefs.current[key] = node;
+                        }}
+                        onRepsChange={(value) =>
+                          handleInputChange(
+                            { blockIdx, exerciseIdx: 0, setIdx },
+                            sourceBlock.exercise.sets[setIdx],
+                            "reps",
+                            value,
+                          )
+                        }
+                        onLoadChange={(value) =>
+                          handleInputChange(
+                            { blockIdx, exerciseIdx: 0, setIdx },
+                            sourceBlock.exercise.sets[setIdx],
+                            "load",
+                            value,
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          }
+
+          if (!isExerciseBlock(savedBlock) && !isExerciseBlock(sourceBlock)) {
+            return (
+              <AthleteSupersetSection
+                key={`superset-${blockIdx}`}
+                superset={savedBlock}
+                blockIdx={blockIdx}
+                savedSuperset={savedBlock}
+                sourceSuperset={sourceBlock}
+                formState={formState}
+                setRefs={setRefs}
+                onInputChange={handleInputChange}
+              />
+            );
+          }
+
+          return null;
         })}
       </div>
 

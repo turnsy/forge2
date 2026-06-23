@@ -16,20 +16,19 @@ import {
   resolveSaveActual,
   setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
+import { dayFromExercises, getBlockExercise } from "@/lib/plans/__tests__/fixtures";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name: "Test Plan",
     weeks: [
       {
         index: 1,
         days: [
-          {
-            index: 1,
-            code: "w1d1",
-            exercises: [
+          dayFromExercises(
+            [
               {
                 name: "Back Squat",
                 sets: [
@@ -77,11 +76,10 @@ function makePlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
-          {
-            index: 2,
-            code: "w1d2",
-            exercises: [
+            { index: 1, code: "w1d1" },
+          ),
+          dayFromExercises(
+            [
               {
                 name: "Bench Press",
                 sets: [
@@ -99,7 +97,8 @@ function makePlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
+            { index: 2, code: "w1d2" },
+          ),
         ],
       },
     ],
@@ -130,8 +129,9 @@ describe("athlete plan domain", () => {
 
   it("builds actual values from absolute and percentage inputs", () => {
     const plan = makePlan();
-    const absoluteSet = plan.weeks[0].days[0].exercises[0].sets[0];
-    const percentageSet = plan.weeks[0].days[0].exercises[0].sets[1];
+    const squat = getBlockExercise(plan.weeks[0].days[0], 0);
+    const absoluteSet = squat.sets[0];
+    const percentageSet = squat.sets[1];
 
     expect(buildActualFromInputs("8", "60", absoluteSet)).toEqual({
       reps: 8,
@@ -149,7 +149,7 @@ describe("athlete plan domain", () => {
 
   it("builds partial actual values for save when only reps are entered", () => {
     const plan = makePlan();
-    const absoluteSet = plan.weeks[0].days[0].exercises[0].sets[0];
+    const absoluteSet = getBlockExercise(plan.weeks[0].days[0], 0).sets[0];
 
     expect(buildActualForSave("8", "", absoluteSet)).toEqual({ reps: 8 });
     expect(buildActualForSave("", "", absoluteSet)).toBeNull();
@@ -162,7 +162,7 @@ describe("athlete plan domain", () => {
   it("reuses saved reps when only load input changes", () => {
     const plan = makePlan();
     const savedSet = {
-      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      ...getBlockExercise(plan.weeks[0].days[0], 0).sets[0],
       actual: {
         reps: 8,
         load: { type: "absolute" as const, value: 60, unit: "kg" as const },
@@ -178,7 +178,7 @@ describe("athlete plan domain", () => {
   it("hydrates form state from saved actual values", () => {
     const plan = makePlan();
     const absoluteSet = {
-      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      ...getBlockExercise(plan.weeks[0].days[0], 0).sets[0],
       actual: {
         reps: 8,
         load: { type: "absolute" as const, value: 60, unit: "kg" as const },
@@ -193,14 +193,14 @@ describe("athlete plan domain", () => {
 
   it("merges partial saves with existing actual values on the server", () => {
     const plan = makePlan();
-    const withReps = applySetActuals(plan, 1, 1, 0, 0, { reps: 8 });
-    const withLoad = applySetActuals(withReps, 1, 1, 0, 0, {
+    const withReps = applySetActuals(plan, 1, 1, 0, 0, 0, { reps: 8 });
+    const withLoad = applySetActuals(withReps, 1, 1, 0, 0, 0, {
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
     });
 
     expect(
-      withLoad.weeks[0].days[0].exercises[0].sets[0].actual,
+      getBlockExercise(withLoad.weeks[0].days[0], 0).sets[0].actual,
     ).toEqual({
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
@@ -220,7 +220,7 @@ describe("athlete plan domain", () => {
   it("skips wiping persisted actuals when both inputs are empty", () => {
     const plan = makePlan();
     const savedSet = {
-      ...plan.weeks[0].days[0].exercises[0].sets[0],
+      ...getBlockExercise(plan.weeks[0].days[0], 0).sets[0],
       actual: {
         reps: 8,
         load: { type: "absolute" as const, value: 60, unit: "kg" as const },
@@ -256,8 +256,8 @@ describe("athlete plan domain", () => {
 
   it("detects complete and incomplete actual sets", () => {
     const plan = makePlan();
-    const absoluteSet = plan.weeks[0].days[0].exercises[0].sets[0];
-    const targetSet = plan.weeks[0].days[0].exercises[1].sets[0];
+    const absoluteSet = getBlockExercise(plan.weeks[0].days[0], 0).sets[0];
+    const targetSet = getBlockExercise(plan.weeks[0].days[0], 1).sets[0];
 
     expect(isSetActualComplete(absoluteSet)).toBe(false);
     expect(
@@ -276,7 +276,7 @@ describe("athlete plan domain", () => {
 
   it("marks an exercise complete only when every set is complete", () => {
     const plan = makePlan();
-    const exercise = plan.weeks[0].days[0].exercises[0];
+    const exercise = getBlockExercise(plan.weeks[0].days[0], 0);
 
     expect(isExerciseComplete(exercise)).toBe(false);
 
@@ -295,7 +295,7 @@ describe("athlete plan domain", () => {
 
   it("completes a day with filled sets and skips unfilled non-target sets", () => {
     const plan = makePlan();
-    const filled = applySetActuals(plan, 1, 1, 0, 0, {
+    const filled = applySetActuals(plan, 1, 1, 0, 0, 0, {
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
     });
@@ -308,29 +308,29 @@ describe("athlete plan domain", () => {
       { setIndex: 2, status: "completed" },
     ]);
     expect(
-      completed.weeks[0].days[0].exercises[0].sets[1].status,
+      getBlockExercise(completed.weeks[0].days[0], 0).sets[1].status,
     ).toBe("skipped");
     expect(
-      completed.weeks[0].days[0].exercises[0].sets[1].actual,
+      getBlockExercise(completed.weeks[0].days[0], 0).sets[1].actual,
     ).toBeNull();
     expect(
-      completed.weeks[0].days[0].exercises[1].sets[0].status,
+      getBlockExercise(completed.weeks[0].days[0], 1).sets[0].status,
     ).toBe("completed");
   });
 
   it("stores target completion without fabricating reps", () => {
     const plan = makePlan();
-    const filled = applySetActuals(plan, 1, 1, 0, 0, {
+    const filled = applySetActuals(plan, 1, 1, 0, 0, 0, {
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
     });
-    const filledBoth = applySetActuals(filled, 1, 1, 0, 1, {
+    const filledBoth = applySetActuals(filled, 1, 1, 0, 0, 1, {
       reps: 6,
       load: { type: "absolute", value: 185, unit: "kg" },
     });
 
     const { plan: completed } = completeDayInPlan(filledBoth, 1, 1);
-    const targetSet = completed.weeks[0].days[0].exercises[1].sets[0];
+    const targetSet = getBlockExercise(completed.weeks[0].days[0], 1).sets[0];
 
     expect(targetSet.actual).toEqual(
       expect.objectContaining({
@@ -342,7 +342,7 @@ describe("athlete plan domain", () => {
 
   it("treats skipped sets as done for exercise completion", () => {
     const plan = makePlan();
-    const exercise = plan.weeks[0].days[0].exercises[0];
+    const exercise = getBlockExercise(plan.weeks[0].days[0], 0);
 
     exercise.sets[0].actual = {
       reps: 8,
@@ -358,11 +358,11 @@ describe("athlete plan domain", () => {
     const day = plan.weeks[0].days[0];
     expect(dayHasUnfilledNonTargetSets(day)).toBe(true);
 
-    const filled = applySetActuals(plan, 1, 1, 0, 0, {
+    const filled = applySetActuals(plan, 1, 1, 0, 0, 0, {
       reps: 8,
       load: { type: "absolute", value: 60, unit: "kg" },
     });
-    const filledDay = applySetActuals(filled, 1, 1, 0, 1, {
+    const filledDay = applySetActuals(filled, 1, 1, 0, 0, 1, {
       reps: 6,
       load: { type: "absolute", value: 185, unit: "kg" },
     }).weeks[0].days[0];
@@ -379,17 +379,39 @@ describe("computePlanCompletionPercent", () => {
         ...week,
         days: week.days.map((day) => ({
           ...day,
-          exercises: day.exercises.map((exercise) => ({
-            ...exercise,
-            sets: exercise.sets.map((set) => ({
-              ...set,
-              status: "completed" as const,
-              actual: set.actual ?? {
-                reps: 5,
-                load: { type: "absolute" as const, value: 100, unit: "kg" as const },
-              },
-            })),
-          })),
+          blocks: day.blocks.map((block) => {
+            if (block.type === "exercise") {
+              return {
+                ...block,
+                exercise: {
+                  ...block.exercise,
+                  sets: block.exercise.sets.map((set) => ({
+                    ...set,
+                    status: "completed" as const,
+                    actual: set.actual ?? {
+                      reps: 5,
+                      load: { type: "absolute" as const, value: 100, unit: "kg" as const },
+                    },
+                  })) as typeof block.exercise.sets,
+                },
+              };
+            }
+
+            return {
+              ...block,
+              exercises: block.exercises.map((exercise) => ({
+                ...exercise,
+                sets: exercise.sets.map((set) => ({
+                  ...set,
+                  status: "completed" as const,
+                  actual: set.actual ?? {
+                    reps: 5,
+                    load: { type: "absolute" as const, value: 100, unit: "kg" as const },
+                  },
+                })) as typeof exercise.sets,
+              })) as typeof block.exercises,
+            };
+          }) as typeof day.blocks,
         })),
       })),
     };
@@ -405,10 +427,8 @@ describe("computePlanCompletionPercent", () => {
 
   it("returns partial completion across multiple days", () => {
     const dayOne = makePlan().weeks[0].days[0];
-    const dayTwo = {
-      index: 2,
-      code: "w1d2",
-      exercises: [
+    const dayTwo = dayFromExercises(
+      [
         {
           name: "Deadlift",
           sets: [
@@ -426,7 +446,8 @@ describe("computePlanCompletionPercent", () => {
           ],
         },
       ],
-    };
+      { index: 2, code: "w1d2" },
+    );
 
     const twoDayPlan: WorkoutPlan = {
       ...makePlan(),

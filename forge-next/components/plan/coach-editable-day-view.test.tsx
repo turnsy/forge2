@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { reorderSetsInExercise } from "@/components/plan/plan-editable-day";
+import { dayFromExercises } from "@/lib/plans/__tests__/fixtures";
 import type { Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
@@ -26,17 +27,14 @@ function makeSet(id: string, reps: number, weight: number): Set {
 
 function makePercentagePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name: "Percentage Block",
     weeks: [
       {
         index: 1,
         days: [
-          {
-            index: 1,
-            code: "w1d1",
-            name: "Squat Day",
-            exercises: [
+          dayFromExercises(
+            [
               {
                 name: "Back Squat",
                 sets: [
@@ -58,7 +56,8 @@ function makePercentagePlan(): WorkoutPlan {
                 ],
               },
             ],
-          },
+            { index: 1, code: "w1d1", name: "Squat Day" },
+          ),
         ],
       },
     ],
@@ -67,17 +66,14 @@ function makePercentagePlan(): WorkoutPlan {
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "2.1.0",
     name: "Strength Block",
     weeks: [
       {
         index: 1,
         days: [
-          {
-            index: 1,
-            code: "w1d1",
-            name: "Upper Body",
-            exercises: [
+          dayFromExercises(
+            [
               {
                 name: "Bench Press",
                 sets: [
@@ -90,7 +86,8 @@ function makePlan(): WorkoutPlan {
                 sets: [makeSet("set-3", 8, 0)],
               },
             ],
-          },
+            { index: 1, code: "w1d1", name: "Upper Body" },
+          ),
         ],
       },
     ],
@@ -194,7 +191,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Incline Bench");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.name).toBe("Incline Bench");
   });
 
   it("changing set reps calls onPlanChange", () => {
@@ -213,7 +210,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(repsInput, { target: { value: "15" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].sets[0].planned).toMatchObject({
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.sets[0].planned).toMatchObject({
       reps: 15,
     });
   });
@@ -234,7 +231,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(weightInput, { target: { value: "195" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercise.sets[0].planned;
     expect(load.type).toBe("exact");
     if (load.type === "exact") {
       expect(load.load).toMatchObject({ value: 195 });
@@ -298,7 +295,7 @@ describe("CoachEditableDayView", () => {
     await user.click(addSetButtons[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const sets = lastCall.weeks[0].days[0].exercises[0].sets;
+    const sets = lastCall.weeks[0].days[0].blocks[0].exercise.sets;
     expect(sets).toHaveLength(3);
     expect(sets[2].planned).toMatchObject({
       reps: 10,
@@ -322,7 +319,7 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByLabelText("Delete set 1"));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].sets).toHaveLength(1);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.sets).toHaveLength(1);
   });
 
   it("adds a new exercise", async () => {
@@ -341,14 +338,14 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByRole("button", { name: "Add exercise" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].exercises[2].name).toBe("New Exercise");
-    expect(lastCall.weeks[0].days[0].exercises[2].id).toBeTruthy();
+    expect(lastCall.weeks[0].days[0].blocks).toHaveLength(3);
+    expect(lastCall.weeks[0].days[0].blocks[2].exercise.name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[2].exercise.id).toBeTruthy();
   });
 
   it("assigns stable ids to exercises without one", () => {
     const plan = makePlan();
-    delete plan.weeks[0].days[0].exercises[0].id;
+    delete plan.weeks[0].days[0].blocks[0].exercise.id;
 
     let currentPlan = plan;
     const onPlanChange = vi.fn((updated: WorkoutPlan) => {
@@ -369,7 +366,7 @@ describe("CoachEditableDayView", () => {
       target: { value: "Incline Bench" },
     });
 
-    const exerciseId = currentPlan.weeks[0].days[0].exercises[0].id;
+    const exerciseId = currentPlan.weeks[0].days[0].blocks[0].exercise.id;
     expect(exerciseId).toBeTruthy();
 
     rerender(
@@ -386,7 +383,7 @@ describe("CoachEditableDayView", () => {
       target: { value: "Flat Bench" },
     });
 
-    expect(currentPlan.weeks[0].days[0].exercises[0].id).toBe(exerciseId);
+    expect(currentPlan.weeks[0].days[0].blocks[0].exercise.id).toBe(exerciseId);
   });
 
   it("removes an exercise when delete is clicked", async () => {
@@ -405,8 +402,8 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getAllByLabelText("Delete exercise")[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises).toHaveLength(1);
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Pull Ups");
+    expect(lastCall.weeks[0].days[0].blocks).toHaveLength(1);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.name).toBe("Pull Ups");
   });
 
   it("swaps exercises with reorder buttons", async () => {
@@ -425,8 +422,8 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getAllByLabelText("Move exercise down")[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Pull Ups");
-    expect(lastCall.weeks[0].days[0].exercises[1].name).toBe("Bench Press");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.name).toBe("Pull Ups");
+    expect(lastCall.weeks[0].days[0].blocks[1].exercise.name).toBe("Bench Press");
   });
 
   it("allows entering a custom load unit", () => {
@@ -451,7 +448,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(customUnitInput, { target: { value: "mi" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercise.sets[0].planned;
     expect(load.type).toBe("exact");
     if (load.type === "exact" && load.load.type === "absolute") {
       expect(load.load.unit).toBe("mi");
@@ -480,7 +477,7 @@ describe("CoachEditableDayView", () => {
     expect(customUnitInput).toHaveValue("");
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercise.sets[0].planned;
     expect(load.type).toBe("exact");
     if (load.type === "exact" && load.load.type === "absolute") {
       expect(load.load.unit).toBe("");
@@ -622,7 +619,7 @@ describe("CoachEditableDayView", () => {
   it("prefills the modal when editing an existing video link", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/existing";
+    plan.weeks[0].days[0].blocks[0].exercise.videoUrl = "https://youtu.be/existing";
 
     render(
       <CoachEditableDayView
@@ -657,8 +654,8 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/demo");
-    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.videoUrl).toBe("https://youtu.be/demo");
+    expect(lastCall.weeks[0].days[0].blocks[1].exercise.videoUrl).toBeUndefined();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -666,16 +663,17 @@ describe("CoachEditableDayView", () => {
     const user = userEvent.setup();
     const onPlanChange = vi.fn();
     const plan = makePlan();
-    plan.weeks[0].days.push({
-      index: 2,
-      code: "w1d2",
-      exercises: [
-        {
-          name: "Bench Press",
-          sets: [makeSet("set-4", 5, 225)],
-        },
-      ],
-    });
+    plan.weeks[0].days.push(
+      dayFromExercises(
+        [
+          {
+            name: "Bench Press",
+            sets: [makeSet("set-4", 5, 225)],
+          },
+        ],
+        { index: 2, code: "w1d2" },
+      ),
+    );
 
     render(
       <CoachEditableDayView
@@ -695,9 +693,9 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/shared");
-    expect(lastCall.weeks[0].days[1].exercises[0].videoUrl).toBe("https://youtu.be/shared");
-    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+    expect(lastCall.weeks[0].days[0].blocks[0].exercise.videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[1].blocks[0].exercise.videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[0].blocks[1].exercise.videoUrl).toBeUndefined();
   });
 
   it("closes the modal without changes when cancel is clicked", async () => {

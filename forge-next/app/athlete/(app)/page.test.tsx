@@ -119,7 +119,7 @@ describe("AthletePage", () => {
 
   it("shows no-plan state when every day is already complete", async () => {
     const completedPlan = structuredClone(minimalWorkoutPlan);
-    completedPlan.weeks[0].days[0].exercises[0].sets[0].status = "completed";
+    completedPlan.weeks[0].days[0].blocks[0].exercise.sets[0].status = "completed";
 
     mockGetAthleteCoachLink.mockResolvedValue({
       relationshipId: "rel-1",

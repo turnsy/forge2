@@ -6,14 +6,22 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
-from forge_plan import Plan, summarize
+from forge_plan import Plan, SupersetRef, summarize
 from forge_plan.builders import (
+    SCHEMA_VERSION,
     empty_plan_template,
     format_day_code,
     load_seed_from_file,
     validate_day_code,
 )
+
+
+def exercise_from_day(day: dict[str, Any], index: int = 0) -> dict[str, Any]:
+    block = day["blocks"][index]
+    assert block["type"] == "exercise"
+    return block["exercise"]
 
 
 class ForgePlanTests(unittest.TestCase):
@@ -29,13 +37,28 @@ class ForgePlanTests(unittest.TestCase):
         plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit="kg")
 
         data = plan.to_dict()
-        self.assertEqual(data["schemaVersion"], "2.0.0")
+        self.assertEqual(data["schemaVersion"], SCHEMA_VERSION)
         self.assertEqual(data["name"], "Strength")
         self.assertEqual(len(data["weeks"]), 1)
         self.assertEqual(data["weeks"][0]["days"][0]["code"], "w1d1")
-        set_entry = data["weeks"][0]["days"][0]["exercises"][0]["sets"][0]
+        set_entry = exercise_from_day(data["weeks"][0]["days"][0])["sets"][0]
         self.assertEqual(set_entry["id"], "w1d1-bs-1")
         self.assertEqual(set_entry["planned"]["reps"], 5)
+
+    def test_add_superset(self) -> None:
+        plan = Plan.empty("Superset")
+        plan.add_week()
+        plan.add_day(week_index=1)
+        superset = plan.add_superset(1, 1, rounds=3, notes="Rest 90s")
+        self.assertIsInstance(superset, SupersetRef)
+        ref = superset.add_exercise("Face Pull")
+        self.assertEqual(ref.name, "Face Pull")
+
+        block = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]
+        self.assertEqual(block["type"], "superset")
+        self.assertEqual(block["notes"], "Rest 90s")
+        self.assertEqual(len(block["exercises"]), 3)
+        self.assertEqual(len(block["exercises"][0]["sets"]), 3)
 
     def test_add_set_notes(self) -> None:
         plan = Plan.empty("Notes")
@@ -50,7 +73,7 @@ class ForgePlanTests(unittest.TestCase):
             load_type="absolute",
             notes="per side",
         )
-        planned = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]
+        planned = exercise_from_day(plan.to_dict()["weeks"][0]["days"][0])["sets"][0]["planned"]
         self.assertEqual(planned["reps"], 3)
         self.assertEqual(planned["notes"], "per side")
 
@@ -85,7 +108,7 @@ class ForgePlanTests(unittest.TestCase):
             load_value=60,
             unit="kg",
         )
-        sets = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"]
+        sets = exercise_from_day(plan.to_dict()["weeks"][0]["days"][0])["sets"]
         self.assertEqual(len(sets), 1)
         self.assertEqual(sets[0]["planned"]["reps"], 8)
 
@@ -103,7 +126,7 @@ class ForgePlanTests(unittest.TestCase):
             unit="kg",
         )
 
-        load = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["load"]
+        load = exercise_from_day(plan.to_dict()["weeks"][0]["days"][0])["sets"][0]["planned"]["load"]
         self.assertEqual(load["type"], "percentage")
         self.assertEqual(load["value"], 85)
         self.assertEqual(load["unit"], "kg")
@@ -142,8 +165,8 @@ class ForgePlanTests(unittest.TestCase):
         plan.move_exercise(1, 1, 0, 1)
 
         names = [
-            ex["name"]
-            for ex in plan.to_dict()["weeks"][0]["days"][0]["exercises"]
+            exercise_from_day(plan.to_dict()["weeks"][0]["days"][0], index)["name"]
+            for index in range(2)
         ]
         self.assertEqual(names, ["Bench", "Squat"])
 
@@ -158,7 +181,7 @@ class ForgePlanTests(unittest.TestCase):
 
         reps = [
             s["planned"]["reps"]
-            for s in plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"]
+            for s in exercise_from_day(plan.to_dict()["weeks"][0]["days"][0])["sets"]
         ]
         self.assertEqual(reps, [12, 8])
 
@@ -192,8 +215,8 @@ class ForgePlanTests(unittest.TestCase):
         data = plan.to_dict()
         self.assertEqual(len(data["weeks"][0]["days"]), 1)
         self.assertEqual(data["weeks"][0]["days"][0]["code"], "w1d1")
-        self.assertEqual(len(data["weeks"][0]["days"][0]["exercises"]), 1)
-        self.assertEqual(data["weeks"][0]["days"][0]["exercises"][0]["name"], "B")
+        self.assertEqual(len(data["weeks"][0]["days"][0]["blocks"]), 1)
+        self.assertEqual(exercise_from_day(data["weeks"][0]["days"][0])["name"], "B")
 
     def test_from_json_file_missing_uses_empty_template(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -213,7 +236,7 @@ class ForgePlanTests(unittest.TestCase):
             plan.write_json(str(out))
             loaded = json.loads(out.read_text(encoding="utf-8"))
             self.assertEqual(loaded["name"], "Out")
-            self.assertEqual(len(loaded["weeks"][0]["days"][0]["exercises"]), 1)
+            self.assertEqual(len(loaded["weeks"][0]["days"][0]["blocks"]), 1)
 
     def test_summarize_nonempty(self) -> None:
         plan = Plan.empty("Named")

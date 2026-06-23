@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
+import { migratePlanToBlocks } from "@/lib/plans/day-blocks";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type WorkoutPlanValidationError = {
@@ -36,11 +37,29 @@ function mapValidationErrors(errors: ErrorObject[]): WorkoutPlanValidationError[
   }));
 }
 
+function preparePlanForValidation(value: unknown): unknown {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  const schemaVersion = record.schemaVersion;
+  if (
+    schemaVersion === "2.0.0" ||
+    (schemaVersion === "2.1.0" && Array.isArray(record.weeks))
+  ) {
+    return migratePlanToBlocks(value as WorkoutPlan);
+  }
+
+  return value;
+}
+
 export function loadWorkoutPlan(value: unknown): WorkoutPlanLoadResult {
   const validate = getValidator();
+  const prepared = preparePlanForValidation(value);
 
-  if (validate(value)) {
-    return { ok: true, plan: value as WorkoutPlan };
+  if (validate(prepared)) {
+    return { ok: true, plan: prepared as WorkoutPlan };
   }
 
   return {
