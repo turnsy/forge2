@@ -80,9 +80,10 @@ def validation_rules_cheat_sheet() -> str:
             "- week_index / day_index on add_*: schema indices (1-based after sync), not 0-based array slots",
             "- move_* / remove_*: 0-based array positions within the parent list",
             "- add_exercise: appends a standalone exercise block (type: exercise)",
-            "- add_superset(week_index, day_index, rounds=3, notes=None) -> SupersetRef: appends a superset block with 2 default exercises and N rounds each",
-            "- SupersetRef.add_exercise(name): append another exercise to the superset (inherits round count)",
-            "- For supersets, use add_superset — do NOT simulate with two separate add_exercise calls",
+            "- add_superset(week_index, day_index, notes=None) -> SupersetRef: append an empty superset block",
+            "- SupersetRef.add_exercise(name, rounds=3, reps=10, load_value=0, unit=\"lb\", ...): add a named exercise with sets to the superset",
+            "  - first exercise sets round count; later exercises inherit it (or pass matching rounds)",
+            "- For supersets: add_superset, then SupersetRef.add_exercise for each exercise — not Plan.add_exercise",
             "- add_set: set id/status/locked/actual are automatic; pass notes= for per-side/time/detail; "
             "omit exercise_index to target last exercise, or pass exercise_name",
             '- add_set load_type: only "absolute" or "percentage" (default absolute)',

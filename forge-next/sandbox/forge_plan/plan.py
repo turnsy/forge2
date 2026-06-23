@@ -60,27 +60,59 @@ class ExerciseRef:
 class SupersetRef:
     """Handle to a superset block inside a plan."""
 
-    def __init__(self, plan: "Plan", superset: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        plan: "Plan",
+        superset: dict[str, Any],
+        *,
+        day_code: str,
+    ) -> None:
         self._plan = plan
         self._superset = superset
+        self._day_code = day_code
 
-    def add_exercise(self, name: str) -> ExerciseRef:
-        """Append an exercise to this superset with the same round count."""
+    def _required_round_count(self, rounds: int | None) -> int:
         exercises = self._superset.setdefault("exercises", [])
-        round_count = len(exercises[0]["sets"]) if exercises else 3
+        if not exercises:
+            return rounds if rounds is not None else 3
+
+        existing_rounds = len(exercises[0]["sets"])
+        if rounds is not None and rounds != existing_rounds:
+            raise ValueError(
+                f"superset round count must be {existing_rounds}, got {rounds}"
+            )
+        return existing_rounds
+
+    def add_exercise(
+        self,
+        name: str,
+        *,
+        rounds: int | None = None,
+        reps: int | str = 10,
+        load_value: float = 0,
+        load_type: str = "absolute",
+        unit: str = "lb",
+        notes: str | None = None,
+    ) -> ExerciseRef:
+        """Append a named exercise to this superset with the given round count and sets."""
+        round_count = self._required_round_count(rounds)
+        exercises = self._superset.setdefault("exercises", [])
         exercise = {"name": name, "sets": []}
         exercises.append(exercise)
+
         for _ in range(round_count):
-            set_id = next_set_id("w0d0", name, exercise["sets"])
+            set_id = next_set_id(self._day_code, name, exercise["sets"])
             exercise["sets"].append(
                 build_set_entry(
                     set_id=set_id,
-                    reps=10,
-                    load_type="absolute",
-                    load_value=0,
-                    unit="lb",
+                    reps=reps,
+                    load_type=load_type,
+                    load_value=load_value,
+                    unit=unit,
+                    notes=notes,
                 )
             )
+
         self._plan._sync_structure()
         return ExerciseRef(self._plan, exercise)
 
@@ -188,34 +220,17 @@ class Plan:
         week_index: int,
         day_index: int,
         *,
-        rounds: int = 3,
         notes: str | None = None,
     ) -> SupersetRef:
-        """Append a superset block with two default exercises."""
+        """Append an empty superset block; add exercises with SupersetRef.add_exercise."""
         day = self._require_day_by_schema_index(week_index, day_index)
         blocks = day.setdefault("blocks", [])
-        exercises = []
-        for label in ("Exercise A", "Exercise B"):
-            exercise = {"name": label, "sets": []}
-            for _ in range(rounds):
-                set_id = next_set_id("w0d0", label, exercise["sets"])
-                exercise["sets"].append(
-                    build_set_entry(
-                        set_id=set_id,
-                        reps=10,
-                        load_type="absolute",
-                        load_value=0,
-                        unit="lb",
-                    )
-                )
-            exercises.append(exercise)
-
-        superset: dict[str, Any] = {"type": "superset", "exercises": exercises}
+        superset: dict[str, Any] = {"type": "superset", "exercises": []}
         if notes is not None:
             superset["notes"] = notes
         blocks.append(superset)
         self._sync_structure()
-        return SupersetRef(self, superset)
+        return SupersetRef(self, superset, day_code=str(day["code"]))
 
     def add_set(
         self,

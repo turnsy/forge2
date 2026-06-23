@@ -49,16 +49,41 @@ class ForgePlanTests(unittest.TestCase):
         plan = Plan.empty("Superset")
         plan.add_week()
         plan.add_day(week_index=1)
-        superset = plan.add_superset(1, 1, rounds=3, notes="Rest 90s")
+        superset = plan.add_superset(1, 1, notes="Rest 90s")
         self.assertIsInstance(superset, SupersetRef)
-        ref = superset.add_exercise("Face Pull")
-        self.assertEqual(ref.name, "Face Pull")
+
+        bench = superset.add_exercise(
+            "Bench Press",
+            rounds=3,
+            reps=5,
+            load_value=135,
+            unit="lb",
+        )
+        incline = superset.add_exercise(
+            "Incline Bench Press",
+            reps=8,
+            load_value=40,
+            unit="lb",
+        )
+        self.assertEqual(bench.name, "Bench Press")
+        self.assertEqual(incline.name, "Incline Bench Press")
 
         block = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]
         self.assertEqual(block["type"], "superset")
         self.assertEqual(block["notes"], "Rest 90s")
-        self.assertEqual(len(block["exercises"]), 3)
+        self.assertEqual(len(block["exercises"]), 2)
         self.assertEqual(len(block["exercises"][0]["sets"]), 3)
+        self.assertEqual(len(block["exercises"][1]["sets"]), 3)
+        self.assertEqual(block["exercises"][0]["sets"][0]["planned"]["reps"], 5)
+
+    def test_superset_add_exercise_rejects_mismatched_rounds(self) -> None:
+        plan = Plan.empty("Superset")
+        plan.add_week()
+        plan.add_day(week_index=1)
+        superset = plan.add_superset(1, 1)
+        superset.add_exercise("Bench Press", rounds=3)
+        with self.assertRaises(ValueError):
+            superset.add_exercise("Rows", rounds=4)
 
     def test_add_set_notes(self) -> None:
         plan = Plan.empty("Notes")

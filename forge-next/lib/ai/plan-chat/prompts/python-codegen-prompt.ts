@@ -34,7 +34,7 @@ export function buildPythonCodegenRules(): string {
     "Critical validation pitfalls (also listed in the cheat sheet):",
     "- Do not pass day codes to add_day — forge_plan derives w1d1, w1d2, etc. from week/day order",
     "- Each week needs >=1 day; each day >=1 block; each exercise >=1 set",
-    "- Supersets: use plan.add_superset(week_index, day_index, rounds=N) then SupersetRef.add_exercise(name) — not two separate add_exercise calls",
+    "- Supersets: plan.add_superset(week_index, day_index) then superset.add_exercise(name, rounds=N, reps=..., load_value=..., unit=...) for each exercise",
     "- add_set: use keyword args (week_index, day_index, reps, load_value, notes=...); omit exercise_index to target the last exercise",
     "",
     "Cheat sheet:",
