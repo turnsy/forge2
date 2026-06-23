@@ -9,10 +9,10 @@ export type RepsValue = number | string;
 export type Load = AbsoluteLoad | PercentageLoad;
 
 /**
- * Athlete-facing workout plan schema with week/day structure and one entry per planned set.
+ * Athlete-facing workout plan schema: Plan → Week → Day → Block → Exercise → Set.
  */
 export interface WorkoutPlan {
-  schemaVersion: "2.0.0";
+  schemaVersion: "3.0.0";
   id?: NonEmptyString;
   name: NonEmptyString;
   discipline?: NonEmptyString;
@@ -24,7 +24,6 @@ export interface WorkoutPlan {
   weeks: [Week, ...Week[]];
 }
 export interface Week {
-  index: number;
   label?: string;
   name?: string;
   notes?: string;
@@ -34,9 +33,17 @@ export interface Week {
   days: [Day, ...Day[]];
 }
 export interface Day {
-  index: number;
   code: string;
   name?: string;
+  notes?: string;
+  /**
+   * @minItems 1
+   */
+  blocks: [Block, ...Block[]];
+}
+export interface Block {
+  id: NonEmptyString;
+  label?: string;
   notes?: string;
   /**
    * @minItems 1
@@ -44,7 +51,7 @@ export interface Day {
   exercises: [Exercise, ...Exercise[]];
 }
 export interface Exercise {
-  id?: NonEmptyString;
+  id: NonEmptyString;
   name: NonEmptyString;
   notes?: string;
   videoUrl?: string;
