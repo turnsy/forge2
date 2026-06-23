@@ -9,6 +9,8 @@ from typing import Any
 from forge_plan.builders import (
     SCHEMA_VERSION,
     build_set_entry,
+    create_exercise,
+    create_superset,
     empty_plan_template,
     format_day_code,
     load_seed_from_file,
@@ -60,59 +62,15 @@ class ExerciseRef:
 class SupersetRef:
     """Handle to a superset block inside a plan."""
 
-    def __init__(
-        self,
-        plan: "Plan",
-        superset: dict[str, Any],
-        *,
-        day_code: str,
-    ) -> None:
+    def __init__(self, plan: "Plan", superset: dict[str, Any]) -> None:
         self._plan = plan
         self._superset = superset
-        self._day_code = day_code
 
-    def _required_round_count(self, rounds: int | None) -> int:
+    def add_exercise(self, name: str) -> ExerciseRef:
+        """Append a named exercise with empty sets; use Plan.add_set to add rounds."""
+        exercise = create_exercise(name)
         exercises = self._superset.setdefault("exercises", [])
-        if not exercises:
-            return rounds if rounds is not None else 3
-
-        existing_rounds = len(exercises[0]["sets"])
-        if rounds is not None and rounds != existing_rounds:
-            raise ValueError(
-                f"superset round count must be {existing_rounds}, got {rounds}"
-            )
-        return existing_rounds
-
-    def add_exercise(
-        self,
-        name: str,
-        *,
-        rounds: int | None = None,
-        reps: int | str = 10,
-        load_value: float = 0,
-        load_type: str = "absolute",
-        unit: str = "lb",
-        notes: str | None = None,
-    ) -> ExerciseRef:
-        """Append a named exercise to this superset with the given round count and sets."""
-        round_count = self._required_round_count(rounds)
-        exercises = self._superset.setdefault("exercises", [])
-        exercise = {"name": name, "sets": []}
         exercises.append(exercise)
-
-        for _ in range(round_count):
-            set_id = next_set_id(self._day_code, name, exercise["sets"])
-            exercise["sets"].append(
-                build_set_entry(
-                    set_id=set_id,
-                    reps=reps,
-                    load_type=load_type,
-                    load_value=load_value,
-                    unit=unit,
-                    notes=notes,
-                )
-            )
-
         self._plan._sync_structure()
         return ExerciseRef(self._plan, exercise)
 
@@ -219,18 +177,39 @@ class Plan:
         self,
         week_index: int,
         day_index: int,
+        block: dict[str, Any] | None = None,
         *,
         notes: str | None = None,
     ) -> SupersetRef:
-        """Append an empty superset block; add exercises with SupersetRef.add_exercise."""
+        """Append a superset block to a day.
+
+        Prefer composing with ``create_exercise`` / ``create_superset`` then passing
+        ``block``; or pass nothing for an empty superset and use SupersetRef.add_exercise
+        plus Plan.add_set (same pattern as standalone exercises).
+        """
         day = self._require_day_by_schema_index(week_index, day_index)
         blocks = day.setdefault("blocks", [])
-        superset: dict[str, Any] = {"type": "superset", "exercises": []}
-        if notes is not None:
-            superset["notes"] = notes
+        if block is None:
+            superset: dict[str, Any] = {"type": "superset", "exercises": []}
+            if notes is not None:
+                superset["notes"] = notes
+        else:
+            if block.get("type") != "superset":
+                raise ValueError("block must be a superset block from create_superset")
+            superset = dict(block)
+            exercises = superset.get("exercises")
+            if not isinstance(exercises, list) or len(exercises) < 2:
+                raise ValueError("superset block must include at least 2 exercises")
+            superset["exercises"] = [
+                dict(exercise) for exercise in exercises if isinstance(exercise, dict)
+            ]
+            if notes is not None:
+                superset["notes"] = notes
+            self._normalize_superset_set_ids(str(day["code"]), superset)
+
         blocks.append(superset)
         self._sync_structure()
-        return SupersetRef(self, superset, day_code=str(day["code"]))
+        return SupersetRef(self, superset)
 
     def add_set(
         self,
@@ -390,6 +369,45 @@ class Plan:
             json.dumps(self.to_dict(), indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
+
+    def _normalize_superset_set_ids(self, day_code: str, superset: dict[str, Any]) -> None:
+        exercises = superset.get("exercises")
+        if not isinstance(exercises, list):
+            return
+        for exercise in exercises:
+            if not isinstance(exercise, dict):
+                continue
+            name = str(exercise.get("name", ""))
+            sets = exercise.get("sets")
+            if not isinstance(sets, list):
+                exercise["sets"] = []
+                continue
+            normalized: list[dict[str, Any]] = []
+            for item in sets:
+                if not isinstance(item, dict):
+                    continue
+                planned = item.get("planned")
+                if not isinstance(planned, dict):
+                    continue
+                load = planned.get("load")
+                if not isinstance(load, dict):
+                    continue
+                load_type = str(load.get("type", "absolute"))
+                load_value = float(load.get("value", 0))
+                unit = str(load.get("unit", "kg"))
+                reps = planned.get("reps", 0)
+                set_id = next_set_id(day_code, name, normalized)
+                normalized.append(
+                    build_set_entry(
+                        set_id=set_id,
+                        reps=reps,
+                        load_type=load_type,
+                        load_value=load_value,
+                        unit=unit,
+                        notes=planned.get("notes") if isinstance(planned.get("notes"), str) else None,
+                    )
+                )
+            exercise["sets"] = normalized
 
     def _sync_structure(self) -> None:
         """Renumber week/day schema indices and day codes to match array order."""

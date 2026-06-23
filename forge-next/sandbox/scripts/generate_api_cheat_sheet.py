@@ -11,8 +11,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from forge_plan import Plan, SupersetRef  # noqa: E402
+from forge_plan import Plan, SupersetRef, create_exercise, create_superset  # noqa: E402
 from forge_plan.schema_rules import validation_rules_cheat_sheet  # noqa: E402
+
+PUBLIC_BUILDERS = [
+    ("create_exercise", create_exercise),
+    ("create_superset", create_superset),
+]
 
 PUBLIC_METHODS = [
     "from_json_file",
@@ -34,6 +39,16 @@ PUBLIC_METHODS = [
     "write_json",
     "to_dict",
 ]
+
+
+def _format_builder(name: str, fn: object) -> str:
+    try:
+        signature = str(inspect.signature(fn))
+    except (TypeError, ValueError):
+        signature = "(...)"
+    doc = inspect.getdoc(fn) or ""
+    summary = doc.split("\n", 1)[0].strip()
+    return f"{name}{signature}\n  {summary}"
 
 
 def _format_method(name: str, method: object) -> str:
@@ -64,6 +79,11 @@ def build_cheat_sheet() -> str:
     for name in PUBLIC_METHODS:
         method = getattr(Plan, name)
         lines.append(_format_method(name, method))
+        lines.append("")
+
+    lines.extend(["Block builders (compose then pass to Plan.add_superset):", ""])
+    for name, fn in PUBLIC_BUILDERS:
+        lines.append(_format_builder(name, fn))
         lines.append("")
 
     lines.extend(
@@ -115,18 +135,22 @@ def build_cheat_sheet() -> str:
             "  plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit=\"kg\")",
             '  plan.write_json("output/plan.json")',
             "",
-            "Example run.py (superset — add_superset then add each exercise with sets):",
+            "Example run.py (superset — compose exercises, attach block, add sets):",
             "",
-            "  from forge_plan import Plan",
+            "  from forge_plan import Plan, create_exercise, create_superset",
             "",
             '  plan = Plan.from_json_file("current_plan.json")',
             "  if plan.is_empty():",
             '      plan = Plan.empty("Superset Day")',
             '  plan.add_week(label="Week 1")',
             '  plan.add_day(week_index=1, name="Upper")',
-            '  superset = plan.add_superset(1, 1, notes="Rest 90s between rounds")',
-            '  superset.add_exercise("Bench Press", rounds=3, reps=5, load_value=135, unit="lb")',
-            '  superset.add_exercise("Incline Bench Press", reps=8, load_value=40, unit="lb")',
+            '  e1 = create_exercise("Bench Press")',
+            '  e2 = create_exercise("Incline Bench Press")',
+            '  ss1 = create_superset(e1, e2, notes="Rest 90s between rounds")',
+            "  plan.add_superset(1, 1, ss1)",
+            "  for _ in range(3):",
+            '      plan.add_set(1, 1, exercise_name="Bench Press", reps=5, load_value=135, unit="lb")',
+            '      plan.add_set(1, 1, exercise_name="Incline Bench Press", reps=8, load_value=40, unit="lb")',
             '  plan.write_json("output/plan.json")',
             "",
             "Example run.py (reorder a day):",

@@ -23,7 +23,8 @@ class SchemaRulesTests(unittest.TestCase):
     def test_cheat_sheet_mentions_superset_api(self) -> None:
         text = validation_rules_cheat_sheet()
         self.assertIn("add_superset", text)
-        self.assertIn("SupersetRef.add_exercise", text)
+        self.assertIn("create_exercise", text)
+        self.assertIn("create_superset", text)
         self.assertIn("2.1.0", text)
 
 

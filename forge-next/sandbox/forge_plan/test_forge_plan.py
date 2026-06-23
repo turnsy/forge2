@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from forge_plan import Plan, SupersetRef, summarize
+from forge_plan import Plan, SupersetRef, create_exercise, create_superset, summarize
 from forge_plan.builders import (
     SCHEMA_VERSION,
     empty_plan_template,
@@ -45,28 +45,31 @@ class ForgePlanTests(unittest.TestCase):
         self.assertEqual(set_entry["id"], "w1d1-bs-1")
         self.assertEqual(set_entry["planned"]["reps"], 5)
 
-    def test_add_superset(self) -> None:
+    def test_add_superset_compositional(self) -> None:
         plan = Plan.empty("Superset")
         plan.add_week()
         plan.add_day(week_index=1)
-        superset = plan.add_superset(1, 1, notes="Rest 90s")
-        self.assertIsInstance(superset, SupersetRef)
-
-        bench = superset.add_exercise(
-            "Bench Press",
-            rounds=3,
-            reps=5,
-            load_value=135,
-            unit="lb",
-        )
-        incline = superset.add_exercise(
-            "Incline Bench Press",
-            reps=8,
-            load_value=40,
-            unit="lb",
-        )
-        self.assertEqual(bench.name, "Bench Press")
-        self.assertEqual(incline.name, "Incline Bench Press")
+        e1 = create_exercise("Bench Press")
+        e2 = create_exercise("Incline Bench Press")
+        ss1 = create_superset(e1, e2, notes="Rest 90s")
+        plan.add_superset(1, 1, ss1)
+        for _ in range(3):
+            plan.add_set(
+                week_index=1,
+                day_index=1,
+                exercise_name="Bench Press",
+                reps=5,
+                load_value=135,
+                unit="lb",
+            )
+            plan.add_set(
+                week_index=1,
+                day_index=1,
+                exercise_name="Incline Bench Press",
+                reps=8,
+                load_value=40,
+                unit="lb",
+            )
 
         block = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]
         self.assertEqual(block["type"], "superset")
@@ -76,14 +79,43 @@ class ForgePlanTests(unittest.TestCase):
         self.assertEqual(len(block["exercises"][1]["sets"]), 3)
         self.assertEqual(block["exercises"][0]["sets"][0]["planned"]["reps"], 5)
 
-    def test_superset_add_exercise_rejects_mismatched_rounds(self) -> None:
+    def test_add_superset_imperative(self) -> None:
         plan = Plan.empty("Superset")
         plan.add_week()
         plan.add_day(week_index=1)
-        superset = plan.add_superset(1, 1)
-        superset.add_exercise("Bench Press", rounds=3)
+        superset = plan.add_superset(1, 1, notes="Rest 90s")
+        self.assertIsInstance(superset, SupersetRef)
+
+        bench = superset.add_exercise("Bench Press")
+        incline = superset.add_exercise("Incline Bench Press")
+        self.assertEqual(bench.name, "Bench Press")
+        self.assertEqual(incline.name, "Incline Bench Press")
+
+        for _ in range(3):
+            plan.add_set(
+                week_index=1,
+                day_index=1,
+                exercise_name="Bench Press",
+                reps=5,
+                load_value=135,
+                unit="lb",
+            )
+            plan.add_set(
+                week_index=1,
+                day_index=1,
+                exercise_name="Incline Bench Press",
+                reps=8,
+                load_value=40,
+                unit="lb",
+            )
+
+        block = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]
+        self.assertEqual(block["type"], "superset")
+        self.assertEqual(len(block["exercises"][0]["sets"]), 3)
+
+    def test_create_superset_requires_two_exercises(self) -> None:
         with self.assertRaises(ValueError):
-            superset.add_exercise("Rows", rounds=4)
+            create_superset(create_exercise("Only one"))
 
     def test_add_set_notes(self) -> None:
         plan = Plan.empty("Notes")

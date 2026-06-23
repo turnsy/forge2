@@ -154,6 +154,26 @@ def validate_day_code(code: str) -> None:
         )
 
 
+def create_exercise(name: str, *, sets: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Build an exercise object (name + sets) for use in supersets or hand assembly."""
+    if not name.strip():
+        raise ValueError("exercise name must be non-empty")
+    return {"name": name, "sets": list(sets) if sets is not None else []}
+
+
+def create_superset(
+    *exercises: dict[str, Any],
+    notes: str | None = None,
+) -> dict[str, Any]:
+    """Build a superset block from exercise objects created with create_exercise."""
+    if len(exercises) < 2:
+        raise ValueError("superset requires at least 2 exercises")
+    block: dict[str, Any] = {"type": "superset", "exercises": list(exercises)}
+    if notes is not None:
+        block["notes"] = notes
+    return block
+
+
 def move_list_item(items: list[Any], from_index: int, to_index: int) -> None:
     """Move an item within a list (0-based indices; ``to_index`` is insert position)."""
     if from_index < 0 or from_index >= len(items):
