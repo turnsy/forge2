@@ -1,13 +1,22 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
-import { loadUploadContextById } from "@/lib/uploads/context-storage";
+import { logSubmittedPlanCode } from "@/lib/ai/plan-chat/log-submitted-code";
+import { executeSubmitPlanCode } from "@/lib/ai/plan-chat/tools/execute-submit-plan-code";
+import type { SubmitPlanCodeError } from "@/lib/ai/plan-chat/tools/execute-submit-plan-code";
 import { SESSION_UPLOAD_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { runSandbox } from "@/lib/sandbox";
+import { loadUploadContextById } from "@/lib/uploads/context-storage";
+import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 
 export type PlanChatToolsContext = {
   coachId: string;
   sessionId: string;
-  onSubmitPlanCode: (python: string) => void;
+  currentArtifact: WorkoutPlan | null;
+  runSandbox?: typeof runSandbox;
+  onRunStatus?: (status: "sandbox" | "validating") => void;
+  onPlanArtifactReady: (plan: WorkoutPlan) => void;
+  onSubmitPlanCodeFailed?: (errors: SubmitPlanCodeError[]) => void;
 };
 
 function truncateSessionUploadText(
@@ -61,7 +70,7 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
 
     submit_plan_code: tool({
       description:
-        "Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. Server runs sandbox after this turn.",
+        "Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. The server runs the sandbox immediately and returns { ok, errors } so you can fix and resubmit in the same turn.",
       inputSchema: z.object({
         python: z
           .string()
@@ -71,11 +80,25 @@ export function createPlanChatTools(ctx: PlanChatToolsContext) {
           ),
       }),
       execute: async ({ python }) => {
-        ctx.onSubmitPlanCode(python);
-        return {
-          ok: true as const,
-          message: "Code queued. The server will run the sandbox after this turn.",
-        };
+        logSubmittedPlanCode(python, {
+          coachId: ctx.coachId,
+          sessionId: ctx.sessionId,
+        });
+
+        const result = await executeSubmitPlanCode({
+          python,
+          currentPlan: ctx.currentArtifact,
+          runSandbox: ctx.runSandbox,
+          onRunStatus: ctx.onRunStatus,
+        });
+
+        if (!result.ok) {
+          ctx.onSubmitPlanCodeFailed?.(result.errors);
+          return { ok: false as const, errors: result.errors };
+        }
+
+        ctx.onPlanArtifactReady(result.plan);
+        return { ok: true as const };
       },
     }),
   };

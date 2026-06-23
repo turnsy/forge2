@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SESSION_UPLOAD_READ_MAX_CHARS } from "@/lib/ai/plan-chat/constants";
+import { buildMinimalWorkoutPlan } from "@/lib/sandbox/stub";
 
 const mockList = vi.fn();
 const mockLoad = vi.fn();
+const mockRunSandbox = vi.fn();
 
 vi.mock("@/lib/uploads/list-session-uploads", () => ({
   listSessionUploads: (...args: unknown[]) => mockList(...args),
@@ -20,6 +22,7 @@ describe("createPlanChatTools", () => {
   beforeEach(() => {
     mockList.mockReset();
     mockLoad.mockReset();
+    mockRunSandbox.mockReset();
   });
 
   it("lists paths under the session prefix", async () => {
@@ -31,7 +34,8 @@ describe("createPlanChatTools", () => {
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: () => {},
+      currentArtifact: null,
+      onPlanArtifactReady: () => {},
     });
 
     const result = await tools.list_session_files.execute!({}, toolCtx);
@@ -39,23 +43,68 @@ describe("createPlanChatTools", () => {
     expect(result.paths).toEqual(["c/s/a__summary.txt", "c/s/a__volume.txt"]);
   });
 
-  it("captures python on submit_plan_code", async () => {
-    let captured = "";
-    mockList.mockResolvedValue([]);
+  it("runs sandbox on submit_plan_code and returns ok when valid", async () => {
+    const plan = buildMinimalWorkoutPlan();
+    mockRunSandbox.mockResolvedValue({ ok: true, plan });
+    const onPlanArtifactReady = vi.fn();
+    const onRunStatus = vi.fn();
+
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: (python) => {
-        captured = python;
-      },
+      currentArtifact: null,
+      runSandbox: mockRunSandbox,
+      onRunStatus,
+      onPlanArtifactReady,
     });
 
-    await tools.submit_plan_code.execute!({ python: "print('hi')" }, toolCtx);
+    const result = await tools.submit_plan_code.execute!(
+      { python: "print('hi')" },
+      toolCtx,
+    );
 
-    expect(captured).toBe("print('hi')");
+    expect(result).toEqual({ ok: true });
+    expect(mockRunSandbox).toHaveBeenCalledWith({
+      artifact: {
+        type: "plan",
+        currentPlan: null,
+        generatedPython: "print('hi')",
+      },
+    });
+    expect(onRunStatus).toHaveBeenCalledWith("sandbox");
+    expect(onRunStatus).toHaveBeenCalledWith("validating");
+    expect(onPlanArtifactReady).toHaveBeenCalledWith(plan);
+  });
 
-    const listed = await tools.list_session_files.execute!({}, toolCtx);
-    expect(listed.paths).toEqual([]);
+  it("returns errors when sandbox fails", async () => {
+    mockRunSandbox.mockResolvedValue({
+      ok: false,
+      code: "SANDBOX_FAILED",
+      message: "SyntaxError",
+    });
+    const onSubmitPlanCodeFailed = vi.fn();
+
+    const tools = createPlanChatTools({
+      coachId: "c",
+      sessionId: "s",
+      currentArtifact: null,
+      runSandbox: mockRunSandbox,
+      onPlanArtifactReady: () => {},
+      onSubmitPlanCodeFailed,
+    });
+
+    const result = await tools.submit_plan_code.execute!(
+      { python: "bad(" },
+      toolCtx,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ code: "SANDBOX_FAILED", message: "SyntaxError" }],
+    });
+    expect(onSubmitPlanCodeFailed).toHaveBeenCalledWith([
+      { code: "SANDBOX_FAILED", message: "SyntaxError" },
+    ]);
   });
 
   it("read_session_file returns file content", async () => {
@@ -63,7 +112,8 @@ describe("createPlanChatTools", () => {
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: () => {},
+      currentArtifact: null,
+      onPlanArtifactReady: () => {},
     });
 
     const result = await tools.read_session_file.execute!(
@@ -84,7 +134,8 @@ describe("createPlanChatTools", () => {
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: () => {},
+      currentArtifact: null,
+      onPlanArtifactReady: () => {},
     });
 
     const result = await tools.read_session_file.execute!(
@@ -107,7 +158,8 @@ describe("createPlanChatTools", () => {
     const tools = createPlanChatTools({
       coachId: "c",
       sessionId: "s",
-      onSubmitPlanCode: () => {},
+      currentArtifact: null,
+      onPlanArtifactReady: () => {},
     });
 
     const result = await tools.read_session_file.execute!(
