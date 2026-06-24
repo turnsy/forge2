@@ -29,7 +29,7 @@ export function PlanDetailActions({
         side="bottom"
         trigger={({ toggle, menuId, open }) => (
           <IconButton
-            variant="plain"
+            variant="secondary"
             size="sm"
             icon={<EllipsisIcon />}
             aria-label="Plan actions"
