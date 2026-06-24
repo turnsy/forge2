@@ -103,10 +103,10 @@ class ForgePlanTests(unittest.TestCase):
             unit="kg",
         )
 
-        load = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["load"]
-        self.assertEqual(load["type"], "percentage")
-        self.assertEqual(load["value"], 85)
-        self.assertEqual(load["unit"], "kg")
+        target = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["target"]
+        self.assertEqual(target["type"], "percentage")
+        self.assertEqual(target["value"], 85)
+        self.assertEqual(target["unit"], "kg")
 
     def test_move_week_renumbers_indices(self) -> None:
         plan = Plan.empty("Reorder")

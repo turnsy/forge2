@@ -13,7 +13,7 @@ function makeSet(status: Set["status"]): Set {
     planned: {
       type: "exact",
       reps: 5,
-      load: { type: "absolute", value: 100, unit: "kg" },
+      target: { type: "absolute", value: 100, unit: "kg" },
     },
     actual: status === "completed" ? { reps: 5 } : null,
     status,

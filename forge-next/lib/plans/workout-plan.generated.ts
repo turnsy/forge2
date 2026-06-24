@@ -6,7 +6,7 @@ export type PlannedSet = ExactPlannedSet | TargetPlannedSet;
  * Supports simple reps (5) and combined reps (3+1).
  */
 export type RepsValue = number | string;
-export type Load = AbsoluteLoad | PercentageLoad;
+export type SetTarget = AbsoluteLoad | PercentageLoad;
 
 /**
  * Athlete-facing workout plan schema: Plan → Week → Day → Block → Exercise → Set.
@@ -71,7 +71,7 @@ export interface Set {
 export interface ExactPlannedSet {
   type: "exact";
   reps: RepsValue;
-  load: Load;
+  target: SetTarget;
   tempo?: string;
   restSeconds?: number;
   notes?: string;
@@ -90,12 +90,12 @@ export interface TargetPlannedSet {
   type: "target";
   instruction: NonEmptyString;
   reps?: RepsValue;
-  load?: Load;
+  target?: SetTarget;
   notes?: string;
 }
 export interface ActualSet {
   reps?: RepsValue;
-  load?: Load;
+  target?: SetTarget;
   completedAt?: string;
   notes?: string;
 }

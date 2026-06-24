@@ -28,7 +28,7 @@ export const minimalWorkoutPlan: WorkoutPlan = {
                       planned: {
                         type: "exact",
                         reps: 5,
-                        load: { type: "absolute", value: 100, unit: "kg" },
+                        target: { type: "absolute", value: 100, unit: "kg" },
                       },
                       actual: null,
                       status: "planned",
@@ -50,7 +50,7 @@ export function makeSet(overrides: Partial<Set> & Pick<Set, "id">): Set {
     planned: {
       type: "exact",
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     },
     actual: null,
     status: "planned",
@@ -115,11 +115,11 @@ export function makeWorkoutPlan(options: MakeWorkoutPlanOptions = {}): WorkoutPl
       planned: {
         type: "exact",
         reps: 8,
-        load: { type: "absolute", value: 60, unit: "kg" },
+        target: { type: "absolute", value: 60, unit: "kg" },
         notes: options.setNotes,
       },
       actual: options.dayComplete
-        ? { reps: 8, load: { type: "absolute", value: 60, unit: "kg" } }
+        ? { reps: 8, target: { type: "absolute", value: 60, unit: "kg" } }
         : null,
       status: options.dayComplete ? "completed" : "planned",
     }),
@@ -132,7 +132,7 @@ export function makeWorkoutPlan(options: MakeWorkoutPlanOptions = {}): WorkoutPl
         planned: {
           type: "exact",
           reps: 5,
-          load: { type: "absolute", value: 80, unit: "kg" },
+          target: { type: "absolute", value: 80, unit: "kg" },
         },
         status: "skipped",
       }),

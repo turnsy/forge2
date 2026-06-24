@@ -224,7 +224,7 @@
       "required": [
         "type",
         "reps",
-        "load"
+        "target"
       ],
       "properties": {
         "type": {
@@ -233,8 +233,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "tempo": {
           "type": "string"
@@ -265,8 +265,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "notes": {
           "type": "string"
@@ -281,8 +281,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "completedAt": {
           "type": "string",
@@ -293,7 +293,7 @@
         }
       }
     },
-    "load": {
+    "setTarget": {
       "oneOf": [
         {
           "$ref": "#/$defs/absoluteLoad"

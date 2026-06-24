@@ -61,7 +61,7 @@ def validation_rules_cheat_sheet() -> str:
             'notes="30 sec", notes="each grip".',
             "  - Optional: rep complexes as string 5+5+5 instead of int + notes when splitting reps matters.",
             '- planned.notes: optional string on exact sets (use for per-side, time, and coaching detail)',
-            '- planned.load: "absolute" OR "percentage"',
+            '- planned.target: "absolute" OR "percentage"',
             f'  - absolute: type "absolute", value >= 0, unit non-empty string (common: {", ".join(LOAD_UNITS_COMMON)})',
             '  - percentage: type "percentage", value >= 0, unit non-empty string (lb/kg/etc. — use add_set unit= for percentage sets)',
             "- actual: null for new sets",

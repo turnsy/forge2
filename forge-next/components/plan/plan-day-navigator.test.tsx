@@ -33,7 +33,7 @@ function makeMultiWeekPlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: { type: "absolute", value: 100, unit: "kg" },
+                          target: { type: "absolute", value: 100, unit: "kg" },
                         },
                       }),
                     ],
@@ -57,7 +57,7 @@ function makeMultiWeekPlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 3,
-                          load: { type: "absolute", value: 80, unit: "kg" },
+                          target: { type: "absolute", value: 80, unit: "kg" },
                         },
                       }),
                     ],
@@ -86,7 +86,7 @@ function makeMultiWeekPlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: { type: "absolute", value: 60, unit: "kg" },
+                          target: { type: "absolute", value: 60, unit: "kg" },
                         },
                       }),
                     ],
@@ -123,7 +123,7 @@ function makeSingleDayPlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: { type: "absolute", value: 100, unit: "kg" },
+                          target: { type: "absolute", value: 100, unit: "kg" },
                         },
                       }),
                     ],

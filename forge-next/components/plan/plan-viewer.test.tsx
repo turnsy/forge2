@@ -29,7 +29,7 @@ function makePlanWithIdenticalSets(setCount: number): WorkoutPlan {
                       planned: {
                         type: "exact" as const,
                         reps: 3,
-                        load: {
+                        target: {
                           type: "percentage" as const,
                           value: 70,
                           unit: "kg",

@@ -1,18 +1,18 @@
-import type { AbsoluteLoad, Load, PercentageLoad } from "@/lib/plans/workout-plan";
+import type { AbsoluteLoad, SetTarget, PercentageLoad } from "@/lib/plans/workout-plan";
 
-export function isPercentageLoad(load: Load): boolean {
+export function isPercentageTarget(load: SetTarget): boolean {
   return load.type === "percentage";
 }
 
-export function getLoadTargetValue(load: Load): string {
+export function getTargetValue(load: SetTarget): string {
   return String(load.value);
 }
 
-export function getLoadUnit(load: Load, fallback = "lb"): string {
+export function getTargetUnit(load: SetTarget, fallback = "lb"): string {
   return load.unit || fallback;
 }
 
-export function parseLoadTargetNumber(value: string): number | undefined {
+export function parseTargetNumber(value: string): number | undefined {
   const trimmed = value.trim();
   if (trimmed === "") {
     return undefined;
@@ -37,8 +37,8 @@ export function toExactPercentageLoad(
   };
 }
 
-export function updateLoadTargetValue(load: Load, rawValue: string): Load {
-  const parsed = parseLoadTargetNumber(rawValue);
+export function updateTargetValue(load: SetTarget, rawValue: string): SetTarget {
+  const parsed = parseTargetNumber(rawValue);
 
   return {
     ...load,
@@ -46,14 +46,14 @@ export function updateLoadTargetValue(load: Load, rawValue: string): Load {
   };
 }
 
-export function updateLoadUnit(load: Load, unit: string): Load {
+export function updateTargetUnit(load: SetTarget, unit: string): SetTarget {
   return {
     ...load,
     unit: unit.trim(),
   };
 }
 
-export function enablePercentageLoad(load: Load): PercentageLoad {
+export function enablePercentageTarget(load: SetTarget): PercentageLoad {
   if (load.type === "percentage") {
     return load;
   }
@@ -63,7 +63,7 @@ export function enablePercentageLoad(load: Load): PercentageLoad {
   return toExactPercentageLoad(seed, load.unit);
 }
 
-export function disablePercentageLoad(load: Load): AbsoluteLoad {
+export function disablePercentageTarget(load: SetTarget): AbsoluteLoad {
   if (load.type === "absolute") {
     return load;
   }

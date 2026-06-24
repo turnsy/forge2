@@ -1,7 +1,7 @@
 import type {
   AbsoluteLoad,
   ActualSet,
-  Load,
+  SetTarget,
   PercentageLoad,
   PlannedSet,
   RepsValue,
@@ -14,19 +14,19 @@ export function formatReps(reps: RepsValue): string {
   return String(reps);
 }
 
-export function formatLoad(load: Load): string {
+export function formatTarget(load: SetTarget): string {
   if (load.type === "absolute") {
-    return formatAbsoluteLoad(load);
+    return formatAbsoluteTarget(load);
   }
 
-  return formatPercentageLoad(load);
+  return formatPercentageTarget(load);
 }
 
-function formatAbsoluteLoad(load: AbsoluteLoad): string {
+function formatAbsoluteTarget(load: AbsoluteLoad): string {
   return `${load.value} ${load.unit}`;
 }
 
-export function formatPercentageLoad(load: PercentageLoad): string {
+export function formatPercentageTarget(load: PercentageLoad): string {
   return `${load.value}% (${load.unit})`;
 }
 
@@ -77,8 +77,8 @@ function getPlannedReps(planned: PlannedSet): RepsValue | undefined {
   return planned.reps;
 }
 
-function getPlannedLoad(planned: PlannedSet): Load | undefined {
-  return planned.load;
+function getPlannedTarget(planned: PlannedSet): SetTarget | undefined {
+  return planned.target;
 }
 
 export function actualRepsMatchesPlanned(
@@ -97,28 +97,28 @@ export function actualRepsMatchesPlanned(
   return String(plannedReps) === String(actual.reps);
 }
 
-export function actualLoadMatchesPlanned(
+export function actualTargetMatchesPlanned(
   planned: PlannedSet,
   actual: ActualSet,
 ): boolean | null {
-  if (!actual.load) {
+  if (!actual.target) {
     return null;
   }
 
-  const plannedLoad = getPlannedLoad(planned);
-  if (!plannedLoad) {
+  const plannedTarget = getPlannedTarget(planned);
+  if (!plannedTarget) {
     return null;
   }
 
-  if (plannedLoad.type === "percentage") {
+  if (plannedTarget.type === "percentage") {
     return true;
   }
 
-  if (actual.load.type !== "absolute" || plannedLoad.type !== "absolute") {
+  if (actual.target.type !== "absolute" || plannedTarget.type !== "absolute") {
     return false;
   }
 
   return (
-    plannedLoad.value === actual.load.value && plannedLoad.unit === actual.load.unit
+    plannedTarget.value === actual.target.value && plannedTarget.unit === actual.target.unit
   );
 }

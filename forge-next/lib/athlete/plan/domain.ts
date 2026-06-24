@@ -8,7 +8,7 @@ import type {
   ActualSet,
   Day,
   Exercise,
-  Load,
+  SetTarget,
   Set,
   Week,
   WorkoutPlan,
@@ -84,7 +84,7 @@ export function isSetActualComplete(set: Set): boolean {
     return false;
   }
 
-  return set.actual.load !== undefined;
+  return set.actual.target !== undefined;
 }
 
 export function isExerciseComplete(exercise: Exercise): boolean {
@@ -112,18 +112,18 @@ export function parseRepsInput(value: string): number | string | null {
   return trimmed;
 }
 
-export function parseLoadInput(
+export function parseTargetInput(
   value: string,
-  plannedLoad: Load,
-): Load | null {
+  plannedTarget: SetTarget,
+): SetTarget | null {
   const trimmed = value.trim();
   if (!trimmed) {
     return null;
   }
 
-  const unit = plannedLoad.unit;
+  const unit = plannedTarget.unit;
 
-  if (plannedLoad.type === "absolute") {
+  if (plannedTarget.type === "absolute") {
     const numeric = Number(trimmed);
     if (!Number.isFinite(numeric)) {
       return null;
@@ -160,7 +160,7 @@ export function parseLoadInput(
 
 export function buildActualFromInputs(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ActualSet | null {
   if (set.planned.type === "target") {
@@ -168,18 +168,18 @@ export function buildActualFromInputs(
   }
 
   const reps = parseRepsInput(repsInput);
-  const load = parseLoadInput(loadInput, set.planned.load);
+  const parsedTarget = parseTargetInput(targetInput, set.planned.target);
 
-  if (reps === null || load === null) {
+  if (reps === null || parsedTarget === null) {
     return null;
   }
 
-  return { reps, load };
+  return { reps, target: parsedTarget };
 }
 
 export function buildActualForSave(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ActualSet | null {
   if (set.planned.type === "target") {
@@ -187,12 +187,12 @@ export function buildActualForSave(
   }
 
   const parsedReps = parseRepsInput(repsInput);
-  const parsedLoad = parseLoadInput(loadInput, set.planned.load);
+  const parsedTarget = parseTargetInput(targetInput, set.planned.target);
   const reps =
     parsedReps ??
     (set.actual?.reps !== undefined ? set.actual.reps : null);
 
-  if (reps === null && parsedLoad === null) {
+  if (reps === null && parsedTarget === null) {
     return null;
   }
 
@@ -200,30 +200,30 @@ export function buildActualForSave(
     return null;
   }
 
-  const load = parsedLoad ?? set.actual?.load;
+  const target = parsedTarget ?? set.actual?.target;
 
-  return load !== undefined ? { reps, load } : { reps };
+  return target !== undefined ? { reps, target } : { reps };
 }
 
-export function formatActualLoadInput(set: Set): string {
-  if (!set.actual?.load) {
+export function formatActualTargetInput(set: Set): string {
+  if (!set.actual?.target) {
     return "";
   }
 
-  if (set.actual.load.type === "absolute") {
-    return String(set.actual.load.value);
+  if (set.actual.target.type === "absolute") {
+    return String(set.actual.target.value);
   }
 
-  return String(set.actual.load.value ?? "");
+  return String(set.actual.target.value ?? "");
 }
 
 export function setFormStateFromActual(set: Set): {
   reps: string;
-  load: string;
+  target: string;
 } {
   return {
     reps: set.actual?.reps !== undefined ? String(set.actual.reps) : "",
-    load: formatActualLoadInput(set),
+    target: formatActualTargetInput(set),
   };
 }
 
@@ -237,7 +237,7 @@ export function mergeSavedActual(
 
   return {
     reps: incoming.reps ?? existing.reps,
-    load: incoming.load ?? existing.load,
+    target: incoming.target ?? existing.target,
     completedAt: incoming.completedAt ?? existing.completedAt,
     notes: incoming.notes ?? existing.notes,
   };
@@ -249,14 +249,14 @@ export type ResolveSaveActualResult =
 
 export function resolveSaveActual(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ResolveSaveActualResult {
-  if (!repsInput.trim() && !loadInput.trim() && set.actual !== null) {
+  if (!repsInput.trim() && !targetInput.trim() && set.actual !== null) {
     return { type: "skip" };
   }
 
-  return { type: "save", actual: buildActualForSave(repsInput, loadInput, set) };
+  return { type: "save", actual: buildActualForSave(repsInput, targetInput, set) };
 }
 
 export function applySetActuals(

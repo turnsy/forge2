@@ -17,7 +17,7 @@ function makeSet(id: string, reps: number, weight: number): Set {
     planned: {
       type: "exact",
       reps,
-      load: { type: "absolute", value: weight, unit: "lb" },
+      target: { type: "absolute", value: weight, unit: "lb" },
     },
     actual: null,
     status: "planned",
@@ -48,7 +48,7 @@ function makePercentagePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: {
+                          target: {
                             type: "percentage",
                             value: 75,
                             unit: "lb",
@@ -286,7 +286,7 @@ describe("CoachEditableDayView", () => {
     const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
     if (load.type === "exact") {
-      expect(load.load).toMatchObject({ value: 195 });
+      expect(load.target).toMatchObject({ value: 195 });
     }
   });
 
@@ -351,7 +351,7 @@ describe("CoachEditableDayView", () => {
     expect(sets).toHaveLength(3);
     expect(sets[2].planned).toMatchObject({
       reps: 10,
-      load: { type: "absolute", value: 205, unit: "lb" },
+      target: { type: "absolute", value: 205, unit: "lb" },
     });
   });
 
@@ -502,8 +502,8 @@ describe("CoachEditableDayView", () => {
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
-    if (load.type === "exact" && load.load.type === "absolute") {
-      expect(load.load.unit).toBe("mi");
+    if (load.type === "exact" && load.target.type === "absolute") {
+      expect(load.target.unit).toBe("mi");
     }
   });
 
@@ -531,8 +531,8 @@ describe("CoachEditableDayView", () => {
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
-    if (load.type === "exact" && load.load.type === "absolute") {
-      expect(load.load.unit).toBe("");
+    if (load.type === "exact" && load.target.type === "absolute") {
+      expect(load.target.unit).toBe("");
     }
   });
 

@@ -14,7 +14,7 @@ function makeExercise(videoUrl?: string): Exercise {
         planned: {
           type: "exact",
           reps: 5,
-          load: { type: "absolute", value: 135, unit: "lb" },
+          target: { type: "absolute", value: 135, unit: "lb" },
         },
         actual: null,
         status: "planned",

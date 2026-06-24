@@ -15,7 +15,7 @@ export function createDefaultSet(): Set {
     planned: {
       type: "exact",
       reps: 10,
-      load: { type: "absolute", value: 0, unit: "lb" },
+      target: { type: "absolute", value: 0, unit: "lb" },
     },
     actual: null,
     status: "planned",
@@ -35,6 +35,13 @@ export function createDefaultBlock(): Block {
   return {
     id: createBlockId(),
     exercises: [createDefaultExercise()],
+  };
+}
+
+export function createDefaultSupersetBlock(): Block {
+  return {
+    id: createBlockId(),
+    exercises: [createDefaultExercise(), createDefaultExercise()],
   };
 }
 
@@ -77,7 +84,7 @@ export function isDefaultDayContent(day: Day): boolean {
     return false;
   }
 
-  const load = set.planned.load;
+  const load = set.planned.target;
   return (
     set.planned.reps === 10 &&
     load.type === "absolute" &&

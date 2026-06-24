@@ -46,7 +46,7 @@ const COMPLETE_DAY_ERROR = "Could not complete the day. Try again.";
 
 type SetFormState = {
   reps: string;
-  load: string;
+  target: string;
 };
 
 type SetLocation = {
@@ -92,29 +92,29 @@ function getResolvedSetFormState(
   return formState[key] ?? setFormStateFromActual(set);
 }
 
-function getLoadUnitLabel(set: Set): string | null {
+function getTargetUnitLabel(set: Set): string | null {
   if (set.planned.type !== "exact") {
     return null;
   }
 
-  return set.planned.load.unit;
+  return set.planned.target.unit;
 }
 
 function getPercentagePlaceholder(set: Set): string {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "percentage") {
+  if (set.planned.type !== "exact" || set.planned.target.type !== "percentage") {
     return "";
   }
 
-  const load = set.planned.load as PercentageLoad;
+  const load = set.planned.target as PercentageLoad;
   return `${load.value}%`;
 }
 
 function getAbsoluteLoadPlaceholder(set: Set): string {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "absolute") {
+  if (set.planned.type !== "exact" || set.planned.target.type !== "absolute") {
     return "";
   }
 
-  return String((set.planned.load as AbsoluteLoad).value);
+  return String((set.planned.target as AbsoluteLoad).value);
 }
 
 
@@ -156,16 +156,16 @@ function applyLocalActualsToDayForm(
 function SetRowInputs({
   set,
   reps,
-  load,
+  target,
   onRepsChange,
-  onLoadChange,
+  onTargetChange,
   readOnly = false,
 }: {
   set: Set;
   reps: string;
-  load: string;
+  target: string;
   onRepsChange?: (value: string) => void;
-  onLoadChange?: (value: string) => void;
+  onTargetChange?: (value: string) => void;
   readOnly?: boolean;
 }) {
   if (set.planned.type === "target") {
@@ -176,7 +176,7 @@ function SetRowInputs({
     );
   }
 
-  const unit = getLoadUnitLabel(set);
+  const unit = getTargetUnitLabel(set);
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -194,17 +194,17 @@ function SetRowInputs({
       />
       <span className="shrink-0 text-sm text-surface-muted">of</span>
       <Input
-        aria-label="Set load"
+        aria-label="Set target"
         type="text"
-        value={load}
+        value={target}
         placeholder={
-          set.planned.load.type === "percentage"
+          set.planned.target.type === "percentage"
             ? getPercentagePlaceholder(set)
             : getAbsoluteLoadPlaceholder(set)
         }
         readOnly={readOnly}
         onChange={
-          readOnly ? undefined : (event) => onLoadChange?.(event.target.value)
+          readOnly ? undefined : (event) => onTargetChange?.(event.target.value)
         }
         className="w-16"
         size="sm"
@@ -261,22 +261,22 @@ function AthleteSetRow({
   set,
   setIdx,
   reps,
-  load,
+  target,
   readOnly,
   complete,
   setRef,
   onRepsChange,
-  onLoadChange,
+  onTargetChange,
 }: {
   set: Set;
   setIdx: number;
   reps: string;
-  load: string;
+  target: string;
   readOnly?: boolean;
   complete?: boolean;
   setRef?: (node: HTMLDivElement | null) => void;
   onRepsChange?: (value: string) => void;
-  onLoadChange?: (value: string) => void;
+  onTargetChange?: (value: string) => void;
 }) {
   const notes = getSetNotes(set);
 
@@ -299,10 +299,10 @@ function AthleteSetRow({
         <SetRowInputs
           set={set}
           reps={reps}
-          load={load}
+          target={target}
           readOnly={readOnly}
           onRepsChange={onRepsChange}
-          onLoadChange={onLoadChange}
+          onTargetChange={onTargetChange}
         />
         <SetCheckmark complete={Boolean(complete)} />
       </div>
@@ -335,7 +335,7 @@ function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }
               <div className="space-y-3">
                 {exercise.sets.map((set, setIdx) => {
                   const filled = set.status === "completed";
-                  const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
+                  const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
 
                   return (
                     <AthleteSetRow
@@ -343,7 +343,7 @@ function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }
                       set={set}
                       setIdx={setIdx}
                       reps={values.reps}
-                      load={values.load}
+                      target={values.target}
                       readOnly
                       complete={filled}
                     />
@@ -429,7 +429,7 @@ function AthleteEditableDayContent({
         const key = getSetKey(exercisePos, setPos);
         const local = formState[key];
         const actual = local
-          ? buildActualFromInputs(local.reps, local.load, set)
+          ? buildActualFromInputs(local.reps, local.target, set)
           : set.actual;
 
         if (!actual) {
@@ -468,8 +468,8 @@ function AthleteEditableDayContent({
   }, []);
 
   const runSave = useCallback(
-    async (location: SetLocation, set: Set, reps: string, load: string) => {
-      const resolution = resolveSaveActual(reps, load, set);
+    async (location: SetLocation, set: Set, reps: string, target: string) => {
+      const resolution = resolveSaveActual(reps, target, set);
       if (resolution.type === "skip") {
         return;
       }
@@ -531,7 +531,7 @@ function AthleteEditableDayContent({
     location: SetLocation,
     set: Set,
     reps: string,
-    load: string,
+    target: string,
   ) {
     const key = getSetKey(location.exercisePos, location.setPos);
     const existingTimer = debounceTimers.current[key];
@@ -542,7 +542,7 @@ function AthleteEditableDayContent({
     debounceTimers.current[key] = setTimeout(() => {
       delete debounceTimers.current[key];
 
-      const saveTask = () => runSave(location, set, reps, load);
+      const saveTask = () => runSave(location, set, reps, target);
       queuedSave.current = saveTask;
       void flushSaveQueue();
     }, SAVE_DEBOUNCE_MS);
@@ -551,14 +551,14 @@ function AthleteEditableDayContent({
   function handleInputChange(
     location: SetLocation,
     set: Set,
-    field: "reps" | "load",
+    field: "reps" | "target",
     value: string,
   ) {
     const key = getSetKey(location.exercisePos, location.setPos);
     setFormState((previous) => {
-      const current = previous[key] ?? { reps: "", load: "" };
+      const current = previous[key] ?? { reps: "", target: "" };
       const next = { ...current, [field]: value };
-      scheduleSave(location, set, next.reps, next.load);
+      scheduleSave(location, set, next.reps, next.target);
       return { ...previous, [key]: next };
     });
   }
@@ -588,7 +588,7 @@ function AthleteEditableDayContent({
           return;
         }
 
-        const resolution = resolveSaveActual(local.reps, local.load, set);
+        const resolution = resolveSaveActual(local.reps, local.target, set);
         if (resolution.type === "skip") {
           return;
         }
@@ -729,7 +729,7 @@ function AthleteEditableDayContent({
                           set={plannedExercise.sets[setPos]}
                           setIdx={setPos}
                           reps={local.reps}
-                          load={local.load}
+                          target={local.target}
                           complete={complete}
                           setRef={(node) => {
                             setRefs.current[key] = node;
@@ -742,11 +742,11 @@ function AthleteEditableDayContent({
                               value,
                             )
                           }
-                          onLoadChange={(value) =>
+                          onTargetChange={(value) =>
                             handleInputChange(
                               { exercisePos, setPos },
                               plannedExercise.sets[setPos],
-                              "load",
+                              "target",
                               value,
                             )
                           }

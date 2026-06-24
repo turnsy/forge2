@@ -9,7 +9,7 @@ function makeSet(overrides: Partial<Set> = {}): Set {
     planned: {
       type: "exact",
       reps: 5,
-      load: { type: "absolute", value: 100, unit: "kg" },
+      target: { type: "absolute", value: 100, unit: "kg" },
     },
     actual: null,
     status: "planned",
@@ -27,7 +27,7 @@ describe("PlanSetTable", () => {
           makeSet({
             actual: {
               reps: 5,
-              load: { type: "absolute", value: 102, unit: "kg" },
+              target: { type: "absolute", value: 102, unit: "kg" },
             },
             status: "completed",
           }),
@@ -61,7 +61,7 @@ describe("PlanSetTable", () => {
           makeSet({
             actual: {
               reps: 5,
-              load: { type: "absolute", value: 85, unit: "kg" },
+              target: { type: "absolute", value: 85, unit: "kg" },
             },
             status: "completed",
           }),
@@ -88,7 +88,7 @@ describe("PlanSetTable", () => {
             planned: {
               type: "exact",
               reps: 5,
-              load: {
+              target: {
                 type: "percentage",
                 value: 80,
                 unit: "kg",
@@ -96,7 +96,7 @@ describe("PlanSetTable", () => {
             },
             actual: {
               reps: 5,
-              load: { type: "absolute", value: 102, unit: "kg" },
+              target: { type: "absolute", value: 102, unit: "kg" },
             },
             status: "completed",
           }),

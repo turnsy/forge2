@@ -47,7 +47,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 8,
-                          load: { type: "absolute", value: 60, unit: "kg" },
+                          target: { type: "absolute", value: 60, unit: "kg" },
                         },
                       }),
                       makeSet({
@@ -55,7 +55,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 6,
-                          load: {
+                          target: {
                             type: "percentage",
                             value: 75,
                             unit: "kg",
@@ -109,7 +109,7 @@ function makeCompletedPlan(): WorkoutPlan {
                   ...set,
                   actual: {
                     reps: 8,
-                    load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+                    target: { type: "absolute" as const, value: 60, unit: "kg" as const },
                   },
                 };
               }
@@ -118,7 +118,7 @@ function makeCompletedPlan(): WorkoutPlan {
                 ...set,
                 actual: {
                   reps: 6,
-                  load: { type: "absolute" as const, value: 75, unit: "kg" as const },
+                  target: { type: "absolute" as const, value: 75, unit: "kg" as const },
                 },
               };
             }),
@@ -174,7 +174,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].actual = {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     };
 
     const { container } = render(
@@ -466,11 +466,11 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].actual = {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     };
     plan.weeks[0].days[0].blocks[0].exercises[0].sets[1].actual = {
       reps: 6,
-      load: { type: "absolute", value: 185, unit: "kg" },
+      target: { type: "absolute", value: 185, unit: "kg" },
     };
 
     render(

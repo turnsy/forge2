@@ -2,9 +2,9 @@ import type { Set } from "@/lib/plans/workout-plan";
 import type { AccordionVariant } from "@/components/ui/accordion";
 import {
   EMPTY_CELL,
-  actualLoadMatchesPlanned,
+  actualTargetMatchesPlanned,
   actualRepsMatchesPlanned,
-  formatLoad,
+  formatTarget,
   formatOptionalCell,
   formatReps,
   formatTargetInstruction,
@@ -18,7 +18,7 @@ const mutedCellClass = "text-surface-muted";
 type CoachSetRow = {
   setNumber: number;
   reps: string;
-  load: string;
+  target: string;
   notes: string;
 };
 
@@ -29,7 +29,7 @@ function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
     return {
       setNumber,
       reps: formatReps(planned.reps),
-      load: formatLoad(planned.load),
+      target: formatTarget(planned.target),
       notes: formatOptionalCell(planned.notes ?? set.notes),
     };
   }
@@ -37,7 +37,7 @@ function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
   return {
     setNumber,
     reps: formatTargetInstruction(planned.instruction),
-    load: planned.load ? formatLoad(planned.load) : EMPTY_CELL,
+    target: planned.target ? formatTarget(planned.target) : EMPTY_CELL,
     notes: formatOptionalCell(planned.notes ?? set.notes),
   };
 }
@@ -138,7 +138,7 @@ export function PlanSetTable({
                 set.actual.reps !== ""
                   ? set.actual.reps
                   : null;
-              const actualLoad = showActual ? (set.actual?.load ?? null) : null;
+              const actualTarget = showActual ? (set.actual?.target ?? null) : null;
 
               return (
                 <tr key={set.id} className="border-b border-glass-border/60 last:border-b-0">
@@ -168,11 +168,11 @@ export function PlanSetTable({
                   </td>
                   <td className="px-3 py-2 text-surface-foreground">
                     <PrescribedActualCell
-                      prescribed={row.load}
-                      actualValue={actualLoad ? formatLoad(actualLoad) : null}
+                      prescribed={row.target}
+                      actualValue={actualTarget ? formatTarget(actualTarget) : null}
                       matches={
-                        actualLoad && set.actual
-                          ? actualLoadMatchesPlanned(set.planned, set.actual)
+                        actualTarget && set.actual
+                          ? actualTargetMatchesPlanned(set.planned, set.actual)
                           : null
                       }
                     />

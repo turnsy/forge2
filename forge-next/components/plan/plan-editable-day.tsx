@@ -31,6 +31,7 @@ import { formatReps } from "@/lib/plans/display";
 import {
   createDefaultBlock,
   createDefaultSet,
+  createDefaultSupersetBlock,
   createExerciseId,
   createSetId,
 } from "@/lib/plans/plan-defaults";
@@ -39,7 +40,7 @@ import type {
   Day,
   Exercise,
   ExactPlannedSet,
-  Load,
+  SetTarget,
   RepsValue,
   Set,
 } from "@/lib/plans/workout-plan";
@@ -108,7 +109,7 @@ function cloneSetFromPrevious(previous: Set): Set {
     planned: {
       type: "exact",
       reps: previous.planned.reps,
-      load: structuredClone(previous.planned.load),
+      target: structuredClone(previous.planned.target),
       tempo: previous.planned.tempo,
       restSeconds: previous.planned.restSeconds,
       notes: previous.planned.notes,
@@ -172,7 +173,7 @@ function SortableSetRow({
   canDelete,
   repsInputRef,
   onRepsChange,
-  onLoadUpdate,
+  onTargetUpdate,
   onNotesChange,
   onDelete,
 }: {
@@ -183,7 +184,7 @@ function SortableSetRow({
   canDelete: boolean;
   repsInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void);
   onRepsChange: (value: string) => void;
-  onLoadUpdate: (load: Load) => void;
+  onTargetUpdate: (load: SetTarget) => void;
   onNotesChange: (value: string) => void;
   onDelete: () => void;
 }) {
@@ -259,10 +260,10 @@ function SortableSetRow({
       <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-3 max-md:p-0">
         <MobileFieldLabel>Target</MobileFieldLabel>
         <PlanLoadTargetControl
-          load={planned.load}
+          target={planned.target}
           disabled={rowDisabled}
           setNumber={setNumber}
-          onChange={onLoadUpdate}
+          onChange={onTargetUpdate}
         />
       </td>
       <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-4 max-md:p-0">
@@ -498,7 +499,7 @@ function EditableExerciseBlock({
                           };
                         });
                       }}
-                      onLoadUpdate={(load) => {
+                      onTargetUpdate={(target) => {
                         if (!isSetEditable(set)) {
                           return;
                         }
@@ -513,7 +514,7 @@ function EditableExerciseBlock({
                             status: "planned",
                             planned: {
                               ...current.planned,
-                              load,
+                              target,
                             },
                           };
                         });
@@ -726,7 +727,7 @@ export function PlanEditableDay({
         </div>
       ))}
 
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-2">
         <Button
           type="button"
           variant="ghost"
@@ -748,7 +749,30 @@ export function PlanEditableDay({
             });
           }}
         >
-          Add
+          Add exercise
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          icon={<PlusIcon />}
+          aria-label="Add superset"
+          disabled={disabled}
+          onClick={() => {
+            emitChange({
+              ...editableDay,
+              blocks: [
+                ...editableDay.blocks,
+                {
+                  ...createDefaultSupersetBlock(),
+                  id: createBlockId(),
+                },
+              ] as typeof editableDay.blocks,
+            });
+          }}
+        >
+          Add superset
         </Button>
       </div>
     </div>

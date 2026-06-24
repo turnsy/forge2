@@ -87,11 +87,11 @@ export function updateFlattenedSet(
 
 export function applyLocalActualsToDay(
   day: Day,
-  formState: Record<string, { reps: string; load: string }>,
+  formState: Record<string, { reps: string; target: string }>,
   getSetKey: (exercisePos: number, setPos: number) => string,
   buildActual: (
     reps: string,
-    load: string,
+    target: string,
     set: import("@/lib/plans/workout-plan").Set,
   ) => import("@/lib/plans/workout-plan").ActualSet | null,
 ): Day {
@@ -104,7 +104,7 @@ export function applyLocalActualsToDay(
         return;
       }
 
-      const actual = buildActual(local.reps, local.load, set);
+      const actual = buildActual(local.reps, local.target, set);
       if (!actual) {
         return;
       }

@@ -110,7 +110,7 @@ def build_planned_set(
     planned: dict[str, Any] = {
         "type": "exact",
         "reps": reps,
-        "load": load,
+        "target": load,
     }
     if notes:
         planned["notes"] = notes

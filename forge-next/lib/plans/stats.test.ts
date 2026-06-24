@@ -23,7 +23,7 @@ function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
                     planned: {
                       type: "exact",
                       reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
+                      target: { type: "absolute", value: 100, unit: "kg" },
                     },
                   }),
                 ],

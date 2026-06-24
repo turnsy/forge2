@@ -54,7 +54,7 @@ describe("athlete plan actions", () => {
   it("saves set actuals for the authenticated athlete", async () => {
     const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     });
 
     expect(result).toEqual({ ok: true });

@@ -30,7 +30,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: { type: "absolute", value: 135, unit: "lb" },
+                          target: { type: "absolute", value: 135, unit: "lb" },
                         },
                       }),
                     ],
@@ -44,7 +44,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 8,
-                          load: { type: "absolute", value: 0, unit: "lb" },
+                          target: { type: "absolute", value: 0, unit: "lb" },
                         },
                       }),
                     ],
@@ -68,7 +68,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 3,
-                          load: { type: "absolute", value: 185, unit: "lb" },
+                          target: { type: "absolute", value: 185, unit: "lb" },
                         },
                         status: "completed",
                         locked: true,
@@ -98,7 +98,7 @@ function makePlan(): WorkoutPlan {
                         planned: {
                           type: "exact",
                           reps: 5,
-                          load: { type: "absolute", value: 135, unit: "lb" },
+                          target: { type: "absolute", value: 135, unit: "lb" },
                         },
                       }),
                     ],
