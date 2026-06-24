@@ -3,7 +3,8 @@ import { join, relative } from "node:path";
 
 const FORGE_PLAN_ROOT = join(process.cwd(), "sandbox", "forge_plan");
 
-const SKIP_NAMES = new Set(["__pycache__", "test_forge_plan.py", "README.md"]);
+const SKIP_TEST_FILE = /^test_.*\.py$/;
+const SKIP_NAMES = new Set(["__pycache__", "README.md"]);
 
 /**
  * Collect forge_plan library files for upload into the sandbox VM.
@@ -13,7 +14,7 @@ export function bundleForgePlanFiles(): { path: string; content: Buffer }[] {
 
   function walk(dir: string): void {
     for (const name of readdirSync(dir)) {
-      if (SKIP_NAMES.has(name)) {
+      if (SKIP_NAMES.has(name) || SKIP_TEST_FILE.test(name)) {
         continue;
       }
 

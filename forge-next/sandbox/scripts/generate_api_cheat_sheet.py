@@ -11,94 +11,106 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from forge_plan import Plan  # noqa: E402
+from forge_plan import Day, Exercise, Plan, Week  # noqa: E402
+from forge_plan.plan import BlockRef, DayRef, ExerciseRef, SetRef, WeekRef  # noqa: E402
 from forge_plan.schema_rules import validation_rules_cheat_sheet  # noqa: E402
 
-PUBLIC_METHODS = [
-    "from_json_file",
-    "empty",
-    "is_empty",
-    "add_week",
-    "add_day",
-    "add_exercise",
-    "add_set",
-    "move_week",
-    "remove_week",
-    "move_day",
-    "remove_day",
-    "move_exercise",
-    "remove_exercise",
-    "move_set",
-    "remove_set",
-    "write_json",
-    "to_dict",
-]
+BUILDER_CLASSES: list[type] = [Plan, Week, Day, Exercise]
+REF_CLASSES: list[type] = [WeekRef, DayRef, BlockRef, ExerciseRef, SetRef]
 
 
-def _format_method(name: str, method: object) -> str:
+def _format_callable(owner: str, name: str, method: object) -> str:
     try:
         signature = str(inspect.signature(method))
     except (TypeError, ValueError):
         signature = "(...)"
     doc = inspect.getdoc(method) or ""
-    summary = doc.split("\n", 1)[0].strip()
-    return f"Plan.{name}{signature}\n  {summary}"
+    summary = doc.split("\n", 1)[0].strip() if doc else ""
+    return f"{owner}.{name}{signature}\n  {summary}"
+
+
+def _iter_public_methods(cls: type) -> list[tuple[str, object]]:
+    items: list[tuple[str, object]] = []
+    for name, member in inspect.getmembers(cls):
+        if name.startswith("_") and name != "__init__":
+            continue
+        if inspect.isfunction(member) or inspect.ismethoddescriptor(member):
+            items.append((name, getattr(cls, name)))
+            continue
+        static = inspect.getattr_static(cls, name, None)
+        if isinstance(static, classmethod):
+            items.append((name, static.__func__))
+    return items
 
 
 def build_cheat_sheet() -> str:
     lines = [
         "forge_plan public API (use these names in submit_plan_code):",
         "",
+        "Builders (create plans):",
+        "",
     ]
-    for name in PUBLIC_METHODS:
-        method = getattr(Plan, name)
-        lines.append(_format_method(name, method))
-        lines.append("")
+
+    for cls in BUILDER_CLASSES:
+        for name, member in _iter_public_methods(cls):
+            if cls is Plan and name not in {
+                "__init__",
+                "from_json_file",
+                "empty",
+                "from_dict",
+                "is_empty",
+                "add_week",
+                "week",
+                "to_dict",
+                "write_json",
+            }:
+                continue
+            if cls is Week and name != "add_day":
+                continue
+            if cls is Day and name not in {"add_exercise", "add_superset"}:
+                continue
+            if cls is Exercise and name not in {"add_set", "add_sets"}:
+                continue
+            owner = cls.__name__
+            lines.append(_format_callable(owner, name, member))
+            lines.append("")
+
+    lines.extend(["Navigation + edits (0-based indices):", ""])
+    for cls in REF_CLASSES:
+        for name, member in _iter_public_methods(cls):
+            if name == "__init__":
+                continue
+            lines.append(_format_callable(cls.__name__, name, member))
+            lines.append("")
 
     lines.extend(
         [
-            "",
             validation_rules_cheat_sheet(),
             "",
-            "Example run.py (multi-week block — preferred pattern when user requests a full program):",
+            "Example run.py (fluent build — preferred for new plans):",
             "",
-            "  from forge_plan import Plan",
+            "  from forge_plan import Plan, Week, Day, Exercise",
             "",
-            '  WEEKS = 4',
-            "  DAYS_PER_WEEK = 4",
-            '  DAY_NAMES = ["Lower", "Upper", "Full body", "Accessories"]',
-            '  LIFT = "Back Squat"',
-            "",
-            '  plan = Plan.from_json_file("current_plan.json")',
-            "  if plan.is_empty():",
-            '      plan = Plan.empty("4-Week Strength")',
-            "  for week in range(1, WEEKS + 1):",
-            '      plan.add_week(label=f"Week {week}")',
-            "      for day in range(1, DAYS_PER_WEEK + 1):",
-            '          plan.add_day(week_index=week, name=DAY_NAMES[day - 1])',
-            '          plan.add_exercise(week_index=week, day_index=day, name=LIFT)',
-            "          plan.add_set(week_index=week, day_index=day, reps=5, load_value=100, unit=\"kg\")",
+            '  plan = Plan("1 week bench").add_week(',
+            "      Week(label=\"Week 1\").add_day(",
+            "          Day(name=\"Upper\")",
+            "          .add_exercise(Exercise(\"Bench press\").add_sets(reps=5, target=50, unit=\"kg\", count=3))",
+            "          .add_superset(",
+            "              Exercise(\"Bench press\").add_sets(reps=10, target=30, unit=\"kg\", count=3),",
+            "              Exercise(\"Incline bench\").add_sets(reps=10, target=20, unit=\"kg\", count=3),",
+            "          )",
+            "      )",
+            "  )",
             '  plan.write_json("output/plan.json")',
             "",
-            "Example run.py (minimal smoke test — not a full program):",
+            "Example run.py (iterate existing plan):",
             "",
             "  from forge_plan import Plan",
             "",
             '  plan = Plan.from_json_file("current_plan.json")',
             "  if plan.is_empty():",
-            '      plan = Plan.empty("Smoke test")',
-            '  plan.add_week(label="Week 1")',
-            '  plan.add_day(week_index=1, name="Day 1")',
-            '  plan.add_exercise(week_index=1, day_index=1, name="Back Squat")',
-            "  plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit=\"kg\")",
-            '  plan.write_json("output/plan.json")',
-            "",
-            "Example run.py (reorder a day):",
-            "",
-            "  from forge_plan import Plan",
-            "",
-            '  plan = Plan.from_json_file("current_plan.json")',
-            "  plan.move_day(week_index=1, from_index=0, to_index=1)",
+            '      plan = Plan("Strength block").add_week(...)',
+            "  plan.week(0).day(0).block(0).exercise(0).set(0).update(reps=6, target=55, unit=\"kg\")",
             '  plan.write_json("output/plan.json")',
         ]
     )

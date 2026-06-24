@@ -13,7 +13,7 @@ import {
 import type { RunPlanSandboxInput, RunSandboxResult } from "@/lib/sandbox/types";
 
 const EMPTY_SEED = {
-  schemaVersion: "2.0.0",
+  schemaVersion: "3.0.0",
   name: "",
   weeks: [],
 } as const;
