@@ -33,4 +33,15 @@ describe("createFoundationTools", () => {
     expect(result.summary).toContain("Summer Block");
     expect(result.summary).not.toContain('"weeks"');
   });
+
+  it("summarize_current_artifact returns set detail for week and day", async () => {
+    const tools = createFoundationTools({ currentArtifact: samplePlan });
+    const result = await tools.summarize_current_artifact.execute!(
+      { week: 0, day: 0 },
+      toolCtx,
+    );
+
+    expect(result.summary).toContain("Back Squat:");
+    expect(result.summary).toContain("@");
+  });
 });

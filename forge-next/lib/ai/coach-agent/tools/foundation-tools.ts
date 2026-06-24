@@ -21,9 +21,24 @@ export function createFoundationTools(ctx: FoundationToolsContext) {
 
     summarize_current_artifact: tool({
       description:
-        "Returns a compact summary of the workout plan currently in the preview. Call when iterating on the in-preview plan or when the user asks about the current draft.",
-      inputSchema: z.object({}),
-      execute: async () => {
+        "Returns a compact summary of the workout plan currently in the preview. Call when iterating on the in-preview plan or when the user asks about the current draft. Pass week (0-based) to focus on one week; pass week and day for full set breakdown on that day.",
+      inputSchema: z.object({
+        week: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("0-based week index (same as plan.week(n))."),
+        day: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe(
+            "0-based day index within the week. Requires week. Includes reps/target per set when both are provided.",
+          ),
+      }),
+      execute: async ({ week, day }) => {
         if (!ctx.currentArtifact) {
           return {
             summary: null as string | null,
@@ -32,7 +47,7 @@ export function createFoundationTools(ctx: FoundationToolsContext) {
         }
 
         return {
-          summary: summarizePlan(ctx.currentArtifact),
+          summary: summarizePlan(ctx.currentArtifact, { week, day }),
         };
       },
     }),
