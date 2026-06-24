@@ -159,7 +159,7 @@ describe("AthletePlanEntryView", () => {
     expect(screen.getByRole("heading", { name: "Strength Block" })).toBeInTheDocument();
     expect(screen.getByLabelText("Week")).toHaveTextContent("Week 1");
     expect(screen.getByLabelText("Day")).toHaveTextContent("Day 1");
-    expect(screen.getByText("Back Squat")).toBeInTheDocument();
+    expect(screen.getAllByText("Back Squat").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Run 400m at RPE 7")).toBeInTheDocument();
 
     expect(screen.getByPlaceholderText("8")).toBeInTheDocument();

@@ -337,4 +337,40 @@ describe("PlanDayView", () => {
 
     expect(screen.queryByLabelText("Video link attached")).not.toBeInTheDocument();
   });
+
+  it("renders athlete editable superset as round cards", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].blocks[0].exercises.push({
+      id: "curl",
+      name: "Curl",
+      sets: [
+        {
+          id: "curl-1",
+          planned: {
+            type: "exact",
+            reps: 12,
+            target: { type: "absolute", value: 20, unit: "kg" },
+          },
+          actual: null,
+          status: "planned",
+          locked: false,
+        },
+      ],
+    });
+
+    render(
+      <PlanDayView
+        plan={plan}
+        weekPos={0}
+        dayPos={0}
+        view="athlete"
+        assignmentId="assignment-1"
+      />,
+    );
+
+    expect(screen.getByText("Round 1")).toBeInTheDocument();
+    expect(screen.getByText("Curl")).toBeInTheDocument();
+    expect(screen.getByText("Back Squat")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Complete" })).toBeInTheDocument();
+  });
 });
