@@ -1,11 +1,7 @@
-import { makeWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { buildMinimalWorkoutPlan } from "@/lib/plans/minimal-plan";
 import type { RunPlanSandboxInput, RunSandboxResult } from "@/lib/sandbox/types";
 
-/** Minimal valid plan for stub sandbox runs (unit tests / CI only). */
-export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
-  return makeWorkoutPlan({ name });
-}
+export { buildMinimalWorkoutPlan };
 
 /**
  * Stub executor for unit tests and CI — returns current plan or a minimal valid plan.

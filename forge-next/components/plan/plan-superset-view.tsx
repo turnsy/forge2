@@ -1,11 +1,14 @@
 import type { MutableRefObject } from "react";
 import type { AccordionVariant } from "@/components/ui/accordion";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
+import { BlockHeader } from "@/components/plan/block-header";
+import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
+import { PrescribedActualCell } from "@/components/plan/prescribed-actual-cell";
 import {
   AthleteExerciseHeader,
   AthleteExerciseNotes,
   AthleteSetRow,
-  athleteSupersetBlockClassName,
+  athleteExerciseCardClassName,
   athleteSupersetRoundCardClassName,
   type AthleteSetFormState,
 } from "@/components/plan/plan-athlete-parts";
@@ -13,17 +16,14 @@ import {
   EMPTY_CELL,
   actualRepsMatchesPlanned,
   actualTargetMatchesPlanned,
-  formatOptionalCell,
+  formatCoachSetCells,
   formatReps,
   formatTarget,
-  formatTargetInstruction,
 } from "@/lib/plans/display";
 import { getSupersetRounds } from "@/lib/plans/day-blocks";
 import { setFormStateFromActual } from "@/lib/athlete/plan/domain";
 import type { Block, Set } from "@/lib/plans/workout-plan";
-import { accordionContentCardClass, accordionNestedClass } from "@/lib/theme";
-import { VideoIcon } from "@/components/icons/video-icon";
-import { IconButton } from "@/components/ui";
+import { accordionContentCardClass } from "@/lib/theme";
 
 const mutedCellClass = "text-surface-muted";
 
@@ -39,52 +39,6 @@ export type AthleteSupersetEntryState = {
   onTargetChange: (exercisePos: number, setPos: number, set: Set, value: string) => void;
   setRefs: MutableRefObject<Record<string, HTMLDivElement | null>>;
 };
-
-function PrescribedActualCell({
-  prescribed,
-  actualValue,
-  matches,
-}: {
-  prescribed: string;
-  actualValue: string | null;
-  matches: boolean | null;
-}) {
-  if (!actualValue) {
-    return <span>{prescribed}</span>;
-  }
-
-  const actualClass =
-    matches === true
-      ? "font-bold text-emerald-700 dark:text-emerald-300"
-      : matches === false
-        ? "font-bold text-amber-800 dark:text-amber-200"
-        : "font-bold text-surface-foreground";
-
-  return (
-    <div className="flex flex-col gap-0.5 md:inline-flex md:flex-row md:items-baseline md:gap-1">
-      <span>{prescribed}</span>
-      <span className={actualClass}>({actualValue})</span>
-    </div>
-  );
-}
-
-function formatCoachSetCells(set: Set): { reps: string; target: string; notes: string } {
-  const { planned } = set;
-
-  if (planned.type === "exact") {
-    return {
-      reps: formatReps(planned.reps),
-      target: formatTarget(planned.target),
-      notes: formatOptionalCell(planned.notes ?? set.notes),
-    };
-  }
-
-  return {
-    reps: formatTargetInstruction(planned.instruction),
-    target: planned.target ? formatTarget(planned.target) : EMPTY_CELL,
-    notes: formatOptionalCell(planned.notes ?? set.notes),
-  };
-}
 
 function CoachSupersetRoundTable({
   roundNumber,
@@ -127,15 +81,7 @@ function CoachSupersetRoundTable({
                       <div className="flex items-center justify-between gap-2">
                         <span>{exercise.name}</span>
                         {exercise.videoUrl ? (
-                          <IconButton
-                            variant="ghost"
-                            size="sm"
-                            icon={<VideoIcon className="h-4 w-4" />}
-                            aria-label="Watch exercise video"
-                            onClick={() =>
-                              window.open(exercise.videoUrl, "_blank", "noopener,noreferrer")
-                            }
-                          />
+                          <ExerciseVideoButton videoUrl={exercise.videoUrl} />
                         ) : null}
                       </div>
                     </td>
@@ -223,7 +169,7 @@ function AthleteSupersetRoundCard({
               key={`${exercise.id}-${set.id}`}
               className={
                 exerciseComplete
-                  ? [accordionNestedClass("success"), "space-y-2 !p-3"].join(" ")
+                  ? [athleteExerciseCardClassName(true), "space-y-2 !p-3"].join(" ")
                   : "space-y-2"
               }
               data-exercise-complete={exerciseComplete ? "true" : "false"}
@@ -280,21 +226,11 @@ export function PlanSupersetView({
 
   return (
     <section
-      className={athleteSupersetBlockClassName()}
+      className={athleteExerciseCardClassName()}
       data-plan-block
       data-superset="true"
     >
-      <div className="flex items-center gap-2">
-        <span className="rounded-full border border-glass-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-surface-muted">
-          Superset
-        </span>
-        {block.label ? (
-          <h3 className="text-sm font-medium text-surface-muted">{block.label}</h3>
-        ) : null}
-      </div>
-      {block.notes ? (
-        <p className="text-sm text-surface-muted">{block.notes}</p>
-      ) : null}
+      <BlockHeader block={block} isSuperset />
       <div className="space-y-4">
         {rounds.map((round) =>
           view === "coach" ? (

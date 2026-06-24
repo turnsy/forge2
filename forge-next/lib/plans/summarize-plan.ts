@@ -1,12 +1,10 @@
 import { flattenDayExercises, isSupersetBlock } from "@/lib/plans/day-blocks";
 import {
-  formatReps,
-  formatTarget,
-  formatTargetInstruction,
+  formatExerciseSetsSummary,
   getDayTitle,
   getWeekTitle,
 } from "@/lib/plans/display";
-import type { Exercise, PlannedSet, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Exercise, WorkoutPlan } from "@/lib/plans/workout-plan";
 import { getPlanStats } from "@/lib/plans/stats";
 
 export type SummarizePlanOptions = {
@@ -158,59 +156,8 @@ function formatExerciseWithSets(exercise: Exercise): string {
     parts.push(`notes=${exercise.notes.trim()}`);
   }
 
-  const setSummary = formatExerciseSets(exercise.sets);
+  const setSummary = formatExerciseSetsSummary(exercise.sets);
   parts.push(setSummary || "no sets");
 
   return parts.join(" ");
-}
-
-function formatExerciseSets(sets: Exercise["sets"]): string {
-  if (!sets.length) {
-    return "";
-  }
-
-  const formatted = sets.map((set) => formatPlannedSetBrief(set));
-  const allIdentical = formatted.length > 1 && formatted.every((line) => line === formatted[0]);
-
-  if (allIdentical) {
-    return `${sets.length}× ${formatted[0]}`;
-  }
-
-  return formatted.join(", ");
-}
-
-function formatPlannedSetBrief(set: Set): string {
-  const planned = set.planned;
-  const parts: string[] = [formatPlannedSetCore(planned)];
-
-  const notes = getPlannedSetNotes(planned);
-  if (notes) {
-    parts.push(`[${notes}]`);
-  }
-
-  if (set.status !== "planned") {
-    parts.push(`(${set.status})`);
-  }
-
-  return parts.join(" ");
-}
-
-function formatPlannedSetCore(planned: PlannedSet): string {
-  if (planned.type === "target") {
-    const parts = [formatTargetInstruction(planned.instruction)];
-    if (planned.reps !== undefined) {
-      parts.push(`${formatReps(planned.reps)} reps`);
-    }
-    if (planned.target) {
-      parts.push(`@ ${formatTarget(planned.target)}`);
-    }
-    return parts.join(" ");
-  }
-
-  return `${formatReps(planned.reps)} @ ${formatTarget(planned.target)}`;
-}
-
-function getPlannedSetNotes(planned: PlannedSet): string | undefined {
-  const notes = planned.notes?.trim();
-  return notes || undefined;
 }

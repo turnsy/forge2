@@ -1,22 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { PlanSetTable } from "@/components/plan/plan-set-table";
-import type { Set } from "@/lib/plans/workout-plan";
-
-function makeSet(overrides: Partial<Set> = {}): Set {
-  return {
-    id: "set-1",
-    planned: {
-      type: "exact",
-      reps: 5,
-      target: { type: "absolute", value: 100, unit: "kg" },
-    },
-    actual: null,
-    status: "planned",
-    locked: false,
-    ...overrides,
-  };
-}
+import { makeSet } from "@/lib/plans/__tests__/fixtures";
 
 describe("PlanSetTable", () => {
   it("shows inline status pills and parenthesized actual values in coach view", () => {
@@ -25,6 +10,11 @@ describe("PlanSetTable", () => {
         view="coach"
         sets={[
           makeSet({
+            planned: {
+              type: "exact",
+              reps: 5,
+              target: { type: "absolute", value: 100, unit: "kg" },
+            },
             actual: {
               reps: 5,
               target: { type: "absolute", value: 102, unit: "kg" },

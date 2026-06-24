@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from forge_plan.ids import format_day_code, new_id, next_set_id
+from forge_plan.ids import new_id, next_set_id
 from forge_plan.target import parse_target
 
 SCHEMA_VERSION = "3.0.0"

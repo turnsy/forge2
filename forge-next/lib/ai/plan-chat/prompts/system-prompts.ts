@@ -43,13 +43,3 @@ export function buildCoachAgentSystemPrompt(input: {
 
   return sections.join("\n");
 }
-
-/** @deprecated Use buildCoachAgentSystemPrompt */
-export function buildPlanChatSystemPrompt(input: {
-  currentArtifact: unknown;
-  hasSessionUploads: boolean;
-}): string {
-  return buildCoachAgentSystemPrompt({
-    hasSessionUploads: input.hasSessionUploads,
-  });
-}

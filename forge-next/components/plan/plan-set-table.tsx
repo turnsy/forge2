@@ -1,13 +1,13 @@
 import type { Set } from "@/lib/plans/workout-plan";
 import type { AccordionVariant } from "@/components/ui/accordion";
+import { PrescribedActualCell } from "@/components/plan/prescribed-actual-cell";
 import {
   EMPTY_CELL,
   actualTargetMatchesPlanned,
   actualRepsMatchesPlanned,
+  formatCoachSetCells,
   formatTarget,
-  formatOptionalCell,
   formatReps,
-  formatTargetInstruction,
 } from "@/lib/plans/display";
 import { accordionContentCardClass } from "@/lib/theme";
 
@@ -23,22 +23,9 @@ type CoachSetRow = {
 };
 
 function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
-  const { planned } = set;
-
-  if (planned.type === "exact") {
-    return {
-      setNumber,
-      reps: formatReps(planned.reps),
-      target: formatTarget(planned.target),
-      notes: formatOptionalCell(planned.notes ?? set.notes),
-    };
-  }
-
   return {
     setNumber,
-    reps: formatTargetInstruction(planned.instruction),
-    target: planned.target ? formatTarget(planned.target) : EMPTY_CELL,
-    notes: formatOptionalCell(planned.notes ?? set.notes),
+    ...formatCoachSetCells(set),
   };
 }
 
@@ -63,39 +50,6 @@ function SetStatusPill({ status }: { status: "completed" | "skipped" }) {
       Skipped
     </span>
   );
-}
-
-function PrescribedActualCell({
-  prescribed,
-  actualValue,
-  matches,
-}: {
-  prescribed: string;
-  actualValue: string | null;
-  matches: boolean | null;
-}) {
-  if (!actualValue) {
-    return <span>{prescribed}</span>;
-  }
-
-  return (
-    <div className="flex flex-col gap-0.5 md:inline-flex md:flex-row md:items-baseline md:gap-1">
-      <span>{prescribed}</span>
-      <span className={actualValueClass(matches)}>({actualValue})</span>
-    </div>
-  );
-}
-
-function actualValueClass(matches: boolean | null): string {
-  if (matches === true) {
-    return "font-bold text-emerald-700 dark:text-emerald-300";
-  }
-
-  if (matches === false) {
-    return "font-bold text-amber-800 dark:text-amber-200";
-  }
-
-  return "font-bold text-surface-foreground";
 }
 
 export function PlanSetTable({

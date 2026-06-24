@@ -1,33 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { makeBlock } from "@/lib/plans/__tests__/fixtures";
+import { makeBlock, makeExercise, makeStatusSet } from "@/lib/plans/__tests__/fixtures";
 import {
   isDayEditable,
   isExerciseEditable,
   isSetEditable,
 } from "@/lib/plans/plan-editability";
-import type { Day, Exercise, Set } from "@/lib/plans/workout-plan";
-
-function makeSet(status: Set["status"]): Set {
-  return {
-    id: "set-1",
-    planned: {
-      type: "exact",
-      reps: 5,
-      target: { type: "absolute", value: 100, unit: "kg" },
-    },
-    actual: status === "completed" ? { reps: 5 } : null,
-    status,
-    locked: false,
-  };
-}
-
-function makeExercise(sets: Set[]): Exercise {
-  return {
-    id: "back-squat",
-    name: "Back Squat",
-    sets: sets as Exercise["sets"],
-  };
-}
+import type { Day, Exercise } from "@/lib/plans/workout-plan";
 
 function makeDay(exercises: Exercise[]): Day {
   return {
@@ -38,27 +16,34 @@ function makeDay(exercises: Exercise[]): Day {
 
 describe("plan editability", () => {
   it("treats only planned sets as editable", () => {
-    expect(isSetEditable(makeSet("planned"))).toBe(true);
-    expect(isSetEditable(makeSet("completed"))).toBe(false);
-    expect(isSetEditable(makeSet("skipped"))).toBe(false);
+    expect(isSetEditable(makeStatusSet("planned"))).toBe(true);
+    expect(isSetEditable(makeStatusSet("completed"))).toBe(false);
+    expect(isSetEditable(makeStatusSet("skipped"))).toBe(false);
   });
 
-  it("treats exercises with any planned set as editable", () => {
-    const editable = makeExercise([makeSet("completed"), makeSet("planned")]);
-    const locked = makeExercise([makeSet("completed"), makeSet("skipped")]);
+  it("treats exercises with any editable set as editable", () => {
+    const editable = makeExercise({
+      name: "Back Squat",
+      sets: [makeStatusSet("planned")],
+    });
+    const locked = makeExercise({
+      name: "Back Squat",
+      sets: [makeStatusSet("completed")],
+    });
 
     expect(isExerciseEditable(editable)).toBe(true);
     expect(isExerciseEditable(locked)).toBe(false);
   });
 
-  it("treats days with any planned set as editable", () => {
-    const editable = makeDay([
-      makeExercise([makeSet("completed")]),
-      makeExercise([makeSet("planned")]),
+  it("treats days with any editable exercise as editable", () => {
+    const editableDay = makeDay([
+      makeExercise({ name: "A", sets: [makeStatusSet("planned")] }),
     ]);
-    const locked = makeDay([makeExercise([makeSet("completed")])]);
+    const lockedDay = makeDay([
+      makeExercise({ name: "A", sets: [makeStatusSet("completed")] }),
+    ]);
 
-    expect(isDayEditable(editable)).toBe(true);
-    expect(isDayEditable(locked)).toBe(false);
+    expect(isDayEditable(editableDay)).toBe(true);
+    expect(isDayEditable(lockedDay)).toBe(false);
   });
 });

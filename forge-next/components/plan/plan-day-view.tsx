@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
+import { AthleteStandaloneExerciseSection } from "@/components/plan/athlete-standalone-exercise";
 import {
-  AthleteExerciseHeader,
-  AthleteExerciseNotes,
   AthleteSetRow,
-  athleteExerciseCardClassName,
   type AthleteSetFormState,
 } from "@/components/plan/plan-athlete-parts";
 import { PlanBlockSection } from "@/components/plan/plan-block-section";
@@ -84,10 +82,6 @@ function getResolvedSetFormState(
   return formState[key] ?? setFormStateFromActual(set);
 }
 
-function exerciseCardClassName(complete: boolean): string {
-  return athleteExerciseCardClassName(complete);
-}
-
 function applyLocalActualsToDayForm(
   day: Day,
   formState: Record<string, SetFormState>,
@@ -105,28 +99,24 @@ function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }
         ) : (
           <section key={block.id} className="space-y-4">
             {block.exercises.map((exercise, exercisePosInBlock) => (
-              <div key={`${block.id}-${exercise.id}-${exercisePosInBlock}`} className="space-y-4">
-                <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-                <AthleteExerciseNotes notes={exercise.notes} />
-                <div className="space-y-3">
-                  {exercise.sets.map((set, setIdx) => {
-                    const filled = set.status === "completed";
-                    const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
+              <AthleteStandaloneExerciseSection key={`${block.id}-${exercise.id}-${exercisePosInBlock}`} exercise={exercise}>
+                {exercise.sets.map((set, setIdx) => {
+                  const filled = set.status === "completed";
+                  const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
 
-                    return (
-                      <AthleteSetRow
-                        key={set.id}
-                        set={set}
-                        setIdx={setIdx}
-                        reps={values.reps}
-                        target={values.target}
-                        readOnly
-                        complete={filled}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
+                  return (
+                    <AthleteSetRow
+                      key={set.id}
+                      set={set}
+                      setIdx={setIdx}
+                      reps={values.reps}
+                      target={values.target}
+                      readOnly
+                      complete={filled}
+                    />
+                  );
+                })}
+              </AthleteStandaloneExerciseSection>
             ))}
           </section>
         ),
@@ -499,55 +489,52 @@ function AthleteEditableDayContent({
                 }
 
                 return (
-                  <section
+                  <AthleteStandaloneExerciseSection
                     key={`${block.id}-${exercise.id}`}
-                    className={exerciseCardClassName(exerciseComplete)}
-                    data-exercise-complete={exerciseComplete ? "true" : "false"}
+                    exercise={exercise}
+                    highlightComplete
+                    complete={exerciseComplete}
                   >
-                    <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-                    <AthleteExerciseNotes notes={exercise.notes} />
-                    <div className="space-y-3">
-                      {exercise.sets.map((savedSet, setPos) => {
-                        const key = getSetKey(exercisePos, setPos);
-                        const local = getResolvedSetFormState(
-                          formState,
-                          plannedExercise.sets[setPos],
-                          key,
-                        );
-                        const complete = isSetActualComplete(savedSet);
+                    {exercise.sets.map((savedSet, setPos) => {
+                      const key = getSetKey(exercisePos, setPos);
+                      const local = getResolvedSetFormState(
+                        formState,
+                        plannedExercise.sets[setPos],
+                        key,
+                      );
+                      const complete = isSetActualComplete(savedSet);
 
-                        return (
-                          <AthleteSetRow
-                            key={savedSet.id}
-                            set={plannedExercise.sets[setPos]}
-                            setIdx={setPos}
-                            reps={local.reps}
-                            target={local.target}
-                            complete={complete}
-                            setRef={(node) => {
-                              setRefs.current[key] = node;
-                            }}
-                            onRepsChange={(value) =>
-                              handleInputChange(
-                                { exercisePos, setPos },
-                                plannedExercise.sets[setPos],
-                                "reps",
-                                value,
-                              )
-                            }
-                            onTargetChange={(value) =>
-                              handleInputChange(
-                                { exercisePos, setPos },
-                                plannedExercise.sets[setPos],
-                                "target",
-                                value,
-                              )
-                            }
-                          />
-                        );
-                      })}
-                    </div>
-                  </section>
+                      return (
+                        <AthleteSetRow
+                          key={savedSet.id}
+                          set={plannedExercise.sets[setPos]}
+                          setIdx={setPos}
+                          reps={local.reps}
+                          target={local.target}
+                          complete={complete}
+                          setRef={(node) => {
+                            setRefs.current[key] = node;
+                          }}
+                          onRepsChange={(value) =>
+                            handleInputChange(
+                              { exercisePos, setPos },
+                              plannedExercise.sets[setPos],
+                              "reps",
+                              value,
+                            )
+                          }
+                          onTargetChange={(value) =>
+                            handleInputChange(
+                              { exercisePos, setPos },
+                              plannedExercise.sets[setPos],
+                              "target",
+                              value,
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </AthleteStandaloneExerciseSection>
                 );
               })}
             </section>

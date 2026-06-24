@@ -1,5 +1,5 @@
-import { VideoIcon } from "@/components/icons/video-icon";
-import { IconButton, Input } from "@/components/ui";
+import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
+import { Input } from "@/components/ui";
 import { isSetActualComplete } from "@/lib/athlete/plan/domain";
 import { getSetNotes } from "@/lib/plans/display";
 import type { AbsoluteLoad, PercentageLoad, Set } from "@/lib/plans/workout-plan";
@@ -61,10 +61,6 @@ export function athleteExerciseCardClassName(complete = false): string {
 
 export function athleteSupersetRoundCardClassName(): string {
   return "space-y-3 rounded-lg border border-glass-border p-3";
-}
-
-export function athleteSupersetBlockClassName(): string {
-  return athleteExerciseCardClassName();
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {
@@ -160,13 +156,7 @@ export function AthleteExerciseHeader({
   return (
     <div className="flex items-center justify-between gap-2">
       <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={<VideoIcon className="h-4 w-4" />}
-        aria-label="Watch exercise video"
-        onClick={() => window.open(videoUrl, "_blank", "noopener,noreferrer")}
-      />
+      <ExerciseVideoButton videoUrl={videoUrl} />
     </div>
   );
 }

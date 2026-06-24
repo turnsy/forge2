@@ -2,33 +2,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
-import type { Exercise } from "@/lib/plans/workout-plan";
-
-function makeExercise(videoUrl?: string): Exercise {
-  return {
-    name: "Back Squat",
-    videoUrl,
-    sets: [
-      {
-        id: "set-1",
-        planned: {
-          type: "exact",
-          reps: 5,
-          target: { type: "absolute", value: 135, unit: "lb" },
-        },
-        actual: null,
-        status: "planned",
-        locked: false,
-      },
-    ],
-  };
-}
+import { makeExercise } from "@/lib/plans/__tests__/fixtures";
 
 describe("PlanExerciseBlock", () => {
   it("shows a video icon when exercise has a videoUrl", () => {
     render(
       <PlanExerciseBlock
-        exercise={makeExercise("https://youtu.be/demo")}
+        exercise={makeExercise({
+          name: "Back Squat",
+          videoUrl: "https://youtu.be/demo",
+        })}
         view="coach"
       />,
     );
@@ -37,7 +20,9 @@ describe("PlanExerciseBlock", () => {
   });
 
   it("hides the video icon when exercise has no videoUrl", () => {
-    render(<PlanExerciseBlock exercise={makeExercise()} view="coach" />);
+    render(
+      <PlanExerciseBlock exercise={makeExercise({ name: "Back Squat" })} view="coach" />,
+    );
 
     expect(screen.queryByLabelText("Video link attached")).not.toBeInTheDocument();
   });
@@ -48,7 +33,10 @@ describe("PlanExerciseBlock", () => {
 
     render(
       <PlanExerciseBlock
-        exercise={makeExercise("https://youtu.be/demo")}
+        exercise={makeExercise({
+          name: "Back Squat",
+          videoUrl: "https://youtu.be/demo",
+        })}
         view="coach"
       />,
     );

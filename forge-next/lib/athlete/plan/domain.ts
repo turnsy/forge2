@@ -1,9 +1,9 @@
 import {
   flattenDayExercises,
-  getFlattenedExerciseRefs,
   mapDayBlocks,
   updateFlattenedSet,
 } from "@/lib/plans/day-blocks";
+import { parseRepsInput } from "@/lib/plans/parse-reps";
 import type {
   ActualSet,
   Day,
@@ -97,19 +97,6 @@ export function dayHasUnfilledNonTargetSets(day: Day): boolean {
       (set) => set.planned.type !== "target" && !isSetActualComplete(set),
     ),
   );
-}
-
-export function parseRepsInput(value: string): number | string | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (/^\d+$/.test(trimmed)) {
-    return Number(trimmed);
-  }
-
-  return trimmed;
 }
 
 export function parseTargetInput(
@@ -414,6 +401,4 @@ export function findNextDayAfter(
   return findCurrentDay(plan);
 }
 
-export function getFlattenedExercisesForDay(day: Day): Exercise[] {
-  return getFlattenedExerciseRefs(day).map((ref) => ref.exercise);
-}
+export { parseRepsInput };

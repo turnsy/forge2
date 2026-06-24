@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from forge_plan.ids import DAY_CODE_PATTERN
-
 DAY_CODE_PATTERN_DESCRIPTION = (
     "lowercase `w` + week number + `d` + day number (regex: ^w[0-9]+d[0-9]+$)"
 )

@@ -122,3 +122,73 @@ export function actualTargetMatchesPlanned(
     plannedTarget.value === actual.target.value && plannedTarget.unit === actual.target.unit
   );
 }
+
+export type CoachSetCells = {
+  reps: string;
+  target: string;
+  notes: string;
+};
+
+export function formatCoachSetCells(set: Set): CoachSetCells {
+  const { planned } = set;
+
+  if (planned.type === "exact") {
+    return {
+      reps: formatReps(planned.reps),
+      target: formatTarget(planned.target),
+      notes: formatOptionalCell(planned.notes ?? set.notes),
+    };
+  }
+
+  return {
+    reps: formatTargetInstruction(planned.instruction),
+    target: planned.target ? formatTarget(planned.target) : EMPTY_CELL,
+    notes: formatOptionalCell(planned.notes ?? set.notes),
+  };
+}
+
+export function formatPlannedSetBrief(set: Set): string {
+  const planned = set.planned;
+  const parts: string[] = [formatPlannedSetCore(planned)];
+
+  const notes = planned.notes?.trim();
+  if (notes) {
+    parts.push(`[${notes}]`);
+  }
+
+  if (set.status !== "planned") {
+    parts.push(`(${set.status})`);
+  }
+
+  return parts.join(" ");
+}
+
+export function formatExerciseSetsSummary(sets: Set[]): string {
+  if (sets.length === 0) {
+    return "";
+  }
+
+  const formatted = sets.map((set) => formatPlannedSetBrief(set));
+  const allIdentical = formatted.length > 1 && formatted.every((line) => line === formatted[0]);
+
+  if (allIdentical) {
+    return `${sets.length}× ${formatted[0]}`;
+  }
+
+  return formatted.join(", ");
+}
+
+function formatPlannedSetCore(planned: PlannedSet): string {
+  if (planned.type === "target") {
+    const parts = [formatTargetInstruction(planned.instruction)];
+    if (planned.reps !== undefined) {
+      parts.push(`${formatReps(planned.reps)} reps`);
+    }
+    if (planned.target) {
+      parts.push(`@ ${formatTarget(planned.target)}`);
+    }
+    return parts.join(" ");
+  }
+
+  return `${formatReps(planned.reps)} @ ${formatTarget(planned.target)}`;
+}

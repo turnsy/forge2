@@ -12,7 +12,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -25,9 +24,13 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input } from "@/components/ui";
+import { BlockHeader } from "@/components/plan/block-header";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { athleteExerciseCardClassName } from "@/components/plan/plan-athlete-parts";
 import { formatReps } from "@/lib/plans/display";
+import { parseRepsValue } from "@/lib/plans/parse-reps";
+import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
 import {
   createDefaultBlock,
   createDefaultExercise,
@@ -37,13 +40,11 @@ import {
   createSetId,
 } from "@/lib/plans/plan-defaults";
 import { createBlockId, isSupersetBlock } from "@/lib/plans/day-blocks";
-import { athleteSupersetBlockClassName } from "@/components/plan/plan-athlete-parts";
 import type {
   Day,
   Exercise,
   ExactPlannedSet,
   SetTarget,
-  RepsValue,
   Set,
 } from "@/lib/plans/workout-plan";
 import {
@@ -88,19 +89,6 @@ function ensureExerciseId(exercise: Exercise): Exercise {
   return { ...exercise, id: createExerciseId() };
 }
 
-function parseRepsValue(value: string): RepsValue {
-  if (value.trim() === "") {
-    return "";
-  }
-
-  const numeric = Number(value);
-  if (!Number.isNaN(numeric) && String(numeric) === value.trim()) {
-    return numeric;
-  }
-
-  return value;
-}
-
 function cloneSetFromPrevious(previous: Set): Set {
   if (previous.planned.type !== "exact") {
     return createDefaultSet();
@@ -120,25 +108,6 @@ function cloneSetFromPrevious(previous: Set): Set {
     status: "planned",
     locked: false,
   };
-}
-
-export function reorderSetsInExercise(
-  sets: Set[],
-  activeId: string,
-  overId: string | undefined,
-): Set[] {
-  if (!overId || activeId === overId) {
-    return sets;
-  }
-
-  const oldIndex = sets.findIndex((set) => set.id === activeId);
-  const newIndex = sets.findIndex((set) => set.id === overId);
-
-  if (oldIndex === -1 || newIndex === -1) {
-    return sets;
-  }
-
-  return arrayMove(sets, oldIndex, newIndex);
 }
 
 const mobileFieldLabelClass =
@@ -682,13 +651,9 @@ export function PlanEditableDay({
       {editableDay.blocks.map((block, blockPos) => (
         <div
           key={block.id}
-          className={isSupersetBlock(block) ? athleteSupersetBlockClassName() : "space-y-4"}
+          className={isSupersetBlock(block) ? athleteExerciseCardClassName() : "space-y-4"}
         >
-          {isSupersetBlock(block) ? (
-            <span className="rounded-full border border-glass-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-surface-muted">
-              Superset
-            </span>
-          ) : null}
+          {isSupersetBlock(block) ? <BlockHeader block={block} isSuperset /> : null}
           {block.exercises.map((exercise, exercisePosInBlock) => (
             <EditableExerciseBlock
               key={exercise.id}

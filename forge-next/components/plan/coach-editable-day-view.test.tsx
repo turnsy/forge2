@@ -2,27 +2,17 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { makeBlock, makeDay, makeExercise } from "@/lib/plans/__tests__/fixtures";
+import { makeBlock, makeDay, makeExercise, makeWeightedSet } from "@/lib/plans/__tests__/fixtures";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
-import { reorderSetsInExercise } from "@/components/plan/plan-editable-day";
-import type { Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => false,
 }));
 
-function makeSet(id: string, reps: number, weight: number): Set {
-  return {
-    id,
-    planned: {
-      type: "exact",
-      reps,
-      target: { type: "absolute", value: weight, unit: "lb" },
-    },
-    actual: null,
-    status: "planned",
-    locked: false,
-  };
+function makeSet(id: string, reps: number, weight: number) {
+  return makeWeightedSet(id, reps, weight, "lb");
 }
 
 function makePercentagePlan(): WorkoutPlan {

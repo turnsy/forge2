@@ -71,6 +71,71 @@ export function makeExercise(
   };
 }
 
+export function makeWeightedSet(
+  id: string,
+  reps: number,
+  value: number,
+  unit: "kg" | "lb" = "lb",
+): Set {
+  return makeSet({
+    id,
+    planned: {
+      type: "exact",
+      reps,
+      target: { type: "absolute", value, unit },
+    },
+  });
+}
+
+export function makeStatusSet(status: Set["status"]): Set {
+  return makeSet({
+    id: "set-1",
+    planned: {
+      type: "exact",
+      reps: 5,
+      target: { type: "absolute", value: 100, unit: "kg" },
+    },
+    actual: status === "completed" ? { reps: 5 } : null,
+    status,
+  });
+}
+
+export function makeSupersetBlock() {
+  return makeBlock({
+    id: "ss-1",
+    exercises: [
+      makeExercise({
+        id: "curl",
+        name: "Curl",
+        sets: [
+          makeSet({
+            id: "curl-1",
+            planned: { type: "exact", reps: 12, target: { type: "absolute", value: 20, unit: "kg" } },
+          }),
+          makeSet({
+            id: "curl-2",
+            planned: { type: "exact", reps: 10, target: { type: "absolute", value: 22, unit: "kg" } },
+          }),
+        ],
+      }),
+      makeExercise({
+        id: "extension",
+        name: "Tricep extension",
+        sets: [
+          makeSet({
+            id: "ext-1",
+            planned: { type: "exact", reps: 12, target: { type: "absolute", value: 15, unit: "kg" } },
+          }),
+          makeSet({
+            id: "ext-2",
+            planned: { type: "exact", reps: 10, target: { type: "absolute", value: 17, unit: "kg" } },
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 export function makeBlock(
   overrides: Partial<Block> & { exercises: Exercise[] },
 ): Block {
@@ -88,13 +153,6 @@ export function makeDay(overrides: Partial<Day> & Pick<Day, "code">): Day {
         exercises: [makeExercise({ id: "ex-1", name: "Back Squat", sets: [makeSet({ id: `${overrides.code}-bs-1` })] })],
       }),
     ],
-    ...overrides,
-  };
-}
-
-export function makeWeek(overrides: Partial<Week> = {}): Week {
-  return {
-    days: [makeDay({ code: "w1d1" })],
     ...overrides,
   };
 }

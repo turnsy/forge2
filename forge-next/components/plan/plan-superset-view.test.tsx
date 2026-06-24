@@ -1,31 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { PlanSupersetView } from "@/components/plan/plan-superset-view";
-import { makeBlock, makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
-
-function makeSupersetBlock() {
-  return makeBlock({
-    id: "ss-1",
-    exercises: [
-      makeExercise({
-        id: "curl",
-        name: "Curl",
-        sets: [
-          makeSet({ id: "curl-1", planned: { type: "exact", reps: 12, target: { type: "absolute", value: 20, unit: "kg" } } }),
-          makeSet({ id: "curl-2", planned: { type: "exact", reps: 10, target: { type: "absolute", value: 22, unit: "kg" } } }),
-        ],
-      }),
-      makeExercise({
-        id: "extension",
-        name: "Tricep extension",
-        sets: [
-          makeSet({ id: "ext-1", planned: { type: "exact", reps: 12, target: { type: "absolute", value: 15, unit: "kg" } } }),
-          makeSet({ id: "ext-2", planned: { type: "exact", reps: 10, target: { type: "absolute", value: 17, unit: "kg" } } }),
-        ],
-      }),
-    ],
-  });
-}
+import { makeSupersetBlock } from "@/lib/plans/__tests__/fixtures";
 
 describe("PlanSupersetView", () => {
   it("renders coach view as round cards with exercise rows", () => {

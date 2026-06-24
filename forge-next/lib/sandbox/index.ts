@@ -7,7 +7,7 @@
 
 import { runPlanSandbox } from "@/lib/sandbox/run-plan";
 import { runPlanSandboxStub } from "@/lib/sandbox/stub";
-import type { RunSandboxResult, SandboxArtifact } from "@/lib/sandbox/types";
+import type { RunPlanSandboxInput, RunSandboxResult, SandboxArtifact } from "@/lib/sandbox/types";
 
 export type {
   RunPlanSandboxInput,
@@ -24,6 +24,25 @@ export type RunSandboxDeps = {
   executePlan?: typeof runPlanSandbox;
 };
 
+function unknownArtifactError(artifact: SandboxArtifact): RunSandboxResult {
+  const unknownType = (artifact as { type: string }).type;
+  return {
+    ok: false,
+    code: "SANDBOX_FAILED",
+    message: `Unknown sandbox artifact type: ${unknownType}`,
+  };
+}
+
+async function executePlanArtifact(
+  artifact: Extract<SandboxArtifact, { type: "plan" }>,
+  executePlan: (input: RunPlanSandboxInput) => Promise<RunSandboxResult>,
+): Promise<RunSandboxResult> {
+  return executePlan({
+    currentPlan: artifact.currentPlan,
+    generatedPython: artifact.generatedPython,
+  });
+}
+
 /**
  * Run codegen for a sandbox artifact. Defaults to the live Vercel Sandbox VM.
  */
@@ -34,19 +53,10 @@ export async function runSandbox(
   switch (input.artifact.type) {
     case "plan": {
       const execute = deps.executePlan ?? runPlanSandbox;
-      return execute({
-        currentPlan: input.artifact.currentPlan,
-        generatedPython: input.artifact.generatedPython,
-      });
+      return executePlanArtifact(input.artifact, execute);
     }
-    default: {
-      const unknownType = (input.artifact as { type: string }).type;
-      return {
-        ok: false,
-        code: "SANDBOX_FAILED",
-        message: `Unknown sandbox artifact type: ${unknownType}`,
-      };
-    }
+    default:
+      return unknownArtifactError(input.artifact);
   }
 }
 
@@ -58,17 +68,8 @@ export async function runSandboxStub(input: {
 }): Promise<RunSandboxResult> {
   switch (input.artifact.type) {
     case "plan":
-      return runPlanSandboxStub({
-        currentPlan: input.artifact.currentPlan,
-        generatedPython: input.artifact.generatedPython,
-      });
-    default: {
-      const unknownType = (input.artifact as { type: string }).type;
-      return {
-        ok: false,
-        code: "SANDBOX_FAILED",
-        message: `Unknown sandbox artifact type: ${unknownType}`,
-      };
-    }
+      return executePlanArtifact(input.artifact, runPlanSandboxStub);
+    default:
+      return unknownArtifactError(input.artifact);
   }
 }
