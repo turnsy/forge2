@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon } from "@/components/icons/pencil-icon";
 import { PlanVersionHistory } from "@/components/plan/plan-version-history";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanDetailActions } from "@/components/plan-detail-actions";
-import { Button, ButtonLink, PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachPlanVersionListItem } from "@/lib/plans/repository";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -29,27 +28,11 @@ export function CoachPlanDetailView({
         title={plan.name}
         description={plan.description}
         actions={
-          <>
-            <Button
-              type="button"
-              variant={showHistory ? "primary" : "secondary"}
-              size="sm"
-              fullWidth={false}
-              onClick={() => setShowHistory((current) => !current)}
-            >
-              History
-            </Button>
-            <PlanDetailActions planId={planId} planTitle={plan.name} />
-            <ButtonLink
-              href={`/coach?planId=${planId}`}
-              variant="secondary"
-              size="sm"
-              className="inline-flex items-center gap-2"
-            >
-              <PencilIcon />
-              Edit
-            </ButtonLink>
-          </>
+          <PlanDetailActions
+            planId={planId}
+            planTitle={plan.name}
+            onToggleHistory={() => setShowHistory((current) => !current)}
+          />
         }
       />
       {showHistory ? (

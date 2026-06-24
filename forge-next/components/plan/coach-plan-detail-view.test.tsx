@@ -35,10 +35,12 @@ describe("CoachPlanDetailView", () => {
     expect(screen.getByText("4-Week Strength Block")).toBeInTheDocument();
     expect(screen.queryByText("Version history")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "History" }));
+    await user.click(screen.getByRole("button", { name: "Plan actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "History" }));
     expect(screen.getByText("Version history")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "History" }));
+    await user.click(screen.getByRole("button", { name: "Plan actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "History" }));
     expect(screen.queryByText("Version history")).not.toBeInTheDocument();
   });
 });
