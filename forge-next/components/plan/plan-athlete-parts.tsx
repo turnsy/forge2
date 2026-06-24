@@ -55,12 +55,16 @@ export function athleteReadOnlySetCardClassName(set: Set): string {
   return athleteSetCardClassName(set.status === "completed" || isSetActualComplete(set));
 }
 
+export function athleteExerciseCardClassName(complete = false): string {
+  return [accordionNestedClass(complete ? "success" : "default"), "space-y-4"].join(" ");
+}
+
 export function athleteSupersetRoundCardClassName(): string {
-  return [accordionNestedClass("default"), "space-y-3 !p-3"].join(" ");
+  return "space-y-3 rounded-lg border border-glass-border p-3";
 }
 
 export function athleteSupersetBlockClassName(): string {
-  return "space-y-4 rounded-lg border border-glass-border/80 bg-glass/30 p-4";
+  return athleteExerciseCardClassName();
 }
 
 function SetCheckmark({ complete }: { complete: boolean }) {

@@ -280,7 +280,7 @@ export function PlanSupersetView({
 
   return (
     <section
-      className={view === "athlete" ? athleteSupersetBlockClassName() : "space-y-4 rounded-lg border border-glass-border/80 bg-glass/30 p-4"}
+      className={athleteSupersetBlockClassName()}
       data-plan-block
       data-superset="true"
     >

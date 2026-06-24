@@ -6,6 +6,7 @@ import {
   AthleteExerciseHeader,
   AthleteExerciseNotes,
   AthleteSetRow,
+  athleteExerciseCardClassName,
   type AthleteSetFormState,
 } from "@/components/plan/plan-athlete-parts";
 import { PlanBlockSection } from "@/components/plan/plan-block-section";
@@ -34,7 +35,6 @@ import {
 import { getDayTitle } from "@/lib/plans/display";
 import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import type { Day, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
-import { accordionNestedClass } from "@/lib/theme";
 
 const SAVE_DEBOUNCE_MS = 800;
 const COMPLETE_DAY_ERROR = "Could not complete the day. Try again.";
@@ -85,7 +85,7 @@ function getResolvedSetFormState(
 }
 
 function exerciseCardClassName(complete: boolean): string {
-  return [accordionNestedClass(complete ? "success" : "default"), "space-y-4"].join(" ");
+  return athleteExerciseCardClassName(complete);
 }
 
 function applyLocalActualsToDayForm(

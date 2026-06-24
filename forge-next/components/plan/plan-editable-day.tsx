@@ -37,6 +37,7 @@ import {
   createSetId,
 } from "@/lib/plans/plan-defaults";
 import { createBlockId, isSupersetBlock } from "@/lib/plans/day-blocks";
+import { athleteSupersetBlockClassName } from "@/components/plan/plan-athlete-parts";
 import type {
   Day,
   Exercise,
@@ -681,11 +682,7 @@ export function PlanEditableDay({
       {editableDay.blocks.map((block, blockPos) => (
         <div
           key={block.id}
-          className={
-            isSupersetBlock(block)
-              ? "space-y-4 rounded-lg border border-glass-border/80 bg-glass/30 p-4"
-              : "space-y-4"
-          }
+          className={isSupersetBlock(block) ? athleteSupersetBlockClassName() : "space-y-4"}
         >
           {isSupersetBlock(block) ? (
             <span className="rounded-full border border-glass-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-surface-muted">
