@@ -1,13 +1,13 @@
 import type { Set } from "@/lib/plans/workout-plan";
 import type { AccordionVariant } from "@/components/ui/accordion";
+import { PrescribedActualCell } from "@/components/plan/prescribed-actual-cell";
 import {
   EMPTY_CELL,
-  actualLoadMatchesPlanned,
+  actualTargetMatchesPlanned,
   actualRepsMatchesPlanned,
-  formatLoad,
-  formatOptionalCell,
+  formatCoachSetCells,
+  formatTarget,
   formatReps,
-  formatTargetInstruction,
 } from "@/lib/plans/display";
 import { accordionContentCardClass } from "@/lib/theme";
 
@@ -18,27 +18,14 @@ const mutedCellClass = "text-surface-muted";
 type CoachSetRow = {
   setNumber: number;
   reps: string;
-  load: string;
+  target: string;
   notes: string;
 };
 
 function buildCoachSetRow(set: Set, setNumber: number): CoachSetRow {
-  const { planned } = set;
-
-  if (planned.type === "exact") {
-    return {
-      setNumber,
-      reps: formatReps(planned.reps),
-      load: formatLoad(planned.load),
-      notes: formatOptionalCell(planned.notes ?? set.notes),
-    };
-  }
-
   return {
     setNumber,
-    reps: formatTargetInstruction(planned.instruction),
-    load: planned.load ? formatLoad(planned.load) : EMPTY_CELL,
-    notes: formatOptionalCell(planned.notes ?? set.notes),
+    ...formatCoachSetCells(set),
   };
 }
 
@@ -63,39 +50,6 @@ function SetStatusPill({ status }: { status: "completed" | "skipped" }) {
       Skipped
     </span>
   );
-}
-
-function PrescribedActualCell({
-  prescribed,
-  actualValue,
-  matches,
-}: {
-  prescribed: string;
-  actualValue: string | null;
-  matches: boolean | null;
-}) {
-  if (!actualValue) {
-    return <span>{prescribed}</span>;
-  }
-
-  return (
-    <div className="flex flex-col gap-0.5 md:inline-flex md:flex-row md:items-baseline md:gap-1">
-      <span>{prescribed}</span>
-      <span className={actualValueClass(matches)}>({actualValue})</span>
-    </div>
-  );
-}
-
-function actualValueClass(matches: boolean | null): string {
-  if (matches === true) {
-    return "font-bold text-emerald-700 dark:text-emerald-300";
-  }
-
-  if (matches === false) {
-    return "font-bold text-amber-800 dark:text-amber-200";
-  }
-
-  return "font-bold text-surface-foreground";
 }
 
 export function PlanSetTable({
@@ -138,7 +92,7 @@ export function PlanSetTable({
                 set.actual.reps !== ""
                   ? set.actual.reps
                   : null;
-              const actualLoad = showActual ? (set.actual?.load ?? null) : null;
+              const actualTarget = showActual ? (set.actual?.target ?? null) : null;
 
               return (
                 <tr key={set.id} className="border-b border-glass-border/60 last:border-b-0">
@@ -168,11 +122,11 @@ export function PlanSetTable({
                   </td>
                   <td className="px-3 py-2 text-surface-foreground">
                     <PrescribedActualCell
-                      prescribed={row.load}
-                      actualValue={actualLoad ? formatLoad(actualLoad) : null}
+                      prescribed={row.target}
+                      actualValue={actualTarget ? formatTarget(actualTarget) : null}
                       matches={
-                        actualLoad && set.actual
-                          ? actualLoadMatchesPlanned(set.planned, set.actual)
+                        actualTarget && set.actual
+                          ? actualTargetMatchesPlanned(set.planned, set.actual)
                           : null
                       }
                     />

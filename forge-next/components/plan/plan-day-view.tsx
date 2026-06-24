@@ -2,12 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
-import { VideoIcon } from "@/components/icons/video-icon";
-import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { AthleteStandaloneExerciseSection } from "@/components/plan/athlete-standalone-exercise";
+import {
+  AthleteSetRow,
+  type AthleteSetFormState,
+} from "@/components/plan/plan-athlete-parts";
+import { PlanBlockSection } from "@/components/plan/plan-block-section";
+import { PlanSupersetView } from "@/components/plan/plan-superset-view";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { CoachLockedDayView } from "@/components/plan/coach-locked-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
-import { Button, IconButton, Input, Message } from "@/components/ui";
+import { Button, Message } from "@/components/ui";
 import { completeDayAction, saveSetActualsAction, type SaveSetActualsActionResult } from "@/lib/athlete/plan/actions";
 import {
   buildActualFromInputs,
@@ -17,38 +22,32 @@ import {
   resolveSaveActual,
   setFormStateFromActual,
 } from "@/lib/athlete/plan/domain";
-import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
-import { getDayTitle, getSetNotes } from "@/lib/plans/display";
-import type {
-  AbsoluteLoad,
-  Day,
-  PercentageLoad,
-  Set,
-  WorkoutPlan,
-} from "@/lib/plans/workout-plan";
 import {
-  accordionClass,
-  accordionNestedClass,
-  completionCheckmarkClass,
-} from "@/lib/theme";
+  applyLocalActualsToDay,
+  cloneDay,
+  getFlatExercisePos,
+  getFlattenedExerciseRefs,
+  isSupersetBlock,
+  updateFlattenedSet,
+} from "@/lib/plans/day-blocks";
+import { getDayTitle } from "@/lib/plans/display";
+import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
+import type { Day, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const SAVE_DEBOUNCE_MS = 800;
 const COMPLETE_DAY_ERROR = "Could not complete the day. Try again.";
 
-type SetFormState = {
-  reps: string;
-  load: string;
-};
+type SetFormState = AthleteSetFormState;
 
 type SetLocation = {
-  exerciseIdx: number;
-  setIdx: number;
+  exercisePos: number;
+  setPos: number;
 };
 
 export type PlanDayViewProps = {
   plan: WorkoutPlan | null;
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
   view: PlanViewerView;
   readOnly?: boolean;
   assignmentId?: string;
@@ -59,16 +58,16 @@ export type PlanDayViewProps = {
   disabled?: boolean;
 };
 
-function getSetKey(exerciseIdx: number, setIdx: number): string {
-  return `${exerciseIdx}-${setIdx}`;
+function getSetKey(exercisePos: number, setPos: number): string {
+  return `${exercisePos}-${setPos}`;
 }
 
 function buildInitialFormState(day: Day): Record<string, SetFormState> {
   const state: Record<string, SetFormState> = {};
 
-  day.exercises.forEach((exercise, exerciseIdx) => {
-    exercise.sets.forEach((set, setIdx) => {
-      state[getSetKey(exerciseIdx, setIdx)] = setFormStateFromActual(set);
+  getFlattenedExerciseRefs(day).forEach((ref, exercisePos) => {
+    ref.exercise.sets.forEach((set, setPos) => {
+      state[getSetKey(exercisePos, setPos)] = setFormStateFromActual(set);
     });
   });
 
@@ -83,293 +82,64 @@ function getResolvedSetFormState(
   return formState[key] ?? setFormStateFromActual(set);
 }
 
-function getLoadUnitLabel(set: Set): string | null {
-  if (set.planned.type !== "exact") {
-    return null;
-  }
-
-  return set.planned.load.unit;
-}
-
-function getPercentagePlaceholder(set: Set): string {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "percentage") {
-    return "";
-  }
-
-  const load = set.planned.load as PercentageLoad;
-  return `${load.value}%`;
-}
-
-function getAbsoluteLoadPlaceholder(set: Set): string {
-  if (set.planned.type !== "exact" || set.planned.load.type !== "absolute") {
-    return "";
-  }
-
-  return String((set.planned.load as AbsoluteLoad).value);
-}
-
-function cloneDay(day: Day): Day {
-  return structuredClone(day);
-}
-
-function exerciseCardClassName(complete: boolean): string {
-  return [accordionNestedClass(complete ? "success" : "default"), "space-y-4"].join(" ");
-}
-
-function athleteSetCardClassName(complete: boolean): string {
-  return [accordionClass(complete ? "success" : "default"), "space-y-2 !p-3"].join(" ");
-}
-
-function athleteReadOnlySetCardClassName(set: Set): string {
-  if (set.status === "skipped") {
-    return [
-      accordionClass("default"),
-      "space-y-2 !p-3",
-      "border-orange-500/35 bg-orange-500/10",
-    ].join(" ");
-  }
-
-  return athleteSetCardClassName(set.status === "completed" || isSetActualComplete(set));
-}
-
-function SetCheckmark({ complete }: { complete: boolean }) {
-  return (
-    <span aria-hidden="true" className={completionCheckmarkClass(complete)}>
-      ✓
-    </span>
-  );
-}
-
-function applyLocalActualsToDay(
+function applyLocalActualsToDayForm(
   day: Day,
   formState: Record<string, SetFormState>,
 ): Day {
-  return {
-    ...day,
-    exercises: day.exercises.map((exercise, exerciseIdx) => ({
-      ...exercise,
-      sets: exercise.sets.map((set, setIdx) => {
-        const local = formState[getSetKey(exerciseIdx, setIdx)];
-        if (!local) {
-          return set;
-        }
-
-        const actual = buildActualFromInputs(local.reps, local.load, set);
-        return {
-          ...set,
-          actual: actual ?? set.actual,
-        };
-      }) as typeof exercise.sets,
-    })) as typeof day.exercises,
-  };
+  return applyLocalActualsToDay(day, formState, getSetKey, buildActualFromInputs);
 }
 
-function SetRowInputs({
-  set,
-  reps,
-  load,
-  onRepsChange,
-  onLoadChange,
-  readOnly = false,
-}: {
-  set: Set;
-  reps: string;
-  load: string;
-  onRepsChange?: (value: string) => void;
-  onLoadChange?: (value: string) => void;
-  readOnly?: boolean;
-}) {
-  if (set.planned.type === "target") {
-    return (
-      <p className="min-w-0 flex-1 text-sm text-surface-muted">
-        {set.planned.instruction}
-      </p>
-    );
-  }
-
-  const unit = getLoadUnitLabel(set);
-
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      <Input
-        aria-label="Set reps"
-        type="text"
-        value={reps}
-        placeholder={String(set.planned.reps)}
-        readOnly={readOnly}
-        onChange={
-          readOnly ? undefined : (event) => onRepsChange?.(event.target.value)
-        }
-        className="w-16"
-        size="sm"
-      />
-      <span className="shrink-0 text-sm text-surface-muted">of</span>
-      <Input
-        aria-label="Set load"
-        type="text"
-        value={load}
-        placeholder={
-          set.planned.load.type === "percentage"
-            ? getPercentagePlaceholder(set)
-            : getAbsoluteLoadPlaceholder(set)
-        }
-        readOnly={readOnly}
-        onChange={
-          readOnly ? undefined : (event) => onLoadChange?.(event.target.value)
-        }
-        className="w-16"
-        size="sm"
-      />
-      {unit ? <span className="shrink-0 text-sm text-surface-muted">{unit}</span> : null}
-    </div>
-  );
-}
-
-function AthleteExerciseNotes({ notes }: { notes?: string }) {
-  if (!notes?.trim()) {
-    return null;
-  }
-
-  return <p className="text-sm text-surface-muted">{notes.trim()}</p>;
-}
-
-function AthleteExerciseHeader({
-  name,
-  videoUrl,
-}: {
-  name: string;
-  videoUrl?: string;
-}) {
-  if (!videoUrl) {
-    return (
-      <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={<VideoIcon className="h-4 w-4" />}
-        aria-label="Watch exercise video"
-        onClick={() => window.open(videoUrl, "_blank", "noopener,noreferrer")}
-      />
-    </div>
-  );
-}
-
-function AthleteSetNotes({ notes }: { notes?: string }) {
-  if (!notes) {
-    return null;
-  }
-
-  return <p className="text-sm text-surface-muted">{notes}</p>;
-}
-
-function AthleteSetRow({
-  set,
-  setIdx,
-  reps,
-  load,
-  readOnly,
-  complete,
-  setRef,
-  onRepsChange,
-  onLoadChange,
-}: {
-  set: Set;
-  setIdx: number;
-  reps: string;
-  load: string;
-  readOnly?: boolean;
-  complete?: boolean;
-  setRef?: (node: HTMLDivElement | null) => void;
-  onRepsChange?: (value: string) => void;
-  onLoadChange?: (value: string) => void;
-}) {
-  const notes = getSetNotes(set);
-
-  return (
-    <div
-      ref={setRef}
-      className={
-        readOnly
-          ? athleteReadOnlySetCardClassName(set)
-          : athleteSetCardClassName(Boolean(complete))
-      }
-      data-set-status={readOnly ? set.status : undefined}
-      data-set-complete={complete ? "true" : "false"}
-    >
-      <AthleteSetNotes notes={notes} />
-      <div className="flex items-center gap-3">
-        <span className="w-6 shrink-0 text-center text-sm font-medium text-surface-muted">
-          {setIdx + 1}
-        </span>
-        <SetRowInputs
-          set={set}
-          reps={reps}
-          load={load}
-          readOnly={readOnly}
-          onRepsChange={onRepsChange}
-          onLoadChange={onLoadChange}
-        />
-        <SetCheckmark complete={Boolean(complete)} />
-      </div>
-    </div>
-  );
-}
-
-function AthleteReadOnlyDayContent({ day }: { day: Day }) {
+function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }) {
   return (
     <div className="space-y-4">
-      <PlanDayHeader day={day} />
-      {day.exercises.map((exercise, exerciseIdx) => (
-        <section
-          key={`${exercise.name}-${exerciseIdx}`}
-          className={[accordionNestedClass("default"), "space-y-4"].join(" ")}
-        >
-          <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-          <AthleteExerciseNotes notes={exercise.notes} />
-          <div className="space-y-3">
-            {exercise.sets.map((set, setIdx) => {
-              const filled = set.status === "completed";
-              const values = filled ? setFormStateFromActual(set) : { reps: "", load: "" };
+      <PlanDayHeader day={day} dayPos={dayPos} />
+      {day.blocks.map((block) =>
+        isSupersetBlock(block) ? (
+          <PlanSupersetView key={block.id} block={block} view="athlete" />
+        ) : (
+          <section key={block.id} className="space-y-4">
+            {block.exercises.map((exercise, exercisePosInBlock) => (
+              <AthleteStandaloneExerciseSection key={`${block.id}-${exercise.id}-${exercisePosInBlock}`} exercise={exercise}>
+                {exercise.sets.map((set, setIdx) => {
+                  const filled = set.status === "completed";
+                  const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
 
-              return (
-                <AthleteSetRow
-                  key={set.id}
-                  set={set}
-                  setIdx={setIdx}
-                  reps={values.reps}
-                  load={values.load}
-                  readOnly
-                  complete={filled}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                  return (
+                    <AthleteSetRow
+                      key={set.id}
+                      set={set}
+                      setIdx={setIdx}
+                      reps={values.reps}
+                      target={values.target}
+                      readOnly
+                      complete={filled}
+                    />
+                  );
+                })}
+              </AthleteStandaloneExerciseSection>
+            ))}
+          </section>
+        ),
+      )}
     </div>
   );
 }
 
-function PlanDayHeader({ day }: { day: Day }) {
+function PlanDayHeader({ day, dayPos }: { day: Day; dayPos: number }) {
   return (
-    <h2 className="text-lg font-semibold text-surface-foreground">{getDayTitle(day)}</h2>
+    <h2 className="text-lg font-semibold text-surface-foreground">{getDayTitle(day, dayPos)}</h2>
   );
 }
 
-function CoachDayContent({ day }: { day: Day }) {
+function CoachDayContent({ day, dayPos }: { day: Day; dayPos: number }) {
   return (
     <div className="space-y-6">
-      <PlanDayHeader day={day} />
-      {day.exercises.map((exercise, index) => (
-        <PlanExerciseBlock
-          key={`${day.code}-${exercise.id ?? exercise.name}-${index}`}
-          exercise={exercise}
+      <PlanDayHeader day={day} dayPos={dayPos} />
+      {day.blocks.map((block) => (
+        <PlanBlockSection
+          key={block.id}
+          block={block}
+          dayCode={day.code}
           view="coach"
           surfaceVariant="default"
         />
@@ -380,15 +150,15 @@ function CoachDayContent({ day }: { day: Day }) {
 
 function AthleteEditableDayContent({
   day,
-  weekIndex,
-  dayIndex,
+  weekPos,
+  dayPos,
   assignmentId,
   onDayCompleted,
   onSaveStatusChange,
 }: {
   day: Day;
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
   assignmentId: string;
   onDayCompleted?: (allDaysDone: boolean, plan: WorkoutPlan) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
@@ -418,14 +188,15 @@ function AthleteEditableDayContent({
   }, [onSaveStatusChange, saveStatus]);
 
   const firstIncompleteKey = useMemo(() => {
-    for (let exerciseIdx = 0; exerciseIdx < day.exercises.length; exerciseIdx += 1) {
-      const exercise = day.exercises[exerciseIdx];
-      for (let setIdx = 0; setIdx < exercise.sets.length; setIdx += 1) {
-        const set = exercise.sets[setIdx];
-        const key = getSetKey(exerciseIdx, setIdx);
+    const refs = getFlattenedExerciseRefs(day);
+    for (let exercisePos = 0; exercisePos < refs.length; exercisePos += 1) {
+      const exercise = refs[exercisePos].exercise;
+      for (let setPos = 0; setPos < exercise.sets.length; setPos += 1) {
+        const set = exercise.sets[setPos];
+        const key = getSetKey(exercisePos, setPos);
         const local = formState[key];
         const actual = local
-          ? buildActualFromInputs(local.reps, local.load, set)
+          ? buildActualFromInputs(local.reps, local.target, set)
           : set.actual;
 
         if (!actual) {
@@ -444,7 +215,7 @@ function AthleteEditableDayContent({
 
     const node = setRefs.current[firstIncompleteKey];
     node?.scrollIntoView?.({ behavior: "smooth", block: "center" });
-  }, [firstIncompleteKey, weekIndex, dayIndex]);
+  }, [firstIncompleteKey, weekPos, dayPos]);
 
   useEffect(() => {
     return () => {
@@ -455,19 +226,17 @@ function AthleteEditableDayContent({
   }, []);
 
   const applySavedActual = useCallback((location: SetLocation, actual: Set["actual"]) => {
-    setSavedDay((previous) => {
-      const next = cloneDay(previous);
-      next.exercises[location.exerciseIdx].sets[location.setIdx] = {
-        ...next.exercises[location.exerciseIdx].sets[location.setIdx],
+    setSavedDay((previous) =>
+      updateFlattenedSet(previous, location.exercisePos, location.setPos, (set) => ({
+        ...set,
         actual,
-      };
-      return next;
-    });
+      })),
+    );
   }, []);
 
   const runSave = useCallback(
-    async (location: SetLocation, set: Set, reps: string, load: string) => {
-      const resolution = resolveSaveActual(reps, load, set);
+    async (location: SetLocation, set: Set, reps: string, target: string) => {
+      const resolution = resolveSaveActual(reps, target, set);
       if (resolution.type === "skip") {
         return;
       }
@@ -479,10 +248,10 @@ function AthleteEditableDayContent({
 
       const result = await saveSetActualsAction(
         assignmentId,
-        weekIndex,
-        dayIndex,
-        location.exerciseIdx,
-        location.setIdx,
+        weekPos,
+        dayPos,
+        location.exercisePos,
+        location.setPos,
         actual,
       );
 
@@ -499,7 +268,7 @@ function AthleteEditableDayContent({
         setSaveStatus("saved");
       }
     },
-    [applySavedActual, assignmentId, dayIndex, weekIndex],
+    [applySavedActual, assignmentId, dayPos, weekPos],
   );
 
   async function flushSaveQueue(): Promise<void> {
@@ -529,9 +298,9 @@ function AthleteEditableDayContent({
     location: SetLocation,
     set: Set,
     reps: string,
-    load: string,
+    target: string,
   ) {
-    const key = getSetKey(location.exerciseIdx, location.setIdx);
+    const key = getSetKey(location.exercisePos, location.setPos);
     const existingTimer = debounceTimers.current[key];
     if (existingTimer) {
       clearTimeout(existingTimer);
@@ -540,7 +309,7 @@ function AthleteEditableDayContent({
     debounceTimers.current[key] = setTimeout(() => {
       delete debounceTimers.current[key];
 
-      const saveTask = () => runSave(location, set, reps, load);
+      const saveTask = () => runSave(location, set, reps, target);
       queuedSave.current = saveTask;
       void flushSaveQueue();
     }, SAVE_DEBOUNCE_MS);
@@ -549,14 +318,14 @@ function AthleteEditableDayContent({
   function handleInputChange(
     location: SetLocation,
     set: Set,
-    field: "reps" | "load",
+    field: "reps" | "target",
     value: string,
   ) {
-    const key = getSetKey(location.exerciseIdx, location.setIdx);
+    const key = getSetKey(location.exercisePos, location.setPos);
     setFormState((previous) => {
-      const current = previous[key] ?? { reps: "", load: "" };
+      const current = previous[key] ?? { reps: "", target: "" };
       const next = { ...current, [field]: value };
-      scheduleSave(location, set, next.reps, next.load);
+      scheduleSave(location, set, next.reps, next.target);
       return { ...previous, [key]: next };
     });
   }
@@ -575,32 +344,32 @@ function AthleteEditableDayContent({
 
     const saves: Array<Promise<SaveSetActualsActionResult>> = [];
     const savedUpdates: Array<{ location: SetLocation; actual: Set["actual"] }> = [];
-    day.exercises.forEach((exercise, exerciseIdx) => {
-      exercise.sets.forEach((set, setIdx) => {
+    getFlattenedExerciseRefs(day).forEach((ref, exercisePos) => {
+      ref.exercise.sets.forEach((set, setPos) => {
         if (set.planned.type === "target") {
           return;
         }
 
-        const local = latestFormState.current[getSetKey(exerciseIdx, setIdx)];
+        const local = latestFormState.current[getSetKey(exercisePos, setPos)];
         if (!local) {
           return;
         }
 
-        const resolution = resolveSaveActual(local.reps, local.load, set);
+        const resolution = resolveSaveActual(local.reps, local.target, set);
         if (resolution.type === "skip") {
           return;
         }
 
         const { actual } = resolution;
-        const location = { exerciseIdx, setIdx };
+        const location = { exercisePos, setPos };
         savedUpdates.push({ location, actual });
         saves.push(
           saveSetActualsAction(
             assignmentId,
-            weekIndex,
-            dayIndex,
-            exerciseIdx,
-            setIdx,
+            weekPos,
+            dayPos,
+            exercisePos,
+            setPos,
             actual,
           ),
         );
@@ -614,17 +383,17 @@ function AthleteEditableDayContent({
 
     if (savedUpdates.length > 0) {
       setSavedDay((previous) => {
-        const next = cloneDay(previous);
+        let next = previous;
         for (const { location, actual } of savedUpdates) {
-          next.exercises[location.exerciseIdx].sets[location.setIdx] = {
-            ...next.exercises[location.exerciseIdx].sets[location.setIdx],
+          next = updateFlattenedSet(next, location.exercisePos, location.setPos, (set) => ({
+            ...set,
             actual,
-          };
+          }));
         }
         return next;
       });
     }
-  }, [assignmentId, day, dayIndex, weekIndex]);
+  }, [assignmentId, day, dayPos, weekPos]);
 
   function handleCompleteSuccess(allDaysDone: boolean, plan: WorkoutPlan) {
     onDayCompleted?.(allDaysDone, plan);
@@ -633,7 +402,7 @@ function AthleteEditableDayContent({
   function handleCompleteDay() {
     setCompleteError(null);
 
-    const dayWithLocalActuals = applyLocalActualsToDay(day, latestFormState.current);
+    const dayWithLocalActuals = applyLocalActualsToDayForm(day, latestFormState.current);
     if (dayHasUnfilledNonTargetSets(dayWithLocalActuals)) {
       setConfirmSkipOpen(true);
       return;
@@ -642,7 +411,7 @@ function AthleteEditableDayContent({
     startCompleteTransition(async () => {
       try {
         await flushPendingSaves();
-        const result = await completeDayAction(assignmentId, weekIndex, dayIndex);
+        const result = await completeDayAction(assignmentId, weekPos, dayPos);
 
         if (!result.ok) {
           setCompleteError(COMPLETE_DAY_ERROR);
@@ -660,7 +429,7 @@ function AthleteEditableDayContent({
     startCompleteTransition(async () => {
       try {
         await flushPendingSaves();
-        const result = await completeDayAction(assignmentId, weekIndex, dayIndex);
+        const result = await completeDayAction(assignmentId, weekPos, dayPos);
         setConfirmSkipOpen(false);
 
         if (!result.ok) {
@@ -678,63 +447,99 @@ function AthleteEditableDayContent({
 
   return (
     <>
-      <PlanDayHeader day={day} />
+      <PlanDayHeader day={day} dayPos={dayPos} />
       <div className="space-y-4">
-        {savedDay.exercises.map((exercise, exerciseIdx) => {
-          const exerciseComplete = isExerciseComplete(exercise);
+        {savedDay.blocks.map((block, blockPos) =>
+          isSupersetBlock(block) ? (
+            <PlanSupersetView
+              key={block.id}
+              block={block}
+              view="athlete"
+              athleteEntry={{
+                getExercisePos: (exercisePosInBlock) =>
+                  getFlatExercisePos(savedDay, blockPos, exercisePosInBlock),
+                getSetKey,
+                getSavedSet: (exercisePosInBlock, setPos) =>
+                  savedDay.blocks[blockPos]?.exercises[exercisePosInBlock]?.sets[setPos],
+                getPlannedSet: (exercisePosInBlock, setPos) =>
+                  day.blocks[blockPos]?.exercises[exercisePosInBlock]?.sets[setPos],
+                resolveFormState: (set, key) =>
+                  getResolvedSetFormState(formState, set, key),
+                isSetComplete: isSetActualComplete,
+                isExerciseComplete: (exercisePosInBlock) =>
+                  isExerciseComplete(
+                    savedDay.blocks[blockPos]!.exercises[exercisePosInBlock]!,
+                  ),
+                onRepsChange: (exercisePos, setPos, set, value) =>
+                  handleInputChange({ exercisePos, setPos }, set, "reps", value),
+                onTargetChange: (exercisePos, setPos, set, value) =>
+                  handleInputChange({ exercisePos, setPos }, set, "target", value),
+                setRefs,
+              }}
+            />
+          ) : (
+            <section key={block.id} className="space-y-4">
+              {block.exercises.map((exercise, exercisePosInBlock) => {
+                const exercisePos = getFlatExercisePos(savedDay, blockPos, exercisePosInBlock);
+                const plannedExercise = day.blocks[blockPos]?.exercises[exercisePosInBlock];
+                const exerciseComplete = isExerciseComplete(exercise);
 
-          return (
-            <section
-              key={`${exercise.name}-${exerciseIdx}`}
-              className={exerciseCardClassName(exerciseComplete)}
-              data-exercise-complete={exerciseComplete ? "true" : "false"}
-            >
-              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-              <AthleteExerciseNotes notes={exercise.notes} />
-              <div className="space-y-3">
-                {exercise.sets.map((savedSet, setIdx) => {
-                  const key = getSetKey(exerciseIdx, setIdx);
-                  const local = getResolvedSetFormState(
-                    formState,
-                    day.exercises[exerciseIdx].sets[setIdx],
-                    key,
-                  );
-                  const complete = isSetActualComplete(savedSet);
+                if (!plannedExercise) {
+                  return null;
+                }
 
-                  return (
-                    <AthleteSetRow
-                      key={savedSet.id}
-                      set={day.exercises[exerciseIdx].sets[setIdx]}
-                      setIdx={setIdx}
-                      reps={local.reps}
-                      load={local.load}
-                      complete={complete}
-                      setRef={(node) => {
-                        setRefs.current[key] = node;
-                      }}
-                      onRepsChange={(value) =>
-                        handleInputChange(
-                          { exerciseIdx, setIdx },
-                          day.exercises[exerciseIdx].sets[setIdx],
-                          "reps",
-                          value,
-                        )
-                      }
-                      onLoadChange={(value) =>
-                        handleInputChange(
-                          { exerciseIdx, setIdx },
-                          day.exercises[exerciseIdx].sets[setIdx],
-                          "load",
-                          value,
-                        )
-                      }
-                    />
-                  );
-                })}
-              </div>
+                return (
+                  <AthleteStandaloneExerciseSection
+                    key={`${block.id}-${exercise.id}`}
+                    exercise={exercise}
+                    highlightComplete
+                    complete={exerciseComplete}
+                  >
+                    {exercise.sets.map((savedSet, setPos) => {
+                      const key = getSetKey(exercisePos, setPos);
+                      const local = getResolvedSetFormState(
+                        formState,
+                        plannedExercise.sets[setPos],
+                        key,
+                      );
+                      const complete = isSetActualComplete(savedSet);
+
+                      return (
+                        <AthleteSetRow
+                          key={savedSet.id}
+                          set={plannedExercise.sets[setPos]}
+                          setIdx={setPos}
+                          reps={local.reps}
+                          target={local.target}
+                          complete={complete}
+                          setRef={(node) => {
+                            setRefs.current[key] = node;
+                          }}
+                          onRepsChange={(value) =>
+                            handleInputChange(
+                              { exercisePos, setPos },
+                              plannedExercise.sets[setPos],
+                              "reps",
+                              value,
+                            )
+                          }
+                          onTargetChange={(value) =>
+                            handleInputChange(
+                              { exercisePos, setPos },
+                              plannedExercise.sets[setPos],
+                              "target",
+                              value,
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </AthleteStandaloneExerciseSection>
+                );
+              })}
             </section>
-          );
-        })}
+          ),
+        )}
       </div>
 
       {completeError ? <Message tone="error">{completeError}</Message> : null}
@@ -755,8 +560,8 @@ function AthleteEditableDayContent({
 
 export function PlanDayView({
   plan,
-  weekIndex,
-  dayIndex,
+  weekPos,
+  dayPos,
   view,
   readOnly = false,
   assignmentId,
@@ -769,7 +574,7 @@ export function PlanDayView({
     return <p className="text-sm text-surface-muted">Day not found</p>;
   }
 
-  const location = resolveDayLocation(plan, weekIndex, dayIndex);
+  const location = resolveDayLocation(plan, weekPos, dayPos);
   if (!location) {
     return <p className="text-sm text-surface-muted">Day not found</p>;
   }
@@ -780,10 +585,10 @@ export function PlanDayView({
     if (!readOnly && isDayEditable(day)) {
       return (
         <AthleteEditableDayContent
-          key={`${weekIndex}-${dayIndex}`}
+          key={`${weekPos}-${dayPos}`}
           day={day}
-          weekIndex={weekIndex}
-          dayIndex={dayIndex}
+          weekPos={weekPos}
+          dayPos={dayPos}
           assignmentId={assignmentId}
           onDayCompleted={onDayCompleted}
           onSaveStatusChange={onSaveStatusChange}
@@ -791,24 +596,24 @@ export function PlanDayView({
       );
     }
 
-    return <AthleteReadOnlyDayContent day={day} />;
+    return <AthleteReadOnlyDayContent day={day} dayPos={dayPos} />;
   }
 
   if (view === "coach" && !readOnly && onPlanChange && plan) {
     if (!isDayEditable(day)) {
-      return <CoachLockedDayView day={day} />;
+      return <CoachLockedDayView day={day} dayPos={dayPos} />;
     }
 
     return (
       <CoachEditableDayView
         plan={plan}
-        weekIndex={weekIndex}
-        dayIndex={dayIndex}
+        weekPos={weekPos}
+        dayPos={dayPos}
         disabled={disabled}
         onPlanChange={onPlanChange}
       />
     );
   }
 
-  return <CoachDayContent day={day} />;
+  return <CoachDayContent day={day} dayPos={dayPos} />;
 }

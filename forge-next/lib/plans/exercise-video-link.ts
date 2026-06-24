@@ -1,9 +1,10 @@
+import { updateFlattenedExercise } from "@/lib/plans/day-blocks";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type ApplyExerciseVideoLinkOptions = {
-  weekIndex: number;
-  dayIndex: number;
-  exerciseIndex: number;
+  weekPos: number;
+  dayPos: number;
+  exercisePos: number;
   exerciseName: string;
   videoUrl: string | undefined;
   addToAll: boolean;
@@ -24,10 +25,11 @@ export function applyExerciseVideoLink(
   if (options.addToAll) {
     for (const week of newPlan.weeks) {
       for (const day of week.days) {
-        for (const exercise of day.exercises) {
-          // Match by name for now; switch to exercise IDs once all exercises have stable ids.
-          if (exercise.name === options.exerciseName) {
-            exercise.videoUrl = normalizedUrl;
+        for (const block of day.blocks) {
+          for (const exercise of block.exercises) {
+            if (exercise.name === options.exerciseName) {
+              exercise.videoUrl = normalizedUrl;
+            }
           }
         }
       }
@@ -36,13 +38,16 @@ export function applyExerciseVideoLink(
     return newPlan;
   }
 
-  const week = newPlan.weeks.find((candidate) => candidate.index === options.weekIndex);
-  const day = week?.days.find((candidate) => candidate.index === options.dayIndex);
-  const exercise = day?.exercises[options.exerciseIndex];
-
-  if (exercise) {
-    exercise.videoUrl = normalizedUrl;
+  const day = newPlan.weeks[options.weekPos]?.days[options.dayPos];
+  if (!day) {
+    return newPlan;
   }
+
+  const updatedDay = updateFlattenedExercise(day, options.exercisePos, (exercise) => ({
+    ...exercise,
+    videoUrl: normalizedUrl,
+  }));
+  newPlan.weeks[options.weekPos].days[options.dayPos] = updatedDay;
 
   return newPlan;
 }

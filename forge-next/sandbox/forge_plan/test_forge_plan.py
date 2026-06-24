@@ -1,242 +1,192 @@
-"""Unit tests for forge_plan (stdlib unittest — no extra deps)."""
+"""Unit tests for forge_plan v3 (stdlib unittest)."""
 
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from forge_plan import Plan, summarize
-from forge_plan.builders import (
-    empty_plan_template,
-    format_day_code,
-    load_seed_from_file,
-    validate_day_code,
-)
+from forge_plan import Day, Exercise, Plan, Week, summarize
+from forge_plan.builders import SCHEMA_VERSION
+from forge_plan.target import parse_target
+
+ROOT = Path(__file__).resolve().parents[2]
+VALIDATE_SCRIPT = ROOT / "scripts" / "validate-plan-json.mjs"
 
 
-class ForgePlanTests(unittest.TestCase):
-    def test_empty_plan_is_empty(self) -> None:
-        plan = Plan.empty("Test")
-        self.assertTrue(plan.is_empty())
+def assert_valid_schema(test: unittest.TestCase, plan_dict: dict) -> None:
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
+        json.dump(plan_dict, handle)
+        handle.flush()
+        path = handle.name
 
-    def test_add_week_day_exercise_set(self) -> None:
-        plan = Plan.empty("Strength")
-        plan.add_week(label="Week 1")
-        plan.add_day(week_index=1, name="Lower")
-        plan.add_exercise(week_index=1, day_index=1, name="Back Squat")
-        plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit="kg")
+    result = subprocess.run(
+        ["node", str(VALIDATE_SCRIPT), path],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        test.fail(
+            "plan JSON failed schema validation:\n"
+            f"{result.stdout}\n{result.stderr}"
+        )
 
+
+def build_sample_plan() -> Plan:
+    return (
+        Plan("1 week bench")
+        .add_week(
+            Week(label="Week 1")
+            .add_day(
+                Day(name="Upper")
+                .add_exercise(
+                    Exercise("Bench press").add_sets(reps=5, target=50, unit="kg", count=3)
+                )
+                .add_superset(
+                    Exercise("Bench press")
+                    .add_set(reps=10, target=30, unit="kg")
+                    .add_set(reps=10, target=32, unit="kg")
+                    .add_set(reps=10, target=35, unit="kg"),
+                    Exercise("Incline bench").add_sets(
+                        reps=10,
+                        target=20,
+                        unit="kg",
+                        count=3,
+                    ),
+                )
+            )
+        )
+    )
+
+
+class ParseTargetTests(unittest.TestCase):
+    def test_absolute_from_number(self) -> None:
+        self.assertEqual(
+            parse_target(50, "kg"),
+            {"type": "absolute", "value": 50.0, "unit": "kg"},
+        )
+
+    def test_percentage_from_string(self) -> None:
+        self.assertEqual(
+            parse_target("75%", "kg"),
+            {"type": "percentage", "value": 75.0, "unit": "kg"},
+        )
+
+    def test_rejects_ambiguous_string(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_target("50", "kg")
+
+
+class ForgePlanBuildTests(unittest.TestCase):
+    def test_fluent_build_matches_v3_shape(self) -> None:
+        plan = build_sample_plan()
         data = plan.to_dict()
-        self.assertEqual(data["schemaVersion"], "2.0.0")
-        self.assertEqual(data["name"], "Strength")
+
+        self.assertEqual(data["schemaVersion"], SCHEMA_VERSION)
+        self.assertEqual(data["name"], "1 week bench")
         self.assertEqual(len(data["weeks"]), 1)
-        self.assertEqual(data["weeks"][0]["days"][0]["code"], "w1d1")
-        set_entry = data["weeks"][0]["days"][0]["exercises"][0]["sets"][0]
-        self.assertEqual(set_entry["id"], "w1d1-bs-1")
-        self.assertEqual(set_entry["planned"]["reps"], 5)
+        day = data["weeks"][0]["days"][0]
+        self.assertEqual(day["code"], "w1d1")
+        self.assertEqual(len(day["blocks"]), 2)
+        self.assertEqual(len(day["blocks"][0]["exercises"]), 1)
+        self.assertEqual(len(day["blocks"][1]["exercises"]), 2)
+        self.assertEqual(len(day["blocks"][0]["exercises"][0]["sets"]), 3)
 
-    def test_add_set_notes(self) -> None:
-        plan = Plan.empty("Notes")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Lunge")
-        plan.add_set(
-            week_index=1,
-            day_index=1,
-            reps=3,
-            load_value=0,
-            load_type="absolute",
-            notes="per side",
+    def test_output_passes_json_schema(self) -> None:
+        assert_valid_schema(self, build_sample_plan().to_dict())
+
+    def test_percentage_target_in_output(self) -> None:
+        plan = (
+            Plan("Pct")
+            .add_week(
+                Week()
+                .add_day(
+                    Day()
+                    .add_exercise(
+                        Exercise("Squat").add_set(reps=5, target="85%", unit="kg")
+                    )
+                )
+            )
         )
-        planned = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]
-        self.assertEqual(planned["reps"], 3)
-        self.assertEqual(planned["notes"], "per side")
-
-    def test_add_day_derives_code_from_position(self) -> None:
-        plan = Plan.empty("Codes")
-        plan.add_week()
-        plan.add_day(week_index=1, name="Mon")
-        plan.add_day(week_index=1, name="Wed")
-        days = plan.to_dict()["weeks"][0]["days"]
-        self.assertEqual(days[0]["code"], "w1d1")
-        self.assertEqual(days[1]["code"], "w1d2")
-
-    def test_add_week_appends_when_index_omitted(self) -> None:
-        plan = Plan.empty("Weeks")
-        plan.add_week(label="A")
-        plan.add_week(label="B")
-        labels = [w["label"] for w in plan.to_dict()["weeks"]]
-        self.assertEqual(labels, ["A", "B"])
-        self.assertEqual(plan.to_dict()["weeks"][1]["index"], 2)
-
-    def test_add_set_by_exercise_name(self) -> None:
-        plan = Plan.empty("Named ex")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Bench")
-        plan.add_exercise(week_index=1, day_index=1, name="Row")
-        plan.add_set(
-            week_index=1,
-            day_index=1,
-            exercise_name="Bench",
-            reps=8,
-            load_value=60,
-            unit="kg",
+        target = (
+            plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]["sets"][0][
+                "planned"
+            ]["target"]
         )
-        sets = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"]
-        self.assertEqual(len(sets), 1)
-        self.assertEqual(sets[0]["planned"]["reps"], 8)
+        self.assertEqual(target["type"], "percentage")
+        self.assertEqual(target["value"], 85.0)
+        assert_valid_schema(self, plan.to_dict())
 
-    def test_percentage_set(self) -> None:
-        plan = Plan.empty("Pct")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Bench")
-        plan.add_set(
-            week_index=1,
-            day_index=1,
-            reps=5,
-            load_type="percentage",
-            load_value=85,
-            unit="kg",
+
+class ForgePlanEditTests(unittest.TestCase):
+    def test_positional_update(self) -> None:
+        plan = build_sample_plan()
+        plan.week(0).day(0).block(0).exercise(0).set(0).update(reps=6, target=55, unit="kg")
+
+        first_set = (
+            plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]["sets"][0]
         )
+        self.assertEqual(first_set["planned"]["reps"], 6)
+        self.assertEqual(first_set["planned"]["target"]["value"], 55.0)
+        assert_valid_schema(self, plan.to_dict())
 
-        load = plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"][0]["planned"]["load"]
-        self.assertEqual(load["type"], "percentage")
-        self.assertEqual(load["value"], 85)
-        self.assertEqual(load["unit"], "kg")
+    def test_flat_exercise_navigation(self) -> None:
+        plan = build_sample_plan()
+        plan.week(0).day(0).exercise(1).set(0).update(target="70%", unit="kg")
 
-    def test_move_week_renumbers_indices(self) -> None:
-        plan = Plan.empty("Reorder")
-        plan.add_week(index=1, label="A")
-        plan.add_week(index=2, label="B")
-        plan.move_week(0, 1)
-
-        weeks = plan.to_dict()["weeks"]
-        self.assertEqual(weeks[0]["label"], "B")
-        self.assertEqual(weeks[0]["index"], 1)
-        self.assertEqual(weeks[1]["label"], "A")
-        self.assertEqual(weeks[1]["index"], 2)
-
-    def test_move_day_renumbers_codes(self) -> None:
-        plan = Plan.empty("Days")
-        plan.add_week()
-        plan.add_day(week_index=1, name="Mon")
-        plan.add_day(week_index=1, name="Wed")
-        plan.move_day(1, 0, 1)
-
-        days = plan.to_dict()["weeks"][0]["days"]
-        self.assertEqual(days[0]["name"], "Wed")
-        self.assertEqual(days[0]["code"], "w1d1")
-        self.assertEqual(days[1]["name"], "Mon")
-        self.assertEqual(days[1]["code"], "w1d2")
-
-    def test_move_exercise(self) -> None:
-        plan = Plan.empty("Ex")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Squat")
-        plan.add_exercise(week_index=1, day_index=1, name="Bench")
-        plan.move_exercise(1, 1, 0, 1)
-
-        names = [
-            ex["name"]
-            for ex in plan.to_dict()["weeks"][0]["days"][0]["exercises"]
-        ]
-        self.assertEqual(names, ["Bench", "Squat"])
-
-    def test_move_set(self) -> None:
-        plan = Plan.empty("Sets")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Curl")
-        plan.add_set(week_index=1, day_index=1, reps=8, load_value=20, unit="kg")
-        plan.add_set(week_index=1, day_index=1, reps=12, load_value=15, unit="kg")
-        plan.move_set(1, 1, 0, 0, 1)
-
-        reps = [
-            s["planned"]["reps"]
-            for s in plan.to_dict()["weeks"][0]["days"][0]["exercises"][0]["sets"]
-        ]
-        self.assertEqual(reps, [12, 8])
-
-    def test_remove_week(self) -> None:
-        plan = Plan.empty("Rm")
-        plan.add_week()
-        plan.add_week()
-        plan.remove_week(0)
-        self.assertEqual(len(plan.to_dict()["weeks"]), 1)
-        self.assertEqual(plan.to_dict()["weeks"][0]["index"], 1)
-
-    def test_remove_day_exercise_set(self) -> None:
-        plan = Plan.empty("Rm nested")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="A")
-        plan.add_exercise(week_index=1, day_index=1, name="B")
-        plan.add_set(
-            week_index=1,
-            day_index=1,
-            exercise_name="A",
-            reps=5,
-            load_value=50,
-            unit="kg",
+        superset_first = (
+            plan.to_dict()["weeks"][0]["days"][0]["blocks"][1]["exercises"][0]["sets"][0]
         )
-        plan.remove_set(1, 1, 0, 0)
-        plan.remove_exercise(1, 1, 0)
-        plan.remove_day(1, 1)
+        self.assertEqual(superset_first["planned"]["target"]["type"], "percentage")
+        assert_valid_schema(self, plan.to_dict())
 
-        data = plan.to_dict()
-        self.assertEqual(len(data["weeks"][0]["days"]), 1)
-        self.assertEqual(data["weeks"][0]["days"][0]["code"], "w1d1")
-        self.assertEqual(len(data["weeks"][0]["days"][0]["exercises"]), 1)
-        self.assertEqual(data["weeks"][0]["days"][0]["exercises"][0]["name"], "B")
+    def test_ref_add_set_on_existing_exercise(self) -> None:
+        plan = build_sample_plan()
+        plan.week(0).day(0).block(0).exercise(0).add_set(reps=3, target=60, unit="kg")
 
-    def test_from_json_file_missing_uses_empty_template(self) -> None:
+        sets = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]["sets"]
+        self.assertEqual(len(sets), 4)
+        assert_valid_schema(self, plan.to_dict())
+
+    def test_move_and_remove_day(self) -> None:
+        plan = (
+            Plan("Two days")
+            .add_week(
+                Week()
+                .add_day(Day(name="Mon").add_exercise(Exercise("A").add_set(reps=5, target=10, unit="kg")))
+                .add_day(Day(name="Wed").add_exercise(Exercise("B").add_set(reps=5, target=10, unit="kg")))
+            )
+        )
+        plan.week(0).day(0).move(1)
+        names = [day["name"] for day in plan.to_dict()["weeks"][0]["days"]]
+        self.assertEqual(names, ["Wed", "Mon"])
+        plan.week(0).day(1).remove()
+        assert_valid_schema(self, plan.to_dict())
+
+
+class ForgePlanSeedTests(unittest.TestCase):
+    def test_from_json_file_empty_when_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            path = str(Path(tmp) / "missing.json")
-            plan = Plan.from_json_file(path)
+            plan = Plan.from_json_file(str(Path(tmp) / "missing.json"))
             self.assertTrue(plan.is_empty())
 
     def test_write_json_round_trip(self) -> None:
-        plan = Plan.empty("Out")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        plan.add_exercise(week_index=1, day_index=1, name="Bench")
-        plan.add_set(week_index=1, day_index=1, reps=3, load_value=60, unit="kg")
-
+        plan = build_sample_plan()
         with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "output" / "plan.json"
-            plan.write_json(str(out))
-            loaded = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(loaded["name"], "Out")
-            self.assertEqual(len(loaded["weeks"][0]["days"][0]["exercises"]), 1)
+            path = Path(tmp) / "output" / "plan.json"
+            plan.write_json(str(path))
+            loaded = Plan.from_json_file(str(path))
+            self.assertEqual(loaded.to_dict(), plan.to_dict())
 
-    def test_summarize_nonempty(self) -> None:
-        plan = Plan.empty("Named")
-        plan.add_week()
-        plan.add_day(week_index=1)
-        text = summarize(plan)
-        self.assertIn("1 week", text)
 
-    def test_validate_day_code_rejects_uppercase(self) -> None:
-        validate_day_code("w1d1")
-        with self.assertRaises(ValueError) as ctx:
-            validate_day_code("W1D1")
-        self.assertIn("lowercase", str(ctx.exception).lower())
-
-    def test_format_day_code(self) -> None:
-        self.assertEqual(format_day_code(2, 3), "w2d3")
-
-    def test_load_seed_from_file_invalid_json(self) -> None:
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
-            handle.write("{not json")
-            handle.flush()
-            data = load_seed_from_file(handle.name)
-        self.assertEqual(data, empty_plan_template())
+class SummarizeTests(unittest.TestCase):
+    def test_summarize_counts_blocks(self) -> None:
+        text = summarize(build_sample_plan())
+        self.assertIn('plan "1 week bench"', text)
+        self.assertIn("2 block(s)", text)
 
 
 if __name__ == "__main__":

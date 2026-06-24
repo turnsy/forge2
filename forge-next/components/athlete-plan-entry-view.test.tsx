@@ -3,6 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AthletePlanEntryView } from "@/components/athlete-plan-entry-view";
 import { completeDayInPlan } from "@/lib/athlete/plan/domain";
+import {
+  makeBlock,
+  makeDay,
+  makeExercise,
+  makeSet,
+} from "@/lib/plans/__tests__/fixtures";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const mockSaveSetActualsAction = vi.fn();
@@ -20,65 +26,61 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         label: "Week 1",
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Back Squat",
-                sets: [
-                  {
-                    id: "w1d1-bs-1",
-                    planned: {
-                      type: "exact",
-                      reps: 8,
-                      load: { type: "absolute", value: 60, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
-                  {
-                    id: "w1d1-bs-2",
-                    planned: {
-                      type: "exact",
-                      reps: 6,
-                      load: {
-                        type: "percentage",
-                        value: 75,
-                        unit: "kg",
-                      },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "back-squat",
+                    name: "Back Squat",
+                    sets: [
+                      makeSet({
+                        id: "w1d1-bs-1",
+                        planned: {
+                          type: "exact",
+                          reps: 8,
+                          target: { type: "absolute", value: 60, unit: "kg" },
+                        },
+                      }),
+                      makeSet({
+                        id: "w1d1-bs-2",
+                        planned: {
+                          type: "exact",
+                          reps: 6,
+                          target: {
+                            type: "percentage",
+                            value: 75,
+                            unit: "kg",
+                          },
+                        },
+                      }),
+                    ],
+                  }),
+                  makeExercise({
+                    id: "conditioning",
+                    name: "Conditioning",
+                    sets: [
+                      makeSet({
+                        id: "w1d1-run-1",
+                        planned: {
+                          type: "target",
+                          instruction: "Run 400m at RPE 7",
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
-              {
-                name: "Conditioning",
-                sets: [
-                  {
-                    id: "w1d1-run-1",
-                    planned: {
-                      type: "target",
-                      instruction: "Run 400m at RPE 7",
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
-                ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -93,37 +95,40 @@ function makeCompletedPlan(): WorkoutPlan {
       ...week,
       days: week.days.map((day) => ({
         ...day,
-        exercises: day.exercises.map((exercise) => ({
-          ...exercise,
-          sets: exercise.sets.map((set) => {
-            if (set.planned.type === "target") {
-              return set;
-            }
+        blocks: day.blocks.map((block) => ({
+          ...block,
+          exercises: block.exercises.map((exercise) => ({
+            ...exercise,
+            sets: exercise.sets.map((set) => {
+              if (set.planned.type === "target") {
+                return set;
+              }
 
-            if (set.id === "w1d1-bs-1") {
+              if (set.id === "w1d1-bs-1") {
+                return {
+                  ...set,
+                  actual: {
+                    reps: 8,
+                    target: { type: "absolute" as const, value: 60, unit: "kg" as const },
+                  },
+                };
+              }
+
               return {
                 ...set,
                 actual: {
-                  reps: 8,
-                  load: { type: "absolute" as const, value: 60, unit: "kg" as const },
+                  reps: 6,
+                  target: { type: "absolute" as const, value: 75, unit: "kg" as const },
                 },
               };
-            }
-
-            return {
-              ...set,
-              actual: {
-                reps: 6,
-                load: { type: "absolute" as const, value: 75, unit: "kg" as const },
-              },
-            };
-          }),
+            }),
+          })),
         })),
       })),
     })),
   };
 
-  return completeDayInPlan(filled, 1, 1).plan;
+  return completeDayInPlan(filled, 0, 0).plan;
 }
 
 describe("AthletePlanEntryView", () => {
@@ -134,7 +139,7 @@ describe("AthletePlanEntryView", () => {
     mockSaveSetActualsAction.mockResolvedValue({ ok: true });
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: null,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makeCompletedPlan(),
     });
@@ -154,7 +159,7 @@ describe("AthletePlanEntryView", () => {
     expect(screen.getByRole("heading", { name: "Strength Block" })).toBeInTheDocument();
     expect(screen.getByLabelText("Week")).toHaveTextContent("Week 1");
     expect(screen.getByLabelText("Day")).toHaveTextContent("Day 1");
-    expect(screen.getByText("Back Squat")).toBeInTheDocument();
+    expect(screen.getAllByText("Back Squat").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Run 400m at RPE 7")).toBeInTheDocument();
 
     expect(screen.getByPlaceholderText("8")).toBeInTheDocument();
@@ -167,9 +172,9 @@ describe("AthletePlanEntryView", () => {
 
   it("uses a green outline on saved complete set rows", () => {
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].sets[0].actual = {
+    plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].actual = {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     };
 
     const { container } = render(
@@ -292,7 +297,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: 2,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makeCompletedPlan(),
     });
@@ -313,7 +318,7 @@ describe("AthletePlanEntryView", () => {
     await user.click(screen.getByRole("button", { name: "Complete" }));
 
     await waitFor(() => {
-      expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 1, 1);
+      expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 0, 0);
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("Day completed!")).toBeInTheDocument();
@@ -343,7 +348,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: 2,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makeCompletedPlan(),
     });
@@ -360,7 +365,7 @@ describe("AthletePlanEntryView", () => {
     await user.click(screen.getByRole("button", { name: "Skip & Complete" }));
 
     await waitFor(() => {
-      expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 1, 1);
+      expect(mockCompleteDayAction).toHaveBeenCalledWith("assignment-1", 0, 0);
     });
   });
 
@@ -369,7 +374,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: null,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makeCompletedPlan(),
     });
@@ -406,7 +411,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: null,
+      nextDayPos: null,
       allDaysDone: true,
       plan: makeCompletedPlan(),
     });
@@ -436,7 +441,7 @@ describe("AthletePlanEntryView", () => {
     const plan = makePlan();
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: 2,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makeCompletedPlan(),
     });
@@ -459,13 +464,13 @@ describe("AthletePlanEntryView", () => {
 
   it("renders saved actual values on mount after reload", () => {
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].sets[0].actual = {
+    plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].actual = {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     };
-    plan.weeks[0].days[0].exercises[0].sets[1].actual = {
+    plan.weeks[0].days[0].blocks[0].exercises[0].sets[1].actual = {
       reps: 6,
-      load: { type: "absolute", value: 185, unit: "kg" },
+      target: { type: "absolute", value: 185, unit: "kg" },
     };
 
     render(
@@ -499,7 +504,7 @@ describe("AthletePlanEntryView", () => {
     await vi.advanceTimersByTimeAsync(800);
 
     const refreshedPlan = structuredClone(plan);
-    refreshedPlan.weeks[0].days[0].exercises[0].sets[0].actual = { reps: 8 };
+    refreshedPlan.weeks[0].days[0].blocks[0].exercises[0].sets[0].actual = { reps: 8 };
 
     rerender(
       <AthletePlanEntryView

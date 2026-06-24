@@ -1,4 +1,5 @@
-import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Block, Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { createBlockId } from "@/lib/plans/day-blocks";
 
 export function createSetId(): string {
   return crypto.randomUUID();
@@ -14,7 +15,7 @@ export function createDefaultSet(): Set {
     planned: {
       type: "exact",
       reps: 10,
-      load: { type: "absolute", value: 0, unit: "lb" },
+      target: { type: "absolute", value: 0, unit: "lb" },
     },
     actual: null,
     status: "planned",
@@ -30,13 +31,26 @@ export function createDefaultExercise(): Exercise {
   };
 }
 
+export function createDefaultBlock(): Block {
+  return {
+    id: createBlockId(),
+    exercises: [createDefaultExercise()],
+  };
+}
+
+export function createDefaultSupersetBlock(): Block {
+  return {
+    id: createBlockId(),
+    exercises: [createDefaultExercise(), createDefaultExercise()],
+  };
+}
+
 export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name,
     weeks: [
       {
-        index: 1,
         days: [createDefaultDay()],
       },
     ],
@@ -45,18 +59,22 @@ export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
 
 export function createDefaultDay(): Day {
   return {
-    index: 1,
     code: "w1d1",
-    exercises: [createDefaultExercise()],
+    blocks: [createDefaultBlock()],
   };
 }
 
 export function isDefaultDayContent(day: Day): boolean {
-  if (day.exercises.length !== 1) {
+  if (day.blocks.length !== 1) {
     return false;
   }
 
-  const exercise = day.exercises[0];
+  const block = day.blocks[0];
+  if (block.exercises.length !== 1) {
+    return false;
+  }
+
+  const exercise = block.exercises[0];
   if (exercise.name !== "New Exercise" || exercise.sets.length !== 1) {
     return false;
   }
@@ -66,7 +84,7 @@ export function isDefaultDayContent(day: Day): boolean {
     return false;
   }
 
-  const load = set.planned.load;
+  const load = set.planned.target;
   return (
     set.planned.reps === 10 &&
     load.type === "absolute" &&

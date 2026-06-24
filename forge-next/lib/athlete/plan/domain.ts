@@ -1,34 +1,37 @@
+import {
+  flattenDayExercises,
+  mapDayBlocks,
+  updateFlattenedSet,
+} from "@/lib/plans/day-blocks";
+import { parseRepsInput } from "@/lib/plans/parse-reps";
 import type {
   ActualSet,
   Day,
   Exercise,
-  Load,
+  SetTarget,
   Set,
   Week,
   WorkoutPlan,
 } from "@/lib/plans/workout-plan";
 
 export type CurrentDayLocation = {
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
   week: Week;
   day: Day;
 };
 
 export function findCurrentDay(plan: WorkoutPlan): CurrentDayLocation | null {
-  for (const week of plan.weeks) {
-    for (const day of week.days) {
-      const hasIncomplete = day.exercises.some((exercise) =>
+  for (let weekPos = 0; weekPos < plan.weeks.length; weekPos += 1) {
+    const week = plan.weeks[weekPos];
+    for (let dayPos = 0; dayPos < week.days.length; dayPos += 1) {
+      const day = week.days[dayPos];
+      const hasIncomplete = flattenDayExercises(day).some((exercise) =>
         exercise.sets.some((set) => set.status === "planned"),
       );
 
       if (hasIncomplete) {
-        return {
-          weekIndex: week.index,
-          dayIndex: day.index,
-          week,
-          day,
-        };
+        return { weekPos, dayPos, week, day };
       }
     }
   }
@@ -47,7 +50,7 @@ export function computePlanCompletionPercent(plan: WorkoutPlan): number {
   for (const week of plan.weeks) {
     for (const day of week.days) {
       totalDays += 1;
-      const dayComplete = day.exercises.every((exercise) =>
+      const dayComplete = flattenDayExercises(day).every((exercise) =>
         exercise.sets.every((set) => set.status === "completed"),
       );
       if (dayComplete) {
@@ -81,7 +84,7 @@ export function isSetActualComplete(set: Set): boolean {
     return false;
   }
 
-  return set.actual.load !== undefined;
+  return set.actual.target !== undefined;
 }
 
 export function isExerciseComplete(exercise: Exercise): boolean {
@@ -89,38 +92,25 @@ export function isExerciseComplete(exercise: Exercise): boolean {
 }
 
 export function dayHasUnfilledNonTargetSets(day: Day): boolean {
-  return day.exercises.some((exercise) =>
+  return flattenDayExercises(day).some((exercise) =>
     exercise.sets.some(
       (set) => set.planned.type !== "target" && !isSetActualComplete(set),
     ),
   );
 }
 
-export function parseRepsInput(value: string): number | string | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (/^\d+$/.test(trimmed)) {
-    return Number(trimmed);
-  }
-
-  return trimmed;
-}
-
-export function parseLoadInput(
+export function parseTargetInput(
   value: string,
-  plannedLoad: Load,
-): Load | null {
+  plannedTarget: SetTarget,
+): SetTarget | null {
   const trimmed = value.trim();
   if (!trimmed) {
     return null;
   }
 
-  const unit = plannedLoad.unit;
+  const unit = plannedTarget.unit;
 
-  if (plannedLoad.type === "absolute") {
+  if (plannedTarget.type === "absolute") {
     const numeric = Number(trimmed);
     if (!Number.isFinite(numeric)) {
       return null;
@@ -157,7 +147,7 @@ export function parseLoadInput(
 
 export function buildActualFromInputs(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ActualSet | null {
   if (set.planned.type === "target") {
@@ -165,18 +155,18 @@ export function buildActualFromInputs(
   }
 
   const reps = parseRepsInput(repsInput);
-  const load = parseLoadInput(loadInput, set.planned.load);
+  const parsedTarget = parseTargetInput(targetInput, set.planned.target);
 
-  if (reps === null || load === null) {
+  if (reps === null || parsedTarget === null) {
     return null;
   }
 
-  return { reps, load };
+  return { reps, target: parsedTarget };
 }
 
 export function buildActualForSave(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ActualSet | null {
   if (set.planned.type === "target") {
@@ -184,12 +174,12 @@ export function buildActualForSave(
   }
 
   const parsedReps = parseRepsInput(repsInput);
-  const parsedLoad = parseLoadInput(loadInput, set.planned.load);
+  const parsedTarget = parseTargetInput(targetInput, set.planned.target);
   const reps =
     parsedReps ??
     (set.actual?.reps !== undefined ? set.actual.reps : null);
 
-  if (reps === null && parsedLoad === null) {
+  if (reps === null && parsedTarget === null) {
     return null;
   }
 
@@ -197,30 +187,30 @@ export function buildActualForSave(
     return null;
   }
 
-  const load = parsedLoad ?? set.actual?.load;
+  const target = parsedTarget ?? set.actual?.target;
 
-  return load !== undefined ? { reps, load } : { reps };
+  return target !== undefined ? { reps, target } : { reps };
 }
 
-export function formatActualLoadInput(set: Set): string {
-  if (!set.actual?.load) {
+export function formatActualTargetInput(set: Set): string {
+  if (!set.actual?.target) {
     return "";
   }
 
-  if (set.actual.load.type === "absolute") {
-    return String(set.actual.load.value);
+  if (set.actual.target.type === "absolute") {
+    return String(set.actual.target.value);
   }
 
-  return String(set.actual.load.value ?? "");
+  return String(set.actual.target.value ?? "");
 }
 
 export function setFormStateFromActual(set: Set): {
   reps: string;
-  load: string;
+  target: string;
 } {
   return {
     reps: set.actual?.reps !== undefined ? String(set.actual.reps) : "",
-    load: formatActualLoadInput(set),
+    target: formatActualTargetInput(set),
   };
 }
 
@@ -234,7 +224,7 @@ export function mergeSavedActual(
 
   return {
     reps: incoming.reps ?? existing.reps,
-    load: incoming.load ?? existing.load,
+    target: incoming.target ?? existing.target,
     completedAt: incoming.completedAt ?? existing.completedAt,
     notes: incoming.notes ?? existing.notes,
   };
@@ -246,63 +236,43 @@ export type ResolveSaveActualResult =
 
 export function resolveSaveActual(
   repsInput: string,
-  loadInput: string,
+  targetInput: string,
   set: Set,
 ): ResolveSaveActualResult {
-  if (!repsInput.trim() && !loadInput.trim() && set.actual !== null) {
+  if (!repsInput.trim() && !targetInput.trim() && set.actual !== null) {
     return { type: "skip" };
   }
 
-  return { type: "save", actual: buildActualForSave(repsInput, loadInput, set) };
+  return { type: "save", actual: buildActualForSave(repsInput, targetInput, set) };
 }
 
 export function applySetActuals(
   plan: WorkoutPlan,
-  weekIdx: number,
-  dayIdx: number,
-  exerciseIdx: number,
-  setIdx: number,
+  weekPos: number,
+  dayPos: number,
+  exercisePos: number,
+  setPos: number,
   actual: ActualSet | null,
 ): WorkoutPlan {
   return {
     ...plan,
-    weeks: plan.weeks.map((week) => {
-      if (week.index !== weekIdx) {
+    weeks: plan.weeks.map((week, currentWeekPos) => {
+      if (currentWeekPos !== weekPos) {
         return week;
       }
 
       return {
         ...week,
-        days: week.days.map((day) => {
-          if (day.index !== dayIdx) {
+        days: week.days.map((day, currentDayPos) => {
+          if (currentDayPos !== dayPos) {
             return day;
           }
 
-          return {
-            ...day,
-            exercises: day.exercises.map((exercise, currentExerciseIdx) => {
-              if (currentExerciseIdx !== exerciseIdx) {
-                return exercise;
-              }
-
-              return {
-                ...exercise,
-                sets: exercise.sets.map((set, currentSetIdx) => {
-                  if (currentSetIdx !== setIdx) {
-                    return set;
-                  }
-
-                  return {
-                    ...set,
-                    actual:
-                      actual === null
-                        ? null
-                        : mergeSavedActual(set.actual, actual),
-                  };
-                }) as typeof exercise.sets,
-              };
-            }) as typeof day.exercises,
-          };
+          return updateFlattenedSet(day, exercisePos, setPos, (set) => ({
+            ...set,
+            actual:
+              actual === null ? null : mergeSavedActual(set.actual, actual),
+          }));
         }) as typeof week.days,
       };
     }) as typeof plan.weeks,
@@ -325,31 +295,31 @@ function buildTargetCompletionActual(set: Set, completedAt: string): ActualSet {
 
 export function completeDayInPlan(
   plan: WorkoutPlan,
-  weekIdx: number,
-  dayIdx: number,
+  weekPos: number,
+  dayPos: number,
 ): { plan: WorkoutPlan; setStatuses: { setIndex: number; status: SetCompletionStatus }[] } {
   const completedAt = new Date().toISOString();
   const setStatuses: { setIndex: number; status: SetCompletionStatus }[] = [];
 
   const nextPlan: WorkoutPlan = {
     ...plan,
-    weeks: plan.weeks.map((week) => {
-      if (week.index !== weekIdx) {
+    weeks: plan.weeks.map((week, currentWeekPos) => {
+      if (currentWeekPos !== weekPos) {
         return week;
       }
 
       return {
         ...week,
-        days: week.days.map((day) => {
-          if (day.index !== dayIdx) {
+        days: week.days.map((day, currentDayPos) => {
+          if (currentDayPos !== dayPos) {
             return day;
           }
 
           let daySetIndex = 0;
 
-          return {
-            ...day,
-            exercises: day.exercises.map((exercise) => ({
+          return mapDayBlocks(day, (block) => ({
+            ...block,
+            exercises: block.exercises.map((exercise) => ({
               ...exercise,
               sets: exercise.sets.map((set) => {
                 const status = resolveSetCompletionStatus(set);
@@ -360,7 +330,7 @@ export function completeDayInPlan(
                   return { ...set, status };
                 }
 
-                const actual =
+                const nextActual =
                   set.planned.type === "target"
                     ? buildTargetCompletionActual(set, completedAt)
                     : set.actual
@@ -370,11 +340,11 @@ export function completeDayInPlan(
                 return {
                   ...set,
                   status: "completed" as const,
-                  actual,
+                  actual: nextActual,
                 };
               }) as typeof exercise.sets,
-            })) as typeof day.exercises,
-          };
+            })) as typeof block.exercises,
+          }));
         }) as typeof week.days,
       };
     }) as typeof plan.weeks,
@@ -397,28 +367,30 @@ function resolveSetCompletionStatus(set: Set): SetCompletionStatus {
 
 export function findNextDayAfter(
   plan: WorkoutPlan,
-  weekIdx: number,
-  dayIdx: number,
+  weekPos: number,
+  dayPos: number,
 ): CurrentDayLocation | null {
   let foundCurrent = false;
 
-  for (const week of plan.weeks) {
-    for (const day of week.days) {
+  for (let currentWeekPos = 0; currentWeekPos < plan.weeks.length; currentWeekPos += 1) {
+    const week = plan.weeks[currentWeekPos];
+    for (let currentDayPos = 0; currentDayPos < week.days.length; currentDayPos += 1) {
+      const day = week.days[currentDayPos];
       if (!foundCurrent) {
-        if (week.index === weekIdx && day.index === dayIdx) {
+        if (currentWeekPos === weekPos && currentDayPos === dayPos) {
           foundCurrent = true;
         }
         continue;
       }
 
-      const hasIncomplete = day.exercises.some((exercise) =>
+      const hasIncomplete = flattenDayExercises(day).some((exercise) =>
         exercise.sets.some((set) => set.status === "planned"),
       );
 
       if (hasIncomplete) {
         return {
-          weekIndex: week.index,
-          dayIndex: day.index,
+          weekPos: currentWeekPos,
+          dayPos: currentDayPos,
           week,
           day,
         };
@@ -428,3 +400,5 @@ export function findNextDayAfter(
 
   return findCurrentDay(plan);
 }
+
+export { parseRepsInput };

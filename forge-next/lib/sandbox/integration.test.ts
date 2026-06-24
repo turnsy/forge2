@@ -9,15 +9,17 @@ import {
 } from "@/lib/sandbox/constants";
 
 const EXAMPLE_RUN_PY = `
-from forge_plan import Plan
+from forge_plan import Day, Exercise, Plan, Week
 
 plan = Plan.from_json_file("current_plan.json")
 if plan.is_empty():
-    plan = Plan.empty("Integration Plan")
-plan.add_week(label="Week 1")
-plan.add_day(week_index=1, name="Lower")
-plan.add_exercise(week_index=1, day_index=1, name="Back Squat")
-plan.add_set(week_index=1, day_index=1, reps=5, load_value=100, unit="kg")
+    plan = Plan("Integration Plan").add_week(
+        Week(label="Week 1").add_day(
+            Day(name="Lower").add_exercise(
+                Exercise("Back Squat").add_set(reps=5, target=100, unit="kg")
+            )
+        )
+    )
 plan.write_json("output/plan.json")
 `.trim();
 
@@ -58,11 +60,16 @@ describe.runIf(integrationEnabled)("runSandbox integration", () => {
     }
 
     const iteratePy = `
-from forge_plan import Plan
+from forge_plan import Day, Exercise, Plan, Week
 
 plan = Plan.from_json_file("current_plan.json")
-plan.add_week(label="Week 2")
-plan.add_day(week_index=2)
+plan.add_week(
+    Week(label="Week 2").add_day(
+        Day().add_exercise(
+            Exercise("Front Squat").add_set(reps=5, target=80, unit="kg")
+        )
+    )
+)
 plan.write_json("output/plan.json")
 `.trim();
 

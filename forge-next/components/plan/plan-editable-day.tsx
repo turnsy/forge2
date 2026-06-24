@@ -12,7 +12,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -25,20 +24,27 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input } from "@/components/ui";
+import { BlockHeader } from "@/components/plan/block-header";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { athleteExerciseCardClassName } from "@/components/plan/plan-athlete-parts";
 import { formatReps } from "@/lib/plans/display";
+import { parseRepsValue } from "@/lib/plans/parse-reps";
+import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
 import {
+  createDefaultBlock,
+  createDefaultExercise,
   createDefaultSet,
+  createDefaultSupersetBlock,
   createExerciseId,
   createSetId,
 } from "@/lib/plans/plan-defaults";
+import { createBlockId, isSupersetBlock } from "@/lib/plans/day-blocks";
 import type {
   Day,
   Exercise,
   ExactPlannedSet,
-  Load,
-  RepsValue,
+  SetTarget,
   Set,
 } from "@/lib/plans/workout-plan";
 import {
@@ -49,12 +55,14 @@ import {
 
 export type PlanEditableDayProps = {
   day: Day;
+  dayPos: number;
   disabled: boolean;
   onChange: (day: Day) => void;
   isSetEditable?: (set: Set) => boolean;
   isExerciseEditable?: (exercise: Exercise) => boolean;
   onNeedVideoLink?: (
-    exerciseIndex: number,
+    blockPos: number,
+    exercisePosInBlock: number,
     exerciseName: string,
     currentVideoUrl?: string,
   ) => void;
@@ -63,10 +71,13 @@ export type PlanEditableDayProps = {
 function cloneDayForEditing(day: Day): Day {
   return {
     ...day,
-    exercises: day.exercises.map((exercise) => ({
-      ...ensureExerciseId(exercise),
-      sets: [...exercise.sets],
-    })) as Day["exercises"],
+    blocks: day.blocks.map((block) => ({
+      ...block,
+      exercises: block.exercises.map((exercise) => ({
+        ...ensureExerciseId(exercise),
+        sets: [...exercise.sets],
+      })) as typeof block.exercises,
+    })) as Day["blocks"],
   };
 }
 
@@ -76,19 +87,6 @@ function ensureExerciseId(exercise: Exercise): Exercise {
   }
 
   return { ...exercise, id: createExerciseId() };
-}
-
-function parseRepsValue(value: string): RepsValue {
-  if (value.trim() === "") {
-    return "";
-  }
-
-  const numeric = Number(value);
-  if (!Number.isNaN(numeric) && String(numeric) === value.trim()) {
-    return numeric;
-  }
-
-  return value;
 }
 
 function cloneSetFromPrevious(previous: Set): Set {
@@ -101,7 +99,7 @@ function cloneSetFromPrevious(previous: Set): Set {
     planned: {
       type: "exact",
       reps: previous.planned.reps,
-      load: structuredClone(previous.planned.load),
+      target: structuredClone(previous.planned.target),
       tempo: previous.planned.tempo,
       restSeconds: previous.planned.restSeconds,
       notes: previous.planned.notes,
@@ -110,25 +108,6 @@ function cloneSetFromPrevious(previous: Set): Set {
     status: "planned",
     locked: false,
   };
-}
-
-export function reorderSetsInExercise(
-  sets: Set[],
-  activeId: string,
-  overId: string | undefined,
-): Set[] {
-  if (!overId || activeId === overId) {
-    return sets;
-  }
-
-  const oldIndex = sets.findIndex((set) => set.id === activeId);
-  const newIndex = sets.findIndex((set) => set.id === overId);
-
-  if (oldIndex === -1 || newIndex === -1) {
-    return sets;
-  }
-
-  return arrayMove(sets, oldIndex, newIndex);
 }
 
 const mobileFieldLabelClass =
@@ -165,7 +144,7 @@ function SortableSetRow({
   canDelete,
   repsInputRef,
   onRepsChange,
-  onLoadUpdate,
+  onTargetUpdate,
   onNotesChange,
   onDelete,
 }: {
@@ -176,7 +155,7 @@ function SortableSetRow({
   canDelete: boolean;
   repsInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void);
   onRepsChange: (value: string) => void;
-  onLoadUpdate: (load: Load) => void;
+  onTargetUpdate: (load: SetTarget) => void;
   onNotesChange: (value: string) => void;
   onDelete: () => void;
 }) {
@@ -252,10 +231,10 @@ function SortableSetRow({
       <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-3 max-md:p-0">
         <MobileFieldLabel>Target</MobileFieldLabel>
         <PlanLoadTargetControl
-          load={planned.load}
+          target={planned.target}
           disabled={rowDisabled}
           setNumber={setNumber}
-          onChange={onLoadUpdate}
+          onChange={onTargetUpdate}
         />
       </td>
       <td className="px-2 py-2 max-md:col-span-3 max-md:col-start-1 max-md:row-start-4 max-md:p-0">
@@ -308,11 +287,7 @@ function EditableExerciseBlock({
   onDeleteExercise: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onNeedVideoLink?: (
-    exerciseIndex: number,
-    exerciseName: string,
-    currentVideoUrl?: string,
-  ) => void;
+  onNeedVideoLink?: () => void;
 }) {
   const autoFocusSetIdRef = useRef<string | null>(null);
   const dndId = useId();
@@ -389,9 +364,7 @@ function EditableExerciseBlock({
               icon={<VideoIcon className="h-4 w-4" />}
               aria-label="Add video link"
               disabled={disabled || !isExerciseEditable}
-              onClick={() =>
-                onNeedVideoLink(exerciseIndex, exercise.name, exercise.videoUrl)
-              }
+              onClick={() => onNeedVideoLink?.()}
             />
           ) : null}
           <IconButton
@@ -497,7 +470,7 @@ function EditableExerciseBlock({
                           };
                         });
                       }}
-                      onLoadUpdate={(load) => {
+                      onTargetUpdate={(target) => {
                         if (!isSetEditable(set)) {
                           return;
                         }
@@ -512,7 +485,7 @@ function EditableExerciseBlock({
                             status: "planned",
                             planned: {
                               ...current.planned,
-                              load,
+                              target,
                             },
                           };
                         });
@@ -586,6 +559,7 @@ function EditableExerciseBlock({
 
 export function PlanEditableDay({
   day,
+  dayPos,
   disabled,
   onChange,
   isSetEditable = () => true,
@@ -598,22 +572,61 @@ export function PlanEditableDay({
     onChange(nextDay);
   }
 
-  function updateExercise(exerciseIndex: number, exercise: Exercise) {
-    const nextExercises = [...editableDay.exercises];
-    nextExercises[exerciseIndex] = exercise;
-    emitChange({ ...editableDay, exercises: nextExercises as typeof editableDay.exercises });
+  function updateBlock(blockPos: number, block: typeof editableDay.blocks[number]) {
+    const nextBlocks = [...editableDay.blocks];
+    nextBlocks[blockPos] = block;
+    emitChange({ ...editableDay, blocks: nextBlocks as typeof editableDay.blocks });
   }
 
-  function moveExercise(exerciseIndex: number, direction: -1 | 1) {
-    const targetIndex = exerciseIndex + direction;
-    if (targetIndex < 0 || targetIndex >= editableDay.exercises.length) {
+  function moveExerciseInBlock(
+    blockPos: number,
+    exercisePosInBlock: number,
+    direction: -1 | 1,
+  ) {
+    const block = editableDay.blocks[blockPos];
+    if (!block) {
       return;
     }
 
-    const nextExercises = [...editableDay.exercises];
-    const [moved] = nextExercises.splice(exerciseIndex, 1);
-    nextExercises.splice(targetIndex, 0, moved);
-    emitChange({ ...editableDay, exercises: nextExercises as typeof editableDay.exercises });
+    const targetIndex = exercisePosInBlock + direction;
+    if (targetIndex < 0 || targetIndex >= block.exercises.length) {
+      return;
+    }
+
+    const nextExercises = [...block.exercises];
+    const [movedExercise] = nextExercises.splice(exercisePosInBlock, 1);
+    nextExercises.splice(targetIndex, 0, movedExercise);
+
+    updateBlock(blockPos, {
+      ...block,
+      exercises: nextExercises as typeof block.exercises,
+    });
+  }
+
+  function deleteExercise(blockPos: number, exercisePosInBlock: number) {
+    const block = editableDay.blocks[blockPos];
+    if (!block) {
+      return;
+    }
+
+    if (block.exercises.length > 1) {
+      updateBlock(blockPos, {
+        ...block,
+        exercises: block.exercises.filter(
+          (_, index) => index !== exercisePosInBlock,
+        ) as typeof block.exercises,
+      });
+      return;
+    }
+
+    if (editableDay.blocks.length <= 1) {
+      return;
+    }
+
+    emitChange({
+      ...editableDay,
+      blocks: editableDay.blocks.filter((_, index) => index !== blockPos) as typeof editableDay.blocks,
+    });
   }
 
   return (
@@ -623,7 +636,7 @@ export function PlanEditableDay({
     >
       <Input
         value={editableDay.name ?? ""}
-        placeholder={`Day ${editableDay.index}`}
+        placeholder={`Day ${dayPos + 1}`}
         readOnly={disabled}
         aria-label="Day name"
         className="text-lg font-semibold"
@@ -635,31 +648,73 @@ export function PlanEditableDay({
         }
       />
 
-      {editableDay.exercises.map((exercise, exerciseIndex) => (
-        <EditableExerciseBlock
-          key={exercise.id}
-          exercise={exercise}
-          exerciseIndex={exerciseIndex}
-          exerciseCount={editableDay.exercises.length}
-          disabled={disabled}
-          isSetEditable={isSetEditable}
-          isExerciseEditable={isExerciseEditableFn(exercise)}
-          onExerciseChange={(nextExercise) => updateExercise(exerciseIndex, nextExercise)}
-          onDeleteExercise={() => {
-            emitChange({
-              ...editableDay,
-              exercises: editableDay.exercises.filter(
-                (_, index) => index !== exerciseIndex,
-              ) as Day["exercises"],
-            });
-          }}
-          onMoveUp={() => moveExercise(exerciseIndex, -1)}
-          onMoveDown={() => moveExercise(exerciseIndex, 1)}
-          onNeedVideoLink={onNeedVideoLink}
-        />
+      {editableDay.blocks.map((block, blockPos) => (
+        <div
+          key={block.id}
+          className={isSupersetBlock(block) ? athleteExerciseCardClassName() : "space-y-4"}
+        >
+          {isSupersetBlock(block) ? <BlockHeader block={block} isSuperset /> : null}
+          {block.exercises.map((exercise, exercisePosInBlock) => (
+            <EditableExerciseBlock
+              key={exercise.id}
+              exercise={exercise}
+              exerciseIndex={exercisePosInBlock}
+              exerciseCount={block.exercises.length}
+              disabled={disabled}
+              isSetEditable={isSetEditable}
+              isExerciseEditable={isExerciseEditableFn(exercise)}
+              onExerciseChange={(nextExercise) => {
+                updateBlock(blockPos, {
+                  ...block,
+                  exercises: block.exercises.map((current, index) =>
+                    index === exercisePosInBlock ? nextExercise : current,
+                  ) as typeof block.exercises,
+                });
+              }}
+              onDeleteExercise={() => deleteExercise(blockPos, exercisePosInBlock)}
+              onMoveUp={() => moveExerciseInBlock(blockPos, exercisePosInBlock, -1)}
+              onMoveDown={() => moveExerciseInBlock(blockPos, exercisePosInBlock, 1)}
+              onNeedVideoLink={
+                onNeedVideoLink
+                  ? () =>
+                      onNeedVideoLink(
+                        blockPos,
+                        exercisePosInBlock,
+                        exercise.name,
+                        exercise.videoUrl,
+                      )
+                  : undefined
+              }
+            />
+          ))}
+          {isSupersetBlock(block) ? (
+            <div className="flex justify-center border-t border-glass-border/60 pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                icon={<PlusIcon />}
+                aria-label="Add exercise to superset"
+                disabled={disabled}
+                onClick={() => {
+                  updateBlock(blockPos, {
+                    ...block,
+                    exercises: [
+                      ...block.exercises,
+                      createDefaultExercise(),
+                    ] as typeof block.exercises,
+                  });
+                }}
+              >
+                Add exercise
+              </Button>
+            </div>
+          ) : null}
+        </div>
       ))}
 
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-2">
         <Button
           type="button"
           variant="ghost"
@@ -669,20 +724,42 @@ export function PlanEditableDay({
           aria-label="Add exercise"
           disabled={disabled}
           onClick={() => {
-          emitChange({
-            ...editableDay,
-            exercises: [
-              ...editableDay.exercises,
-              {
-                id: createExerciseId(),
-                name: "New Exercise",
-                sets: [createDefaultSet()],
-              },
-            ] as Day["exercises"],
-          });
-        }}
+            emitChange({
+              ...editableDay,
+              blocks: [
+                ...editableDay.blocks,
+                {
+                  ...createDefaultBlock(),
+                  id: createBlockId(),
+                },
+              ] as typeof editableDay.blocks,
+            });
+          }}
         >
-          Add
+          Add exercise
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          icon={<PlusIcon />}
+          aria-label="Add superset"
+          disabled={disabled}
+          onClick={() => {
+            emitChange({
+              ...editableDay,
+              blocks: [
+                ...editableDay.blocks,
+                {
+                  ...createDefaultSupersetBlock(),
+                  id: createBlockId(),
+                },
+              ] as typeof editableDay.blocks,
+            });
+          }}
+        >
+          Add superset
         </Button>
       </div>
     </div>

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://forge2.app/schemas/workout-plan.schema.json",
   "title": "Workout Plan",
-  "description": "Athlete-facing workout plan schema with week/day structure and one entry per planned set.",
+  "description": "Athlete-facing workout plan schema: Plan → Week → Day → Block → Exercise → Set.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "const": "2.0.0"
+      "const": "3.0.0"
     },
     "id": {
       "$ref": "#/$defs/nonEmptyString"
@@ -60,14 +60,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "index",
         "days"
       ],
       "properties": {
-        "index": {
-          "type": "integer",
-          "minimum": 1
-        },
         "label": {
           "type": "string"
         },
@@ -90,20 +85,41 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "index",
         "code",
-        "exercises"
+        "blocks"
       ],
       "properties": {
-        "index": {
-          "type": "integer",
-          "minimum": 1
-        },
         "code": {
           "type": "string",
           "pattern": "^w[0-9]+d[0-9]+$"
         },
         "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "exercises"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "label": {
           "type": "string"
         },
         "notes": {
@@ -122,6 +138,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "id",
         "name",
         "sets"
       ],
@@ -207,7 +224,7 @@
       "required": [
         "type",
         "reps",
-        "load"
+        "target"
       ],
       "properties": {
         "type": {
@@ -216,8 +233,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "tempo": {
           "type": "string"
@@ -248,8 +265,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "notes": {
           "type": "string"
@@ -264,8 +281,8 @@
         "reps": {
           "$ref": "#/$defs/repsValue"
         },
-        "load": {
-          "$ref": "#/$defs/load"
+        "target": {
+          "$ref": "#/$defs/setTarget"
         },
         "completedAt": {
           "type": "string",
@@ -276,7 +293,7 @@
         }
       }
     },
-    "load": {
+    "setTarget": {
       "oneOf": [
         {
           "$ref": "#/$defs/absoluteLoad"

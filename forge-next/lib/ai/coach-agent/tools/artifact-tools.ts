@@ -1,8 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { getCoachPlanById } from "@/lib/plans/repository";
+import { fetchCoachPlanForTool } from "@/lib/ai/coach-agent/tools/fetch-coach-plan";
 import { summarizePlan } from "@/lib/plans/summarize-plan";
-import { toToolNotFound } from "@/lib/ai/coach-agent/tools/db-tool-errors";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type ArtifactToolsContext = {
@@ -24,17 +23,17 @@ export function createArtifactTools(ctx: ArtifactToolsContext) {
         planId: z.string().uuid().describe("Saved plan id."),
       }),
       execute: async ({ planId }) => {
-        const result = await getCoachPlanById(ctx.coachId, planId);
+        const result = await fetchCoachPlanForTool(ctx.coachId, planId);
 
-        if (result.status === "not_found") {
-          return toToolNotFound("Plan");
-        }
+        if (!result.ok) {
+          if ("notFound" in result) {
+            return result.notFound;
+          }
 
-        if (result.status === "invalid") {
           return {
             ok: false as const,
-            code: "invalid" as const,
-            message: "Plan data failed validation.",
+            code: result.code,
+            message: result.message,
           };
         }
 

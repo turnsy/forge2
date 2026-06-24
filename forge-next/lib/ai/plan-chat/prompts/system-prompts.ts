@@ -11,7 +11,7 @@ export function buildCoachAgentSystemPrompt(input: {
     "- Mutations: accept_coach_link, reject_coach_link, assign_plan",
     "- Open a saved plan for editing (not already in preview): set_current_artifact(planId) — e.g. \"edit Summer Block\", \"add a week to this plan\"",
     "- Start a brand-new plan (user explicitly asks): clear_current_artifact — not when iterating on the current plan",
-    "- Inspect the in-preview plan: summarize_current_artifact",
+    "- Inspect the in-preview plan: summarize_current_artifact (optional week/day for drill-down with set detail)",
     "- Create or change the in-preview plan: get_plan_codegen_guide, then submit_plan_code",
     "",
     "Important boundaries:",
@@ -42,14 +42,4 @@ export function buildCoachAgentSystemPrompt(input: {
   }
 
   return sections.join("\n");
-}
-
-/** @deprecated Use buildCoachAgentSystemPrompt */
-export function buildPlanChatSystemPrompt(input: {
-  currentArtifact: unknown;
-  hasSessionUploads: boolean;
-}): string {
-  return buildCoachAgentSystemPrompt({
-    hasSessionUploads: input.hasSessionUploads,
-  });
 }

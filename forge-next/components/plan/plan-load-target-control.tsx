@@ -8,16 +8,16 @@ import {
   PRESET_LOAD_UNITS,
 } from "@/lib/plans/load-units";
 import {
-  disablePercentageLoad,
-  enablePercentageLoad,
-  getLoadUnit,
-  getLoadTargetValue,
-  isPercentageLoad,
-  parseLoadTargetNumber,
-  updateLoadUnit,
-  updateLoadTargetValue,
+  disablePercentageTarget,
+  enablePercentageTarget,
+  getTargetUnit,
+  getTargetValue,
+  isPercentageTarget,
+  parseTargetNumber,
+  updateTargetUnit,
+  updateTargetValue,
 } from "@/lib/plans/percentage-load";
-import type { Load } from "@/lib/plans/workout-plan";
+import type { SetTarget } from "@/lib/plans/workout-plan";
 
 const unitControlClass = "w-[4.75rem] shrink-0 self-stretch";
 const percentageToggleClass =
@@ -126,52 +126,52 @@ function LoadUnitControl({
 }
 
 export type PlanLoadTargetControlProps = {
-  load: Load;
+  target: SetTarget;
   disabled: boolean;
   setNumber: number;
-  onChange: (load: Load) => void;
+  onChange: (target: SetTarget) => void;
 };
 
 export function PlanLoadTargetControl({
-  load,
+  target,
   disabled,
   setNumber,
   onChange,
 }: PlanLoadTargetControlProps) {
-  const isPercentage = isPercentageLoad(load);
-  const displayUnit = getLoadUnit(load);
-  const loadKey = `${load.type}-${load.value}-${load.unit}`;
-  const [syncedLoadKey, setSyncedLoadKey] = useState(loadKey);
-  const [draft, setDraft] = useState(() => getLoadTargetValue(load));
+  const isPercentage = isPercentageTarget(target);
+  const displayUnit = getTargetUnit(target);
+  const targetKey = `${target.type}-${target.value}-${target.unit}`;
+  const [syncedTargetKey, setSyncedTargetKey] = useState(targetKey);
+  const [draft, setDraft] = useState(() => getTargetValue(target));
 
-  if (loadKey !== syncedLoadKey) {
-    setSyncedLoadKey(loadKey);
-    setDraft(getLoadTargetValue(load));
+  if (targetKey !== syncedTargetKey) {
+    setSyncedTargetKey(targetKey);
+    setDraft(getTargetValue(target));
   }
 
   function handleTogglePercentage() {
     if (isPercentage) {
-      onChange(disablePercentageLoad(load));
+      onChange(disablePercentageTarget(target));
       return;
     }
 
-    onChange(enablePercentageLoad(load));
+    onChange(enablePercentageTarget(target));
   }
 
   function handleTargetChange(event: ChangeEvent<HTMLInputElement>) {
     const next = event.target.value;
     setDraft(next);
 
-    const parsed = parseLoadTargetNumber(next);
+    const parsed = parseTargetNumber(next);
     if (parsed !== undefined) {
-      onChange(updateLoadTargetValue(load, next));
+      onChange(updateTargetValue(target, next));
     }
   }
 
   function handleTargetBlur() {
-    const parsed = parseLoadTargetNumber(draft);
+    const parsed = parseTargetNumber(draft);
     if (parsed === undefined) {
-      setDraft(getLoadTargetValue(load));
+      setDraft(getTargetValue(target));
     }
   }
 
@@ -203,7 +203,7 @@ export function PlanLoadTargetControl({
       <LoadUnitControl
         unit={displayUnit}
         disabled={disabled}
-        onChange={(unit) => onChange(updateLoadUnit(load, unit))}
+        onChange={(unit) => onChange(updateTargetUnit(target, unit))}
       />
     </div>
   );

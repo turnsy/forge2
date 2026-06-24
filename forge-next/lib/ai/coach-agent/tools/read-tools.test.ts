@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { makeWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
 const mockListAthletes = vi.fn();
 const mockGetAthlete = vi.fn();
@@ -27,39 +28,7 @@ import { createReadTools } from "@/lib/ai/coach-agent/tools/read-tools";
 const toolCtx = { messages: [], toolCallId: "1" };
 const coachId = "coach-1";
 
-const samplePlan = {
-  schemaVersion: "2.0.0" as const,
-  name: "Summer Block",
-  weeks: [
-    {
-      index: 1,
-      days: [
-        {
-          index: 1,
-          code: "w1d1",
-          exercises: [
-            {
-              name: "Squat",
-              sets: [
-                {
-                  id: "w1d1-sq-1",
-                  planned: {
-                    type: "exact" as const,
-                    reps: 5,
-                    load: { type: "absolute" as const, value: 100, unit: "kg" as const },
-                  },
-                  actual: null,
-                  status: "planned" as const,
-                  locked: false,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
+const samplePlan = makeWorkoutPlan({ name: "Summer Block" });
 
 describe("createReadTools", () => {
   beforeEach(() => {

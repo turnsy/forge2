@@ -1,7 +1,7 @@
 import type {
   AbsoluteLoad,
   ActualSet,
-  Load,
+  SetTarget,
   PercentageLoad,
   PlannedSet,
   RepsValue,
@@ -14,19 +14,19 @@ export function formatReps(reps: RepsValue): string {
   return String(reps);
 }
 
-export function formatLoad(load: Load): string {
+export function formatTarget(load: SetTarget): string {
   if (load.type === "absolute") {
-    return formatAbsoluteLoad(load);
+    return formatAbsoluteTarget(load);
   }
 
-  return formatPercentageLoad(load);
+  return formatPercentageTarget(load);
 }
 
-function formatAbsoluteLoad(load: AbsoluteLoad): string {
+function formatAbsoluteTarget(load: AbsoluteLoad): string {
   return `${load.value} ${load.unit}`;
 }
 
-export function formatPercentageLoad(load: PercentageLoad): string {
+export function formatPercentageTarget(load: PercentageLoad): string {
   return `${load.value}% (${load.unit})`;
 }
 
@@ -34,7 +34,7 @@ export function formatTargetInstruction(instruction: string): string {
   return instruction;
 }
 
-export function getWeekTitle(week: Week): string {
+export function getWeekTitle(week: Week, weekPos: number): string {
   if (week.label?.trim()) {
     return week.label.trim();
   }
@@ -43,15 +43,15 @@ export function getWeekTitle(week: Week): string {
     return week.name.trim();
   }
 
-  return `Week ${week.index}`;
+  return `Week ${weekPos + 1}`;
 }
 
-export function getDayTitle(day: Day): string {
+export function getDayTitle(day: Day, dayPos: number): string {
   if (day.name?.trim()) {
     return day.name.trim();
   }
 
-  return `Day ${day.index}`;
+  return `Day ${dayPos + 1}`;
 }
 
 export const EMPTY_CELL = "—";
@@ -77,8 +77,8 @@ function getPlannedReps(planned: PlannedSet): RepsValue | undefined {
   return planned.reps;
 }
 
-function getPlannedLoad(planned: PlannedSet): Load | undefined {
-  return planned.load;
+function getPlannedTarget(planned: PlannedSet): SetTarget | undefined {
+  return planned.target;
 }
 
 export function actualRepsMatchesPlanned(
@@ -97,28 +97,98 @@ export function actualRepsMatchesPlanned(
   return String(plannedReps) === String(actual.reps);
 }
 
-export function actualLoadMatchesPlanned(
+export function actualTargetMatchesPlanned(
   planned: PlannedSet,
   actual: ActualSet,
 ): boolean | null {
-  if (!actual.load) {
+  if (!actual.target) {
     return null;
   }
 
-  const plannedLoad = getPlannedLoad(planned);
-  if (!plannedLoad) {
+  const plannedTarget = getPlannedTarget(planned);
+  if (!plannedTarget) {
     return null;
   }
 
-  if (plannedLoad.type === "percentage") {
+  if (plannedTarget.type === "percentage") {
     return true;
   }
 
-  if (actual.load.type !== "absolute" || plannedLoad.type !== "absolute") {
+  if (actual.target.type !== "absolute" || plannedTarget.type !== "absolute") {
     return false;
   }
 
   return (
-    plannedLoad.value === actual.load.value && plannedLoad.unit === actual.load.unit
+    plannedTarget.value === actual.target.value && plannedTarget.unit === actual.target.unit
   );
+}
+
+export type CoachSetCells = {
+  reps: string;
+  target: string;
+  notes: string;
+};
+
+export function formatCoachSetCells(set: Set): CoachSetCells {
+  const { planned } = set;
+
+  if (planned.type === "exact") {
+    return {
+      reps: formatReps(planned.reps),
+      target: formatTarget(planned.target),
+      notes: formatOptionalCell(planned.notes ?? set.notes),
+    };
+  }
+
+  return {
+    reps: formatTargetInstruction(planned.instruction),
+    target: planned.target ? formatTarget(planned.target) : EMPTY_CELL,
+    notes: formatOptionalCell(planned.notes ?? set.notes),
+  };
+}
+
+export function formatPlannedSetBrief(set: Set): string {
+  const planned = set.planned;
+  const parts: string[] = [formatPlannedSetCore(planned)];
+
+  const notes = planned.notes?.trim();
+  if (notes) {
+    parts.push(`[${notes}]`);
+  }
+
+  if (set.status !== "planned") {
+    parts.push(`(${set.status})`);
+  }
+
+  return parts.join(" ");
+}
+
+export function formatExerciseSetsSummary(sets: Set[]): string {
+  if (sets.length === 0) {
+    return "";
+  }
+
+  const formatted = sets.map((set) => formatPlannedSetBrief(set));
+  const allIdentical = formatted.length > 1 && formatted.every((line) => line === formatted[0]);
+
+  if (allIdentical) {
+    return `${sets.length}× ${formatted[0]}`;
+  }
+
+  return formatted.join(", ");
+}
+
+function formatPlannedSetCore(planned: PlannedSet): string {
+  if (planned.type === "target") {
+    const parts = [formatTargetInstruction(planned.instruction)];
+    if (planned.reps !== undefined) {
+      parts.push(`${formatReps(planned.reps)} reps`);
+    }
+    if (planned.target) {
+      parts.push(`@ ${formatTarget(planned.target)}`);
+    }
+    return parts.join(" ");
+  }
+
+  return `${formatReps(planned.reps)} @ ${formatTarget(planned.target)}`;
 }

@@ -1,29 +1,40 @@
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type {
+  Block,
+  Day,
+  Exercise,
+  Set,
+  Week,
+  WorkoutPlan,
+} from "@/lib/plans/workout-plan";
 
 export const minimalWorkoutPlan: WorkoutPlan = {
-  schemaVersion: "2.0.0",
+  schemaVersion: "3.0.0",
   name: "4-Week Strength Block",
   weeks: [
     {
-      index: 1,
       days: [
         {
-          index: 1,
           code: "w1d1",
-          exercises: [
+          blocks: [
             {
-              name: "Back Squat",
-              sets: [
+              id: "w1d1-b1",
+              exercises: [
                 {
-                  id: "w1d1-bs-1",
-                  planned: {
-                    type: "exact",
-                    reps: 5,
-                    load: { type: "absolute", value: 100, unit: "kg" },
-                  },
-                  actual: null,
-                  status: "planned",
-                  locked: false,
+                  id: "back-squat",
+                  name: "Back Squat",
+                  sets: [
+                    {
+                      id: "w1d1-bs-1",
+                      planned: {
+                        type: "exact",
+                        reps: 5,
+                        target: { type: "absolute", value: 100, unit: "kg" },
+                      },
+                      actual: null,
+                      status: "planned",
+                      locked: false,
+                    },
+                  ],
                 },
               ],
             },
@@ -33,3 +44,201 @@ export const minimalWorkoutPlan: WorkoutPlan = {
     },
   ],
 };
+
+export function makeSet(overrides: Partial<Set> & Pick<Set, "id">): Set {
+  return {
+    planned: {
+      type: "exact",
+      reps: 8,
+      target: { type: "absolute", value: 60, unit: "kg" },
+    },
+    actual: null,
+    status: "planned",
+    locked: false,
+    ...overrides,
+  };
+}
+
+export function makeExercise(
+  overrides: Partial<Exercise> & Pick<Exercise, "name">,
+): Exercise {
+  return {
+    id: overrides.id ?? `${overrides.name.toLowerCase().replace(/\s+/g, "-")}`,
+    sets: [
+      makeSet({ id: "set-1" }),
+    ],
+    ...overrides,
+  };
+}
+
+export function makeWeightedSet(
+  id: string,
+  reps: number,
+  value: number,
+  unit: "kg" | "lb" = "lb",
+): Set {
+  return makeSet({
+    id,
+    planned: {
+      type: "exact",
+      reps,
+      target: { type: "absolute", value, unit },
+    },
+  });
+}
+
+export function makeStatusSet(status: Set["status"]): Set {
+  return makeSet({
+    id: "set-1",
+    planned: {
+      type: "exact",
+      reps: 5,
+      target: { type: "absolute", value: 100, unit: "kg" },
+    },
+    actual: status === "completed" ? { reps: 5 } : null,
+    status,
+  });
+}
+
+export function makeSupersetBlock() {
+  return makeBlock({
+    id: "ss-1",
+    exercises: [
+      makeExercise({
+        id: "curl",
+        name: "Curl",
+        sets: [
+          makeSet({
+            id: "curl-1",
+            planned: { type: "exact", reps: 12, target: { type: "absolute", value: 20, unit: "kg" } },
+          }),
+          makeSet({
+            id: "curl-2",
+            planned: { type: "exact", reps: 10, target: { type: "absolute", value: 22, unit: "kg" } },
+          }),
+        ],
+      }),
+      makeExercise({
+        id: "extension",
+        name: "Tricep extension",
+        sets: [
+          makeSet({
+            id: "ext-1",
+            planned: { type: "exact", reps: 12, target: { type: "absolute", value: 15, unit: "kg" } },
+          }),
+          makeSet({
+            id: "ext-2",
+            planned: { type: "exact", reps: 10, target: { type: "absolute", value: 17, unit: "kg" } },
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+export function makeBlock(
+  overrides: Partial<Block> & { exercises: Exercise[] },
+): Block {
+  return {
+    id: overrides.id ?? "block-1",
+    ...overrides,
+  };
+}
+
+export function makeDay(overrides: Partial<Day> & Pick<Day, "code">): Day {
+  return {
+    blocks: [
+      makeBlock({
+        id: `${overrides.code}-b1`,
+        exercises: [makeExercise({ id: "ex-1", name: "Back Squat", sets: [makeSet({ id: `${overrides.code}-bs-1` })] })],
+      }),
+    ],
+    ...overrides,
+  };
+}
+
+export type MakeWorkoutPlanOptions = {
+  dayComplete?: boolean;
+  includeSkippedSet?: boolean;
+  exerciseNotes?: string;
+  setNotes?: string;
+  name?: string;
+  multiDay?: boolean;
+};
+
+export function makeWorkoutPlan(options: MakeWorkoutPlanOptions = {}): WorkoutPlan {
+  const sets: Set[] = [
+    makeSet({
+      id: "w1d1-bs-1",
+      planned: {
+        type: "exact",
+        reps: 8,
+        target: { type: "absolute", value: 60, unit: "kg" },
+        notes: options.setNotes,
+      },
+      actual: options.dayComplete
+        ? { reps: 8, target: { type: "absolute", value: 60, unit: "kg" } }
+        : null,
+      status: options.dayComplete ? "completed" : "planned",
+    }),
+  ];
+
+  if (options.includeSkippedSet) {
+    sets.push(
+      makeSet({
+        id: "w1d1-bs-2",
+        planned: {
+          type: "exact",
+          reps: 5,
+          target: { type: "absolute", value: 80, unit: "kg" },
+        },
+        status: "skipped",
+      }),
+    );
+  }
+
+  const days = [
+    makeDay({
+      code: "w1d1",
+      blocks: [
+        makeBlock({
+          id: "w1d1-b1",
+          exercises: [
+            makeExercise({
+              id: "back-squat",
+              name: "Back Squat",
+              notes: options.exerciseNotes,
+              sets: sets as Exercise["sets"],
+            }),
+          ],
+        }),
+      ],
+    }),
+  ];
+
+  if (options.multiDay) {
+    days.push(
+      makeDay({
+        code: "w1d2",
+        blocks: [
+          makeBlock({
+            id: "w1d2-b1",
+            exercises: [
+              makeExercise({
+                id: "bench-press",
+                name: "Bench Press",
+                sets: [makeSet({ id: "w1d2-bp-1" })] as Exercise["sets"],
+              }),
+            ],
+          }),
+        ],
+      }),
+    );
+  }
+
+  return {
+    schemaVersion: "3.0.0",
+    name: options.name ?? "Strength Block",
+    weeks: [{ days: days as Week["days"] }],
+  };
+}

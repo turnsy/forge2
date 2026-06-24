@@ -14,11 +14,11 @@ class SchemaRulesTests(unittest.TestCase):
         self.assertIn("W1D1", text)
         self.assertIn("^w[0-9]+d[0-9]+$", text)
 
-    def test_cheat_sheet_reps_integer_and_notes(self) -> None:
+    def test_cheat_sheet_mentions_blocks_and_target(self) -> None:
         text = validation_rules_cheat_sheet()
-        self.assertIn("plain integer", text)
-        self.assertIn('notes="per side"', text)
-        self.assertIn("3/side", text)
+        self.assertIn("blocks", text)
+        self.assertIn("planned.target", text)
+        self.assertIn("3.0.0", text)
 
 
 if __name__ == "__main__":

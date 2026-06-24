@@ -52,9 +52,9 @@ describe("athlete plan actions", () => {
   });
 
   it("saves set actuals for the authenticated athlete", async () => {
-    const result = await saveSetActualsAction("assignment-1", 1, 1, 0, 0, {
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, {
       reps: 8,
-      load: { type: "absolute", value: 60, unit: "kg" },
+      target: { type: "absolute", value: 60, unit: "kg" },
     });
 
     expect(result).toEqual({ ok: true });
@@ -68,7 +68,7 @@ describe("athlete plan actions", () => {
       message: "Not authenticated",
     });
 
-    const result = await saveSetActualsAction("assignment-1", 1, 1, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
 
     expect(result).toEqual({
       ok: false,
@@ -81,7 +81,7 @@ describe("athlete plan actions", () => {
   it("returns not found when assignment is missing or owned by another athlete", async () => {
     mockGetAssignedPlanById.mockResolvedValue({ ok: true, plan: null });
 
-    const result = await saveSetActualsAction("assignment-1", 1, 1, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
 
     expect(result).toEqual({
       ok: false,
@@ -97,7 +97,7 @@ describe("athlete plan actions", () => {
       message: "save failed",
     });
 
-    const result = await saveSetActualsAction("assignment-1", 1, 1, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
 
     expect(result).toEqual({
       ok: false,
@@ -106,13 +106,13 @@ describe("athlete plan actions", () => {
     });
   });
 
-  it("completes a day and returns the next day index", async () => {
-    const result = await completeDayAction("assignment-1", 1, 1);
+  it("completes a day and returns the next day position", async () => {
+    const result = await completeDayAction("assignment-1", 0, 0);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.allDaysDone).toBe(false);
-      expect(result.nextDayIdx).toBe(1);
+      expect(result.nextDayPos).toBe(0);
       expect(result.plan).toEqual(minimalWorkoutPlan);
     }
   });
@@ -124,7 +124,7 @@ describe("athlete plan actions", () => {
       message: "complete failed",
     });
 
-    const result = await completeDayAction("assignment-1", 1, 1);
+    const result = await completeDayAction("assignment-1", 0, 0);
 
     expect(result).toEqual({
       ok: false,

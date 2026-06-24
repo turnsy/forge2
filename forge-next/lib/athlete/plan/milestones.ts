@@ -9,7 +9,7 @@ export type AthletePlanMilestone =
 export function dayCompletedMilestone(currentDay: CurrentDayLocation): AthletePlanMilestone {
   return {
     kind: "day",
-    description: `${getWeekTitle(currentDay.week)} · ${getDayTitle(currentDay.day)}`,
+    description: `${getWeekTitle(currentDay.week, currentDay.weekPos)} · ${getDayTitle(currentDay.day, currentDay.dayPos)}`,
   };
 }
 

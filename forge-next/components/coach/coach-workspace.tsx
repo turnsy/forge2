@@ -483,8 +483,7 @@ export function CoachWorkspace({
     );
   }
 
-  const artifactFadeKey =
-    activePlanId ?? state.sessionId + (state.artifactTitle || "artifact");
+  const artifactFadeKey = activePlanId ?? state.sessionId;
 
   if (isMobile) {
     if (!showSplitPane) {

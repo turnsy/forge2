@@ -1,4 +1,4 @@
-"""Workout plan builder aligned to workout-plan.schema.json v2.0.0."""
+"""Workout plan builder and refs for workout-plan.schema.json v3."""
 
 from __future__ import annotations
 
@@ -7,355 +7,521 @@ from pathlib import Path
 from typing import Any
 
 from forge_plan.builders import (
+    SCHEMA_VERSION,
+    Day,
+    Exercise,
+    Week,
     build_set_entry,
     empty_plan_template,
-    format_day_code,
     load_seed_from_file,
+    materialize_day,
+    materialize_week,
     move_list_item,
-    next_set_id,
 )
+from forge_plan.ids import format_day_code, new_id, next_set_id
+from forge_plan.target import parse_target
 
 
-class WeekRef:
-    """Handle to a week inside a plan."""
+class SetRef:
+    """Handle to one set inside a plan."""
 
-    def __init__(self, plan: "Plan", week: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        plan: Plan,
+        week_pos: int,
+        day_pos: int,
+        block_pos: int,
+        exercise_pos: int,
+        set_pos: int,
+    ) -> None:
         self._plan = plan
-        self._week = week
+        self._week_pos = week_pos
+        self._day_pos = day_pos
+        self._block_pos = block_pos
+        self._exercise_pos = exercise_pos
+        self._set_pos = set_pos
 
-    @property
-    def index(self) -> int:
-        return int(self._week["index"])
+    def update(
+        self,
+        *,
+        reps: int | str | None = None,
+        target: int | float | str | None = None,
+        unit: str | None = None,
+        notes: str | None = None,
+        status: str | None = None,
+        locked: bool | None = None,
+    ) -> SetRef:
+        set_entry = self._require_set()
+        planned = set_entry.setdefault("planned", {})
+        if planned.get("type") != "exact":
+            raise ValueError("only exact planned sets support update(); use update_target for instructional sets")
 
+        if reps is not None:
+            planned["reps"] = reps
+        if target is not None:
+            current_unit = unit
+            if current_unit is None:
+                existing_target = planned.get("target")
+                if not isinstance(existing_target, dict):
+                    raise ValueError("unit is required when updating target on a set without an existing target")
+                current_unit = str(existing_target.get("unit", "kg"))
+            planned["target"] = parse_target(target, current_unit)
+        elif unit is not None:
+            existing_target = planned.get("target")
+            if not isinstance(existing_target, dict):
+                raise ValueError("cannot update unit without an existing target")
+            value = existing_target.get("value")
+            target_type = existing_target.get("type")
+            if target_type == "absolute":
+                planned["target"] = parse_target(float(value), unit)
+            elif target_type == "percentage":
+                planned["target"] = parse_target(f"{value}%", unit)
+            else:
+                raise ValueError("cannot update unit on set without a valid target")
 
-class DayRef:
-    """Handle to a day inside a plan."""
+        if notes is not None:
+            planned["notes"] = notes or None
+            if planned["notes"] is None:
+                planned.pop("notes", None)
 
-    def __init__(self, plan: "Plan", day: dict[str, Any]) -> None:
-        self._plan = plan
-        self._day = day
+        if status is not None:
+            set_entry["status"] = status
+        if locked is not None:
+            set_entry["locked"] = locked
 
-    @property
-    def index(self) -> int:
-        return int(self._day["index"])
+        self._plan._sync()
+        return self
 
-    @property
-    def code(self) -> str:
-        return str(self._day["code"])
+    def update_target(
+        self,
+        *,
+        instruction: str,
+        reps: int | str | None = None,
+        target: int | float | str | None = None,
+        unit: str | None = None,
+        notes: str | None = None,
+    ) -> SetRef:
+        set_entry = self._require_set()
+        planned: dict[str, Any] = {
+            "type": "target",
+            "instruction": instruction,
+        }
+        if reps is not None:
+            planned["reps"] = reps
+        if target is not None:
+            planned["target"] = parse_target(target, unit or "kg")
+        if notes is not None:
+            planned["notes"] = notes
+        set_entry["planned"] = planned
+        self._plan._sync()
+        return self
+
+    def remove(self) -> None:
+        sets = self._require_sets_list()
+        if len(sets) <= 1:
+            raise ValueError("exercise must keep at least one set")
+        sets.pop(self._set_pos)
+        self._plan._sync()
+
+    def move(self, to_index: int) -> None:
+        sets = self._require_sets_list()
+        move_list_item(sets, self._set_pos, to_index)
+        self._plan._sync()
+
+    def _require_set(self) -> dict[str, Any]:
+        return self._require_sets_list()[self._set_pos]
+
+    def _require_sets_list(self) -> list[dict[str, Any]]:
+        exercise = ExerciseRef(
+            self._plan,
+            self._week_pos,
+            self._day_pos,
+            self._block_pos,
+            self._exercise_pos,
+        )._require_exercise()
+        sets = exercise.get("sets")
+        if not isinstance(sets, list):
+            raise ValueError("exercise has no sets")
+        return sets
 
 
 class ExerciseRef:
-    """Handle to an exercise inside a plan."""
+    """Handle to one exercise inside a plan."""
 
-    def __init__(self, plan: "Plan", exercise: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        plan: Plan,
+        week_pos: int,
+        day_pos: int,
+        block_pos: int,
+        exercise_pos: int,
+    ) -> None:
         self._plan = plan
-        self._exercise = exercise
+        self._week_pos = week_pos
+        self._day_pos = day_pos
+        self._block_pos = block_pos
+        self._exercise_pos = exercise_pos
 
-    @property
-    def name(self) -> str:
-        return str(self._exercise["name"])
-
-
-class Plan:
-    """Mutable workout plan builder for workout-plan.schema.json v2.0.0.
-
-    See ``forge_plan.schema_rules.validation_rules_cheat_sheet()`` for field-level
-    constraints (day codes, reps, loads, min array lengths).
-    """
-
-    def __init__(self, data: dict[str, Any] | None = None) -> None:
-        self._data = data if data is not None else empty_plan_template()
-
-    @classmethod
-    def from_json_file(cls, path: str) -> "Plan":
-        """Load seed from ``current_plan.json`` (empty template when missing)."""
-        return cls(load_seed_from_file(path))
-
-    @classmethod
-    def empty(cls, name: str) -> "Plan":
-        """Create a new named plan with no weeks."""
-        data = empty_plan_template()
-        data["name"] = name
-        return cls(data)
-
-    @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "Plan":
-        """Wrap an existing plan dict."""
-        return cls(dict(value))
-
-    def is_empty(self) -> bool:
-        """True when the plan has no weeks (seed not yet built)."""
-        weeks = self._data.get("weeks")
-        return not isinstance(weeks, list) or len(weeks) == 0
-
-    def add_week(
-        self,
-        *,
-        label: str | None = None,
-        name: str | None = None,
-        index: int | None = None,
-    ) -> WeekRef:
-        """Append a week, or upsert by schema ``index`` when provided.
-
-        Week ``index`` and day ``code`` values are assigned by ``_sync_structure``
-        from array order (1-based). Omit ``index`` to append the next week.
-        """
-        weeks = self._ensure_weeks()
-        if index is None:
-            week: dict[str, Any] = {"index": 0, "days": []}
-            weeks.append(week)
-        else:
-            week = self._find_week_by_schema_index(weeks, index)
-            if week is None:
-                week = {"index": index, "days": []}
-                weeks.append(week)
-
-        if label is not None:
-            week["label"] = label
-        if name is not None:
-            week["name"] = name
-
-        self._sync_structure()
-        return WeekRef(self, week)
-
-    def add_day(
-        self,
-        *,
-        week_index: int,
-        name: str | None = None,
-        index: int | None = None,
-    ) -> DayRef:
-        """Append a day to a week, or upsert by schema ``day_index`` when provided.
-
-        Day ``code`` (e.g. ``w1d1``) and ``index`` are derived from week/day
-        array order — do not pass codes manually.
-        """
-        week = self._require_week_by_schema_index(week_index)
-        days = week.setdefault("days", [])
-        if index is None:
-            day: dict[str, Any] = {"index": 0, "code": "w0d0", "exercises": []}
-            days.append(day)
-        else:
-            day = self._find_day_by_schema_index(days, index)
-            if day is None:
-                day = {"index": index, "code": "w0d0", "exercises": []}
-                days.append(day)
-
-        if name is not None:
-            day["name"] = name
-
-        self._sync_structure()
-        return DayRef(self, day)
-
-    def add_exercise(
-        self,
-        *,
-        week_index: int,
-        day_index: int,
-        name: str,
-    ) -> ExerciseRef:
-        """Append an exercise to a day (``week_index`` / ``day_index`` are schema indices)."""
-        day = self._require_day_by_schema_index(week_index, day_index)
-        exercises = day.setdefault("exercises", [])
-        exercise = {"name": name, "sets": []}
-        exercises.append(exercise)
-        self._sync_structure()
-        return ExerciseRef(self, exercise)
+    def set(self, set_pos: int) -> SetRef:
+        return SetRef(
+            self._plan,
+            self._week_pos,
+            self._day_pos,
+            self._block_pos,
+            self._exercise_pos,
+            set_pos,
+        )
 
     def add_set(
         self,
-        week_index: int,
-        day_index: int,
         *,
         reps: int | str,
-        load_value: float,
-        load_type: str = "absolute",
+        target: int | float | str,
         unit: str = "kg",
         notes: str | None = None,
-        exercise_name: str | None = None,
-        exercise_index: int | None = None,
-    ) -> None:
-        """Append a planned exact set to a day.
+    ) -> ExerciseRef:
+        return self._append_sets(reps=reps, target=target, unit=unit, notes=notes, count=1)
 
-        Use integer ``reps`` for the count. Put per-side, time, and coaching detail in
-        ``notes`` (e.g. ``notes="per side"``). Set ``id``, ``status``, ``locked``, and
-        ``actual`` are filled automatically. Target the exercise by ``exercise_name``,
-        ``exercise_index`` (0-based), or omit both to use the last exercise on that day.
+    def add_sets(
+        self,
+        *,
+        reps: int | str,
+        target: int | float | str,
+        unit: str = "kg",
+        count: int,
+        notes: str | None = None,
+    ) -> ExerciseRef:
+        if count < 1:
+            raise ValueError("count must be >= 1")
+        return self._append_sets(reps=reps, target=target, unit=unit, notes=notes, count=count)
 
-        For ``load_type="percentage"``, ``unit`` is the unit the resolved load will be in
-        (e.g. ``unit="kg"`` for 85% of a kg-based max).
-        """
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        day = self._require_day_at(week_pos, day_pos)
-        exercise = self._resolve_exercise(
-            day,
-            week_index=week_index,
-            day_index=day_index,
-            exercise_name=exercise_name,
-            exercise_index=exercise_index,
-        )
+    def update(
+        self,
+        *,
+        name: str | None = None,
+        notes: str | None = None,
+        video_url: str | None = None,
+    ) -> ExerciseRef:
+        exercise = self._require_exercise()
+        if name is not None:
+            exercise["name"] = name
+        if notes is not None:
+            if notes:
+                exercise["notes"] = notes
+            else:
+                exercise.pop("notes", None)
+        if video_url is not None:
+            if video_url:
+                exercise["videoUrl"] = video_url
+            else:
+                exercise.pop("videoUrl", None)
+        self._plan._sync()
+        return self
+
+    def remove(self) -> None:
+        block = self._plan.week(self._week_pos).day(self._day_pos).block(self._block_pos)
+        exercises = block._require_block()["exercises"]
+        if len(exercises) <= 1:
+            block.remove()
+            return
+        exercises.pop(self._exercise_pos)
+        self._plan._sync()
+
+    def move(self, to_index: int) -> None:
+        exercises = self._require_block_exercises()
+        move_list_item(exercises, self._exercise_pos, to_index)
+        self._plan._sync()
+
+    def _append_sets(
+        self,
+        *,
+        reps: int | str,
+        target: int | float | str,
+        unit: str,
+        notes: str | None,
+        count: int,
+    ) -> ExerciseRef:
+        exercise = self._require_exercise()
         sets = exercise.setdefault("sets", [])
-        set_id = next_set_id(str(day["code"]), str(exercise["name"]), sets)
-        sets.append(
-            build_set_entry(
-                set_id=set_id,
-                reps=reps,
-                load_type=load_type,
-                load_value=load_value,
-                unit=unit,
-                notes=notes,
+        day_code = self._plan.week(self._week_pos).day(self._day_pos)._require_day()["code"]
+        exercise_name = str(exercise["name"])
+        for _ in range(count):
+            set_id = next_set_id(day_code, exercise_name, sets)
+            sets.append(
+                build_set_entry(
+                    set_id=set_id,
+                    reps=reps,
+                    target=target,
+                    unit=unit,
+                    notes=notes,
+                )
             )
-        )
-        self._sync_structure()
+        self._plan._sync()
+        return self
 
-    def move_week(self, from_index: int, to_index: int) -> None:
-        """Reorder weeks by 0-based array position; renumbers indices and day codes."""
-        weeks = self._ensure_weeks()
-        move_list_item(weeks, from_index, to_index)
-        self._sync_structure()
+    def _require_exercise(self) -> dict[str, Any]:
+        exercises = self._require_block_exercises()
+        if self._exercise_pos < 0 or self._exercise_pos >= len(exercises):
+            raise ValueError(f"exercise index {self._exercise_pos} out of range")
+        return exercises[self._exercise_pos]
 
-    def remove_week(self, index: int) -> None:
-        """Remove a week by 0-based array position."""
-        weeks = self._ensure_weeks()
-        if index < 0 or index >= len(weeks):
-            raise ValueError(f"week array index {index} out of range")
-        weeks.pop(index)
-        self._sync_structure()
+    def _require_block_exercises(self) -> list[dict[str, Any]]:
+        block = self._plan.week(self._week_pos).day(self._day_pos).block(self._block_pos)
+        return block._require_block()["exercises"]
 
-    def move_day(self, week_index: int, from_index: int, to_index: int) -> None:
-        """Reorder days within a week (``week_index`` schema index; day positions 0-based)."""
-        week_pos = self._schema_week_position(week_index)
-        week = self._require_week_at(week_pos)
+
+class BlockRef:
+    """Handle to one block inside a day."""
+
+    def __init__(self, plan: Plan, week_pos: int, day_pos: int, block_pos: int) -> None:
+        self._plan = plan
+        self._week_pos = week_pos
+        self._day_pos = day_pos
+        self._block_pos = block_pos
+
+    def exercise(self, exercise_pos: int) -> ExerciseRef:
+        return ExerciseRef(self._plan, self._week_pos, self._day_pos, self._block_pos, exercise_pos)
+
+    def update(self, *, label: str | None = None, notes: str | None = None) -> BlockRef:
+        block = self._require_block()
+        if label is not None:
+            if label:
+                block["label"] = label
+            else:
+                block.pop("label", None)
+        if notes is not None:
+            if notes:
+                block["notes"] = notes
+            else:
+                block.pop("notes", None)
+        self._plan._sync()
+        return self
+
+    def remove(self) -> None:
+        blocks = self._require_blocks_list()
+        if len(blocks) <= 1:
+            raise ValueError("day must keep at least one block")
+        blocks.pop(self._block_pos)
+        self._plan._sync()
+
+    def move(self, to_index: int) -> None:
+        blocks = self._require_blocks_list()
+        move_list_item(blocks, self._block_pos, to_index)
+        self._plan._sync()
+
+    def _require_block(self) -> dict[str, Any]:
+        return self._require_blocks_list()[self._block_pos]
+
+    def _require_blocks_list(self) -> list[dict[str, Any]]:
+        return self._plan.week(self._week_pos).day(self._day_pos)._require_blocks_list()
+
+
+class DayRef:
+    """Handle to one day inside a plan."""
+
+    def __init__(self, plan: Plan, week_pos: int, day_pos: int) -> None:
+        self._plan = plan
+        self._week_pos = week_pos
+        self._day_pos = day_pos
+
+    def block(self, block_pos: int) -> BlockRef:
+        return BlockRef(self._plan, self._week_pos, self._day_pos, block_pos)
+
+    def exercise(self, flat_exercise_pos: int) -> ExerciseRef:
+        block_pos, exercise_pos = self._resolve_flat_exercise_pos(flat_exercise_pos)
+        return ExerciseRef(self._plan, self._week_pos, self._day_pos, block_pos, exercise_pos)
+
+    def add_exercise(self, exercise: Exercise) -> DayRef:
+        from forge_plan.builders import Block, materialize_block
+
+        day = self._require_day()
+        day_code = str(day.get("code", "w0d0"))
+        blocks = day.setdefault("blocks", [])
+        blocks.append(materialize_block(Block(exercises=[exercise]), day_code))
+        self._plan._sync()
+        return self
+
+    def add_superset(self, *exercises: Exercise, label: str | None = None) -> DayRef:
+        from forge_plan.builders import Block, materialize_block
+
+        if len(exercises) < 2:
+            raise ValueError("add_superset requires at least two exercises")
+        day = self._require_day()
+        day_code = str(day.get("code", "w0d0"))
+        blocks = day.setdefault("blocks", [])
+        blocks.append(materialize_block(Block(exercises=list(exercises), label=label), day_code))
+        self._plan._sync()
+        return self
+
+    def update(self, *, name: str | None = None, notes: str | None = None) -> DayRef:
+        day = self._require_day()
+        if name is not None:
+            if name:
+                day["name"] = name
+            else:
+                day.pop("name", None)
+        if notes is not None:
+            if notes:
+                day["notes"] = notes
+            else:
+                day.pop("notes", None)
+        self._plan._sync()
+        return self
+
+    def remove(self) -> None:
+        days = self._require_days_list()
+        if len(days) <= 1:
+            raise ValueError("week must keep at least one day")
+        days.pop(self._day_pos)
+        self._plan._sync()
+
+    def move(self, to_index: int) -> None:
+        days = self._require_days_list()
+        move_list_item(days, self._day_pos, to_index)
+        self._plan._sync()
+
+    def _resolve_flat_exercise_pos(self, flat_exercise_pos: int) -> tuple[int, int]:
+        if flat_exercise_pos < 0:
+            raise ValueError(f"exercise index {flat_exercise_pos} out of range")
+        offset = 0
+        for block_pos, block in enumerate(self._require_blocks_list()):
+            exercises = block.get("exercises")
+            if not isinstance(exercises, list):
+                continue
+            if flat_exercise_pos < offset + len(exercises):
+                return block_pos, flat_exercise_pos - offset
+            offset += len(exercises)
+        raise ValueError(f"exercise index {flat_exercise_pos} out of range")
+
+    def _require_day(self) -> dict[str, Any]:
+        return self._require_days_list()[self._day_pos]
+
+    def _require_days_list(self) -> list[dict[str, Any]]:
+        return self._plan.week(self._week_pos)._require_week()["days"]
+
+    def _require_blocks_list(self) -> list[dict[str, Any]]:
+        blocks = self._require_day().get("blocks")
+        if not isinstance(blocks, list):
+            raise ValueError("day has no blocks")
+        return blocks
+
+
+class WeekRef:
+    """Handle to one week inside a plan."""
+
+    def __init__(self, plan: Plan, week_pos: int) -> None:
+        self._plan = plan
+        self._week_pos = week_pos
+
+    def day(self, day_pos: int) -> DayRef:
+        return DayRef(self._plan, self._week_pos, day_pos)
+
+    def add_day(self, day: Day) -> WeekRef:
+        week = self._require_week()
         days = week.setdefault("days", [])
-        move_list_item(days, from_index, to_index)
-        self._sync_structure()
+        days.append(materialize_day(day))
+        self._plan._sync()
+        return self
 
-    def remove_day(self, week_index: int, index: int) -> None:
-        """Remove a day by 0-based array position within a week (schema ``week_index``)."""
-        week_pos = self._schema_week_position(week_index)
-        week = self._require_week_at(week_pos)
-        days = week.setdefault("days", [])
-        if index < 0 or index >= len(days):
-            raise ValueError(f"day array index {index} out of range")
-        days.pop(index)
-        self._sync_structure()
+    def update(self, *, label: str | None = None, name: str | None = None, notes: str | None = None) -> WeekRef:
+        week = self._require_week()
+        if label is not None:
+            if label:
+                week["label"] = label
+            else:
+                week.pop("label", None)
+        if name is not None:
+            if name:
+                week["name"] = name
+            else:
+                week.pop("name", None)
+        if notes is not None:
+            if notes:
+                week["notes"] = notes
+            else:
+                week.pop("notes", None)
+        self._plan._sync()
+        return self
 
-    def move_exercise(
-        self, week_index: int, day_index: int, from_index: int, to_index: int
-    ) -> None:
-        """Reorder exercises (schema week/day indices; 0-based exercise positions)."""
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        day = self._require_day_at(week_pos, day_pos)
-        exercises = day.setdefault("exercises", [])
-        move_list_item(exercises, from_index, to_index)
-        self._sync_structure()
+    def remove(self) -> None:
+        weeks = self._plan._ensure_weeks()
+        if len(weeks) <= 1:
+            raise ValueError("plan must keep at least one week")
+        weeks.pop(self._week_pos)
+        self._plan._sync()
 
-    def remove_exercise(self, week_index: int, day_index: int, index: int) -> None:
-        """Remove an exercise by 0-based array position."""
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        day = self._require_day_at(week_pos, day_pos)
-        exercises = day.setdefault("exercises", [])
-        if index < 0 or index >= len(exercises):
-            raise ValueError(f"exercise array index {index} out of range")
-        exercises.pop(index)
-        self._sync_structure()
+    def move(self, to_index: int) -> None:
+        weeks = self._plan._ensure_weeks()
+        move_list_item(weeks, self._week_pos, to_index)
+        self._plan._sync()
 
-    def move_set(
-        self,
-        week_index: int,
-        day_index: int,
-        exercise_index: int,
-        from_index: int,
-        to_index: int,
-    ) -> None:
-        """Reorder sets within an exercise (0-based set positions)."""
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        day = self._require_day_at(week_pos, day_pos)
-        exercises = day.setdefault("exercises", [])
-        if exercise_index < 0 or exercise_index >= len(exercises):
-            raise ValueError(f"exercise_index {exercise_index} out of range")
-        sets = exercises[exercise_index].setdefault("sets", [])
-        move_list_item(sets, from_index, to_index)
-        self._sync_structure()
+    def _require_week(self) -> dict[str, Any]:
+        weeks = self._plan._ensure_weeks()
+        if self._week_pos < 0 or self._week_pos >= len(weeks):
+            raise ValueError(f"week index {self._week_pos} out of range")
+        return weeks[self._week_pos]
 
-    def remove_set(
-        self,
-        week_index: int,
-        day_index: int,
-        exercise_index: int,
-        index: int,
-    ) -> None:
-        """Remove a set by 0-based array position."""
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        day = self._require_day_at(week_pos, day_pos)
-        exercises = day.setdefault("exercises", [])
-        if exercise_index < 0 or exercise_index >= len(exercises):
-            raise ValueError(f"exercise_index {exercise_index} out of range")
-        sets = exercises[exercise_index].setdefault("sets", [])
-        if index < 0 or index >= len(sets):
-            raise ValueError(f"set array index {index} out of range")
-        sets.pop(index)
-        self._sync_structure()
+
+class Plan:
+    """Mutable workout plan builder for schema v3."""
+
+    def __init__(self, name: str | None = None, data: dict[str, Any] | None = None) -> None:
+        """Create a plan builder. Pass ``name`` for fluent ``Plan("title").add_week(...)``."""
+        if data is not None:
+            self._data = data
+        elif name is not None:
+            self._data = empty_plan_template(name)
+        else:
+            self._data = empty_plan_template()
+
+    @classmethod
+    def from_json_file(cls, path: str) -> Plan:
+        """Load seed from ``current_plan.json`` (empty template when missing or invalid)."""
+        seed = load_seed_from_file(path)
+        if not seed.get("name"):
+            return cls(data=seed)
+        return cls(data=seed)
+
+    @classmethod
+    def empty(cls, name: str) -> Plan:
+        """Create a new named plan with no weeks."""
+        return cls(name=name)
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> Plan:
+        """Wrap an existing v3 plan dict."""
+        if value.get("schemaVersion") != SCHEMA_VERSION:
+            raise ValueError(f"expected schemaVersion {SCHEMA_VERSION}")
+        return cls(data=dict(value))
+
+    def is_empty(self) -> bool:
+        """True when the plan has no weeks."""
+        weeks = self._data.get("weeks")
+        return not isinstance(weeks, list) or len(weeks) == 0
+
+    def add_week(self, week: Week) -> Plan:
+        """Append a built week. Returns ``self`` for chaining."""
+        weeks = self._ensure_weeks()
+        weeks.append(materialize_week(week))
+        self._sync()
+        return self
+
+    def week(self, week_pos: int) -> WeekRef:
+        """Return a handle to a week by 0-based array position."""
+        return WeekRef(self, week_pos)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return JSON-serializable plan data (schema v2.0.0)."""
+        """Return JSON-serializable plan data (schema v3.0.0)."""
         return dict(self._data)
 
     def write_json(self, path: str) -> None:
-        """Write plan JSON to ``output/plan.json`` (creates parent dirs)."""
+        """Write plan JSON (creates parent dirs)."""
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(self.to_dict(), indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
-
-    def _sync_structure(self) -> None:
-        """Renumber week/day schema indices and day codes to match array order."""
-        weeks = self._ensure_weeks()
-        for week_pos, week in enumerate(weeks):
-            week_number = week_pos + 1
-            week["index"] = week_number
-            days = week.get("days")
-            if not isinstance(days, list):
-                week["days"] = []
-                continue
-            for day_pos, day in enumerate(days):
-                day_number = day_pos + 1
-                day["index"] = day_number
-                day["code"] = format_day_code(week_number, day_number)
-
-    def _resolve_exercise(
-        self,
-        day: dict[str, Any],
-        *,
-        week_index: int,
-        day_index: int,
-        exercise_name: str | None,
-        exercise_index: int | None,
-    ) -> dict[str, Any]:
-        exercises = day.setdefault("exercises", [])
-        if len(exercises) == 0:
-            raise ValueError(
-                f"week {week_index} day {day_index} has no exercises; call add_exercise first"
-            )
-
-        if exercise_name is not None:
-            for exercise in exercises:
-                if str(exercise.get("name")) == exercise_name:
-                    return exercise
-            raise ValueError(
-                f'exercise {exercise_name!r} not found on week {week_index} day {day_index}'
-            )
-
-        if exercise_index is not None:
-            if exercise_index < 0 or exercise_index >= len(exercises):
-                raise ValueError(
-                    f"exercise_index {exercise_index} out of range for week {week_index} day {day_index}"
-                )
-            return exercises[exercise_index]
-
-        return exercises[-1]
 
     def _ensure_weeks(self) -> list[dict[str, Any]]:
         weeks = self._data.get("weeks")
@@ -364,68 +530,49 @@ class Plan:
             self._data["weeks"] = weeks
         return weeks
 
-    def _find_week_by_schema_index(
-        self, weeks: list[dict[str, Any]], index: int
-    ) -> dict[str, Any] | None:
-        for week in weeks:
-            if int(week.get("index", -1)) == index:
-                return week
-        return None
-
-    def _find_day_by_schema_index(
-        self, days: list[dict[str, Any]], index: int
-    ) -> dict[str, Any] | None:
-        for day in days:
-            if int(day.get("index", -1)) == index:
-                return day
-        return None
-
-    def _schema_week_position(self, week_index: int) -> int:
+    def _sync(self) -> None:
         weeks = self._ensure_weeks()
-        for pos, week in enumerate(weeks):
-            if int(week.get("index", -1)) == week_index:
-                return pos
-        raise ValueError(f"week {week_index} does not exist; call add_week first")
+        for week_pos, week in enumerate(weeks):
+            week_number = week_pos + 1
+            days = week.get("days")
+            if not isinstance(days, list):
+                week["days"] = []
+                continue
+            for day_pos, day in enumerate(days):
+                day_number = day_pos + 1
+                day_code = format_day_code(week_number, day_number)
+                day["code"] = day_code
 
-    def _schema_week_day_positions(self, week_index: int, day_index: int) -> tuple[int, int]:
-        week_pos = self._schema_week_position(week_index)
-        week = weeks[week_pos] if (weeks := self._ensure_weeks()) else None
-        if week is None:
-            raise ValueError(f"week {week_index} does not exist")
-        days = week.get("days")
-        if not isinstance(days, list):
-            raise ValueError(f"week {week_index} has no days")
-        for pos, day in enumerate(days):
-            if int(day.get("index", -1)) == day_index:
-                return week_pos, pos
-        raise ValueError(
-            f"day {day_index} in week {week_index} does not exist; call add_day first"
-        )
+                blocks = day.get("blocks")
+                if not isinstance(blocks, list):
+                    day["blocks"] = []
+                    continue
 
-    def _require_week_by_schema_index(self, week_index: int) -> dict[str, Any]:
-        week = self._find_week_by_schema_index(self._ensure_weeks(), week_index)
-        if week is None:
-            raise ValueError(f"week {week_index} does not exist; call add_week first")
-        return week
+                for block in blocks:
+                    if not block.get("id"):
+                        block["id"] = new_id()
 
-    def _require_week_at(self, week_pos: int) -> dict[str, Any]:
-        weeks = self._ensure_weeks()
-        if week_pos < 0 or week_pos >= len(weeks):
-            raise ValueError(f"week array index {week_pos} out of range")
-        return weeks[week_pos]
+                    exercises = block.get("exercises")
+                    if not isinstance(exercises, list):
+                        block["exercises"] = []
+                        continue
 
-    def _require_day_by_schema_index(self, week_index: int, day_index: int) -> dict[str, Any]:
-        week_pos, day_pos = self._schema_week_day_positions(week_index, day_index)
-        return self._require_day_at(week_pos, day_pos)
+                    for exercise in exercises:
+                        if not exercise.get("id"):
+                            exercise["id"] = new_id()
 
-    def _require_day_at(self, week_pos: int, day_pos: int) -> dict[str, Any]:
-        week = self._require_week_at(week_pos)
-        days = week.get("days")
-        if not isinstance(days, list):
-            raise ValueError(f"week at position {week_pos} has no days")
-        if day_pos < 0 or day_pos >= len(days):
-            raise ValueError(f"day array index {day_pos} out of range")
-        return days[day_pos]
+                        sets = exercise.get("sets")
+                        if not isinstance(sets, list):
+                            exercise["sets"] = []
+                            continue
+
+                        exercise_name = str(exercise.get("name", "exercise"))
+                        for set_pos, set_entry in enumerate(sets):
+                            if not set_entry.get("id"):
+                                set_entry["id"] = next_set_id(day_code, exercise_name, sets[:set_pos])
+                            set_entry.setdefault("actual", None)
+                            set_entry.setdefault("status", "planned")
+                            set_entry.setdefault("locked", False)
 
 
 def summarize(plan: Plan | dict[str, Any]) -> str:
@@ -436,6 +583,7 @@ def summarize(plan: Plan | dict[str, Any]) -> str:
         return "empty plan"
 
     day_count = 0
+    block_count = 0
     exercise_count = 0
     set_count = 0
     for week in weeks:
@@ -444,17 +592,22 @@ def summarize(plan: Plan | dict[str, Any]) -> str:
             continue
         day_count += len(days)
         for day in days:
-            exercises = day.get("exercises") if isinstance(day, dict) else []
-            if not isinstance(exercises, list):
+            blocks = day.get("blocks") if isinstance(day, dict) else []
+            if not isinstance(blocks, list):
                 continue
-            exercise_count += len(exercises)
-            for exercise in exercises:
-                sets = exercise.get("sets") if isinstance(exercise, dict) else []
-                if isinstance(sets, list):
-                    set_count += len(sets)
+            block_count += len(blocks)
+            for block in blocks:
+                exercises = block.get("exercises") if isinstance(block, dict) else []
+                if not isinstance(exercises, list):
+                    continue
+                exercise_count += len(exercises)
+                for exercise in exercises:
+                    sets = exercise.get("sets") if isinstance(exercise, dict) else []
+                    if isinstance(sets, list):
+                        set_count += len(sets)
 
     name = data.get("name") if isinstance(data, dict) else ""
     return (
         f'plan "{name}" — {len(weeks)} week(s), {day_count} day(s), '
-        f"{exercise_count} exercise(s), {set_count} set(s)"
+        f"{block_count} block(s), {exercise_count} exercise(s), {set_count} set(s)"
     )

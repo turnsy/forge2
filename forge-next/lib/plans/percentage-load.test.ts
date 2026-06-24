@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
-  disablePercentageLoad,
-  enablePercentageLoad,
-  getLoadTargetValue,
-  updateLoadUnit,
-  updateLoadTargetValue,
+  disablePercentageTarget,
+  enablePercentageTarget,
+  getTargetValue,
+  updateTargetUnit,
+  updateTargetValue,
 } from "@/lib/plans/percentage-load";
 
 describe("percentage-load", () => {
   it("reads scalar values from absolute and percentage loads", () => {
-    expect(getLoadTargetValue({ type: "absolute", value: 185, unit: "lb" })).toBe(
+    expect(getTargetValue({ type: "absolute", value: 185, unit: "lb" })).toBe(
       "185",
     );
     expect(
-      getLoadTargetValue({
+      getTargetValue({
         type: "percentage",
         value: 75,
         unit: "kg",
@@ -24,14 +24,14 @@ describe("percentage-load", () => {
   it("toggles between absolute and percentage loads", () => {
     const absolute = { type: "absolute" as const, value: 60, unit: "kg" as const };
 
-    const enabled = enablePercentageLoad(absolute);
+    const enabled = enablePercentageTarget(absolute);
     expect(enabled).toEqual({
       type: "percentage",
       value: 60,
       unit: "kg",
     });
 
-    expect(disablePercentageLoad(enabled)).toEqual({
+    expect(disablePercentageTarget(enabled)).toEqual({
       type: "absolute",
       value: 60,
       unit: "kg",
@@ -40,7 +40,7 @@ describe("percentage-load", () => {
 
   it("updates percentage values without dropping unit", () => {
     expect(
-      updateLoadTargetValue(
+      updateTargetValue(
         {
           type: "percentage",
           value: 75,
@@ -57,7 +57,7 @@ describe("percentage-load", () => {
 
   it("updates unit on both load types", () => {
     expect(
-      updateLoadUnit(
+      updateTargetUnit(
         {
           type: "percentage",
           value: 75,
@@ -72,7 +72,7 @@ describe("percentage-load", () => {
     });
 
     expect(
-      updateLoadUnit(
+      updateTargetUnit(
         {
           type: "absolute",
           value: 100,

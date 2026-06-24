@@ -1,53 +1,49 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { makeBlock, makeDay, makeExercise } from "@/lib/plans/__tests__/fixtures";
 import { PlanMobileDayPicker } from "@/components/plan/plan-mobile-day-picker";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Week 1 Day 1 Exercise",
-                sets: [],
-              },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [makeExercise({ id: "w1d1-ex1", name: "Week 1 Day 1 Exercise", sets: [] })],
+              }),
             ],
-          },
-          {
-            index: 2,
+          }),
+          makeDay({
             code: "w1d2",
-            exercises: [
-              {
-                name: "Week 1 Day 2 Exercise",
-                sets: [],
-              },
+            blocks: [
+              makeBlock({
+                id: "w1d2-b1",
+                exercises: [makeExercise({ id: "w1d2-ex1", name: "Week 1 Day 2 Exercise", sets: [] })],
+              }),
             ],
-          },
+          }),
         ],
       },
       {
-        index: 2,
         label: "Deload Week",
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w2d1",
-            exercises: [
-              {
-                name: "Week 2 Day 1 Exercise",
-                sets: [],
-              },
+            blocks: [
+              makeBlock({
+                id: "w2d1-b1",
+                exercises: [makeExercise({ id: "w2d1-ex1", name: "Week 2 Day 1 Exercise", sets: [] })],
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -59,8 +55,8 @@ describe("PlanMobileDayPicker", () => {
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
-        selectedWeekIndex={1}
-        selectedDayIndex={1}
+        selectedWeekPos={0}
+        selectedDayPos={0}
         onSelect={() => undefined}
       />,
     );
@@ -79,14 +75,14 @@ describe("PlanMobileDayPicker", () => {
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
-        selectedWeekIndex={1}
-        selectedDayIndex={2}
+        selectedWeekPos={0}
+        selectedDayPos={1}
         onSelect={onSelect}
       />,
     );
 
     await user.click(screen.getByRole("button", { name: "Previous day" }));
-    expect(onSelect).toHaveBeenCalledWith({ weekIndex: 1, dayIndex: 1 });
+    expect(onSelect).toHaveBeenCalledWith({ weekPos: 0, dayPos: 0 });
   });
 
   it("navigates to the next day from the header arrow", async () => {
@@ -96,14 +92,14 @@ describe("PlanMobileDayPicker", () => {
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
-        selectedWeekIndex={1}
-        selectedDayIndex={1}
+        selectedWeekPos={0}
+        selectedDayPos={0}
         onSelect={onSelect}
       />,
     );
 
     await user.click(screen.getByRole("button", { name: "Next day" }));
-    expect(onSelect).toHaveBeenCalledWith({ weekIndex: 1, dayIndex: 2 });
+    expect(onSelect).toHaveBeenCalledWith({ weekPos: 0, dayPos: 1 });
   });
 
   it("opens a dropdown with every week and day, then selects on tap", async () => {
@@ -113,8 +109,8 @@ describe("PlanMobileDayPicker", () => {
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
-        selectedWeekIndex={1}
-        selectedDayIndex={1}
+        selectedWeekPos={0}
+        selectedDayPos={0}
         onSelect={onSelect}
       />,
     );
@@ -132,7 +128,7 @@ describe("PlanMobileDayPicker", () => {
 
     await user.click(within(weekOne).getByRole("option", { name: "Day 2" }));
 
-    expect(onSelect).toHaveBeenCalledWith({ weekIndex: 1, dayIndex: 2 });
+    expect(onSelect).toHaveBeenCalledWith({ weekPos: 0, dayPos: 1 });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
@@ -143,8 +139,8 @@ describe("PlanMobileDayPicker", () => {
     render(
       <PlanMobileDayPicker
         plan={makePlan()}
-        selectedWeekIndex={1}
-        selectedDayIndex={1}
+        selectedWeekPos={0}
+        selectedDayPos={0}
         onSelect={onSelect}
       />,
     );
@@ -154,6 +150,6 @@ describe("PlanMobileDayPicker", () => {
     const deloadWeek = screen.getByLabelText("Deload Week");
     await user.click(within(deloadWeek).getByRole("option", { name: "Day 1" }));
 
-    expect(onSelect).toHaveBeenCalledWith({ weekIndex: 2, dayIndex: 1 });
+    expect(onSelect).toHaveBeenCalledWith({ weekPos: 1, dayPos: 0 });
   });
 });

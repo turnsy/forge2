@@ -1,3 +1,4 @@
+import { flattenDayExercises } from "@/lib/plans/day-blocks";
 import type { Day, Exercise, Set } from "@/lib/plans/workout-plan";
 
 export function isSetEditable(set: Set): boolean {
@@ -9,5 +10,5 @@ export function isExerciseEditable(exercise: Exercise): boolean {
 }
 
 export function isDayEditable(day: Day): boolean {
-  return day.exercises.some(isExerciseEditable);
+  return flattenDayExercises(day).some(isExerciseEditable);
 }

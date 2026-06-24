@@ -1,8 +1,7 @@
-"""Human-readable validation rules aligned with workout-plan.schema.json v2.0.0."""
+"""Human-readable validation rules aligned with workout-plan.schema.json v3.0.0."""
 
 from __future__ import annotations
 
-# Keep in sync with forge_plan.builders.DAY_CODE_PATTERN and schemas/workout-plan.schema.json
 DAY_CODE_PATTERN_DESCRIPTION = (
     "lowercase `w` + week number + `d` + day number (regex: ^w[0-9]+d[0-9]+$)"
 )
@@ -19,7 +18,7 @@ REPS_INVALID_EXAMPLES = (
     "5/5",
     "1 (3 jumps)",
 )
-LOAD_UNITS_COMMON = ("kg", "lb", "m", "yd")
+TARGET_UNITS_COMMON = ("kg", "lb", "m", "yd")
 SET_STATUS_VALUES = ("planned", "completed", "skipped")
 
 
@@ -27,54 +26,59 @@ def validation_rules_cheat_sheet() -> str:
     """Return validation rules text for LLM cheat sheets and prompts."""
     return "\n".join(
         [
-            "Schema validation rules (workout-plan.schema.json v2.0.0 — sandbox output must pass):",
+            "Schema validation rules (workout-plan.schema.json v3.0.0 — sandbox output must pass):",
             "",
             "Plan root:",
-            '- schemaVersion must be exactly "2.0.0"',
+            '- schemaVersion must be exactly "3.0.0"',
             "- name: non-empty string (required)",
             "- weeks: array with at least 1 week for a valid saved plan",
             "",
             "Week:",
-            "- index: integer >= 1 (schema index; forge_plan renumbers to match array order after each mutation)",
             "- days: at least 1 day per week",
             "",
             "Day:",
-            "- index: integer >= 1",
             f"- code: {DAY_CODE_PATTERN_DESCRIPTION}",
             f"  - OK: {', '.join(repr(x) for x in DAY_CODE_EXAMPLES_OK)}",
             f"  - Invalid: {', '.join(repr(x) for x in DAY_CODE_EXAMPLES_BAD)}",
-            "- exercises: at least 1 exercise per day",
-            "- day.code and day.index are assigned by forge_plan from array order (do not pass codes to add_day)",
+            "- blocks: at least 1 block per day",
+            "- day.code is assigned by forge_plan from array order (do not pass codes unless editing)",
+            "",
+            "Block:",
+            "- id: non-empty string (auto-generated UUID when missing)",
+            "- exercises: at least 1 exercise per block",
+            "- 1 exercise = standalone work; 2+ exercises = superset",
             "",
             "Exercise:",
+            "- id: non-empty string (required; auto-generated when missing)",
             "- name: non-empty string (required)",
             "- sets: at least 1 set per exercise",
             "",
-            "Set (forge_plan.add_set builds exact planned sets):",
+            "Set (Exercise.add_set / add_sets build exact planned sets):",
             "- id: non-empty string (auto: {{day_code}}-{{exercise_slug}}-{{n}}, e.g. w1d1-bs-1)",
-            '- planned.type: "exact" (builder) or "target" (hand-authored only)',
+            '- planned.type: "exact" (builder) or "target" (hand-authored via SetRef.update_target)',
             f"- planned.reps: {REPS_PATTERN_DESCRIPTION}",
             "  - Use a plain integer for set reps (counts only).",
             "  - Do not put units, sides, ranges, or spreadsheet shorthand in reps "
             f"(invalid: {', '.join(repr(x) for x in REPS_INVALID_EXAMPLES)}).",
-            '  - Put qualifiers in planned.notes via add_set(notes=...) — e.g. notes="per side", '
-            'notes="30 sec", notes="each grip".',
+            '  - Put qualifiers in planned.notes — e.g. notes="per side", notes="30 sec".',
             "  - Optional: rep complexes as string 5+5+5 instead of int + notes when splitting reps matters.",
-            '- planned.notes: optional string on exact sets (use for per-side, time, and coaching detail)',
-            '- planned.load: "absolute" OR "percentage"',
-            f'  - absolute: type "absolute", value >= 0, unit non-empty string (common: {", ".join(LOAD_UNITS_COMMON)})',
-            '  - percentage: type "percentage", value >= 0, unit non-empty string (lb/kg/etc. — use add_set unit= for percentage sets)',
+            "- planned.target:",
+            "  - number (int/float) → absolute load: { type: \"absolute\", value, unit }",
+            "  - string ending in % → percentage load: { type: \"percentage\", value, unit }",
+            f'  - unit: non-empty string (common: {", ".join(TARGET_UNITS_COMMON)})',
             "- actual: null for new sets",
             f'- status: one of {", ".join(repr(s) for s in SET_STATUS_VALUES)} (builder uses "planned")',
             "- locked: boolean (builder uses false)",
             "",
             "forge_plan API conventions:",
-            "- add_week() / add_day(): omit index to append; optional index upserts that slot",
-            "- week_index / day_index on add_*: schema indices (1-based after sync), not 0-based array slots",
-            "- move_* / remove_*: 0-based array positions within the parent list",
-            "- add_set: set id/status/locked/actual are automatic; pass notes= for per-side/time/detail; "
-            "omit exercise_index to target last exercise, or pass exercise_name",
-            '- add_set load_type: only "absolute" or "percentage" (default absolute)',
-            "- Call add_week → add_day → add_exercise → add_set in order for new content",
+            "- Build: Plan(name).add_week(Week().add_day(Day().add_exercise(...)))",
+            "- add_exercise → 1-exercise block; add_superset(*exercises) → multi-exercise block",
+            "- Exercise.add_set(reps=, target=, unit=) appends one set",
+            "- Exercise.add_sets(reps=, target=, unit=, count=) appends identical sets (count required)",
+            "- target: 50 → absolute; \"75%\" → percentage",
+            "- Edit: plan.week(0).day(0).block(0).exercise(0).set(0).update(...)",
+            "- day.exercise(0) also works (flat index across blocks)",
+            "- All week/day/block/exercise/set indices are 0-based array positions",
+            "- Call add_week → add_day → add_exercise/add_superset before add_set/add_sets on builders",
         ]
     ).strip()

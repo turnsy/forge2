@@ -2,63 +2,58 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { makeBlock, makeDay, makeExercise, makeWeightedSet } from "@/lib/plans/__tests__/fixtures";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
-import { reorderSetsInExercise } from "@/components/plan/plan-editable-day";
-import type { Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => false,
 }));
 
-function makeSet(id: string, reps: number, weight: number): Set {
-  return {
-    id,
-    planned: {
-      type: "exact",
-      reps,
-      load: { type: "absolute", value: weight, unit: "lb" },
-    },
-    actual: null,
-    status: "planned",
-    locked: false,
-  };
+function makeSet(id: string, reps: number, weight: number) {
+  return makeWeightedSet(id, reps, weight, "lb");
 }
 
 function makePercentagePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Percentage Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
             name: "Squat Day",
-            exercises: [
-              {
-                name: "Back Squat",
-                sets: [
-                  {
-                    id: "set-pct-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: {
-                        type: "percentage",
-                        value: 75,
-                        unit: "lb",
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "back-squat",
+                    name: "Back Squat",
+                    sets: [
+                      {
+                        id: "set-pct-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          target: {
+                            type: "percentage",
+                            value: 75,
+                            unit: "lb",
+                          },
+                        },
+                        actual: null,
+                        status: "planned",
+                        locked: false,
                       },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -67,30 +62,74 @@ function makePercentagePlan(): WorkoutPlan {
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
             name: "Upper Body",
-            exercises: [
-              {
-                name: "Bench Press",
-                sets: [
-                  makeSet("set-1", 12, 185),
-                  makeSet("set-2", 10, 205),
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "bench-press",
+                    name: "Bench Press",
+                    sets: [
+                      makeSet("set-1", 12, 185),
+                      makeSet("set-2", 10, 205),
+                    ],
+                  }),
                 ],
-              },
-              {
-                name: "Pull Ups",
-                sets: [makeSet("set-3", 8, 0)],
-              },
+              }),
+              makeBlock({
+                id: "w1d1-b2",
+                exercises: [
+                  makeExercise({
+                    id: "pull-ups",
+                    name: "Pull Ups",
+                    sets: [makeSet("set-3", 8, 0)],
+                  }),
+                ],
+              }),
             ],
-          },
+          }),
+        ],
+      },
+    ],
+  };
+}
+
+function makeSupersetPlan(): WorkoutPlan {
+  return {
+    schemaVersion: "3.0.0",
+    name: "Strength Block",
+    weeks: [
+      {
+        days: [
+          makeDay({
+            code: "w1d1",
+            name: "Upper Body",
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "bench-press",
+                    name: "Bench Press",
+                    sets: [makeSet("set-1", 12, 185)],
+                  }),
+                  makeExercise({
+                    id: "pull-ups",
+                    name: "Pull Ups",
+                    sets: [makeSet("set-2", 8, 0)],
+                  }),
+                ],
+              }),
+            ],
+          }),
         ],
       },
     ],
@@ -102,8 +141,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={vi.fn()}
       />,
@@ -118,8 +157,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -142,8 +181,8 @@ describe("CoachEditableDayView", () => {
       return (
         <CoachEditableDayView
           plan={plan}
-          weekIndex={1}
-          dayIndex={1}
+          weekPos={0}
+          dayPos={0}
           disabled={false}
           onPlanChange={setPlan}
         />
@@ -166,8 +205,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={plan}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={vi.fn()}
       />,
@@ -183,8 +222,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -194,7 +233,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Incline Bench");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench");
   });
 
   it("changing set reps calls onPlanChange", () => {
@@ -202,8 +241,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -213,7 +252,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(repsInput, { target: { value: "15" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].sets[0].planned).toMatchObject({
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned).toMatchObject({
       reps: 15,
     });
   });
@@ -223,8 +262,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -234,10 +273,10 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(weightInput, { target: { value: "195" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
     if (load.type === "exact") {
-      expect(load.load).toMatchObject({ value: 195 });
+      expect(load.target).toMatchObject({ value: 195 });
     }
   });
 
@@ -247,8 +286,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -265,8 +304,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={vi.fn()}
       />,
@@ -287,8 +326,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -298,11 +337,11 @@ describe("CoachEditableDayView", () => {
     await user.click(addSetButtons[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const sets = lastCall.weeks[0].days[0].exercises[0].sets;
+    const sets = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets;
     expect(sets).toHaveLength(3);
     expect(sets[2].planned).toMatchObject({
       reps: 10,
-      load: { type: "absolute", value: 205, unit: "lb" },
+      target: { type: "absolute", value: 205, unit: "lb" },
     });
   });
 
@@ -312,8 +351,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -322,7 +361,7 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByLabelText("Delete set 1"));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].sets).toHaveLength(1);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].sets).toHaveLength(1);
   });
 
   it("adds a new exercise", async () => {
@@ -331,8 +370,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -341,14 +380,14 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getByRole("button", { name: "Add exercise" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].exercises[2].name).toBe("New Exercise");
-    expect(lastCall.weeks[0].days[0].exercises[2].id).toBeTruthy();
+    expect(lastCall.weeks[0].days[0].blocks).toHaveLength(3);
+    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].id).toBeTruthy();
   });
 
   it("assigns stable ids to exercises without one", () => {
     const plan = makePlan();
-    delete plan.weeks[0].days[0].exercises[0].id;
+    delete plan.weeks[0].days[0].blocks[0].exercises[0].id;
 
     let currentPlan = plan;
     const onPlanChange = vi.fn((updated: WorkoutPlan) => {
@@ -358,8 +397,8 @@ describe("CoachEditableDayView", () => {
     const { rerender } = render(
       <CoachEditableDayView
         plan={currentPlan}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -369,14 +408,14 @@ describe("CoachEditableDayView", () => {
       target: { value: "Incline Bench" },
     });
 
-    const exerciseId = currentPlan.weeks[0].days[0].exercises[0].id;
+    const exerciseId = currentPlan.weeks[0].days[0].blocks[0].exercises[0].id;
     expect(exerciseId).toBeTruthy();
 
     rerender(
       <CoachEditableDayView
         plan={currentPlan}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -386,7 +425,7 @@ describe("CoachEditableDayView", () => {
       target: { value: "Flat Bench" },
     });
 
-    expect(currentPlan.weeks[0].days[0].exercises[0].id).toBe(exerciseId);
+    expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].id).toBe(exerciseId);
   });
 
   it("removes an exercise when delete is clicked", async () => {
@@ -395,8 +434,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -405,8 +444,8 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getAllByLabelText("Delete exercise")[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises).toHaveLength(1);
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Pull Ups");
+    expect(lastCall.weeks[0].days[0].blocks).toHaveLength(1);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Pull Ups");
   });
 
   it("swaps exercises with reorder buttons", async () => {
@@ -414,9 +453,9 @@ describe("CoachEditableDayView", () => {
     const onPlanChange = vi.fn();
     render(
       <CoachEditableDayView
-        plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        plan={makeSupersetPlan()}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -425,8 +464,28 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getAllByLabelText("Move exercise down")[0]);
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].name).toBe("Pull Ups");
-    expect(lastCall.weeks[0].days[0].exercises[1].name).toBe("Bench Press");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Pull Ups");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[1].name).toBe("Bench Press");
+  });
+
+  it("adds an exercise to an existing superset", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makeSupersetPlan()}
+        weekPos={0}
+        dayPos={0}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Add exercise to superset"));
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises).toHaveLength(3);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("New Exercise");
   });
 
   it("allows entering a custom load unit", () => {
@@ -434,8 +493,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -451,10 +510,10 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(customUnitInput, { target: { value: "mi" } });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
-    if (load.type === "exact" && load.load.type === "absolute") {
-      expect(load.load.unit).toBe("mi");
+    if (load.type === "exact" && load.target.type === "absolute") {
+      expect(load.target.unit).toBe("mi");
     }
   });
 
@@ -463,8 +522,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
@@ -480,10 +539,10 @@ describe("CoachEditableDayView", () => {
     expect(customUnitInput).toHaveValue("");
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    const load = lastCall.weeks[0].days[0].exercises[0].sets[0].planned;
+    const load = lastCall.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned;
     expect(load.type).toBe("exact");
-    if (load.type === "exact" && load.load.type === "absolute") {
-      expect(load.load.unit).toBe("");
+    if (load.type === "exact" && load.target.type === "absolute") {
+      expect(load.target.unit).toBe("");
     }
   });
 
@@ -494,8 +553,8 @@ describe("CoachEditableDayView", () => {
       return (
         <CoachEditableDayView
           plan={plan}
-          weekIndex={1}
-          dayIndex={1}
+          weekPos={0}
+          dayPos={0}
           disabled={false}
           onPlanChange={setPlan}
         />
@@ -527,8 +586,8 @@ describe("CoachEditableDayView", () => {
       return (
         <CoachEditableDayView
           plan={plan}
-          weekIndex={1}
-          dayIndex={1}
+          weekPos={0}
+          dayPos={0}
           disabled={false}
           onPlanChange={setPlan}
         />
@@ -554,8 +613,8 @@ describe("CoachEditableDayView", () => {
       return (
         <CoachEditableDayView
           plan={plan}
-          weekIndex={1}
-          dayIndex={1}
+          weekPos={0}
+          dayPos={0}
           disabled={false}
           onPlanChange={setPlan}
         />
@@ -582,8 +641,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled
         onPlanChange={vi.fn()}
       />,
@@ -602,8 +661,8 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={vi.fn()}
       />,
@@ -612,23 +671,21 @@ describe("CoachEditableDayView", () => {
     await user.click(screen.getAllByLabelText("Add video link")[0]);
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Video Link")).toBeInTheDocument();
-    expect(screen.getByLabelText("Video link")).toHaveValue("");
-    expect(
-      screen.getByLabelText("Add to all occurrences of this exercise"),
-    ).not.toBeChecked();
+    expect(screen.getByText("Exercise video link")).toBeInTheDocument();
+    expect(screen.getByLabelText("Video URL")).toHaveValue("");
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
 
   it("prefills the modal when editing an existing video link", async () => {
     const user = userEvent.setup();
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/existing";
+    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/existing";
 
     render(
       <CoachEditableDayView
         plan={plan}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={vi.fn()}
       />,
@@ -636,7 +693,7 @@ describe("CoachEditableDayView", () => {
 
     await user.click(screen.getAllByLabelText("Add video link")[0]);
 
-    expect(screen.getByLabelText("Video link")).toHaveValue("https://youtu.be/existing");
+    expect(screen.getByLabelText("Video URL")).toHaveValue("https://youtu.be/existing");
   });
 
   it("sets videoUrl on confirm for the current exercise", async () => {
@@ -645,20 +702,20 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
     );
 
     await user.click(screen.getAllByLabelText("Add video link")[0]);
-    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/demo");
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.type(screen.getByLabelText("Video URL"), "https://youtu.be/demo");
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/demo");
-    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].videoUrl).toBe("https://youtu.be/demo");
+    expect(lastCall.weeks[0].days[0].blocks[1].exercises[0].videoUrl).toBeUndefined();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -666,38 +723,43 @@ describe("CoachEditableDayView", () => {
     const user = userEvent.setup();
     const onPlanChange = vi.fn();
     const plan = makePlan();
-    plan.weeks[0].days.push({
-      index: 2,
-      code: "w1d2",
-      exercises: [
-        {
-          name: "Bench Press",
-          sets: [makeSet("set-4", 5, 225)],
-        },
-      ],
-    });
+    plan.weeks[0].days.push(
+      makeDay({
+        code: "w1d2",
+        blocks: [
+          makeBlock({
+            id: "w1d2-b1",
+            exercises: [
+              makeExercise({
+                id: "bench-press-2",
+                name: "Bench Press",
+                sets: [makeSet("set-4", 5, 225)],
+              }),
+            ],
+          }),
+        ],
+      }),
+    );
 
     render(
       <CoachEditableDayView
         plan={plan}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
     );
 
     await user.click(screen.getAllByLabelText("Add video link")[0]);
-    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/shared");
-    await user.click(
-      screen.getByLabelText("Add to all occurrences of this exercise"),
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.type(screen.getByLabelText("Video URL"), "https://youtu.be/shared");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].exercises[0].videoUrl).toBe("https://youtu.be/shared");
-    expect(lastCall.weeks[0].days[1].exercises[0].videoUrl).toBe("https://youtu.be/shared");
-    expect(lastCall.weeks[0].days[0].exercises[1].videoUrl).toBeUndefined();
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[1].blocks[0].exercises[0].videoUrl).toBe("https://youtu.be/shared");
+    expect(lastCall.weeks[0].days[0].blocks[1].exercises[0].videoUrl).toBeUndefined();
   });
 
   it("closes the modal without changes when cancel is clicked", async () => {
@@ -706,15 +768,15 @@ describe("CoachEditableDayView", () => {
     render(
       <CoachEditableDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         disabled={false}
         onPlanChange={onPlanChange}
       />,
     );
 
     await user.click(screen.getAllByLabelText("Add video link")[0]);
-    await user.type(screen.getByLabelText("Video link"), "https://youtu.be/demo");
+    await user.type(screen.getByLabelText("Video URL"), "https://youtu.be/demo");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onPlanChange).not.toHaveBeenCalled();

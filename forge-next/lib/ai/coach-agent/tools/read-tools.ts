@@ -3,8 +3,8 @@ import { z } from "zod";
 import { listCoachAthletes } from "@/lib/athletes/repository";
 import { listCoachPendingInvites } from "@/lib/links/repository";
 import { getCoachAthleteRelationship } from "@/lib/links/repository";
+import { fetchCoachPlanForTool } from "@/lib/ai/coach-agent/tools/fetch-coach-plan";
 import {
-  getCoachPlanById,
   listCoachPlanVersions,
   listCoachPlans,
 } from "@/lib/plans/repository";
@@ -125,17 +125,17 @@ export function createReadTools(ctx: ReadToolsContext) {
         planId: z.string().uuid().describe("Plan id."),
       }),
       execute: async ({ planId }) => {
-        const result = await getCoachPlanById(ctx.coachId, planId);
+        const result = await fetchCoachPlanForTool(ctx.coachId, planId);
 
-        if (result.status === "not_found") {
-          return toToolNotFound("Plan");
-        }
+        if (!result.ok) {
+          if ("notFound" in result) {
+            return result.notFound;
+          }
 
-        if (result.status === "invalid") {
           return {
             ok: false as const,
-            code: "invalid" as const,
-            message: "Plan data failed validation.",
+            code: result.code,
+            message: result.message,
           };
         }
 

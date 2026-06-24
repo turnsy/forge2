@@ -9,7 +9,11 @@ describe("bundleForgePlanFiles", () => {
     expect(paths).toContain("forge_plan/__init__.py");
     expect(paths).toContain("forge_plan/plan.py");
     expect(paths).toContain("forge_plan/builders.py");
+    expect(paths).toContain("forge_plan/target.py");
+    expect(paths).toContain("forge_plan/ids.py");
+    expect(paths).toContain("forge_plan/schema_rules.py");
     expect(paths).not.toContain("forge_plan/test_forge_plan.py");
+    expect(paths).not.toContain("forge_plan/test_schema_rules.py");
     expect(paths).not.toContain("forge_plan/README.md");
   });
 });

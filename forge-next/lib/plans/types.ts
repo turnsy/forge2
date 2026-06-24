@@ -8,8 +8,3 @@ export type CoachPlanListItem = {
 export type PlanActionResult =
   | { ok: true }
   | { ok: false; error: string };
-
-export type CoachPlanDeleteInfo = {
-  planTitle: string;
-  activeAssignmentCount: number;
-};

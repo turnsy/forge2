@@ -58,7 +58,7 @@ vi.mock("@/components/artifact/artifact-preview", () => ({
 }));
 
 const samplePlan = {
-  schemaVersion: "2.0.0" as const,
+  schemaVersion: "3.0.0" as const,
   name: "Test Plan",
   weeks: [],
 };

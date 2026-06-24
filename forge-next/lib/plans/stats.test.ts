@@ -1,33 +1,35 @@
 import { describe, expect, it } from "vitest";
+import { makeBlock, makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
 import { getPlanStats } from "@/lib/plans/stats";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name,
     weeks: weekDayCounts.map((dayCount, weekIndex) => ({
-      index: weekIndex + 1,
       days: Array.from({ length: dayCount }, (_, dayIndex) => ({
-        index: dayIndex + 1,
         code: `w${weekIndex + 1}d${dayIndex + 1}`,
-        exercises: [
-          {
-            name: "Back Squat",
-            sets: [
-              {
-                id: `w${weekIndex + 1}d${dayIndex + 1}-bs-1`,
-                planned: {
-                  type: "exact" as const,
-                  reps: 5,
-                  load: { type: "absolute" as const, value: 100, unit: "kg" as const },
-                },
-                actual: null,
-                status: "planned" as const,
-                locked: false,
-              },
+        blocks: [
+          makeBlock({
+            id: `w${weekIndex + 1}d${dayIndex + 1}-b1`,
+            exercises: [
+              makeExercise({
+                id: `w${weekIndex + 1}d${dayIndex + 1}-bs`,
+                name: "Back Squat",
+                sets: [
+                  makeSet({
+                    id: `w${weekIndex + 1}d${dayIndex + 1}-bs-1`,
+                    planned: {
+                      type: "exact",
+                      reps: 5,
+                      target: { type: "absolute", value: 100, unit: "kg" },
+                    },
+                  }),
+                ],
+              }),
             ],
-          },
+          }),
         ],
       })),
     })) as WorkoutPlan["weeks"],

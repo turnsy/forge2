@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  actualLoadMatchesPlanned,
+  actualTargetMatchesPlanned,
   actualRepsMatchesPlanned,
-  formatLoad,
-  formatPercentageLoad,
+  formatTarget,
+  formatPercentageTarget,
   formatReps,
   formatTargetInstruction,
   getDayTitle,
@@ -20,14 +20,14 @@ describe("formatReps", () => {
   });
 });
 
-describe("formatLoad", () => {
+describe("formatTarget", () => {
   it("formats absolute load", () => {
-    expect(formatLoad({ type: "absolute", value: 100, unit: "kg" })).toBe("100 kg");
+    expect(formatTarget({ type: "absolute", value: 100, unit: "kg" })).toBe("100 kg");
   });
 
   it("formats percentage load with unit", () => {
     expect(
-      formatPercentageLoad({
+      formatPercentageTarget({
         type: "percentage",
         value: 70,
         unit: "kg",
@@ -44,20 +44,20 @@ describe("formatTargetInstruction", () => {
 
 describe("getWeekTitle", () => {
   it("prefers label over name and index", () => {
-    expect(getWeekTitle({ index: 1, label: "Week 1", name: "Intro", days: [] as never })).toBe(
-      "Week 1",
-    );
+    expect(
+      getWeekTitle({ label: "Week 1", name: "Intro", days: [] as never }, 0),
+    ).toBe("Week 1");
   });
 
   it("falls back to Week index", () => {
-    expect(getWeekTitle({ index: 2, days: [] as never })).toBe("Week 2");
+    expect(getWeekTitle({ days: [] as never }, 1)).toBe("Week 2");
   });
 });
 
 describe("getDayTitle", () => {
   it("returns Day with index", () => {
-    expect(getDayTitle({ index: 1, code: "w1d1", exercises: [] as never })).toBe("Day 1");
-    expect(getDayTitle({ index: 3, code: "w2d3", name: "Heavy day", exercises: [] as never })).toBe(
+    expect(getDayTitle({ code: "w1d1", blocks: [] as never }, 0)).toBe("Day 1");
+    expect(getDayTitle({ code: "w2d3", name: "Heavy day", blocks: [] as never }, 2)).toBe(
       "Heavy day",
     );
   });
@@ -67,7 +67,7 @@ describe("actualRepsMatchesPlanned", () => {
   it("returns true when exact planned reps match actual", () => {
     expect(
       actualRepsMatchesPlanned(
-        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { type: "exact", reps: 5, target: { type: "absolute", value: 85, unit: "kg" } },
         { reps: 5 },
       ),
     ).toBe(true);
@@ -76,7 +76,7 @@ describe("actualRepsMatchesPlanned", () => {
   it("returns false when exact planned reps differ from actual", () => {
     expect(
       actualRepsMatchesPlanned(
-        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
+        { type: "exact", reps: 5, target: { type: "absolute", value: 85, unit: "kg" } },
         { reps: 4 },
       ),
     ).toBe(false);
@@ -92,38 +92,38 @@ describe("actualRepsMatchesPlanned", () => {
   });
 });
 
-describe("actualLoadMatchesPlanned", () => {
+describe("actualTargetMatchesPlanned", () => {
   it("returns true when absolute planned load matches actual", () => {
     expect(
-      actualLoadMatchesPlanned(
-        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
-        { load: { type: "absolute", value: 85, unit: "kg" } },
+      actualTargetMatchesPlanned(
+        { type: "exact", reps: 5, target: { type: "absolute", value: 85, unit: "kg" } },
+        { target: { type: "absolute", value: 85, unit: "kg" } },
       ),
     ).toBe(true);
   });
 
   it("returns false when absolute planned load differs from actual", () => {
     expect(
-      actualLoadMatchesPlanned(
-        { type: "exact", reps: 5, load: { type: "absolute", value: 85, unit: "kg" } },
-        { load: { type: "absolute", value: 102, unit: "kg" } },
+      actualTargetMatchesPlanned(
+        { type: "exact", reps: 5, target: { type: "absolute", value: 85, unit: "kg" } },
+        { target: { type: "absolute", value: 102, unit: "kg" } },
       ),
     ).toBe(false);
   });
 
   it("returns true for percentage-based prescriptions regardless of actual load", () => {
     expect(
-      actualLoadMatchesPlanned(
+      actualTargetMatchesPlanned(
         {
           type: "exact",
           reps: 5,
-          load: {
+          target: {
             type: "percentage",
             value: 80,
             unit: "kg",
           },
         },
-        { load: { type: "absolute", value: 102, unit: "kg" } },
+        { target: { type: "absolute", value: 102, unit: "kg" } },
       ),
     ).toBe(true);
   });
