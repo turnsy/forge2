@@ -1,5 +1,6 @@
 import type { AccordionVariant } from "@/components/ui/accordion";
 import { PlanExerciseBlock, type PlanViewerView } from "@/components/plan/plan-exercise-block";
+import { PlanSupersetView } from "@/components/plan/plan-superset-view";
 import { isSupersetBlock } from "@/lib/plans/day-blocks";
 import type { Block } from "@/lib/plans/workout-plan";
 
@@ -14,29 +15,14 @@ export function PlanBlockSection({
   view: PlanViewerView;
   surfaceVariant?: AccordionVariant;
 }) {
-  const isSuperset = isSupersetBlock(block);
+  if (isSupersetBlock(block)) {
+    return <PlanSupersetView block={block} view={view} surfaceVariant={surfaceVariant} />;
+  }
 
   return (
-    <section
-      className={
-        isSuperset
-          ? "space-y-4 rounded-lg border border-glass-border/80 bg-glass/30 p-4"
-          : "space-y-4"
-      }
-      data-plan-block
-      data-superset={isSuperset ? "true" : "false"}
-    >
-      {isSuperset || block.label ? (
-        <div className="flex items-center gap-2">
-          {isSuperset ? (
-            <span className="rounded-full border border-glass-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-surface-muted">
-              Superset
-            </span>
-          ) : null}
-          {block.label ? (
-            <h3 className="text-sm font-medium text-surface-muted">{block.label}</h3>
-          ) : null}
-        </div>
+    <section className="space-y-4" data-plan-block data-superset="false">
+      {block.label ? (
+        <h3 className="text-sm font-medium text-surface-muted">{block.label}</h3>
       ) : null}
       {block.notes ? (
         <p className="text-sm text-surface-muted">{block.notes}</p>

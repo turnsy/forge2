@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { PlanBlockSection } from "@/components/plan/plan-block-section";
+import { PlanSupersetView } from "@/components/plan/plan-superset-view";
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { CoachLockedDayView } from "@/components/plan/coach-locked-day-view";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
@@ -314,46 +315,38 @@ function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }
   return (
     <div className="space-y-4">
       <PlanDayHeader day={day} dayPos={dayPos} />
-      {day.blocks.map((block) => (
-        <section
-          key={block.id}
-          className={
-            isSupersetBlock(block)
-              ? "space-y-4 rounded-lg border border-glass-border/80 bg-glass/30 p-4"
-              : "space-y-4"
-          }
-        >
-          {isSupersetBlock(block) ? (
-            <span className="rounded-full border border-glass-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-surface-muted">
-              Superset
-            </span>
-          ) : null}
-          {block.exercises.map((exercise, exercisePosInBlock) => (
-            <div key={`${block.id}-${exercise.id}-${exercisePosInBlock}`} className="space-y-4">
-              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
-              <AthleteExerciseNotes notes={exercise.notes} />
-              <div className="space-y-3">
-                {exercise.sets.map((set, setIdx) => {
-                  const filled = set.status === "completed";
-                  const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
+      {day.blocks.map((block) =>
+        isSupersetBlock(block) ? (
+          <PlanSupersetView key={block.id} block={block} view="athlete" />
+        ) : (
+          <section key={block.id} className="space-y-4">
+            {block.exercises.map((exercise, exercisePosInBlock) => (
+              <div key={`${block.id}-${exercise.id}-${exercisePosInBlock}`} className="space-y-4">
+                <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+                <AthleteExerciseNotes notes={exercise.notes} />
+                <div className="space-y-3">
+                  {exercise.sets.map((set, setIdx) => {
+                    const filled = set.status === "completed";
+                    const values = filled ? setFormStateFromActual(set) : { reps: "", target: "" };
 
-                  return (
-                    <AthleteSetRow
-                      key={set.id}
-                      set={set}
-                      setIdx={setIdx}
-                      reps={values.reps}
-                      target={values.target}
-                      readOnly
-                      complete={filled}
-                    />
-                  );
-                })}
+                    return (
+                      <AthleteSetRow
+                        key={set.id}
+                        set={set}
+                        setIdx={setIdx}
+                        reps={values.reps}
+                        target={values.target}
+                        readOnly
+                        complete={filled}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </section>
-      ))}
+            ))}
+          </section>
+        ),
+      )}
     </div>
   );
 }

@@ -72,8 +72,10 @@ describe("PlanViewer", () => {
   it("renders one table row per set in coach view via PlanDayNavigator", () => {
     render(<PlanViewer plan={makePlanWithIdenticalSets(3)} view="coach" />);
 
-    expect(screen.getByText("Hang SN")).toBeInTheDocument();
+    expect(screen.getAllByText("Hang SN").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Press")).toBeInTheDocument();
+    expect(screen.getByText("Round 1")).toBeInTheDocument();
+    expect(screen.getByText("Round 3")).toBeInTheDocument();
 
     const setCells = screen.getAllByRole("cell", { name: "3" });
     expect(setCells.length).toBeGreaterThanOrEqual(3);

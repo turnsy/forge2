@@ -30,6 +30,7 @@ import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { formatReps } from "@/lib/plans/display";
 import {
   createDefaultBlock,
+  createDefaultExercise,
   createDefaultSet,
   createDefaultSupersetBlock,
   createExerciseId,
@@ -724,6 +725,30 @@ export function PlanEditableDay({
               }
             />
           ))}
+          {isSupersetBlock(block) ? (
+            <div className="flex justify-center border-t border-glass-border/60 pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                icon={<PlusIcon />}
+                aria-label="Add exercise to superset"
+                disabled={disabled}
+                onClick={() => {
+                  updateBlock(blockPos, {
+                    ...block,
+                    exercises: [
+                      ...block.exercises,
+                      createDefaultExercise(),
+                    ] as typeof block.exercises,
+                  });
+                }}
+              >
+                Add exercise
+              </Button>
+            </div>
+          ) : null}
         </div>
       ))}
 

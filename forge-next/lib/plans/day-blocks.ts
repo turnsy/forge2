@@ -1,4 +1,4 @@
-import type { Block, Day, Exercise } from "@/lib/plans/workout-plan";
+import type { Block, Day, Exercise, Set } from "@/lib/plans/workout-plan";
 
 export function createBlockId(): string {
   return crypto.randomUUID();
@@ -35,6 +35,44 @@ export function getFlattenedExercise(
 
 export function isSupersetBlock(block: Block): boolean {
   return block.exercises.length > 1;
+}
+
+export type SupersetRoundEntry = {
+  exercise: Exercise;
+  exercisePosInBlock: number;
+  set: Set;
+  setPos: number;
+};
+
+export type SupersetRound = {
+  roundNumber: number;
+  entries: SupersetRoundEntry[];
+};
+
+export function getSupersetRounds(block: Block): SupersetRound[] {
+  if (!isSupersetBlock(block)) {
+    return [];
+  }
+
+  const maxSets = Math.max(...block.exercises.map((exercise) => exercise.sets.length));
+  const rounds: SupersetRound[] = [];
+
+  for (let setPos = 0; setPos < maxSets; setPos += 1) {
+    const entries: SupersetRoundEntry[] = [];
+
+    block.exercises.forEach((exercise, exercisePosInBlock) => {
+      const set = exercise.sets[setPos];
+      if (set) {
+        entries.push({ exercise, exercisePosInBlock, set, setPos });
+      }
+    });
+
+    if (entries.length > 0) {
+      rounds.push({ roundNumber: setPos + 1, entries });
+    }
+  }
+
+  return rounds;
 }
 
 export function mapDayBlocks(

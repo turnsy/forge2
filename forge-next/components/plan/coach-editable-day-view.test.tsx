@@ -478,6 +478,26 @@ describe("CoachEditableDayView", () => {
     expect(lastCall.weeks[0].days[0].blocks[0].exercises[1].name).toBe("Bench Press");
   });
 
+  it("adds an exercise to an existing superset", async () => {
+    const user = userEvent.setup();
+    const onPlanChange = vi.fn();
+    render(
+      <CoachEditableDayView
+        plan={makeSupersetPlan()}
+        weekPos={0}
+        dayPos={0}
+        disabled={false}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Add exercise to superset"));
+
+    const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises).toHaveLength(3);
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("New Exercise");
+  });
+
   it("allows entering a custom load unit", () => {
     const onPlanChange = vi.fn();
     render(
