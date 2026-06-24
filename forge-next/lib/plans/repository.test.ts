@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import {
   mapCoachPlanDetailRow,
   mapCoachPlanRpcRow,
@@ -12,39 +13,7 @@ describe("mapCoachPlanRow", () => {
       id: "plan-1",
       created_at: "2026-01-01T00:00:00.000Z",
       active_version: {
-        plan_data: {
-          schemaVersion: "2.0.0",
-          name: "4-Week Strength Block",
-          weeks: [
-            {
-              index: 1,
-              days: [
-                {
-                  index: 1,
-                  code: "w1d1",
-                  exercises: [
-                    {
-                      name: "Back Squat",
-                      sets: [
-                        {
-                          id: "w1d1-bs-1",
-                          planned: {
-                            type: "exact",
-                            reps: 5,
-                            load: { type: "absolute", value: 100, unit: "kg" },
-                          },
-                          actual: null,
-                          status: "planned",
-                          locked: false,
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
+        plan_data: minimalWorkoutPlan,
       },
     });
 
@@ -124,39 +93,7 @@ describe("mapCoachPlanDetailRow", () => {
       id: "plan-1",
       created_at: "2026-01-01T00:00:00.000Z",
       active_version: {
-        plan_data: {
-          schemaVersion: "2.0.0",
-          name: "4-Week Strength Block",
-          weeks: [
-            {
-              index: 1,
-              days: [
-                {
-                  index: 1,
-                  code: "w1d1",
-                  exercises: [
-                    {
-                      name: "Back Squat",
-                      sets: [
-                        {
-                          id: "w1d1-bs-1",
-                          planned: {
-                            type: "exact",
-                            reps: 5,
-                            load: { type: "absolute", value: 100, unit: "kg" },
-                          },
-                          actual: null,
-                          status: "planned",
-                          locked: false,
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
+        plan_data: minimalWorkoutPlan,
       },
     });
 
@@ -175,7 +112,7 @@ describe("mapCoachPlanDetailRow", () => {
       id: "plan-1",
       created_at: "2026-01-01T00:00:00.000Z",
       active_version: {
-        plan_data: { schemaVersion: "2.0.0" },
+        plan_data: { schemaVersion: "3.0.0" },
       },
     });
 

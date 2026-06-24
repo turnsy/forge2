@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlanDayView } from "@/components/plan/plan-day-view";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { makeWorkoutPlan as makePlan } from "@/lib/plans/__tests__/fixtures";
 
 const mockSaveSetActualsAction = vi.fn();
 const mockCompleteDayAction = vi.fn();
@@ -12,74 +12,13 @@ vi.mock("@/lib/athlete/plan/actions", () => ({
   completeDayAction: (...args: unknown[]) => mockCompleteDayAction(...args),
 }));
 
-function makePlan(overrides: {
-  dayComplete?: boolean;
-  includeSkippedSet?: boolean;
-  exerciseNotes?: string;
-  setNotes?: string;
-} = {}): WorkoutPlan {
-  const sets: WorkoutPlan["weeks"][number]["days"][number]["exercises"][number]["sets"] = [
-    {
-      id: "w1d1-bs-1",
-      planned: {
-        type: "exact",
-        reps: 8,
-        load: { type: "absolute", value: 60, unit: "kg" },
-        notes: overrides.setNotes,
-      },
-      actual: overrides.dayComplete
-        ? { reps: 8, load: { type: "absolute", value: 60, unit: "kg" } }
-        : null,
-      status: overrides.dayComplete ? "completed" : "planned",
-      locked: false,
-    },
-  ];
-
-  if (overrides.includeSkippedSet) {
-    sets.push({
-      id: "w1d1-bs-2",
-      planned: {
-        type: "exact",
-        reps: 5,
-        load: { type: "absolute", value: 80, unit: "kg" },
-      },
-      actual: null,
-      status: "skipped",
-      locked: false,
-    });
-  }
-
-  return {
-    schemaVersion: "2.0.0",
-    name: "Strength Block",
-    weeks: [
-      {
-        index: 1,
-        days: [
-          {
-            index: 1,
-            code: "w1d1",
-            exercises: [
-              {
-                name: "Back Squat",
-                notes: overrides.exerciseNotes,
-                sets,
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
-}
-
 describe("PlanDayView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSaveSetActualsAction.mockResolvedValue({ ok: true });
     mockCompleteDayAction.mockResolvedValue({
       ok: true,
-      nextDayIdx: null,
+      nextDayPos: null,
       allDaysDone: false,
       plan: makePlan(),
     });
@@ -88,7 +27,7 @@ describe("PlanDayView", () => {
 
   it("shows PlanSetTable for coach view", () => {
     render(
-      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+      <PlanDayView plan={makePlan()} weekPos={0} dayPos={0} view="coach" />,
     );
 
     expect(screen.getByRole("table")).toBeInTheDocument();
@@ -99,8 +38,8 @@ describe("PlanDayView", () => {
     const { container } = render(
       <PlanDayView
         plan={makePlan({ dayComplete: true })}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -120,8 +59,8 @@ describe("PlanDayView", () => {
     const { container } = render(
       <PlanDayView
         plan={makePlan({ dayComplete: true, includeSkippedSet: true })}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -141,8 +80,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -160,8 +99,8 @@ describe("PlanDayView", () => {
           exerciseNotes: "Brace hard on each rep",
           setNotes: "Leave 2 reps in reserve",
         })}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -175,8 +114,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -187,7 +126,7 @@ describe("PlanDayView", () => {
 
   it("hides Complete button for read-only views", () => {
     const { rerender } = render(
-      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+      <PlanDayView plan={makePlan()} weekPos={0} dayPos={0} view="coach" />,
     );
 
     expect(screen.queryByRole("button", { name: "Complete" })).not.toBeInTheDocument();
@@ -195,8 +134,8 @@ describe("PlanDayView", () => {
     rerender(
       <PlanDayView
         plan={makePlan({ dayComplete: true })}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -207,7 +146,7 @@ describe("PlanDayView", () => {
 
   it("shows Day not found empty state for out-of-bounds indices", () => {
     render(
-      <PlanDayView plan={makePlan()} weekIndex={99} dayIndex={99} view="coach" />,
+      <PlanDayView plan={makePlan()} weekPos={99} dayPos={99} view="coach" />,
     );
 
     expect(screen.getByText("Day not found")).toBeInTheDocument();
@@ -217,8 +156,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="coach"
         readOnly={false}
         onPlanChange={vi.fn()}
@@ -233,8 +172,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="coach"
         readOnly={false}
         disabled
@@ -251,8 +190,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="coach"
         readOnly={false}
         onPlanChange={onPlanChange}
@@ -270,8 +209,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="coach"
         readOnly
         onPlanChange={vi.fn()}
@@ -283,7 +222,7 @@ describe("PlanDayView", () => {
 
   it("still renders read-only coach table when onPlanChange is not provided", () => {
     render(
-      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+      <PlanDayView plan={makePlan()} weekPos={0} dayPos={0} view="coach" />,
     );
 
     expect(screen.getByRole("table")).toBeInTheDocument();
@@ -293,8 +232,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan({ dayComplete: true })}
-        weekIndex={1}
-        dayIndex={1}
+        weekPos={0}
+        dayPos={0}
         view="coach"
         readOnly={false}
         onPlanChange={vi.fn()}
@@ -310,13 +249,13 @@ describe("PlanDayView", () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
 
     render(
       <PlanDayView
         plan={plan}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -339,8 +278,8 @@ describe("PlanDayView", () => {
     render(
       <PlanDayView
         plan={makePlan()}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -351,13 +290,13 @@ describe("PlanDayView", () => {
 
   it("shows athlete video button in read-only completed day view", () => {
     const plan = makePlan({ dayComplete: true });
-    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
 
     render(
       <PlanDayView
         plan={plan}
-        weekIndex={1}
-        dayIndex={1}
+          weekPos={0}
+          dayPos={0}
         view="athlete"
         assignmentId="assignment-1"
       />,
@@ -370,10 +309,10 @@ describe("PlanDayView", () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const plan = makePlan();
-    plan.weeks[0].days[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
 
     render(
-      <PlanDayView plan={plan} weekIndex={1} dayIndex={1} view="coach" />,
+      <PlanDayView plan={plan} weekPos={0} dayPos={0} view="coach" />,
     );
 
     const videoButton = screen.getByLabelText("Video link attached");
@@ -393,7 +332,7 @@ describe("PlanDayView", () => {
 
   it("hides video indicator in coach read-only view when no videoUrl is set", () => {
     render(
-      <PlanDayView plan={makePlan()} weekIndex={1} dayIndex={1} view="coach" />,
+      <PlanDayView plan={makePlan()} weekPos={0} dayPos={0} view="coach" />,
     );
 
     expect(screen.queryByLabelText("Video link attached")).not.toBeInTheDocument();

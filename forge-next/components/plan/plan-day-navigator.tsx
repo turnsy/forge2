@@ -79,41 +79,41 @@ export function PlanDayNavigator({
     [plan, view, initialDay],
   );
 
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(defaultSelection.weekIndex);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(defaultSelection.dayIndex);
+  const [selectedWeekPos, setSelectedWeekPos] = useState(defaultSelection.weekPos);
+  const [selectedDayPos, setSelectedDayPos] = useState(defaultSelection.dayPos);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const selectionKey = `${selectedWeekIndex}-${selectedDayIndex}`;
+  const selectionKey = `${selectedWeekPos}-${selectedDayPos}`;
 
-  function handleWeekChange(weekIndex: number) {
-    const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+  function handleWeekChange(weekPos: number) {
+    const week = plan.weeks[weekPos];
     if (!week) {
       return;
     }
 
-    const nextDayIndex = clampDaySelectionForWeek(week, 1);
-    setSelectedWeekIndex(weekIndex);
-    setSelectedDayIndex(nextDayIndex);
+    const nextDayPos = clampDaySelectionForWeek(week, selectedDayPos);
+    setSelectedWeekPos(weekPos);
+    setSelectedDayPos(nextDayPos);
   }
 
-  function handleDayChange(dayIndex: number) {
-    setSelectedDayIndex(dayIndex);
+  function handleDayChange(dayPos: number) {
+    setSelectedDayPos(dayPos);
   }
 
-  function handleMobileSelect({ weekIndex, dayIndex }: DaySelection) {
-    setSelectedWeekIndex(weekIndex);
-    setSelectedDayIndex(dayIndex);
+  function handleMobileSelect({ weekPos, dayPos }: DaySelection) {
+    setSelectedWeekPos(weekPos);
+    setSelectedDayPos(dayPos);
   }
 
-  const selectedWeek = plan.weeks.find((week) => week.index === selectedWeekIndex);
-  const weekOptions = plan.weeks.map((week) => ({
-    index: week.index,
-    label: getWeekDropdownLabel(week),
+  const selectedWeek = plan.weeks[selectedWeekPos];
+  const weekOptions = plan.weeks.map((week, weekPos) => ({
+    weekPos,
+    label: getWeekDropdownLabel(week, weekPos),
   }));
   const dayOptions =
-    selectedWeek?.days.map((day) => ({
-      index: day.index,
-      label: getDayDropdownLabel(day),
+    selectedWeek?.days.map((day, dayPos) => ({
+      dayPos,
+      label: getDayDropdownLabel(day, dayPos),
     })) ?? [];
 
   const showStructureControls = view === "coach" && !readOnly && Boolean(onPlanChange);
@@ -122,23 +122,23 @@ export function PlanDayNavigator({
     onPlanChange?.(nextPlan);
   };
 
-  const handleDayCompleted = (allDaysDone: boolean, plan: WorkoutPlan) => {
-    if (!onDayCompleted || !selectedWeek) {
+  const handleDayCompleted = (allDaysDone: boolean, nextPlan: WorkoutPlan) => {
+    if (!onDayCompleted) {
       return;
     }
 
-    const week = plan.weeks.find((candidate) => candidate.index === selectedWeekIndex);
-    const day = week?.days.find((candidate) => candidate.index === selectedDayIndex);
+    const week = nextPlan.weeks[selectedWeekPos];
+    const day = week?.days[selectedDayPos];
     if (!week || !day) {
       return;
     }
 
     onDayCompleted(allDaysDone, {
-      weekIndex: selectedWeekIndex,
-      dayIndex: selectedDayIndex,
+      weekPos: selectedWeekPos,
+      dayPos: selectedDayPos,
       week,
       day,
-    }, plan);
+    }, nextPlan);
   };
 
   return (
@@ -158,11 +158,11 @@ export function PlanDayNavigator({
               hideLabel
               size="sm"
               wrapperClassName="min-w-0 flex-1"
-              value={selectedWeekIndex}
+              value={selectedWeekPos}
               onChange={(event) => handleWeekChange(Number(event.target.value))}
             >
               {weekOptions.map((option) => (
-                <option key={option.index} value={option.index}>
+                <option key={option.weekPos} value={option.weekPos}>
                   {option.label}
                 </option>
               ))}
@@ -172,11 +172,11 @@ export function PlanDayNavigator({
               hideLabel
               size="sm"
               wrapperClassName="min-w-0 flex-1"
-              value={selectedDayIndex}
+              value={selectedDayPos}
               onChange={(event) => handleDayChange(Number(event.target.value))}
             >
               {dayOptions.map((option) => (
-                <option key={option.index} value={option.index}>
+                <option key={option.dayPos} value={option.dayPos}>
                   {option.label}
                 </option>
               ))}
@@ -185,14 +185,14 @@ export function PlanDayNavigator({
           {showStructureControls ? (
             <PlanStructureControls
               plan={plan}
-              selectedWeekIndex={selectedWeekIndex}
-              selectedDayIndex={selectedDayIndex}
+              selectedWeekPos={selectedWeekPos}
+              selectedDayPos={selectedDayPos}
               disabled={disabled}
               canEditDay={canEditDay}
               onPlanChange={handlePlanStructureChange}
-              onSelectionChange={({ weekIndex, dayIndex }) => {
-                setSelectedWeekIndex(weekIndex);
-                setSelectedDayIndex(dayIndex);
+              onSelectionChange={({ weekPos, dayPos }) => {
+                setSelectedWeekPos(weekPos);
+                setSelectedDayPos(dayPos);
               }}
             />
           ) : null}
@@ -200,23 +200,23 @@ export function PlanDayNavigator({
 
         <PlanMobileDayPicker
           plan={plan}
-          selectedWeekIndex={selectedWeekIndex}
-          selectedDayIndex={selectedDayIndex}
+          selectedWeekPos={selectedWeekPos}
+          selectedDayPos={selectedDayPos}
           onSelect={handleMobileSelect}
         />
         {showStructureControls ? (
           <div className="md:hidden">
             <PlanStructureControls
               plan={plan}
-              selectedWeekIndex={selectedWeekIndex}
-              selectedDayIndex={selectedDayIndex}
+              selectedWeekPos={selectedWeekPos}
+              selectedDayPos={selectedDayPos}
               disabled={disabled}
               layout="mobile"
               canEditDay={canEditDay}
               onPlanChange={handlePlanStructureChange}
-              onSelectionChange={({ weekIndex, dayIndex }) => {
-                setSelectedWeekIndex(weekIndex);
-                setSelectedDayIndex(dayIndex);
+              onSelectionChange={({ weekPos, dayPos }) => {
+                setSelectedWeekPos(weekPos);
+                setSelectedDayPos(dayPos);
               }}
             />
           </div>
@@ -226,8 +226,8 @@ export function PlanDayNavigator({
       <PlanDayView
         key={selectionKey}
         plan={plan}
-        weekIndex={selectedWeekIndex}
-        dayIndex={selectedDayIndex}
+        weekPos={selectedWeekPos}
+        dayPos={selectedDayPos}
         view={view}
         readOnly={readOnly}
         assignmentId={assignmentId}

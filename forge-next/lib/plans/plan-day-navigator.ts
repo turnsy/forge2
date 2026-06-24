@@ -1,78 +1,66 @@
 import { findCurrentDay } from "@/lib/athlete/plan/domain";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 export { isDayEditable } from "@/lib/plans/plan-editability";
+import { getDayTitle, getWeekTitle } from "@/lib/plans/display";
 import type { Day, Week, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type PlanDayNavItem = {
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
   week: Week;
   day: Day;
 };
 
 export type DaySelection = {
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
 };
 
 export function buildPlanDayNavItems(plan: WorkoutPlan): PlanDayNavItem[] {
   const items: PlanDayNavItem[] = [];
 
-  for (const week of plan.weeks) {
-    for (const day of week.days) {
-      items.push({
-        weekIndex: week.index,
-        dayIndex: day.index,
-        week,
-        day,
-      });
-    }
-  }
+  plan.weeks.forEach((week, weekPos) => {
+    week.days.forEach((day, dayPos) => {
+      items.push({ weekPos, dayPos, week, day });
+    });
+  });
 
   return items;
 }
 
-export function getWeekDropdownLabel(week: Week): string {
-  if (week.label?.trim()) {
-    return week.label.trim();
-  }
-
-  if (week.name?.trim()) {
-    return week.name.trim();
-  }
-
-  return `Week ${week.index}`;
+export function getWeekDropdownLabel(week: Week, weekPos: number): string {
+  return getWeekTitle(week, weekPos);
 }
 
-export function getDayDropdownLabel(day: Day): string {
-  return `Day ${day.index}`;
+export function getDayDropdownLabel(day: Day, dayPos: number): string {
+  return getDayTitle(day, dayPos);
 }
 
-export function getMobileDayLabel(weekIndex: number, dayIndex: number): string {
-  return `W${weekIndex} D${dayIndex}`;
+export function getMobileDayLabel(weekPos: number, dayPos: number): string {
+  return `W${weekPos + 1} D${dayPos + 1}`;
 }
 
-export function getMobileDayHeaderLabel(week: Week, day: Day): string {
-  return `Week ${week.index}, Day ${day.index}`;
+export function getMobileDayHeaderLabel(week: Week, day: Day, weekPos: number, dayPos: number): string {
+  return `${getWeekTitle(week, weekPos)}, ${getDayTitle(day, dayPos)}`;
 }
 
 export function findNavItemIndex(
   items: PlanDayNavItem[],
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
 ): number {
   return items.findIndex(
-    (item) => item.weekIndex === weekIndex && item.dayIndex === dayIndex,
+    (item) => item.weekPos === weekPos && item.dayPos === dayPos,
   );
 }
 
 export function getAdjacentDaySelection(
   items: PlanDayNavItem[],
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
   direction: "prev" | "next",
 ): DaySelection | null {
-  const currentIndex = findNavItemIndex(items, weekIndex, dayIndex);
+  const currentIndex = findNavItemIndex(items, weekPos, dayPos);
   if (currentIndex === -1) {
     return null;
   }
@@ -84,22 +72,22 @@ export function getAdjacentDaySelection(
 
   const item = items[nextIndex];
   return {
-    weekIndex: item.weekIndex,
-    dayIndex: item.dayIndex,
+    weekPos: item.weekPos,
+    dayPos: item.dayPos,
   };
 }
 
 export function resolveDayLocation(
   plan: WorkoutPlan,
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
 ): { week: Week; day: Day } | null {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+  const week = plan.weeks[weekPos];
   if (!week) {
     return null;
   }
 
-  const day = week.days.find((candidate) => candidate.index === dayIndex);
+  const day = week.days[dayPos];
   if (!day) {
     return null;
   }
@@ -113,7 +101,7 @@ export function getInitialDaySelection(
   initialDay?: DaySelection,
 ): DaySelection {
   if (initialDay) {
-    const resolved = resolveDayLocation(plan, initialDay.weekIndex, initialDay.dayIndex);
+    const resolved = resolveDayLocation(plan, initialDay.weekPos, initialDay.dayPos);
     if (resolved) {
       return initialDay;
     }
@@ -123,30 +111,22 @@ export function getInitialDaySelection(
     const current = findCurrentDay(plan);
     if (current) {
       return {
-        weekIndex: current.weekIndex,
-        dayIndex: current.dayIndex,
+        weekPos: current.weekPos,
+        dayPos: current.dayPos,
       };
     }
   }
 
-  const firstWeek = plan.weeks[0];
-  const firstDay = firstWeek?.days[0];
-
   return {
-    weekIndex: firstWeek?.index ?? 1,
-    dayIndex: firstDay?.index ?? 1,
+    weekPos: 0,
+    dayPos: 0,
   };
 }
 
-export function clampDaySelectionForWeek(
-  week: Week,
-  dayIndex: number,
-): number {
-  const dayExists = week.days.some((day) => day.index === dayIndex);
-  if (dayExists) {
-    return dayIndex;
+export function clampDaySelectionForWeek(week: Week, dayPos: number): number {
+  if (dayPos >= 0 && dayPos < week.days.length) {
+    return dayPos;
   }
 
-  return week.days[0]?.index ?? 1;
+  return 0;
 }
-

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { makeBlock } from "@/lib/plans/__tests__/fixtures";
 import {
   isDayEditable,
   isExerciseEditable,
@@ -22,6 +23,7 @@ function makeSet(status: Set["status"]): Set {
 
 function makeExercise(sets: Set[]): Exercise {
   return {
+    id: "back-squat",
     name: "Back Squat",
     sets: sets as Exercise["sets"],
   };
@@ -29,9 +31,8 @@ function makeExercise(sets: Set[]): Exercise {
 
 function makeDay(exercises: Exercise[]): Day {
   return {
-    index: 1,
     code: "w1d1",
-    exercises: exercises as Day["exercises"],
+    blocks: [makeBlock({ id: "w1d1-b1", exercises: exercises as Day["blocks"][number]["exercises"] })],
   };
 }
 

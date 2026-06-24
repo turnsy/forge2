@@ -8,7 +8,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 describe("mapPlanWireEvent", () => {
   it("maps plan artifact events to chat artifact events", () => {
-    const plan = { schemaVersion: "2.0.0" as const, name: "Block", weeks: [] };
+    const plan = { schemaVersion: "3.0.0" as const, name: "Block", weeks: [] };
     expect(
       mapPlanWireEvent({
         type: "artifact",
@@ -38,7 +38,7 @@ describe("plan chat SSE buffer parsing", () => {
 describe("readPlanChatSseStream", () => {
   it("maps streamed plan-chat wire events to client chat events", async () => {
     const plan: WorkoutPlan = {
-      schemaVersion: "2.0.0",
+      schemaVersion: "3.0.0",
       name: "Stream Plan",
       weeks: [],
     };

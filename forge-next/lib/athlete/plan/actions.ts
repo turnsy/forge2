@@ -20,17 +20,17 @@ import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
 
 export type CompleteDayActionResult = ServiceResult<{
-  nextDayIdx: number | null;
+  nextDayPos: number | null;
   allDaysDone: boolean;
   plan: WorkoutPlan;
 }>;
 
 export async function saveSetActualsAction(
   assignmentId: string,
-  weekIdx: number,
-  dayIdx: number,
-  exerciseIdx: number,
-  setIdx: number,
+  weekPos: number,
+  dayPos: number,
+  exercisePos: number,
+  setPos: number,
   actual: ActualSet | null,
 ): Promise<SaveSetActualsActionResult> {
   const auth = await requireRoleAuth("athlete");
@@ -53,10 +53,10 @@ export async function saveSetActualsAction(
 
   const updatedPlan = applySetActuals(
     assignment.plan,
-    weekIdx,
-    dayIdx,
-    exerciseIdx,
-    setIdx,
+    weekPos,
+    dayPos,
+    exercisePos,
+    setPos,
     actual,
   );
 
@@ -65,8 +65,8 @@ export async function saveSetActualsAction(
 
 export async function completeDayAction(
   assignmentId: string,
-  weekIdx: number,
-  dayIdx: number,
+  weekPos: number,
+  dayPos: number,
 ): Promise<CompleteDayActionResult> {
   const auth = await requireRoleAuth("athlete");
   if (!auth.ok) {
@@ -89,8 +89,8 @@ export async function completeDayAction(
   const completeResult = await completeDay(
     assignmentId,
     assignment.plan,
-    weekIdx,
-    dayIdx,
+    weekPos,
+    dayPos,
   );
 
   if (!completeResult.ok) {
@@ -100,14 +100,14 @@ export async function completeDayAction(
   const { allDaysDone, plan } = completeResult;
 
   if (allDaysDone) {
-    return { ok: true, nextDayIdx: null, allDaysDone: true, plan };
+    return { ok: true, nextDayPos: null, allDaysDone: true, plan };
   }
 
-  const nextDay = findNextDayAfter(plan, weekIdx, dayIdx);
+  const nextDay = findNextDayAfter(plan, weekPos, dayPos);
 
   return {
     ok: true,
-    nextDayIdx: nextDay?.dayIndex ?? null,
+    nextDayPos: nextDay?.dayPos ?? null,
     allDaysDone: false,
     plan,
   };

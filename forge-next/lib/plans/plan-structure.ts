@@ -1,6 +1,6 @@
 import { createDefaultDay, isDefaultDayContent } from "@/lib/plans/plan-defaults";
 import type { DaySelection } from "@/lib/plans/plan-day-navigator";
-import type { Day, Week, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function formatDayCode(weekNumber: number, dayNumber: number): string {
   return `w${weekNumber}d${dayNumber}`;
@@ -14,14 +14,12 @@ export function syncPlanStructure(plan: WorkoutPlan): WorkoutPlan {
 
       return {
         ...day,
-        index: dayNumber,
         code: formatDayCode(weekNumber, dayNumber),
       };
     });
 
     return {
       ...week,
-      index: weekNumber,
       days: days as typeof week.days,
     };
   });
@@ -30,14 +28,6 @@ export function syncPlanStructure(plan: WorkoutPlan): WorkoutPlan {
     ...plan,
     weeks: weeks as typeof plan.weeks,
   };
-}
-
-function findWeekArrayIndex(plan: WorkoutPlan, weekIndex: number): number {
-  return plan.weeks.findIndex((week) => week.index === weekIndex);
-}
-
-function findDayArrayIndex(week: Week, dayIndex: number): number {
-  return week.days.findIndex((day) => day.index === dayIndex);
 }
 
 function moveListItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
@@ -59,247 +49,187 @@ export function canRemoveWeek(plan: WorkoutPlan): boolean {
   return plan.weeks.length > 1;
 }
 
-export function canRemoveDay(plan: WorkoutPlan, weekIndex: number): boolean {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+export function canRemoveDay(plan: WorkoutPlan, weekPos: number): boolean {
+  const week = plan.weeks[weekPos];
   return Boolean(week && week.days.length > 1);
 }
 
-export function canMoveWeek(plan: WorkoutPlan, weekIndex: number, direction: -1 | 1): boolean {
-  const weekPosition = findWeekArrayIndex(plan, weekIndex);
-  if (weekPosition === -1) {
-    return false;
-  }
-
-  const targetPosition = weekPosition + direction;
-  return targetPosition >= 0 && targetPosition < plan.weeks.length;
+export function canMoveWeek(plan: WorkoutPlan, weekPos: number, direction: -1 | 1): boolean {
+  const targetPosition = weekPos + direction;
+  return weekPos >= 0 && weekPos < plan.weeks.length && targetPosition >= 0 && targetPosition < plan.weeks.length;
 }
 
 export function canMoveDay(
   plan: WorkoutPlan,
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
   direction: -1 | 1,
 ): boolean {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+  const week = plan.weeks[weekPos];
   if (!week) {
     return false;
   }
 
-  const dayPosition = findDayArrayIndex(week, dayIndex);
-  if (dayPosition === -1) {
-    return false;
-  }
-
-  const targetPosition = dayPosition + direction;
-  return targetPosition >= 0 && targetPosition < week.days.length;
+  const targetPosition = dayPos + direction;
+  return dayPos >= 0 && dayPos < week.days.length && targetPosition >= 0 && targetPosition < week.days.length;
 }
 
 export function addWeek(plan: WorkoutPlan): WorkoutPlan {
   const nextPlan = clonePlan(plan);
   nextPlan.weeks.push({
-    index: nextPlan.weeks.length + 1,
     days: [createDefaultDay()],
   });
 
   return syncPlanStructure(nextPlan);
 }
 
-export function addDay(plan: WorkoutPlan, weekIndex: number): WorkoutPlan {
+export function addDay(plan: WorkoutPlan, weekPos: number): WorkoutPlan {
   const nextPlan = clonePlan(plan);
-  const weekPosition = findWeekArrayIndex(nextPlan, weekIndex);
-  if (weekPosition === -1) {
+  const week = nextPlan.weeks[weekPos];
+  if (!week) {
     return plan;
   }
 
-  nextPlan.weeks[weekPosition].days.push(createDefaultDay());
+  week.days.push(createDefaultDay());
   return syncPlanStructure(nextPlan);
 }
 
-export function removeWeek(plan: WorkoutPlan, weekIndex: number): WorkoutPlan | null {
-  if (!canRemoveWeek(plan)) {
-    return null;
-  }
-
-  const weekPosition = findWeekArrayIndex(plan, weekIndex);
-  if (weekPosition === -1) {
+export function removeWeek(plan: WorkoutPlan, weekPos: number): WorkoutPlan | null {
+  if (!canRemoveWeek(plan) || !plan.weeks[weekPos]) {
     return null;
   }
 
   const nextPlan = clonePlan(plan);
-  nextPlan.weeks.splice(weekPosition, 1);
+  nextPlan.weeks.splice(weekPos, 1);
   return syncPlanStructure(nextPlan);
 }
 
 export function removeDay(
   plan: WorkoutPlan,
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
 ): WorkoutPlan | null {
-  if (!canRemoveDay(plan, weekIndex)) {
+  if (!canRemoveDay(plan, weekPos) || !plan.weeks[weekPos]?.days[dayPos]) {
     return null;
   }
 
   const nextPlan = clonePlan(plan);
-  const weekPosition = findWeekArrayIndex(nextPlan, weekIndex);
-  if (weekPosition === -1) {
-    return null;
-  }
-
-  const dayPosition = findDayArrayIndex(nextPlan.weeks[weekPosition], dayIndex);
-  if (dayPosition === -1) {
-    return null;
-  }
-
-  nextPlan.weeks[weekPosition].days.splice(dayPosition, 1);
+  nextPlan.weeks[weekPos].days.splice(dayPos, 1);
   return syncPlanStructure(nextPlan);
 }
 
 export function moveWeek(
   plan: WorkoutPlan,
-  weekIndex: number,
+  weekPos: number,
   direction: -1 | 1,
 ): WorkoutPlan | null {
-  if (!canMoveWeek(plan, weekIndex, direction)) {
-    return null;
-  }
-
-  const weekPosition = findWeekArrayIndex(plan, weekIndex);
-  if (weekPosition === -1) {
+  if (!canMoveWeek(plan, weekPos, direction)) {
     return null;
   }
 
   const nextPlan = clonePlan(plan);
   nextPlan.weeks = moveListItem(
     nextPlan.weeks,
-    weekPosition,
-    weekPosition + direction,
+    weekPos,
+    weekPos + direction,
   ) as typeof nextPlan.weeks;
   return syncPlanStructure(nextPlan);
 }
 
 export function moveDay(
   plan: WorkoutPlan,
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
   direction: -1 | 1,
 ): WorkoutPlan | null {
-  if (!canMoveDay(plan, weekIndex, dayIndex, direction)) {
+  if (!canMoveDay(plan, weekPos, dayPos, direction)) {
     return null;
   }
 
   const nextPlan = clonePlan(plan);
-  const weekPosition = findWeekArrayIndex(nextPlan, weekIndex);
-  if (weekPosition === -1) {
-    return null;
-  }
-
-  const week = nextPlan.weeks[weekPosition];
-  const dayPosition = findDayArrayIndex(week, dayIndex);
-  if (dayPosition === -1) {
-    return null;
-  }
-
+  const week = nextPlan.weeks[weekPos];
   week.days = moveListItem(
     week.days,
-    dayPosition,
-    dayPosition + direction,
+    dayPos,
+    dayPos + direction,
   ) as typeof week.days;
   return syncPlanStructure(nextPlan);
 }
 
 export function resolveSelectionAfterAddWeek(plan: WorkoutPlan): DaySelection {
-  const week = plan.weeks.at(-1);
+  const weekPos = plan.weeks.length - 1;
+
   return {
-    weekIndex: week?.index ?? 1,
-    dayIndex: week?.days[0]?.index ?? 1,
+    weekPos: Math.max(weekPos, 0),
+    dayPos: 0,
   };
 }
 
 export function resolveSelectionAfterAddDay(
   plan: WorkoutPlan,
-  weekIndex: number,
+  weekPos: number,
 ): DaySelection {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
-  const day = week?.days.at(-1);
+  const week = plan.weeks[weekPos];
+  const dayPos = (week?.days.length ?? 1) - 1;
 
   return {
-    weekIndex,
-    dayIndex: day?.index ?? 1,
+    weekPos,
+    dayPos: Math.max(dayPos, 0),
   };
 }
 
 export function resolveSelectionAfterRemoveWeek(
   plan: WorkoutPlan,
-  removedWeekArrayIndex: number,
+  removedWeekPos: number,
 ): DaySelection {
-  const targetPosition = Math.min(removedWeekArrayIndex, plan.weeks.length - 1);
-  const week = plan.weeks[targetPosition];
+  const targetPosition = Math.min(removedWeekPos, plan.weeks.length - 1);
 
   return {
-    weekIndex: week?.index ?? 1,
-    dayIndex: week?.days[0]?.index ?? 1,
+    weekPos: Math.max(targetPosition, 0),
+    dayPos: 0,
   };
 }
 
 export function resolveSelectionAfterRemoveDay(
   plan: WorkoutPlan,
-  weekIndex: number,
-  removedDayArrayIndex: number,
+  weekPos: number,
+  removedDayPos: number,
 ): DaySelection {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+  const week = plan.weeks[weekPos];
   if (!week) {
-    return { weekIndex: 1, dayIndex: 1 };
+    return { weekPos: 0, dayPos: 0 };
   }
 
-  const targetPosition = Math.min(removedDayArrayIndex, week.days.length - 1);
+  const targetPosition = Math.min(removedDayPos, week.days.length - 1);
 
   return {
-    weekIndex,
-    dayIndex: week.days[targetPosition]?.index ?? 1,
+    weekPos,
+    dayPos: Math.max(targetPosition, 0),
   };
 }
 
 export function resolveSelectionAfterMoveWeek(
   plan: WorkoutPlan,
-  weekArrayIndex: number,
+  weekPos: number,
 ): DaySelection {
-  const week = plan.weeks[weekArrayIndex];
-
   return {
-    weekIndex: week?.index ?? 1,
-    dayIndex: week?.days[0]?.index ?? 1,
+    weekPos: Math.min(Math.max(weekPos, 0), plan.weeks.length - 1),
+    dayPos: 0,
   };
 }
 
 export function resolveSelectionAfterMoveDay(
-  plan: WorkoutPlan,
-  weekIndex: number,
-  dayArrayIndex: number,
+  weekPos: number,
+  dayPos: number,
 ): DaySelection {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
-  const day = week?.days[dayArrayIndex];
-
   return {
-    weekIndex,
-    dayIndex: day?.index ?? 1,
+    weekPos,
+    dayPos,
   };
 }
 
-export function getWeekArrayIndex(plan: WorkoutPlan, weekIndex: number): number {
-  return findWeekArrayIndex(plan, weekIndex);
-}
-
-export function getDayArrayIndex(plan: WorkoutPlan, weekIndex: number, dayIndex: number): number {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
-  if (!week) {
-    return -1;
-  }
-
-  return findDayArrayIndex(week, dayIndex);
-}
-
-export function shouldConfirmDeleteWeek(plan: WorkoutPlan, weekIndex: number): boolean {
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+export function shouldConfirmDeleteWeek(plan: WorkoutPlan, weekPos: number): boolean {
+  const week = plan.weeks[weekPos];
   if (!week) {
     return false;
   }

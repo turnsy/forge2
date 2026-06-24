@@ -192,11 +192,11 @@ export async function savePlanActuals(
 export async function completeDay(
   assignmentId: string,
   planData: WorkoutPlan,
-  weekIdx: number,
-  dayIdx: number,
+  weekPos: number,
+  dayPos: number,
   client?: AthletePlanClient,
 ): Promise<CompleteDayResult> {
-  const { plan, setStatuses } = completeDayInPlan(planData, weekIdx, dayIdx);
+  const { plan, setStatuses } = completeDayInPlan(planData, weekPos, dayPos);
   const allDaysDone = areAllDaysComplete(plan);
   const completedAt = allDaysDone ? new Date().toISOString() : null;
 

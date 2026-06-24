@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { makeBlock, makeDay, makeExercise } from "@/lib/plans/__tests__/fixtures";
 import { PlanViewer } from "@/components/plan/plan-viewer";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -9,53 +10,58 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 function makePlanWithIdenticalSets(setCount: number): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Hang SN",
-                sets: Array.from({ length: setCount }, (_, index) => ({
-                  id: `w1d1-hang-sn-${index + 1}`,
-                  planned: {
-                    type: "exact" as const,
-                    reps: 3,
-                    load: {
-                      type: "percentage" as const,
-                      value: 70,
-                      unit: "kg",
-                    },
-                  },
-                  actual: null,
-                  status: "planned" as const,
-                  locked: false,
-                })),
-              },
-              {
-                name: "Press",
-                sets: [
-                  {
-                    id: "w1d1-press-1",
-                    planned: {
-                      type: "target" as const,
-                      instruction: "work up to",
-                      reps: 5,
-                      notes: "work up to 3x5",
-                    },
-                    actual: null,
-                    status: "planned" as const,
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "hang-sn",
+                    name: "Hang SN",
+                    sets: Array.from({ length: setCount }, (_, index) => ({
+                      id: `w1d1-hang-sn-${index + 1}`,
+                      planned: {
+                        type: "exact" as const,
+                        reps: 3,
+                        load: {
+                          type: "percentage" as const,
+                          value: 70,
+                          unit: "kg",
+                        },
+                      },
+                      actual: null,
+                      status: "planned" as const,
+                      locked: false,
+                    })),
+                  }),
+                  makeExercise({
+                    id: "press",
+                    name: "Press",
+                    sets: [
+                      {
+                        id: "w1d1-press-1",
+                        planned: {
+                          type: "target" as const,
+                          instruction: "work up to",
+                          reps: 5,
+                          notes: "work up to 3x5",
+                        },
+                        actual: null,
+                        status: "planned" as const,
+                        locked: false,
+                      },
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],

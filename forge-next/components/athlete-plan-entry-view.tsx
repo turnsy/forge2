@@ -50,8 +50,8 @@ export function AthletePlanEntryView({
       const nextDay = findCurrentDay(currentPlan);
       if (nextDay) {
         setNavigateToDay({
-          weekIndex: nextDay.weekIndex,
-          dayIndex: nextDay.dayIndex,
+          weekPos: nextDay.weekPos,
+          dayPos: nextDay.dayPos,
         });
       }
       return currentPlan;
@@ -72,7 +72,7 @@ export function AthletePlanEntryView({
       <PlanDayNavigator
         key={
           navigateToDay
-            ? `nav-${navigateToDay.weekIndex}-${navigateToDay.dayIndex}`
+            ? `nav-${navigateToDay.weekPos}-${navigateToDay.dayPos}`
             : "default"
         }
         plan={plan}

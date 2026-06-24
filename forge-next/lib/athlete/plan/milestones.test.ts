@@ -9,8 +9,8 @@ import type { CurrentDayLocation } from "@/lib/athlete/plan/domain";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
 const currentDay: CurrentDayLocation = {
-  weekIndex: 1,
-  dayIndex: 1,
+  weekPos: 0,
+  dayPos: 0,
   week: minimalWorkoutPlan.weeks[0],
   day: minimalWorkoutPlan.weeks[0].days[0],
 };

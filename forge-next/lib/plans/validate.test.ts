@@ -1,40 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { makeWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 
 function minimalValidPlan() {
-  return {
-    schemaVersion: "2.0.0",
-    name: "Test Plan",
-    weeks: [
-      {
-        index: 1,
-        days: [
-          {
-            index: 1,
-            code: "w1d1",
-            exercises: [
-              {
-                name: "Back Squat",
-                sets: [
-                  {
-                    id: "w1d1-bs-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
+  return makeWorkoutPlan({ name: "Test Plan" });
 }
 
 describe("loadWorkoutPlan", () => {
@@ -48,7 +17,7 @@ describe("loadWorkoutPlan", () => {
   });
 
   it("rejects missing required fields", () => {
-    const result = loadWorkoutPlan({ schemaVersion: "2.0.0" });
+    const result = loadWorkoutPlan({ schemaVersion: "3.0.0" });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

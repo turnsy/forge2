@@ -12,12 +12,10 @@ import { resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import {
   addDay,
   addWeek,
-  canRemoveDay,
-  canRemoveWeek,
   canMoveDay,
   canMoveWeek,
-  getDayArrayIndex,
-  getWeekArrayIndex,
+  canRemoveDay,
+  canRemoveWeek,
   moveDay,
   moveWeek,
   removeDay,
@@ -39,23 +37,18 @@ type PendingDelete =
 
 function canMoveSelectedDay(
   plan: WorkoutPlan,
-  weekIndex: number,
-  dayIndex: number,
+  weekPos: number,
+  dayPos: number,
   direction: -1 | 1,
   canEditDay: (day: Day) => boolean,
 ): boolean {
-  if (!canMoveDay(plan, weekIndex, dayIndex, direction)) {
+  if (!canMoveDay(plan, weekPos, dayPos, direction)) {
     return false;
   }
 
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
-  if (!week) {
-    return false;
-  }
-
-  const dayPosition = week.days.findIndex((day) => day.index === dayIndex);
-  const selectedDay = week.days[dayPosition];
-  const neighborDay = week.days[dayPosition + direction];
+  const week = plan.weeks[weekPos];
+  const selectedDay = week?.days[dayPos];
+  const neighborDay = week?.days[dayPos + direction];
 
   if (!selectedDay || !neighborDay) {
     return false;
@@ -66,17 +59,16 @@ function canMoveSelectedDay(
 
 function canMoveSelectedWeek(
   plan: WorkoutPlan,
-  weekIndex: number,
+  weekPos: number,
   direction: -1 | 1,
   canEditDay: (day: Day) => boolean,
 ): boolean {
-  if (!canMoveWeek(plan, weekIndex, direction)) {
+  if (!canMoveWeek(plan, weekPos, direction)) {
     return false;
   }
 
-  const weekPosition = getWeekArrayIndex(plan, weekIndex);
-  const selectedWeek = plan.weeks[weekPosition];
-  const neighborWeek = plan.weeks[weekPosition + direction];
+  const selectedWeek = plan.weeks[weekPos];
+  const neighborWeek = plan.weeks[weekPos + direction];
 
   if (!selectedWeek || !neighborWeek) {
     return false;
@@ -89,21 +81,21 @@ function canMoveSelectedWeek(
 
 function canDeleteSelectedWeek(
   plan: WorkoutPlan,
-  weekIndex: number,
+  weekPos: number,
   canEditDay: (day: Day) => boolean,
 ): boolean {
   if (!canRemoveWeek(plan)) {
     return false;
   }
 
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
+  const week = plan.weeks[weekPos];
   return Boolean(week?.days.every(canEditDay));
 }
 
 export function PlanStructureControls({
   plan,
-  selectedWeekIndex,
-  selectedDayIndex,
+  selectedWeekPos,
+  selectedDayPos,
   disabled,
   onPlanChange,
   onSelectionChange,
@@ -111,8 +103,8 @@ export function PlanStructureControls({
   canEditDay = () => true,
 }: {
   plan: WorkoutPlan;
-  selectedWeekIndex: number;
-  selectedDayIndex: number;
+  selectedWeekPos: number;
+  selectedDayPos: number;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
   onSelectionChange: (selection: DaySelection) => void;
@@ -120,9 +112,7 @@ export function PlanStructureControls({
   canEditDay?: (day: Day) => boolean;
 }) {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
-  const weekArrayIndex = getWeekArrayIndex(plan, selectedWeekIndex);
-  const dayArrayIndex = getDayArrayIndex(plan, selectedWeekIndex, selectedDayIndex);
-  const selectedLocation = resolveDayLocation(plan, selectedWeekIndex, selectedDayIndex);
+  const selectedLocation = resolveDayLocation(plan, selectedWeekPos, selectedDayPos);
 
   function handleAddWeek() {
     const nextPlan = addWeek(plan);
@@ -131,88 +121,76 @@ export function PlanStructureControls({
   }
 
   function handleAddDay() {
-    const nextPlan = addDay(plan, selectedWeekIndex);
+    const nextPlan = addDay(plan, selectedWeekPos);
     onPlanChange(nextPlan);
-    onSelectionChange(resolveSelectionAfterAddDay(nextPlan, selectedWeekIndex));
+    onSelectionChange(resolveSelectionAfterAddDay(nextPlan, selectedWeekPos));
   }
 
   function executeRemoveWeek() {
-    if (weekArrayIndex === -1) {
-      return;
-    }
-
-    const nextPlan = removeWeek(plan, selectedWeekIndex);
+    const nextPlan = removeWeek(plan, selectedWeekPos);
     if (!nextPlan) {
       return;
     }
 
     onPlanChange(nextPlan);
-    onSelectionChange(resolveSelectionAfterRemoveWeek(nextPlan, weekArrayIndex));
+    onSelectionChange(resolveSelectionAfterRemoveWeek(nextPlan, selectedWeekPos));
   }
 
   function executeRemoveDay() {
-    if (!selectedLocation || dayArrayIndex === -1) {
+    if (!selectedLocation) {
       return;
     }
 
-    const nextPlan = removeDay(plan, selectedWeekIndex, selectedDayIndex);
+    const nextPlan = removeDay(plan, selectedWeekPos, selectedDayPos);
     if (!nextPlan) {
       return;
     }
 
     onPlanChange(nextPlan);
     onSelectionChange(
-      resolveSelectionAfterRemoveDay(nextPlan, selectedWeekIndex, dayArrayIndex),
+      resolveSelectionAfterRemoveDay(nextPlan, selectedWeekPos, selectedDayPos),
     );
   }
 
   function handleMoveWeek(direction: -1 | 1) {
-    if (!canMoveSelectedWeek(plan, selectedWeekIndex, direction, canEditDay)) {
+    if (!canMoveSelectedWeek(plan, selectedWeekPos, direction, canEditDay)) {
       return;
     }
 
-    const weekPosition = getWeekArrayIndex(plan, selectedWeekIndex);
-    const nextPlan = moveWeek(plan, selectedWeekIndex, direction);
+    const nextPlan = moveWeek(plan, selectedWeekPos, direction);
     if (!nextPlan) {
       return;
     }
 
     onPlanChange(nextPlan);
-    onSelectionChange(resolveSelectionAfterMoveWeek(nextPlan, weekPosition + direction));
+    onSelectionChange(resolveSelectionAfterMoveWeek(nextPlan, selectedWeekPos + direction));
   }
 
   function handleMoveDay(direction: -1 | 1) {
     if (
       !selectedLocation ||
-      !canMoveSelectedDay(plan, selectedWeekIndex, selectedDayIndex, direction, canEditDay)
+      !canMoveSelectedDay(plan, selectedWeekPos, selectedDayPos, direction, canEditDay)
     ) {
       return;
     }
 
-    const nextPlan = moveDay(plan, selectedWeekIndex, selectedDayIndex, direction);
+    const nextPlan = moveDay(plan, selectedWeekPos, selectedDayPos, direction);
     if (!nextPlan) {
       return;
     }
 
-    const week = nextPlan.weeks.find((candidate) => candidate.index === selectedWeekIndex);
-    const dayPosition = week
-      ? week.days.findIndex((day) => day.index === selectedDayIndex)
-      : -1;
-
     onPlanChange(nextPlan);
-    if (dayPosition !== -1) {
-      onSelectionChange(
-        resolveSelectionAfterMoveDay(nextPlan, selectedWeekIndex, dayPosition),
-      );
-    }
+    onSelectionChange(
+      resolveSelectionAfterMoveDay(selectedWeekPos, selectedDayPos + direction),
+    );
   }
 
   function requestRemoveWeek() {
-    if (!canDeleteSelectedWeek(plan, selectedWeekIndex, canEditDay)) {
+    if (!canDeleteSelectedWeek(plan, selectedWeekPos, canEditDay)) {
       return;
     }
 
-    if (shouldConfirmDeleteWeek(plan, selectedWeekIndex)) {
+    if (shouldConfirmDeleteWeek(plan, selectedWeekPos)) {
       setPendingDelete({ type: "week" });
       return;
     }
@@ -222,7 +200,7 @@ export function PlanStructureControls({
 
   function requestRemoveDay() {
     if (
-      !canRemoveDay(plan, selectedWeekIndex) ||
+      !canRemoveDay(plan, selectedWeekPos) ||
       !selectedLocation ||
       !canEditDay(selectedLocation.day)
     ) {
@@ -261,7 +239,7 @@ export function PlanStructureControls({
         icon={<ChevronUpIcon className="h-4 w-4" />}
         aria-label="Move week up"
         disabled={
-          disabled || !canMoveSelectedWeek(plan, selectedWeekIndex, -1, canEditDay)
+          disabled || !canMoveSelectedWeek(plan, selectedWeekPos, -1, canEditDay)
         }
         onClick={() => handleMoveWeek(-1)}
       />
@@ -271,7 +249,7 @@ export function PlanStructureControls({
         icon={<ChevronDownIcon className="h-4 w-4" />}
         aria-label="Move week down"
         disabled={
-          disabled || !canMoveSelectedWeek(plan, selectedWeekIndex, 1, canEditDay)
+          disabled || !canMoveSelectedWeek(plan, selectedWeekPos, 1, canEditDay)
         }
         onClick={() => handleMoveWeek(1)}
       />
@@ -293,7 +271,7 @@ export function PlanStructureControls({
         size="sm"
         fullWidth={layout === "mobile"}
         icon={<XIcon />}
-        disabled={disabled || !canDeleteSelectedWeek(plan, selectedWeekIndex, canEditDay)}
+        disabled={disabled || !canDeleteSelectedWeek(plan, selectedWeekPos, canEditDay)}
         onClick={requestRemoveWeek}
       >
         Delete week
@@ -316,7 +294,7 @@ export function PlanStructureControls({
         aria-label="Move day up"
         disabled={
           disabled ||
-          !canMoveSelectedDay(plan, selectedWeekIndex, selectedDayIndex, -1, canEditDay)
+          !canMoveSelectedDay(plan, selectedWeekPos, selectedDayPos, -1, canEditDay)
         }
         onClick={() => handleMoveDay(-1)}
       />
@@ -327,7 +305,7 @@ export function PlanStructureControls({
         aria-label="Move day down"
         disabled={
           disabled ||
-          !canMoveSelectedDay(plan, selectedWeekIndex, selectedDayIndex, 1, canEditDay)
+          !canMoveSelectedDay(plan, selectedWeekPos, selectedDayPos, 1, canEditDay)
         }
         onClick={() => handleMoveDay(1)}
       />
@@ -351,7 +329,7 @@ export function PlanStructureControls({
         icon={<XIcon />}
         disabled={
           disabled ||
-          !canRemoveDay(plan, selectedWeekIndex) ||
+          !canRemoveDay(plan, selectedWeekPos) ||
           !selectedLocation ||
           !canEditDay(selectedLocation.day)
         }
@@ -376,7 +354,7 @@ export function PlanStructureControls({
       <PlanEditorConfirmModal
         open
         title="Delete day?"
-        description="This day and all of its exercises will be removed from the plan."
+        description="This day and all of its blocks will be removed from the plan."
         confirmLabel="Delete day"
         onConfirm={handleConfirmDelete}
         onCancel={() => setPendingDelete(null)}

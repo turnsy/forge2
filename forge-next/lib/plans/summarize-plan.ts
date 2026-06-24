@@ -1,3 +1,4 @@
+import { flattenDayExercises } from "@/lib/plans/day-blocks";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { getPlanStats } from "@/lib/plans/stats";
 
@@ -20,24 +21,24 @@ export function summarizePlan(plan: WorkoutPlan | null | undefined): string {
     lines.push(`Discipline: ${plan.discipline}`);
   }
 
-  for (const week of plan.weeks.slice(0, 8)) {
+  plan.weeks.slice(0, 8).forEach((week, weekPos) => {
     const dayCount = week.days?.length ?? 0;
-    const weekLabel = week.label ?? week.name ?? `Week ${week.index}`;
+    const weekLabel = week.label ?? week.name ?? `Week ${weekPos + 1}`;
     lines.push(`- ${weekLabel} (${dayCount} days)`);
-    for (const day of (week.days ?? []).slice(0, 7)) {
-      const exerciseNames = (day.exercises ?? [])
+    (week.days ?? []).slice(0, 7).forEach((day, dayPos) => {
+      const exerciseNames = flattenDayExercises(day)
         .slice(0, 12)
         .map((exercise) => exercise.name)
         .join(", ");
       const dayLabel = day.name ?? day.code;
       lines.push(
-        `  - Day ${day.index} (${dayLabel}): ${exerciseNames || "no exercises"}`,
+        `  - Day ${dayPos + 1} (${dayLabel}): ${exerciseNames || "no exercises"}`,
       );
-    }
+    });
     if ((week.days?.length ?? 0) > 7) {
       lines.push("  - … additional days omitted");
     }
-  }
+  });
 
   if (plan.weeks.length > 8) {
     lines.push("- … additional weeks omitted");

@@ -24,13 +24,13 @@ const dropdownPanelClass = [
 
 export function PlanMobileDayPicker({
   plan,
-  selectedWeekIndex,
-  selectedDayIndex,
+  selectedWeekPos,
+  selectedDayPos,
   onSelect,
 }: {
   plan: WorkoutPlan;
-  selectedWeekIndex: number;
-  selectedDayIndex: number;
+  selectedWeekPos: number;
+  selectedDayPos: number;
   onSelect: (selection: DaySelection) => void;
 }) {
   const navItems = useMemo(() => buildPlanDayNavItems(plan), [plan]);
@@ -40,24 +40,28 @@ export function PlanMobileDayPicker({
 
   const previousSelection = getAdjacentDaySelection(
     navItems,
-    selectedWeekIndex,
-    selectedDayIndex,
+    selectedWeekPos,
+    selectedDayPos,
     "prev",
   );
   const nextSelection = getAdjacentDaySelection(
     navItems,
-    selectedWeekIndex,
-    selectedDayIndex,
+    selectedWeekPos,
+    selectedDayPos,
     "next",
   );
 
   const selectedItem = navItems.find(
-    (item) =>
-      item.weekIndex === selectedWeekIndex && item.dayIndex === selectedDayIndex,
+    (item) => item.weekPos === selectedWeekPos && item.dayPos === selectedDayPos,
   );
   const headerLabel = selectedItem
-    ? getMobileDayHeaderLabel(selectedItem.week, selectedItem.day)
-    : `Week ${selectedWeekIndex}, Day ${selectedDayIndex}`;
+    ? getMobileDayHeaderLabel(
+        selectedItem.week,
+        selectedItem.day,
+        selectedItem.weekPos,
+        selectedItem.dayPos,
+      )
+    : `Week ${selectedWeekPos + 1}, Day ${selectedDayPos + 1}`;
 
   useEffect(() => {
     if (!open) {
@@ -92,8 +96,8 @@ export function PlanMobileDayPicker({
     setOpen((current) => !current);
   }
 
-  function handleSelectDay(weekIndex: number, dayIndex: number) {
-    onSelect({ weekIndex, dayIndex });
+  function handleSelectDay(weekPos: number, dayPos: number) {
+    onSelect({ weekPos, dayPos });
     setOpen(false);
   }
 
@@ -150,10 +154,10 @@ export function PlanMobileDayPicker({
           className={`absolute top-[calc(100%+0.5rem)] z-20 max-h-[min(24rem,60vh)] w-full overflow-y-auto p-3 ${dropdownPanelClass}`}
         >
           <div className="flex flex-col gap-4">
-            {plan.weeks.map((week) => (
-              <section key={week.index} aria-label={getWeekDropdownLabel(week)}>
+            {plan.weeks.map((week, weekPos) => (
+              <section key={`${weekPos}-${week.days[0]?.code ?? "week"}`} aria-label={getWeekDropdownLabel(week, weekPos)}>
                 <h3 className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-surface-muted">
-                  {getWeekDropdownLabel(week)}
+                  {getWeekDropdownLabel(week, weekPos)}
                 </h3>
                 <div
                   className="grid w-full gap-2"
@@ -161,9 +165,9 @@ export function PlanMobileDayPicker({
                     gridTemplateColumns: `repeat(${week.days.length}, minmax(0, 1fr))`,
                   }}
                 >
-                  {week.days.map((day) => {
+                  {week.days.map((day, dayPos) => {
                     const isSelected =
-                      week.index === selectedWeekIndex && day.index === selectedDayIndex;
+                      weekPos === selectedWeekPos && dayPos === selectedDayPos;
 
                     return (
                       <PillButton
@@ -173,9 +177,9 @@ export function PlanMobileDayPicker({
                         selected={isSelected}
                         aria-selected={isSelected}
                         className="w-full"
-                        onClick={() => handleSelectDay(week.index, day.index)}
+                        onClick={() => handleSelectDay(weekPos, dayPos)}
                       >
-                        {getDayDropdownLabel(day)}
+                        {getDayDropdownLabel(day, dayPos)}
                       </PillButton>
                     );
                   })}

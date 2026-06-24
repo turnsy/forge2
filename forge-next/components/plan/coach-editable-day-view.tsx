@@ -5,6 +5,7 @@ import { PlanEditableDay } from "@/components/plan/plan-editable-day";
 import { Button, Checkbox, Input } from "@/components/ui";
 import { Modal } from "@/components/ui/modal";
 import { applyExerciseVideoLink } from "@/lib/plans/exercise-video-link";
+import { getFlatExercisePos } from "@/lib/plans/day-blocks";
 import {
   isExerciseEditable,
   isSetEditable,
@@ -12,15 +13,15 @@ import {
 import type { Day, Exercise, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 type VideoLinkModalState = {
-  exerciseIndex: number;
+  exercisePos: number;
   exerciseName: string;
   currentVideoUrl?: string;
 };
 
 export type CoachEditableDayViewProps = {
   plan: WorkoutPlan;
-  weekIndex: number;
-  dayIndex: number;
+  weekPos: number;
+  dayPos: number;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
   isSetEditable?: (set: Set) => boolean;
@@ -29,8 +30,8 @@ export type CoachEditableDayViewProps = {
 
 export function CoachEditableDayView({
   plan,
-  weekIndex,
-  dayIndex,
+  weekPos,
+  dayPos,
   disabled,
   onPlanChange,
   isSetEditable: isSetEditableProp = isSetEditable,
@@ -42,8 +43,7 @@ export function CoachEditableDayView({
   const [videoUrlInput, setVideoUrlInput] = useState("");
   const [addToAllExercises, setAddToAllExercises] = useState(false);
 
-  const week = plan.weeks.find((candidate) => candidate.index === weekIndex);
-  const day = week?.days.find((candidate) => candidate.index === dayIndex);
+  const day = plan.weeks[weekPos]?.days[dayPos];
 
   if (!day) {
     return <p className="text-sm text-surface-muted">Day not found</p>;
@@ -51,26 +51,26 @@ export function CoachEditableDayView({
 
   function handleDayChange(updatedDay: Day) {
     const newPlan = structuredClone(plan);
-    const targetWeek = newPlan.weeks.find((candidate) => candidate.index === weekIndex);
-    const targetDay = targetWeek?.days.find((candidate) => candidate.index === dayIndex);
-
-    if (!targetWeek || !targetDay) {
+    const targetWeek = newPlan.weeks[weekPos];
+    if (!targetWeek?.days[dayPos]) {
       return;
     }
 
-    const dayPosition = targetWeek.days.findIndex(
-      (candidate) => candidate.index === dayIndex,
-    );
-    targetWeek.days[dayPosition] = updatedDay;
+    targetWeek.days[dayPos] = updatedDay;
     onPlanChange(newPlan);
   }
 
   function openVideoLinkModal(
-    exerciseIndex: number,
+    blockPos: number,
+    exercisePosInBlock: number,
     exerciseName: string,
     currentVideoUrl?: string,
   ) {
-    setVideoLinkModal({ exerciseIndex, exerciseName, currentVideoUrl });
+    setVideoLinkModal({
+      exercisePos: getFlatExercisePos(day, blockPos, exercisePosInBlock),
+      exerciseName,
+      currentVideoUrl,
+    });
     setVideoUrlInput(currentVideoUrl ?? "");
     setAddToAllExercises(false);
   }
@@ -81,21 +81,21 @@ export function CoachEditableDayView({
     setAddToAllExercises(false);
   }
 
-  function handleVideoLinkConfirm() {
+  function handleSaveVideoLink() {
     if (!videoLinkModal) {
       return;
     }
 
-    const updatedPlan = applyExerciseVideoLink(plan, {
-      weekIndex,
-      dayIndex,
-      exerciseIndex: videoLinkModal.exerciseIndex,
+    const nextPlan = applyExerciseVideoLink(plan, {
+      weekPos,
+      dayPos,
+      exercisePos: videoLinkModal.exercisePos,
       exerciseName: videoLinkModal.exerciseName,
       videoUrl: videoUrlInput,
       addToAll: addToAllExercises,
     });
 
-    onPlanChange(updatedPlan);
+    onPlanChange(nextPlan);
     closeVideoLinkModal();
   }
 
@@ -103,48 +103,42 @@ export function CoachEditableDayView({
     <>
       <PlanEditableDay
         day={day}
+        dayPos={dayPos}
         disabled={disabled}
+        onChange={handleDayChange}
         isSetEditable={isSetEditableProp}
         isExerciseEditable={isExerciseEditableProp}
-        onChange={handleDayChange}
         onNeedVideoLink={openVideoLinkModal}
       />
 
       <Modal
         open={videoLinkModal !== null}
-        title="Video Link"
+        title="Exercise video link"
         onClose={closeVideoLinkModal}
-        footer={
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              fullWidth={false}
-              onClick={closeVideoLinkModal}
-            >
-              Cancel
-            </Button>
-            <Button type="button" fullWidth={false} onClick={handleVideoLinkConfirm}>
-              Confirm
-            </Button>
-          </div>
-        }
       >
         <div className="space-y-4">
+          <p className="text-sm text-surface-muted">
+            {videoLinkModal?.exerciseName}
+          </p>
           <Input
+            label="Video URL"
             value={videoUrlInput}
-            placeholder="Paste a video link (YouTube, Vimeo, etc.)"
-            aria-label="Video link"
+            placeholder="https://"
             onChange={(event) => setVideoUrlInput(event.target.value)}
           />
-          <label className="flex items-center gap-2 text-sm text-surface-foreground">
-            <Checkbox
-              checked={addToAllExercises}
-              aria-label="Add to all occurrences of this exercise"
-              onChange={setAddToAllExercises}
-            />
-            Add to all occurrences of this exercise
-          </label>
+          <Checkbox
+            label="Apply to all exercises with this name"
+            checked={addToAllExercises}
+            onChange={(checked) => setAddToAllExercises(checked)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={closeVideoLinkModal}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSaveVideoLink}>
+              Save
+            </Button>
+          </div>
         </div>
       </Modal>
     </>

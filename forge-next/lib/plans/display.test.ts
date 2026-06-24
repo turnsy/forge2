@@ -44,20 +44,20 @@ describe("formatTargetInstruction", () => {
 
 describe("getWeekTitle", () => {
   it("prefers label over name and index", () => {
-    expect(getWeekTitle({ index: 1, label: "Week 1", name: "Intro", days: [] as never })).toBe(
-      "Week 1",
-    );
+    expect(
+      getWeekTitle({ label: "Week 1", name: "Intro", days: [] as never }, 0),
+    ).toBe("Week 1");
   });
 
   it("falls back to Week index", () => {
-    expect(getWeekTitle({ index: 2, days: [] as never })).toBe("Week 2");
+    expect(getWeekTitle({ days: [] as never }, 1)).toBe("Week 2");
   });
 });
 
 describe("getDayTitle", () => {
   it("returns Day with index", () => {
-    expect(getDayTitle({ index: 1, code: "w1d1", exercises: [] as never })).toBe("Day 1");
-    expect(getDayTitle({ index: 3, code: "w2d3", name: "Heavy day", exercises: [] as never })).toBe(
+    expect(getDayTitle({ code: "w1d1", blocks: [] as never }, 0)).toBe("Day 1");
+    expect(getDayTitle({ code: "w2d3", name: "Heavy day", blocks: [] as never }, 2)).toBe(
       "Heavy day",
     );
   });

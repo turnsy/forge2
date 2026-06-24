@@ -34,7 +34,7 @@ export function formatTargetInstruction(instruction: string): string {
   return instruction;
 }
 
-export function getWeekTitle(week: Week): string {
+export function getWeekTitle(week: Week, weekPos: number): string {
   if (week.label?.trim()) {
     return week.label.trim();
   }
@@ -43,15 +43,15 @@ export function getWeekTitle(week: Week): string {
     return week.name.trim();
   }
 
-  return `Week ${week.index}`;
+  return `Week ${weekPos + 1}`;
 }
 
-export function getDayTitle(day: Day): string {
+export function getDayTitle(day: Day, dayPos: number): string {
   if (day.name?.trim()) {
     return day.name.trim();
   }
 
-  return `Day ${day.index}`;
+  return `Day ${dayPos + 1}`;
 }
 
 export const EMPTY_CELL = "—";

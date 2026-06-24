@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { makeBlock, makeDay, makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -12,83 +13,87 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 function makeEditablePlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Week 1 Day 1 Exercise",
-                sets: [
-                  {
-                    id: "w1d1-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w1d1-ex1",
+                    name: "Week 1 Day 1 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w1d1-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 100, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
-          {
-            index: 2,
+          }),
+          makeDay({
             code: "w1d2",
-            exercises: [
-              {
-                name: "Week 1 Day 2 Exercise",
-                sets: [
-                  {
-                    id: "w1d2-1",
-                    planned: {
-                      type: "exact",
-                      reps: 3,
-                      load: { type: "absolute", value: 80, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d2-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w1d2-ex1",
+                    name: "Week 1 Day 2 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w1d2-1",
+                        planned: {
+                          type: "exact",
+                          reps: 3,
+                          load: { type: "absolute", value: 80, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
       {
-        index: 2,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w2d1",
-            exercises: [
-              {
-                name: "Week 2 Day 1 Exercise",
-                sets: [
-                  {
-                    id: "w2d1-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 60, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w2d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w2d1-ex1",
+                    name: "Week 2 Day 1 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w2d1-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 60, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -164,7 +169,7 @@ describe("PlanDayNavigator structure controls", () => {
 
     const nextPlan = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(nextPlan.weeks).toHaveLength(3);
-    expect(nextPlan.weeks[2].index).toBe(3);
+    expect(nextPlan.weeks[2].days).toHaveLength(1);
   });
 
   it("disables delete week when only one week exists", () => {

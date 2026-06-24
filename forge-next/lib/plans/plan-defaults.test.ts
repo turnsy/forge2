@@ -15,7 +15,8 @@ describe("createEmptyWorkoutPlan", () => {
     expect(result.plan.name).toBe("New Plan");
     expect(result.plan.weeks).toHaveLength(1);
     expect(result.plan.weeks[0]?.days).toHaveLength(1);
-    expect(result.plan.weeks[0]?.days[0]?.exercises).toHaveLength(1);
+    expect(result.plan.weeks[0]?.days[0]?.blocks).toHaveLength(1);
+    expect(result.plan.weeks[0]?.days[0]?.blocks[0]?.exercises).toHaveLength(1);
   });
 
   it("accepts a custom plan name", () => {

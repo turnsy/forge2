@@ -1,41 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { makeWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import { createFoundationTools } from "@/lib/ai/coach-agent/tools/foundation-tools";
 
 const toolCtx = { messages: [], toolCallId: "1" };
 
-const samplePlan = {
-  schemaVersion: "2.0.0" as const,
-  name: "Summer Block",
-  weeks: [
-    {
-      index: 1,
-      days: [
-        {
-          index: 1,
-          code: "w1d1",
-          exercises: [
-            {
-              name: "Back Squat",
-              sets: [
-                {
-                  id: "w1d1-bs-1",
-                  planned: {
-                    type: "exact" as const,
-                    reps: 5,
-                    load: { type: "absolute" as const, value: 100, unit: "kg" as const },
-                  },
-                  actual: null,
-                  status: "planned" as const,
-                  locked: false,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
+const samplePlan = makeWorkoutPlan({ name: "Summer Block" });
 
 describe("createFoundationTools", () => {
   it("get_plan_codegen_guide returns non-empty guide", async () => {

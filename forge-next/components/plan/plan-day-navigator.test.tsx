@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { makeBlock, makeDay, makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -12,84 +13,88 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 function makeMultiWeekPlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Strength Block",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Week 1 Day 1 Exercise",
-                sets: [
-                  {
-                    id: "w1d1-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w1d1-ex1",
+                    name: "Week 1 Day 1 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w1d1-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 100, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
-          {
-            index: 2,
+          }),
+          makeDay({
             code: "w1d2",
-            exercises: [
-              {
-                name: "Week 1 Day 2 Exercise",
-                sets: [
-                  {
-                    id: "w1d2-1",
-                    planned: {
-                      type: "exact",
-                      reps: 3,
-                      load: { type: "absolute", value: 80, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d2-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w1d2-ex1",
+                    name: "Week 1 Day 2 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w1d2-1",
+                        planned: {
+                          type: "exact",
+                          reps: 3,
+                          load: { type: "absolute", value: 80, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
       {
-        index: 2,
         label: "Deload Week",
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w2d1",
-            exercises: [
-              {
-                name: "Week 2 Day 1 Exercise",
-                sets: [
-                  {
-                    id: "w2d1-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 60, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w2d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w2d1-ex1",
+                    name: "Week 2 Day 1 Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w2d1-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 60, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -98,34 +103,35 @@ function makeMultiWeekPlan(): WorkoutPlan {
 
 function makeSingleDayPlan(): WorkoutPlan {
   return {
-    schemaVersion: "2.0.0",
+    schemaVersion: "3.0.0",
     name: "Single Day",
     weeks: [
       {
-        index: 1,
         days: [
-          {
-            index: 1,
+          makeDay({
             code: "w1d1",
-            exercises: [
-              {
-                name: "Only Exercise",
-                sets: [
-                  {
-                    id: "w1d1-1",
-                    planned: {
-                      type: "exact",
-                      reps: 5,
-                      load: { type: "absolute", value: 100, unit: "kg" },
-                    },
-                    actual: null,
-                    status: "planned",
-                    locked: false,
-                  },
+            blocks: [
+              makeBlock({
+                id: "w1d1-b1",
+                exercises: [
+                  makeExercise({
+                    id: "w1d1-ex1",
+                    name: "Only Exercise",
+                    sets: [
+                      makeSet({
+                        id: "w1d1-1",
+                        planned: {
+                          type: "exact",
+                          reps: 5,
+                          load: { type: "absolute", value: 100, unit: "kg" },
+                        },
+                      }),
+                    ],
+                  }),
                 ],
-              },
+              }),
             ],
-          },
+          }),
         ],
       },
     ],
@@ -170,11 +176,11 @@ describe("PlanDayNavigator", () => {
     const user = userEvent.setup();
     render(<PlanDayNavigator plan={makeMultiWeekPlan()} view="coach" readOnly />);
 
-    await user.selectOptions(screen.getByLabelText("Day"), "2");
+    await user.selectOptions(screen.getByLabelText("Day"), "1");
     expect(screen.getByText("Week 1 Day 2 Exercise")).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Week"), "2");
-    expect(screen.getByLabelText("Day")).toHaveValue("1");
+    await user.selectOptions(screen.getByLabelText("Week"), "1");
+    expect(screen.getByLabelText("Day")).toHaveValue("0");
     expect(screen.getByText("Week 2 Day 1 Exercise")).toBeInTheDocument();
   });
 
@@ -202,7 +208,7 @@ describe("PlanDayNavigator", () => {
 
   it("defaults to first incomplete day for athlete view", () => {
     const plan = makeMultiWeekPlan();
-    plan.weeks[0].days[0].exercises[0].sets[0].status = "completed";
+    plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].status = "completed";
 
     render(<PlanDayNavigator plan={plan} view="athlete" assignmentId="assignment-1" />);
 
@@ -237,7 +243,7 @@ describe("PlanDayNavigator", () => {
 
     expect(screen.getByText("Week 1 Day 1 Exercise")).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("Day"), "2");
+    await user.selectOptions(screen.getByLabelText("Day"), "1");
     expect(screen.getByText("Week 1 Day 2 Exercise")).toBeInTheDocument();
     expect(screen.queryByText("Week 1 Day 1 Exercise")).not.toBeInTheDocument();
   });
@@ -248,7 +254,7 @@ describe("PlanDayNavigator", () => {
         plan={makeSingleDayPlan()}
         view="coach"
         readOnly
-        initialDay={{ weekIndex: 99, dayIndex: 99 }}
+        initialDay={{ weekPos: 99, dayPos: 99 }}
       />,
     );
 
