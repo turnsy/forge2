@@ -1,5 +1,6 @@
 import type { AccordionVariant } from "@/components/ui/accordion";
-import { PlanExerciseBlock, type PlanViewerView } from "@/components/plan/plan-exercise-block";
+import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { PlanSupersetView } from "@/components/plan/plan-superset-view";
 import { isSupersetBlock } from "@/lib/plans/day-blocks";
 import type { Block } from "@/lib/plans/workout-plan";

@@ -126,11 +126,14 @@ export function CoachEditableDayView({
             placeholder="https://"
             onChange={(event) => setVideoUrlInput(event.target.value)}
           />
-          <Checkbox
-            label="Apply to all exercises with this name"
-            checked={addToAllExercises}
-            onChange={(checked) => setAddToAllExercises(checked)}
-          />
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-surface-foreground">
+            <Checkbox
+              aria-label="Apply to all exercises with this name"
+              checked={addToAllExercises}
+              onChange={(checked) => setAddToAllExercises(checked)}
+            />
+            Apply to all exercises with this name
+          </label>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={closeVideoLinkModal}>
               Cancel
