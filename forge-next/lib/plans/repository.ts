@@ -5,7 +5,7 @@ import {
   toPaginatedResult,
 } from "@/lib/lists/query";
 import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/data-client";
 import { parseWorkoutPlan } from "@/lib/plans/parse-workout-plan";
 import { getPlanStats } from "@/lib/plans/stats";
 import type { CoachPlanListItem } from "@/lib/plans/types";

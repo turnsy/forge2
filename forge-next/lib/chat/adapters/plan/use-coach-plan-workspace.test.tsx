@@ -3,26 +3,43 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 
-const { saveSessionSnapshot, streamPlanChat } = vi.hoisted(() => ({
+const { saveSessionSnapshot, mockSend, mockReset } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
-  streamPlanChat: vi.fn(),
+  mockSend: vi.fn(),
+  mockReset: vi.fn(),
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
 }));
 
-vi.mock("@/lib/chat/adapters/plan/plan-chat-client", () => ({
-  streamPlanChat,
+vi.mock("eve/react", () => ({
+  useEveAgent: () => ({
+    data: {
+      messages: [],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      runStatus: null,
+      streamingAssistantText: "",
+      errors: [],
+      phase: "idle",
+      warnings: [],
+    },
+    status: "ready",
+    error: null,
+    events: [],
+    session: { sessionId: undefined, continuationToken: undefined, streamIndex: 0 },
+    send: mockSend,
+    reset: mockReset,
+    stop: vi.fn(),
+  }),
 }));
 
 describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    streamPlanChat.mockImplementation(async ({ onEvent }) => {
-      onEvent({ type: "assistantTextDelta", delta: "Done." });
-      return null;
-    });
+    mockSend.mockResolvedValue(undefined);
     saveSessionSnapshot.mockResolvedValue({
       ok: true,
       title: "Strength block",
@@ -42,38 +59,13 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
-  it("calls onSessionPersisted once after the first successful save", async () => {
-    const onSessionPersisted = vi.fn();
-
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({ onSessionPersisted }),
-    );
+  it("delegates sendMessage to useEveAgent", async () => {
+    const { result } = renderHook(() => useCoachPlanWorkspace());
 
     await act(async () => {
       await result.current.sendMessage([{ type: "text", value: "Hello" }]);
     });
 
-    expect(onSessionPersisted).toHaveBeenCalledOnce();
-    expect(onSessionPersisted).toHaveBeenCalledWith(
-      result.current.state.sessionId,
-    );
-  });
-
-  it("does not call onSessionPersisted when save fails", async () => {
-    saveSessionSnapshot.mockResolvedValue({
-      ok: false,
-      message: "save failed",
-    });
-    const onSessionPersisted = vi.fn();
-
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({ onSessionPersisted }),
-    );
-
-    await act(async () => {
-      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
-    });
-
-    expect(onSessionPersisted).not.toHaveBeenCalled();
+    expect(mockSend).toHaveBeenCalledWith({ message: "Hello" });
   });
 });

@@ -6,15 +6,19 @@ describe("createSessionWorkspaceState", () => {
     const state = createSessionWorkspaceState({
       id: "session-42",
       snapshot: {
+        forgeSessionId: "session-42",
+        title: "Hypertrophy Block",
+        eve: null,
+        ui: {
+          currentArtifact: null,
+          planId: null,
+          artifactTitle: "Draft",
+        },
         messages: [
           { role: "user", content: "Build me a plan" },
           { role: "assistant", content: "Sure." },
         ],
-        currentArtifact: null,
-        planId: null,
-        artifactTitle: "Draft",
         contextFileIds: ["ctx-1"],
-        title: "Hypertrophy Block",
       },
     });
 

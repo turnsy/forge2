@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
 import { saveChatSession } from "@/lib/chat/session-storage";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 
 type SaveSessionBody = {
   sessionId?: string;
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (snapshot.messages.length === 0) {
+  if (!snapshotHasConversation(snapshot)) {
     return NextResponse.json({ ok: true });
   }
 

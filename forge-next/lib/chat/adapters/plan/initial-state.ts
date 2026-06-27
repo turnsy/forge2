@@ -1,6 +1,11 @@
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
+import {
+  getSnapshotMessages,
+  snapshotHasConversation,
+} from "@/lib/chat/snapshot-messages";
+import { normalizeCoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function createEditPlanWorkspaceState(
@@ -18,16 +23,23 @@ export function createEditPlanWorkspaceState(
 
 export function createSessionWorkspaceState(session: {
   id: string;
-  snapshot: ChatSessionSnapshot;
+  snapshot: CoachWorkspaceSnapshot;
 }): PlanWorkspaceState {
+  const normalized = normalizeCoachWorkspaceSnapshot(
+    session.id,
+    session.snapshot,
+  );
+
   return {
     ...createInitialChatWorkspaceState<WorkoutPlan>(session.id),
-    hasStarted: session.snapshot.messages.length > 0,
-    messages: session.snapshot.messages,
-    currentArtifact: session.snapshot.currentArtifact,
-    planId: session.snapshot.planId,
-    artifactTitle: session.snapshot.artifactTitle,
-    contextFileIds: session.snapshot.contextFileIds,
-    sessionTitle: session.snapshot.title,
+    hasStarted:
+      snapshotHasConversation(normalized) ||
+      normalized.ui.currentArtifact !== null,
+    messages: getSnapshotMessages(normalized),
+    currentArtifact: normalized.ui.currentArtifact,
+    planId: normalized.ui.planId,
+    artifactTitle: normalized.ui.artifactTitle,
+    contextFileIds: normalized.contextFileIds ?? [],
+    sessionTitle: normalized.title,
   };
 }

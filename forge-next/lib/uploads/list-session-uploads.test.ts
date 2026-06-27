@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockList = vi.fn();
 
-vi.mock("@/utils/supabase/server", () => ({
+vi.mock("@/utils/supabase/data-client", () => ({
   createClient: vi.fn(async () => ({
     storage: {
       from: () => ({

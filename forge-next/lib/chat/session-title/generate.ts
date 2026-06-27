@@ -2,7 +2,11 @@ import { generateText } from "ai";
 import { createSessionTitleGatewayModel } from "@/lib/chat/session-title/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
 import type { ChatMessage } from "@/lib/chat/types";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
+import {
+  getSnapshotMessages,
+  firstUserMessageFromEvents,
+} from "@/lib/chat/snapshot-messages";
 
 export const SESSION_FALLBACK_TITLE = "Untitled conversation";
 
@@ -19,8 +23,10 @@ export type GenerateSessionTitleDeps = {
   createModel?: () => ReturnType<typeof createSessionTitleGatewayModel>;
 };
 
-function countUserMessages(snapshot: ChatSessionSnapshot): number {
-  return snapshot.messages.filter((message) => message.role === "user").length;
+function countUserMessages(snapshot: CoachWorkspaceSnapshot): number {
+  return getSnapshotMessages(snapshot).filter(
+    (message) => message.role === "user",
+  ).length;
 }
 
 function formatMessageForTitle(message: ChatMessage): string {
@@ -34,16 +40,20 @@ function formatMessageForTitle(message: ChatMessage): string {
   return message.content.trim();
 }
 
-function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
-  const firstUserMessage = snapshot.messages.find(
+function getFirstUserMessageText(snapshot: CoachWorkspaceSnapshot): string {
+  const fromMessages = getSnapshotMessages(snapshot).find(
     (message) => message.role === "user",
   );
 
-  if (!firstUserMessage) {
-    return "";
+  if (fromMessages) {
+    return formatMessageForTitle(fromMessages);
   }
 
-  return formatMessageForTitle(firstUserMessage);
+  if (snapshot.eve?.events?.length) {
+    return firstUserMessageFromEvents(snapshot.eve.events);
+  }
+
+  return "";
 }
 
 function readGeneratedText(result: Awaited<ReturnType<typeof generateText>>): string {
@@ -102,14 +112,14 @@ export function normalizeSessionTitle(raw: string): string | null {
 }
 
 export function shouldGenerateSessionTitle(
-  snapshot: ChatSessionSnapshot,
+  snapshot: CoachWorkspaceSnapshot,
   options?: { generateTitle?: boolean },
 ): boolean {
   return options?.generateTitle === true && countUserMessages(snapshot) === 1;
 }
 
 export async function generateSessionTitle(
-  snapshot: ChatSessionSnapshot,
+  snapshot: CoachWorkspaceSnapshot,
   deps: GenerateSessionTitleDeps = {},
 ): Promise<string> {
   const isGatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;

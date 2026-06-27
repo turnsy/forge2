@@ -107,7 +107,7 @@ describe("CoachAthleteDetailView", () => {
           assignedPlan({
             id: "assignment-2",
             status: "completed",
-            completedAt: "2026-02-01T00:00:00.000Z",
+            completedAt: "2026-02-01T12:00:00.000Z",
           }),
         ]}
       />,
@@ -143,14 +143,14 @@ describe("CoachAthleteDetailView", () => {
           assignedPlan({
             id: "assignment-2",
             status: "completed",
-            completedAt: "2026-02-01T00:00:00.000Z",
+            completedAt: "2026-02-01T12:00:00.000Z",
           }),
           assignedPlan({
             id: "assignment-3",
             status: "unassigned",
             assignedAt: "2025-12-01T00:00:00.000Z",
             completedAt: null,
-            unassignedAt: "2026-06-12T00:00:00.000Z",
+            unassignedAt: "2026-06-12T12:00:00.000Z",
           }),
         ]}
       />,

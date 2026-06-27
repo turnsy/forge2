@@ -46,8 +46,7 @@ export function ChatThread({
     (runStatus !== null && isActiveRunStatus(runStatus)) ||
     (phase === "streaming" && runStatus === null);
 
-  const showErrors =
-    errors.length > 0 && (phase === "error" || phase === "idle");
+  const showErrors = errors.length > 0;
 
   const uploadLabel = phase === "uploading" ? "Uploading files…" : null;
   const statusLabel =

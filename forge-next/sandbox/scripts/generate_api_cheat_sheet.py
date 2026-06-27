@@ -122,8 +122,7 @@ def main() -> None:
     out_ts = (
         ROOT.parent
         / "lib"
-        / "ai"
-        / "plan-chat"
+        / "plans"
         / "prompts"
         / "forge_plan_api_cheat_sheet.generated.ts"
     )

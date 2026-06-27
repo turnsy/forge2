@@ -1,34 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { buildSnapshotFromState } from "@/lib/chat/session-types";
-import type { ChatWorkspaceState } from "@/lib/chat/types";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { buildCoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 
-describe("buildSnapshotFromState", () => {
-  it("captures the terminal workspace fields", () => {
-    const state: ChatWorkspaceState<WorkoutPlan> = {
-      sessionId: "session-1",
-      hasStarted: true,
-      sessionTitle: "Bench Press Block",
-      artifactTitle: "Strength Block",
-      planId: "plan-1",
-      messages: [{ role: "user", content: "Build a plan" }],
-      currentArtifact: null,
-      contextFileIds: ["ctx-1"],
-      attachments: [],
-      runStatus: null,
-      warnings: [],
-      errors: [],
-      phase: "streaming",
-      streamingAssistantText: "partial",
-    };
-
-    expect(buildSnapshotFromState(state)).toEqual({
+describe("buildCoachWorkspaceSnapshot", () => {
+  it("captures eve cursor and ui cache fields", () => {
+    expect(
+      buildCoachWorkspaceSnapshot({
+        forgeSessionId: "session-1",
+        title: "Bench Press Block",
+        ui: {
+          planId: "plan-1",
+          artifactTitle: "Strength Block",
+          currentArtifact: null,
+        },
+        eve: {
+          sessionId: "eve-1",
+          continuationToken: "token",
+          streamIndex: 3,
+          events: [],
+        },
+      }),
+    ).toEqual({
+      forgeSessionId: "session-1",
       title: "Bench Press Block",
-      messages: state.messages,
-      currentArtifact: null,
-      planId: "plan-1",
-      artifactTitle: "Strength Block",
-      contextFileIds: ["ctx-1"],
+      ui: {
+        planId: "plan-1",
+        artifactTitle: "Strength Block",
+        currentArtifact: null,
+      },
+      eve: {
+        sessionId: "eve-1",
+        continuationToken: "token",
+        streamIndex: 3,
+        events: [],
+      },
     });
   });
 });
