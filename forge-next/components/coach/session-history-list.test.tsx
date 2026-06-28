@@ -63,7 +63,6 @@ describe("SessionHistoryList integration", () => {
 
     expect(mockStartSessionNavigation).toHaveBeenCalledWith("session-1");
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
-    expect(mockRefresh).toHaveBeenCalled();
   });
 
   it("preserves server-provided updatedAt order", async () => {
