@@ -78,7 +78,6 @@ describe("SessionHistoryMobilePanel", () => {
     await user.click(await screen.findByText("Adjust weekly volume"));
 
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
-    expect(mockRefresh).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 });

@@ -8,13 +8,13 @@ import {
   saveSessionSnapshot as persistSessionSnapshot,
 } from "@/lib/chat/session-storage";
 import { generateSessionTitleFromText } from "@/lib/chat/session-title/generate";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 
 const DEFAULT_SESSION_LIST_LIMIT = 20;
 
 export async function saveSessionSnapshot(
   sessionId: string,
-  snapshot: ChatSessionSnapshot,
+  snapshot: CoachWorkspaceSnapshot,
 ) {
   const user = await requireRole("coach");
   return persistSessionSnapshot(user.id, sessionId, snapshot);

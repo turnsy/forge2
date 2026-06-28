@@ -2,18 +2,15 @@ import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
 import { z } from "zod";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import {
-  clearCoachArtifact,
   coachArtifact,
   setCoachArtifact,
 } from "../lib/coach-artifact-state";
-import { getCoachId, getForgeSessionId } from "../lib/coach-context";
 import {
   CURRENT_PLAN_PATH,
   EMPTY_PLAN_SEED,
   OUTPUT_PLAN_PATH,
   RUN_SCRIPT_PATH,
 } from "../lib/constants";
-import { logSubmittedPlanCode } from "../lib/log-submitted-code";
 import {
   MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
   reserveSubmitPlanCodeAttempt,
@@ -31,8 +28,6 @@ export default defineTool({
       ),
   }),
   async execute({ python }, ctx) {
-    const coachId = getCoachId(ctx);
-    const forgeSessionId = getForgeSessionId(ctx);
     const turnId = ctx.session.turn.id;
     const attempt = reserveSubmitPlanCodeAttempt(turnId);
 
@@ -47,11 +42,6 @@ export default defineTool({
         ],
       };
     }
-
-    logSubmittedPlanCode(python, {
-      coachId,
-      sessionId: forgeSessionId,
-    });
 
     const sandbox = await ctx.getSandbox();
     const currentPlan = coachArtifact.get().plan;
@@ -135,7 +125,7 @@ export default defineTool({
   },
   toModelOutput(output) {
     if (output.ok) {
-      return { type: "text", value: "Plan updated successfully." };
+      return { type: "text", value: "Preview updated." };
     }
     return { type: "json", value: output };
   },

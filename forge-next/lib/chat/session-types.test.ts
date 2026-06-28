@@ -36,7 +36,7 @@ describe("buildCoachWorkspaceSnapshot", () => {
 });
 
 describe("normalizeCoachWorkspaceSnapshot", () => {
-  it("strips legacy event blobs from eve state", async () => {
+  it("assigns forgeSessionId and strips extra eve fields", async () => {
     const { normalizeCoachWorkspaceSnapshot } = await import(
       "@/lib/chat/session-types"
     );
@@ -44,7 +44,7 @@ describe("normalizeCoachWorkspaceSnapshot", () => {
     expect(
       normalizeCoachWorkspaceSnapshot("session-1", {
         title: "Saved chat",
-        forgeSessionId: "session-1",
+        forgeSessionId: "old-id",
         ui: {
           planId: null,
           artifactTitle: "",
@@ -55,7 +55,7 @@ describe("normalizeCoachWorkspaceSnapshot", () => {
           continuationToken: "token",
           streamIndex: 2,
           events: [{ type: "message.received", data: { message: "Hi" } }],
-        },
+        } as never,
       }),
     ).toEqual({
       title: "Saved chat",

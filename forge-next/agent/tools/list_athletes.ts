@@ -1,12 +1,7 @@
 import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
 import { z } from "zod";
 import { listCoachAthletes } from "@/lib/athletes/repository";
-import { getCoachAthleteRelationship } from "@/lib/links/repository";
-import { listCoachPlanVersions, listCoachPlans } from "@/lib/plans/repository";
-import { summarizePlan } from "@/lib/plans/summarize-plan";
 import { getCoachId } from "../lib/coach-context";
-import { toToolNotFound } from "../lib/db-tool-errors";
-import { fetchCoachPlanForTool } from "../lib/plans";
 import { listInputSchema, toListQuery } from "../lib/list-schema";
 
 export default defineTool({

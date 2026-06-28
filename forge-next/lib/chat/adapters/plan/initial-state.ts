@@ -1,10 +1,7 @@
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
-import {
-  getSnapshotMessages,
-  snapshotHasConversation,
-} from "@/lib/chat/snapshot-messages";
+import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { normalizeCoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -35,11 +32,9 @@ export function createSessionWorkspaceState(session: {
     hasStarted:
       snapshotHasConversation(normalized) ||
       normalized.ui.currentArtifact !== null,
-    messages: getSnapshotMessages(normalized),
     currentArtifact: normalized.ui.currentArtifact,
     planId: normalized.ui.planId,
     artifactTitle: normalized.ui.artifactTitle,
-    contextFileIds: normalized.contextFileIds ?? [],
     sessionTitle: normalized.title,
   };
 }

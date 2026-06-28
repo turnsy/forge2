@@ -20,17 +20,7 @@ export type CoachWorkspaceSnapshot = {
     artifactTitle: string;
     currentArtifact: WorkoutPlan | null;
   };
-  /** @deprecated Legacy snapshots only */
-  messages?: ChatMessage[];
-  /** @deprecated Legacy snapshots only */
-  currentArtifact?: WorkoutPlan | null;
-  planId?: string | null;
-  artifactTitle?: string;
-  contextFileIds?: string[];
 };
-
-/** @deprecated Use CoachWorkspaceSnapshot */
-export type ChatSessionSnapshot = CoachWorkspaceSnapshot;
 
 export type EveCoachReducerData = {
   messages: ChatMessage[];
@@ -46,43 +36,19 @@ export type EveCoachReducerData = {
 
 export function normalizeCoachWorkspaceSnapshot(
   forgeSessionId: string,
-  snapshot: CoachWorkspaceSnapshot | Record<string, unknown>,
+  snapshot: CoachWorkspaceSnapshot,
 ): CoachWorkspaceSnapshot {
-  if ("ui" in snapshot && snapshot.ui && typeof snapshot.ui === "object") {
-    const normalized = snapshot as CoachWorkspaceSnapshot;
-    return {
-      ...normalized,
-      forgeSessionId,
-      eve: normalizeEveSessionState(normalized.eve),
-    };
-  }
-
-  const legacy = snapshot as CoachWorkspaceSnapshot & {
-    eve?: SessionState & { events?: unknown[] };
-  };
   return {
-    title: legacy.title ?? null,
+    ...snapshot,
     forgeSessionId,
-    eve: normalizeEveSessionState(legacy.eve),
-    ui: {
-      planId: legacy.planId ?? null,
-      artifactTitle: legacy.artifactTitle ?? "",
-      currentArtifact: legacy.currentArtifact ?? null,
-    },
+    eve: normalizeEveSessionState(snapshot.eve),
   };
 }
 
 function normalizeEveSessionState(
-  eve:
-    | (SessionState & { events?: unknown[] })
-    | null
-    | undefined,
+  eve: SessionState | null | undefined,
 ): SessionState | null {
-  if (!eve) {
-    return null;
-  }
-
-  if (!eve.sessionId) {
+  if (!eve?.sessionId) {
     return null;
   }
 

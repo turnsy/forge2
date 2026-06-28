@@ -1,30 +1,7 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export function parseCookieHeader(header: string): { name: string; value: string }[] {
-  if (!header.trim()) {
-    return [];
-  }
-
-  return header.split(";").flatMap((part) => {
-    const trimmed = part.trim();
-    if (!trimmed) {
-      return [];
-    }
-
-    const separator = trimmed.indexOf("=");
-    if (separator <= 0) {
-      return [];
-    }
-
-    return [
-      {
-        name: trimmed.slice(0, separator),
-        value: trimmed.slice(separator + 1),
-      },
-    ];
-  });
-}
+export { parseCookieHeader };
 
 export function createSupabaseFromCookieHeader(
   cookieHeader: string,

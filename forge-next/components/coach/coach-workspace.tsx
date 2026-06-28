@@ -32,7 +32,7 @@ import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-sessio
 import type { HandleMessageStreamEvent } from "eve/client";
 import {
   normalizeCoachWorkspaceSnapshot,
-  type ChatSessionSnapshot,
+  type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
@@ -150,7 +150,7 @@ export function CoachWorkspace(
     initialPlan?: WorkoutPlan;
     initialSession?: {
       id: string;
-      snapshot: ChatSessionSnapshot;
+      snapshot: CoachWorkspaceSnapshot;
       createdAt: string;
       updatedAt: string;
     };
@@ -199,7 +199,7 @@ function CoachWorkspaceInner({
   initialPlan?: WorkoutPlan;
   initialSession?: {
     id: string;
-    snapshot: ChatSessionSnapshot;
+    snapshot: CoachWorkspaceSnapshot;
     createdAt: string;
     updatedAt: string;
   };

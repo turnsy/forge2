@@ -1,5 +1,4 @@
 import type { EveAgentReducer } from "eve/react";
-import type { HandleMessageStreamEvent } from "eve/client";
 import type {
   EveCoachReducerData,
 } from "@/lib/chat/session-types";

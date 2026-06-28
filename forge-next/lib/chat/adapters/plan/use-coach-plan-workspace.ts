@@ -18,7 +18,7 @@ import {
   normalizeCoachWorkspaceSnapshot,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
-import { getSnapshotMessages, snapshotHasConversation } from "@/lib/chat/snapshot-messages";
+import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
@@ -106,17 +106,7 @@ export function useCoachPlanWorkspace(options?: {
     return createSessionId();
   });
 
-  const reducerSeedMessages = useMemo(() => {
-    if (initialReplayedEvents.length > 0) {
-      return [];
-    }
-
-    if (normalizedSnapshot) {
-      return getSnapshotMessages(normalizedSnapshot);
-    }
-
-    return [];
-  }, [initialReplayedEvents.length, normalizedSnapshot]);
+  const reducerSeedMessages = useMemo(() => [], []);
 
   const eveReducer = useMemo(
     () =>

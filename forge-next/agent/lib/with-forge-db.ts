@@ -7,6 +7,7 @@ type ForgeDbContext = {
   };
 };
 
+/** Threads the Eve auth cookie header into Supabase repository calls. */
 function getCookieHeaderFromSession(session: ForgeDbContext["session"]): string {
   const attributes = session.auth.current?.attributes as
     | { cookieHeader?: string }

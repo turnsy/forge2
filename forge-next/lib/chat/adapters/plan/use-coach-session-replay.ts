@@ -82,12 +82,10 @@ export function useCoachSessionReplay(initialSession?: {
           return;
         }
 
+        console.error("Failed to restore Eve session replay", error);
         setState({
           status: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Could not restore conversation.",
+          message: "Couldn't load conversation.",
         });
       });
 

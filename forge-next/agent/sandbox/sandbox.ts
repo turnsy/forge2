@@ -4,6 +4,8 @@ import { vercel } from "eve/sandbox/vercel";
 export default defineSandbox({
   backend: vercel({ runtime: "python3.13", networkPolicy: "deny-all" }),
   async onSession({ use }) {
+    // Eve sandbox session API — not React's use() hook.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use({ networkPolicy: "deny-all" });
   },
 });

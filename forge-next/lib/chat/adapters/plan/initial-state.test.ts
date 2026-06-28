@@ -8,25 +8,24 @@ describe("createSessionWorkspaceState", () => {
       snapshot: {
         forgeSessionId: "session-42",
         title: "Hypertrophy Block",
-        eve: null,
+        eve: {
+          sessionId: "eve-1",
+          continuationToken: "token",
+          streamIndex: 2,
+        },
         ui: {
           currentArtifact: null,
           planId: null,
           artifactTitle: "Draft",
         },
-        messages: [
-          { role: "user", content: "Build me a plan" },
-          { role: "assistant", content: "Sure." },
-        ],
-        contextFileIds: ["ctx-1"],
       },
     });
 
     expect(state.sessionId).toBe("session-42");
     expect(state.hasStarted).toBe(true);
-    expect(state.messages).toHaveLength(2);
+    expect(state.messages).toEqual([]);
     expect(state.artifactTitle).toBe("Draft");
-    expect(state.contextFileIds).toEqual(["ctx-1"]);
+    expect(state.contextFileIds).toEqual([]);
     expect(state.sessionTitle).toBe("Hypertrophy Block");
     expect(state.phase).toBe("idle");
     expect(state.streamingAssistantText).toBe("");
