@@ -7,6 +7,7 @@ import {
   renameChatSession,
   saveSessionSnapshot as persistSessionSnapshot,
 } from "@/lib/chat/session-storage";
+import { generateSessionTitleFromText } from "@/lib/chat/session-title/generate";
 import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 
 const DEFAULT_SESSION_LIST_LIMIT = 20;
@@ -17,6 +18,11 @@ export async function saveSessionSnapshot(
 ) {
   const user = await requireRole("coach");
   return persistSessionSnapshot(user.id, sessionId, snapshot);
+}
+
+export async function generateSessionTitleFromPrompt(message: string) {
+  await requireRole("coach");
+  return generateSessionTitleFromText(message);
 }
 
 export async function listTaskSessions(limit = DEFAULT_SESSION_LIST_LIMIT) {

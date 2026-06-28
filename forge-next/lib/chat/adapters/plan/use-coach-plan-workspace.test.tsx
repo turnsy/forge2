@@ -1,16 +1,23 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 
-const { saveSessionSnapshot, mockSend, mockReset } = vi.hoisted(() => ({
+const {
+  saveSessionSnapshot,
+  generateSessionTitleFromPrompt,
+  mockSend,
+  mockReset,
+} = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
+  generateSessionTitleFromPrompt: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
+  generateSessionTitleFromPrompt,
 }));
 
 vi.mock("eve/react", () => ({
@@ -44,6 +51,7 @@ describe("useCoachPlanWorkspace", () => {
       ok: true,
       title: "Strength block",
     });
+    generateSessionTitleFromPrompt.mockResolvedValue("Strength block");
   });
 
   it("initializes with a draft plan when initialPlan is provided without planId", () => {
@@ -67,5 +75,20 @@ describe("useCoachPlanWorkspace", () => {
     });
 
     expect(mockSend).toHaveBeenCalledWith({ message: "Hello" });
+  });
+
+  it("starts title generation on the first user message before sending", async () => {
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    await act(async () => {
+      await result.current.sendMessage([
+        { type: "text", value: "Build a bench plan" },
+      ]);
+    });
+
+    expect(generateSessionTitleFromPrompt).toHaveBeenCalledWith(
+      "Build a bench plan",
+    );
+    expect(mockSend).toHaveBeenCalledWith({ message: "Build a bench plan" });
   });
 });

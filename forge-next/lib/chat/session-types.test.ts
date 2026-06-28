@@ -16,7 +16,6 @@ describe("buildCoachWorkspaceSnapshot", () => {
           sessionId: "eve-1",
           continuationToken: "token",
           streamIndex: 3,
-          events: [],
         },
       }),
     ).toEqual({
@@ -31,7 +30,45 @@ describe("buildCoachWorkspaceSnapshot", () => {
         sessionId: "eve-1",
         continuationToken: "token",
         streamIndex: 3,
-        events: [],
+      },
+    });
+  });
+});
+
+describe("normalizeCoachWorkspaceSnapshot", () => {
+  it("strips legacy event blobs from eve state", async () => {
+    const { normalizeCoachWorkspaceSnapshot } = await import(
+      "@/lib/chat/session-types"
+    );
+
+    expect(
+      normalizeCoachWorkspaceSnapshot("session-1", {
+        title: "Saved chat",
+        forgeSessionId: "session-1",
+        ui: {
+          planId: null,
+          artifactTitle: "",
+          currentArtifact: null,
+        },
+        eve: {
+          sessionId: "eve-1",
+          continuationToken: "token",
+          streamIndex: 2,
+          events: [{ type: "message.received", data: { message: "Hi" } }],
+        },
+      }),
+    ).toEqual({
+      title: "Saved chat",
+      forgeSessionId: "session-1",
+      ui: {
+        planId: null,
+        artifactTitle: "",
+        currentArtifact: null,
+      },
+      eve: {
+        sessionId: "eve-1",
+        continuationToken: "token",
+        streamIndex: 2,
       },
     });
   });

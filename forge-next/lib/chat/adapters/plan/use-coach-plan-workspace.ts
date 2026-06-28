@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import type { HandleMessageStreamEvent } from "eve/client";
 import { useEveAgent } from "eve/react";
-import { saveSessionSnapshot } from "@/lib/chat/actions";
+import {
+  generateSessionTitleFromPrompt,
+  saveSessionSnapshot,
+} from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
@@ -72,12 +76,14 @@ export function useCoachPlanWorkspace(options?: {
   initialPlan?: WorkoutPlan;
   planId?: string;
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
+  initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   onArtifactCleared?: () => void;
   onSessionPersisted?: (sessionId: string) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const planId = options?.planId;
   const initialSession = options?.initialSession;
+  const initialReplayedEvents = options?.initialReplayedEvents ?? [];
   const onArtifactCleared = options?.onArtifactCleared;
   const onSessionPersisted = options?.onSessionPersisted;
   const hasSyncedSessionUrlRef = useRef(false);
@@ -100,12 +106,22 @@ export function useCoachPlanWorkspace(options?: {
     return createSessionId();
   });
 
+  const reducerSeedMessages = useMemo(() => {
+    if (initialReplayedEvents.length > 0) {
+      return [];
+    }
+
+    if (normalizedSnapshot) {
+      return getSnapshotMessages(normalizedSnapshot);
+    }
+
+    return [];
+  }, [initialReplayedEvents.length, normalizedSnapshot]);
+
   const eveReducer = useMemo(
     () =>
       createEveCoachReducer({
-        messages: normalizedSnapshot
-          ? getSnapshotMessages(normalizedSnapshot)
-          : [],
+        messages: reducerSeedMessages,
         currentArtifact:
           normalizedSnapshot?.ui.currentArtifact ??
           initialPlan ??
@@ -116,23 +132,18 @@ export function useCoachPlanWorkspace(options?: {
           initialPlan?.name ??
           "",
       }),
-    [normalizedSnapshot, initialPlan, planId],
+    [reducerSeedMessages, normalizedSnapshot, initialPlan, planId],
   );
 
   const sessionTitleRef = useRef<string | null>(
     normalizedSnapshot?.title ?? null,
   );
+  const pendingTitleRef = useRef<Promise<string | null> | null>(null);
 
   const agent = useEveAgent({
     reducer: eveReducer,
-    initialSession: normalizedSnapshot?.eve
-      ? {
-          sessionId: normalizedSnapshot.eve.sessionId,
-          continuationToken: normalizedSnapshot.eve.continuationToken,
-          streamIndex: normalizedSnapshot.eve.streamIndex,
-        }
-      : undefined,
-    initialEvents: normalizedSnapshot?.eve?.events,
+    initialSession: normalizedSnapshot?.eve ?? undefined,
+    initialEvents: initialReplayedEvents,
     headers: () => ({
       [FORGE_SESSION_HEADER]: forgeSessionId,
     }),
@@ -144,11 +155,14 @@ export function useCoachPlanWorkspace(options?: {
     }),
     onFinish: async (snapshot) => {
       const hasConversation =
-        snapshot.data.messages.length > 0 ||
-        snapshot.events.length > 0;
+        snapshot.data.messages.length > 0 || Boolean(snapshot.session.sessionId);
 
       if (!hasConversation) {
         return;
+      }
+
+      if (!sessionTitleRef.current && pendingTitleRef.current) {
+        sessionTitleRef.current = await pendingTitleRef.current;
       }
 
       const workspaceSnapshot = buildCoachWorkspaceSnapshot({
@@ -164,7 +178,6 @@ export function useCoachPlanWorkspace(options?: {
               sessionId: snapshot.session.sessionId,
               continuationToken: snapshot.session.continuationToken ?? "",
               streamIndex: snapshot.session.streamIndex,
-              events: [...snapshot.events],
             }
           : null,
       });
@@ -311,6 +324,18 @@ export function useCoachPlanWorkspace(options?: {
         return;
       }
 
+      const isFirstUserTurn =
+        agent.data.messages.length === 0 && !sessionTitleRef.current;
+
+      if (isFirstUserTurn) {
+        pendingTitleRef.current = generateSessionTitleFromPrompt(displayPrompt)
+          .then((title) => {
+            sessionTitleRef.current = title;
+            return title;
+          })
+          .catch(() => null);
+      }
+
       await agent.send({ message: agentPrompt });
     },
     [agent, isBusy],
@@ -320,6 +345,7 @@ export function useCoachPlanWorkspace(options?: {
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     sessionTitleRef.current = null;
+    pendingTitleRef.current = null;
   }, [agent, forgeSessionId]);
 
   const setArtifactTitle = useCallback((_artifactTitle: string) => {
@@ -333,53 +359,6 @@ export function useCoachPlanWorkspace(options?: {
   const setArtifact = useCallback((_artifact: WorkoutPlan) => {
     // Artifact is driven by Eve tool results and plan save flows.
   }, []);
-
-  useEffect(() => {
-    const persistOnUnload = () => {
-      if (state.messages.length === 0 && agent.events.length === 0) {
-        return;
-      }
-
-      const workspaceSnapshot = buildCoachWorkspaceSnapshot({
-        forgeSessionId,
-        title: sessionTitleRef.current,
-        ui: {
-          planId: state.planId,
-          artifactTitle: state.artifactTitle,
-          currentArtifact: state.currentArtifact,
-        },
-        eve: agent.session.sessionId
-          ? {
-              sessionId: agent.session.sessionId,
-              continuationToken: agent.session.continuationToken ?? "",
-              streamIndex: agent.session.streamIndex,
-              events: [...agent.events],
-            }
-          : null,
-      });
-
-      const payload = JSON.stringify({
-        sessionId: forgeSessionId,
-        snapshot: workspaceSnapshot,
-      });
-      const blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon("/api/coach/save-session", blob);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        persistOnUnload();
-      }
-    };
-
-    window.addEventListener("beforeunload", persistOnUnload);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("beforeunload", persistOnUnload);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [agent.events, agent.session, forgeSessionId, state]);
 
   return {
     state,

@@ -1,4 +1,3 @@
-import type { HandleMessageStreamEvent } from "eve/client";
 import type { SessionState } from "eve/client";
 import type {
   ChatDisplayError,
@@ -9,12 +8,7 @@ import type {
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type EveCoachSnapshot = {
-  eve: {
-    sessionId: string;
-    continuationToken: string;
-    streamIndex: number;
-    events: HandleMessageStreamEvent[];
-  } | null;
+  eve: SessionState | null;
 };
 
 export type CoachWorkspaceSnapshot = {
@@ -55,19 +49,47 @@ export function normalizeCoachWorkspaceSnapshot(
   snapshot: CoachWorkspaceSnapshot | Record<string, unknown>,
 ): CoachWorkspaceSnapshot {
   if ("ui" in snapshot && snapshot.ui && typeof snapshot.ui === "object") {
-    return snapshot as CoachWorkspaceSnapshot;
+    const normalized = snapshot as CoachWorkspaceSnapshot;
+    return {
+      ...normalized,
+      forgeSessionId,
+      eve: normalizeEveSessionState(normalized.eve),
+    };
   }
 
-  const legacy = snapshot as CoachWorkspaceSnapshot;
+  const legacy = snapshot as CoachWorkspaceSnapshot & {
+    eve?: SessionState & { events?: unknown[] };
+  };
   return {
     title: legacy.title ?? null,
     forgeSessionId,
-    eve: legacy.eve ?? null,
+    eve: normalizeEveSessionState(legacy.eve),
     ui: {
       planId: legacy.planId ?? null,
       artifactTitle: legacy.artifactTitle ?? "",
       currentArtifact: legacy.currentArtifact ?? null,
     },
+  };
+}
+
+function normalizeEveSessionState(
+  eve:
+    | (SessionState & { events?: unknown[] })
+    | null
+    | undefined,
+): SessionState | null {
+  if (!eve) {
+    return null;
+  }
+
+  if (!eve.sessionId) {
+    return null;
+  }
+
+  return {
+    sessionId: eve.sessionId,
+    continuationToken: eve.continuationToken,
+    streamIndex: eve.streamIndex ?? 0,
   };
 }
 

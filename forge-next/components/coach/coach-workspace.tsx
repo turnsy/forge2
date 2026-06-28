@@ -10,6 +10,7 @@ import { CoachConversationPanel } from "@/components/coach/coach-conversation-pa
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
+import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_CHAT_AREA_CLASS,
@@ -27,7 +28,12 @@ import {
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
+import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
+import type { HandleMessageStreamEvent } from "eve/client";
+import {
+  normalizeCoachWorkspaceSnapshot,
+  type ChatSessionSnapshot,
+} from "@/lib/chat/session-types";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -136,12 +142,54 @@ function ArtifactPanel({
   );
 }
 
-export function CoachWorkspace({
+export function CoachWorkspace(
+  props: {
+    firstName: string;
+    role: UserRole;
+    planId?: string;
+    initialPlan?: WorkoutPlan;
+    initialSession?: {
+      id: string;
+      snapshot: ChatSessionSnapshot;
+      createdAt: string;
+      updatedAt: string;
+    };
+    stripPlanIdOnClear?: boolean;
+    promptEnabled?: boolean;
+  },
+) {
+  const replay = useCoachSessionReplay(props.initialSession);
+
+  if (replay.status === "loading") {
+    return <CoachSessionLoadingView />;
+  }
+
+  if (replay.status === "error") {
+    return (
+      <div
+        className="flex min-h-0 flex-1 flex-col items-center justify-center p-6"
+        role="alert"
+      >
+        <p className="text-sm text-surface-muted">{replay.message}</p>
+      </div>
+    );
+  }
+
+  return (
+    <CoachWorkspaceInner
+      {...props}
+      initialReplayedEvents={replay.events}
+    />
+  );
+}
+
+function CoachWorkspaceInner({
   firstName,
   role,
   planId: initialPlanId,
   initialPlan,
   initialSession,
+  initialReplayedEvents = [],
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -155,6 +203,7 @@ export function CoachWorkspace({
     createdAt: string;
     updatedAt: string;
   };
+  initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -163,13 +212,20 @@ export function CoachWorkspace({
   const [showArtifact, setShowArtifact] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const normalizedInitialSession = initialSession
+    ? normalizeCoachWorkspaceSnapshot(
+        initialSession.id,
+        initialSession.snapshot,
+      )
+    : null;
   const initialSavedSnapshot =
     initialPlan != null && initialPlanId
       ? createPlanSnapshot(initialPlan, initialPlan.name)
-      : initialSession?.snapshot.planId && initialSession.snapshot.currentArtifact
+      : normalizedInitialSession?.ui.planId &&
+          normalizedInitialSession.ui.currentArtifact
         ? createPlanSnapshot(
-            initialSession.snapshot.currentArtifact,
-            initialSession.snapshot.artifactTitle,
+            normalizedInitialSession.ui.currentArtifact,
+            normalizedInitialSession.ui.artifactTitle,
           )
         : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
@@ -213,6 +269,7 @@ export function CoachWorkspace({
               id: initialSession.id,
               snapshot: initialSession.snapshot,
             },
+            initialReplayedEvents,
             onArtifactCleared: handleArtifactCleared,
           }
         : {

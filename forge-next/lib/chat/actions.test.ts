@@ -38,7 +38,6 @@ describe("chat actions", () => {
           title: "Bench block",
           createdAt: "2026-06-01T00:00:00.000Z",
           updatedAt: "2026-06-02T00:00:00.000Z",
-          preview: "Build a plan",
         },
       ],
     });

@@ -1,14 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
-import {
-  getSnapshotMessages,
-  firstUserMessageFromEvents,
-} from "@/lib/chat/snapshot-messages";
-import {
-  SESSION_FALLBACK_TITLE,
-  generateSessionTitle,
-  shouldGenerateSessionTitle,
-} from "@/lib/chat/session-title/generate";
+import { SESSION_FALLBACK_TITLE } from "@/lib/chat/session-title/generate";
 
 type ChatSessionRow = {
   id: string;
@@ -40,49 +32,8 @@ export type ListSessionsResult = {
     title: string;
     createdAt: string;
     updatedAt: string;
-    preview: string;
   }[];
 };
-
-const PREVIEW_MAX_LENGTH = 120;
-
-export function extractSessionPreview(snapshot: CoachWorkspaceSnapshot): string {
-  const firstMessage = getSnapshotMessages(snapshot)[0];
-  if (!firstMessage?.content) {
-    const fromEvents = snapshot.eve?.events
-      ? firstUserMessageFromEvents(snapshot.eve.events)
-      : "";
-    if (!fromEvents) {
-      return "";
-    }
-    return fromEvents.length <= PREVIEW_MAX_LENGTH
-      ? fromEvents
-      : `${fromEvents.slice(0, PREVIEW_MAX_LENGTH)}…`;
-  }
-
-  const trimmed = firstMessage.content.trim();
-  if (trimmed.length <= PREVIEW_MAX_LENGTH) {
-    return trimmed;
-  }
-
-  return `${trimmed.slice(0, PREVIEW_MAX_LENGTH)}…`;
-}
-
-async function resolveSnapshotTitle(
-  snapshot: CoachWorkspaceSnapshot,
-  options?: { generateTitle?: boolean },
-): Promise<string | null> {
-  const clientTitle = snapshot.title?.trim();
-  if (clientTitle) {
-    return clientTitle;
-  }
-
-  if (shouldGenerateSessionTitle(snapshot, options)) {
-    return generateSessionTitle(snapshot);
-  }
-
-  return null;
-}
 
 export type SaveSessionSnapshotResult =
   | { ok: true; title: string | null }
@@ -92,11 +43,9 @@ export async function saveChatSession(
   coachId: string,
   sessionId: string,
   snapshot: CoachWorkspaceSnapshot,
-  options?: { generateTitle?: boolean },
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
-  const generateTitle = options?.generateTitle ?? snapshot.title == null;
-  const title = await resolveSnapshotTitle(snapshot, { generateTitle });
+  const title = snapshot.title?.trim() || null;
   const snapshotToSave: CoachWorkspaceSnapshot = { ...snapshot, title };
 
   const { error } = await supabase.from("chat_sessions").upsert(
@@ -242,7 +191,6 @@ export async function listRecentChatSessions(
       title: row.snapshot.title?.trim() || SESSION_FALLBACK_TITLE,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      preview: extractSessionPreview(row.snapshot),
     })),
   };
 }
