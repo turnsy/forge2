@@ -169,7 +169,7 @@ export function createEveCoachReducer(
           .map((action) => action.toolName);
 
         if (toolNames.includes("submit_plan_code")) {
-          return { ...data, runStatus: "sandbox" };
+          return { ...data, runStatus: "sandbox", errors: [] };
         }
         return data;
       }
@@ -181,10 +181,29 @@ export function createEveCoachReducer(
           let next = applyArtifactFromTool(data, result.toolName, result.output);
 
           if (result.toolName === "submit_plan_code") {
-            next = { ...next, runStatus: "validating" };
+            const output = result.output;
+            const succeeded =
+              typeof output === "object" &&
+              output !== null &&
+              "ok" in output &&
+              output.ok === true;
+
+            next = {
+              ...next,
+              runStatus: succeeded ? "validating" : "sandbox",
+              ...(succeeded ? { errors: [] } : {}),
+            };
           }
 
+          const isInternalCodegenRetry =
+            result.toolName === "submit_plan_code" &&
+            typeof result.output === "object" &&
+            result.output !== null &&
+            "ok" in result.output &&
+            result.output.ok === false;
+
           if (
+            !isInternalCodegenRetry &&
             typeof result.output === "object" &&
             result.output !== null &&
             "ok" in result.output &&

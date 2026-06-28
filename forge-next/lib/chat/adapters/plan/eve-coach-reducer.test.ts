@@ -76,4 +76,80 @@ describe("createEveCoachReducer", () => {
       { message: "AI Gateway authentication failed." },
     ]);
   });
+
+  it("does not surface submit_plan_code sandbox failures in chat errors", () => {
+    let state = reducer.initial();
+    state = reducer.reduce(state, {
+      type: "actions.requested",
+      data: {
+        turnId: "turn-1",
+        stepIndex: 0,
+        sequence: 1,
+        actions: [{ kind: "tool-call", toolName: "submit_plan_code" }],
+      },
+    });
+
+    expect(state.runStatus).toBe("sandbox");
+
+    state = reducer.reduce(state, {
+      type: "action.result",
+      data: {
+        turnId: "turn-1",
+        stepIndex: 0,
+        sequence: 2,
+        result: {
+          kind: "tool-result",
+          toolName: "submit_plan_code",
+          output: {
+            ok: false,
+            errors: [
+              {
+                code: "SANDBOX_FAILED",
+                message:
+                  "Traceback (most recent call last):\n  File \"run.py\", line 3\nNameError: name 'foo' is not defined",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(state.errors).toEqual([]);
+    expect(state.phase).not.toBe("error");
+    expect(state.runStatus).toBe("sandbox");
+  });
+
+  it("clears errors when submit_plan_code succeeds", () => {
+    let state = {
+      ...reducer.initial(),
+      errors: [{ message: "Stale error" }],
+      phase: "streaming" as const,
+    };
+
+    state = reducer.reduce(state, {
+      type: "action.result",
+      data: {
+        turnId: "turn-1",
+        stepIndex: 1,
+        sequence: 3,
+        result: {
+          kind: "tool-result",
+          toolName: "submit_plan_code",
+          output: {
+            ok: true,
+            plan: { name: "Bench Plan", version: "3.0.0", weeks: [] },
+            title: "Bench Plan",
+          },
+        },
+      },
+    });
+
+    expect(state.errors).toEqual([]);
+    expect(state.currentArtifact).toEqual({
+      name: "Bench Plan",
+      version: "3.0.0",
+      weeks: [],
+    });
+    expect(state.artifactTitle).toBe("Bench Plan");
+  });
 });
