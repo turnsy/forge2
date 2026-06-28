@@ -14,10 +14,14 @@ import {
   RUN_SCRIPT_PATH,
 } from "../lib/constants";
 import { logSubmittedPlanCode } from "../lib/log-submitted-code";
+import {
+  MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
+  reserveSubmitPlanCodeAttempt,
+} from "../lib/submit-plan-code-attempts";
 
 export default defineTool({
   description:
-    "Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. The server runs the sandbox immediately and returns { ok, errors } so you can fix and resubmit in the same turn.",
+    `Submit the full Python source for run.py to create or update the workout plan. When the user already specified program scope (weeks, days per week, etc.), implement the entire requested structure in this one script (use loops); do not stop after week 1 or day 1 and ask to continue. The server runs the sandbox immediately and returns { ok, errors } so you can fix and resubmit in the same turn. At most ${MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN} attempts per user message; after that, stop retrying and explain the blocker briefly to the user.`,
   inputSchema: z.object({
     python: z
       .string()
@@ -29,6 +33,20 @@ export default defineTool({
   async execute({ python }, ctx) {
     const coachId = getCoachId(ctx);
     const forgeSessionId = getForgeSessionId(ctx);
+    const turnId = ctx.session.turn.id;
+    const attempt = reserveSubmitPlanCodeAttempt(turnId);
+
+    if (!attempt.allowed) {
+      return {
+        ok: false as const,
+        errors: [
+          {
+            code: "RETRY_LIMIT_EXCEEDED",
+            message: `submit_plan_code was called ${attempt.attempt} times this turn (limit ${MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN}). Stop retrying and tell the user you could not build the plan.`,
+          },
+        ],
+      };
+    }
 
     logSubmittedPlanCode(python, {
       coachId,
