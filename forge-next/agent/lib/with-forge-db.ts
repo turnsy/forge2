@@ -1,7 +1,13 @@
-import type { SessionContext } from "eve/tools";
+import type { SessionAuth } from "eve/context";
 import { runWithSupabaseCookieHeader } from "@/utils/supabase/data-client";
 
-function getCookieHeaderFromSession(session: SessionContext["session"]): string {
+type ForgeDbContext = {
+  session: {
+    auth: SessionAuth;
+  };
+};
+
+function getCookieHeaderFromSession(session: ForgeDbContext["session"]): string {
   const attributes = session.auth.current?.attributes as
     | { cookieHeader?: string }
     | undefined;
@@ -10,7 +16,7 @@ function getCookieHeaderFromSession(session: SessionContext["session"]): string 
 }
 
 export function withForgeDbContext<T>(
-  ctx: SessionContext,
+  ctx: ForgeDbContext,
   fn: () => T,
 ): T {
   return runWithSupabaseCookieHeader(
@@ -20,7 +26,7 @@ export function withForgeDbContext<T>(
 }
 
 export async function withForgeDbContextAsync<T>(
-  ctx: SessionContext,
+  ctx: ForgeDbContext,
   fn: () => Promise<T>,
 ): Promise<T> {
   return withForgeDbContext(ctx, fn);

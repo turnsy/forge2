@@ -7,11 +7,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { ChatMessage } from "@/lib/chat/types";
 
 function isToolResult(
-  result: HandleMessageStreamEvent["data"] extends infer D
-    ? D extends { result?: infer R }
-      ? R
-      : never
-    : never,
+  result: unknown,
 ): result is { kind: "tool-result"; toolName: string; output: unknown } {
   return (
     typeof result === "object" &&

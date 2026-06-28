@@ -9,7 +9,7 @@ export function defineForgeTool<TInput, TOutput>(
   return defineTool({
     ...definition,
     async execute(input, ctx) {
-      return withForgeDbContextAsync(ctx, () => execute(input, ctx));
+      return withForgeDbContextAsync(ctx, async () => execute(input, ctx));
     },
   });
 }

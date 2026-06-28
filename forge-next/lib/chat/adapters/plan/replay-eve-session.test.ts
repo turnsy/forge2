@@ -53,6 +53,7 @@ describe("replayEveSessionEvents", () => {
     ).resolves.toEqual(events);
 
     expect(mockClient).toHaveBeenCalledWith({
+      host: "",
       headers: {
         "x-forge-session-id": "forge-session-1",
       },

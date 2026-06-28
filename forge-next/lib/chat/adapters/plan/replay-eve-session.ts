@@ -11,6 +11,7 @@ export async function replayEveSessionEvents(
   }
 
   const client = new Client({
+    host: "",
     headers: {
       [FORGE_SESSION_HEADER]: forgeSessionId,
     },

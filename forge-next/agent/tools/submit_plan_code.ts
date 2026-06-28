@@ -61,10 +61,22 @@ export default defineTool({
       };
     }
 
-    let rawOutput: string;
+    let rawOutput: string | null;
     try {
       rawOutput = await sandbox.readTextFile({ path: OUTPUT_PLAN_PATH });
     } catch {
+      return {
+        ok: false as const,
+        errors: [
+          {
+            code: "MISSING_OUTPUT",
+            message: "Sandbox did not produce output/plan.json.",
+          },
+        ],
+      };
+    }
+
+    if (!rawOutput) {
       return {
         ok: false as const,
         errors: [
