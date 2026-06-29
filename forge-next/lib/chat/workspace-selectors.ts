@@ -11,7 +11,11 @@ export function hasUploadingAttachments<TArtifact>(
 }
 
 export function canSendChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
-  if (state.phase === "streaming" || state.phase === "uploading") {
+  if (
+    state.phase === "initializing" ||
+    state.phase === "streaming" ||
+    state.phase === "uploading"
+  ) {
     return false;
   }
 
@@ -23,7 +27,11 @@ export function canSendChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): bo
 }
 
 export function isChatRunning<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
-  return state.phase === "streaming" || state.phase === "uploading";
+  return (
+    state.phase === "streaming" ||
+    state.phase === "uploading" ||
+    state.phase === "initializing"
+  );
 }
 
 export function isAwaitingFirstArtifact<TArtifact>(

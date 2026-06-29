@@ -94,8 +94,40 @@ describe("useCoachPlanWorkspace", () => {
       expect.any(String),
       "Strength block",
     );
-    expect(onThreadInitialized).toHaveBeenCalledWith(expect.any(String));
+    expect(onThreadInitialized).toHaveBeenCalledWith({
+      sessionId: expect.any(String),
+      title: "Strength block",
+    });
     expect(mockSend).toHaveBeenCalledWith({ message: "Hello" });
+  });
+
+  it("sets initializing phase while the forge thread is created", async () => {
+    let resolveInit: (value: { ok: boolean }) => void = () => {};
+    initCoachThread.mockReturnValue(
+      new Promise((resolve) => {
+        resolveInit = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    let sendPromise: Promise<void> | undefined;
+    act(() => {
+      sendPromise = result.current.sendMessage([
+        { type: "text", value: "Hello" },
+      ]);
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.phase).toBe("initializing");
+    });
+
+    await act(async () => {
+      resolveInit({ ok: true });
+      await sendPromise;
+    });
+
+    expect(result.current.state.phase).toBe("idle");
   });
 
   it("starts title generation on the first user message before sending", async () => {

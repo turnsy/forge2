@@ -34,6 +34,7 @@ import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -208,6 +209,7 @@ function CoachWorkspaceInner({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
@@ -221,7 +223,25 @@ function CoachWorkspaceInner({
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
 
-  const handleThreadBound = useCallback((sessionId: string) => {
+  const handleThreadBound = useCallback(
+    ({
+      sessionId,
+      title,
+    }: {
+      sessionId: string;
+      title: string | null;
+    }) => {
+      sessionNavigation?.registerNewSession({
+        id: sessionId,
+        title: title?.trim() || "New conversation",
+        updatedAt: new Date().toISOString(),
+      });
+      syncCoachWorkspaceUrl({ sessionId, planId: null });
+    },
+    [sessionNavigation],
+  );
+
+  const handleSessionPersisted = useCallback((sessionId: string) => {
     syncCoachWorkspaceUrl({ sessionId, planId: null });
   }, []);
 
@@ -236,13 +256,6 @@ function CoachWorkspaceInner({
       });
     }
   }, [stripPlanIdOnClear]);
-
-  const handleSessionPersisted = useCallback(
-    (sessionId: string) => {
-      handleThreadBound(sessionId);
-    },
-    [handleThreadBound],
-  );
 
   const {
     state,

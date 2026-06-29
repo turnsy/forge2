@@ -7,6 +7,15 @@ import {
 } from "@/lib/chat/workspace-selectors";
 
 describe("workspace selectors", () => {
+  it("blocks send while initializing", () => {
+    const state = {
+      ...createInitialChatWorkspaceState(),
+      phase: "initializing" as const,
+    };
+    expect(canSendChat(state)).toBe(false);
+    expect(isChatRunning(state)).toBe(true);
+  });
+
   it("blocks send while streaming", () => {
     const state = { ...createInitialChatWorkspaceState(), phase: "streaming" as const };
     expect(canSendChat(state)).toBe(false);

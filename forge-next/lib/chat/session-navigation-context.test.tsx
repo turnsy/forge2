@@ -13,13 +13,31 @@ vi.mock("next/navigation", () => ({
 }));
 
 function Probe() {
-  const { pendingSessionId, startSessionNavigation } = useSessionNavigation();
+  const {
+    pendingSessionId,
+    insertedSessions,
+    startSessionNavigation,
+    registerNewSession,
+  } = useSessionNavigation();
 
   return (
     <div>
-      <span>{pendingSessionId ?? "idle"}</span>
+      <span data-testid="pending">{pendingSessionId ?? "idle"}</span>
+      <span data-testid="inserted-count">{insertedSessions.length}</span>
       <button type="button" onClick={() => startSessionNavigation("session-1")}>
         Navigate
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          registerNewSession({
+            id: "session-new",
+            title: "Fresh thread",
+            updatedAt: "2026-06-28T00:00:00.000Z",
+          })
+        }
+      >
+        Register
       </button>
     </div>
   );
@@ -40,7 +58,7 @@ describe("SessionNavigationProvider", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Navigate" }));
-    expect(screen.getByText("session-1")).toBeInTheDocument();
+    expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
 
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
     rerender(
@@ -50,7 +68,22 @@ describe("SessionNavigationProvider", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("idle")).toBeInTheDocument();
+      expect(screen.getByTestId("pending")).toHaveTextContent("idle");
     });
+  });
+
+  it("inserts a new session and highlights it while navigation is pending", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Register" }));
+
+    expect(screen.getByTestId("inserted-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("pending")).toHaveTextContent("session-new");
   });
 });

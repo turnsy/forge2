@@ -5,7 +5,7 @@ import { ChatAttachment } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
-import { Button, FadeIn, IconButton } from "@/components/ui";
+import { Button, FadeIn, IconButton, Spinner } from "@/components/ui";
 import { canSendChat } from "@/lib/chat/workspace-selectors";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
@@ -37,6 +37,7 @@ export function ChatComposer({
   }
 
   const isDragging = dragDepth > 0;
+  const isInitializing = state.phase === "initializing";
   const sendAllowed = canSendChat(state) && !documentEmpty;
 
   function addFiles(files: File[]) {
@@ -122,8 +123,8 @@ export function ChatComposer({
             <IconButton
               variant="primary"
               size="sm"
-              icon={<ArrowRightIcon />}
-              aria-label="Send"
+              icon={isInitializing ? <Spinner className="h-4 w-4" /> : <ArrowRightIcon />}
+              aria-label={isInitializing ? "Starting conversation" : "Send"}
               disabled={!sendAllowed}
               onClick={handleSend}
             />

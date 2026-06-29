@@ -21,7 +21,15 @@ vi.mock("@/lib/chat/session-navigation-context", async () => {
     ...actual,
     useOptionalSessionNavigation: () => ({
       pendingSessionId: null,
+      insertedSessions: [
+        {
+          id: "session-new",
+          title: "Just created",
+          updatedAt: "2026-06-28T00:00:00.000Z",
+        },
+      ],
       startSessionNavigation: mockStartSessionNavigation,
+      registerNewSession: vi.fn(),
     }),
   };
 });
@@ -63,6 +71,18 @@ describe("SessionHistoryList integration", () => {
 
     expect(mockStartSessionNavigation).toHaveBeenCalledWith("session-1");
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+  });
+
+  it("prepends inserted sessions ahead of fetched history", async () => {
+    render(<SessionHistoryList />);
+
+    const inserted = await screen.findByText("Just created");
+    const fetched = await screen.findByText("Build a plan");
+
+    expect(
+      inserted.compareDocumentPosition(fetched) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("preserves server-provided updatedAt order", async () => {

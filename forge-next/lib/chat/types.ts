@@ -15,7 +15,12 @@ export type ChatMessage = {
   segments?: PromptSegment[];
 };
 
-export type ChatWorkspacePhase = "idle" | "uploading" | "streaming" | "error";
+export type ChatWorkspacePhase =
+  | "idle"
+  | "initializing"
+  | "uploading"
+  | "streaming"
+  | "error";
 
 export type ChatDisplayError = {
   code?: string;

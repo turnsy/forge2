@@ -98,7 +98,10 @@ export function useCoachPlanWorkspace(options?: {
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   onArtifactCleared?: () => void;
   onSessionPersisted?: (sessionId: string) => void;
-  onThreadInitialized?: (sessionId: string) => void;
+  onThreadInitialized?: (payload: {
+    sessionId: string;
+    title: string | null;
+  }) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
@@ -212,7 +215,10 @@ export function useCoachPlanWorkspace(options?: {
           }
 
           threadInitializedRef.current = true;
-          onThreadInitialized?.(forgeSessionId);
+          onThreadInitialized?.({
+            sessionId: forgeSessionId,
+            title: sessionTitleRef.current,
+          });
           return true;
         })();
       }
@@ -326,6 +332,7 @@ export function useCoachPlanWorkspace(options?: {
     attachmentReducer,
     createAttachmentState(),
   );
+  const [isInitializingThread, setIsInitializingThread] = useState(false);
 
   const isBusy =
     agent.status === "submitted" || agent.status === "streaming";
@@ -347,8 +354,9 @@ export function useCoachPlanWorkspace(options?: {
     agent.data.planId,
   ]);
 
-  const phase: PlanWorkspaceState["phase"] =
-    attachmentState.phase === "uploading"
+  const phase: PlanWorkspaceState["phase"] = isInitializingThread
+    ? "initializing"
+    : attachmentState.phase === "uploading"
       ? "uploading"
       : agent.status === "error" || agent.data.phase === "error"
         ? "error"
@@ -449,21 +457,26 @@ export function useCoachPlanWorkspace(options?: {
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
-      if (displayPrompt.length === 0 || isBusy) {
+      if (displayPrompt.length === 0 || isBusy || isInitializingThread) {
         return;
       }
 
-      const initialized = await ensureThreadInitialized(
-        sessionTitleRef.current,
-        displayPrompt,
-      );
-      if (!initialized) {
-        return;
-      }
+      setIsInitializingThread(true);
+      try {
+        const initialized = await ensureThreadInitialized(
+          sessionTitleRef.current,
+          displayPrompt,
+        );
+        if (!initialized) {
+          return;
+        }
 
-      await agent.send({ message: agentPrompt });
+        await agent.send({ message: agentPrompt });
+      } finally {
+        setIsInitializingThread(false);
+      }
     },
-    [agent, ensureThreadInitialized, isBusy],
+    [agent, ensureThreadInitialized, isBusy, isInitializingThread],
   );
 
   const restart = useCallback(() => {
@@ -473,6 +486,7 @@ export function useCoachPlanWorkspace(options?: {
     initPromiseRef.current = null;
     threadInitializedRef.current = false;
     persistedEveSessionIdRef.current = null;
+    setIsInitializingThread(false);
     setLocalArtifact(initialPlan ?? null);
     setLocalPlanId(entryPlanId ?? null);
     setLocalArtifactTitle(initialPlan?.name ?? "");
