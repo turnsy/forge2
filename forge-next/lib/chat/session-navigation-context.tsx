@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -75,8 +76,11 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
   const registerNewSession = useCallback((session: SessionListItemData) => {
     setInsertedSessions((current) => {
-      const withoutDuplicate = current.filter((entry) => entry.id !== session.id);
-      return [session, ...withoutDuplicate];
+      if (current.some((entry) => entry.id === session.id)) {
+        return current;
+      }
+
+      return [session, ...current];
     });
   }, []);
 
@@ -94,17 +98,27 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     return pending;
   }, []);
 
+  const contextValue = useMemo(
+    () => ({
+      pendingSessionId,
+      insertedSessions,
+      startSessionNavigation,
+      registerNewSession,
+      stashPendingFirstSend,
+      consumePendingFirstSend,
+    }),
+    [
+      consumePendingFirstSend,
+      insertedSessions,
+      pendingSessionId,
+      registerNewSession,
+      startSessionNavigation,
+      stashPendingFirstSend,
+    ],
+  );
+
   return (
-    <SessionNavigationContext.Provider
-      value={{
-        pendingSessionId,
-        insertedSessions,
-        startSessionNavigation,
-        registerNewSession,
-        stashPendingFirstSend,
-        consumePendingFirstSend,
-      }}
-    >
+    <SessionNavigationContext.Provider value={contextValue}>
       {children}
     </SessionNavigationContext.Provider>
   );

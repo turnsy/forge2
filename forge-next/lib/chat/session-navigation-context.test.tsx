@@ -140,6 +140,21 @@ describe("SessionNavigationProvider", () => {
     expect(screen.getByTestId("pending")).toHaveTextContent("idle");
   });
 
+  it("does not re-insert an existing session id", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Register" }));
+    await user.click(screen.getByRole("button", { name: "Register" }));
+
+    expect(screen.getByTestId("inserted-count")).toHaveTextContent("1");
+  });
+
   it("stashes and consumes a pending first send", async () => {
     const user = userEvent.setup();
 

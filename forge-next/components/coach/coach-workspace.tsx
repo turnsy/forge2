@@ -223,6 +223,7 @@ function CoachWorkspaceInner({
       : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
+  const registeredSidebarSessionRef = useRef<string | null>(null);
 
   const handleThreadBound = useCallback(
     ({
@@ -246,12 +247,17 @@ function CoachWorkspaceInner({
       return;
     }
 
+    if (registeredSidebarSessionRef.current === initialSession.id) {
+      return;
+    }
+
+    registeredSidebarSessionRef.current = initialSession.id;
     sessionNavigation?.registerNewSession({
       id: initialSession.id,
       title: initialSession.snapshot.title?.trim() || "New conversation",
       updatedAt: initialSession.updatedAt,
     });
-  }, [initialSession, sessionNavigation]);
+  }, [initialSession, sessionNavigation?.registerNewSession]);
 
   const handleFirstSendNavigate = useCallback(
     (pending: {
