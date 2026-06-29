@@ -133,6 +133,26 @@ function eveMessagesToChatMessages(
   return result;
 }
 
+function finalizeAssistantTurn(
+  data: EveCoachReducerData,
+): EveCoachReducerData {
+  const assistantText = data.streamingAssistantText.trim();
+
+  return {
+    ...data,
+    messages:
+      assistantText.length > 0
+        ? [
+            ...data.messages,
+            { role: "assistant" as const, content: assistantText },
+          ]
+        : data.messages,
+    streamingAssistantText: "",
+    runStatus: "done",
+    phase: "idle",
+  };
+}
+
 export function createEveCoachReducer(
   initial: Partial<EveCoachReducerData> = {},
 ): EveAgentReducer<EveCoachReducerData> {
@@ -217,22 +237,10 @@ export function createEveCoachReducer(
           };
         }
 
-        case "turn.completed": {
-          const assistantText = data.streamingAssistantText.trim();
-          return {
-            ...data,
-            messages:
-              assistantText.length > 0
-                ? [
-                    ...data.messages,
-                    { role: "assistant" as const, content: assistantText },
-                  ]
-                : data.messages,
-            streamingAssistantText: "",
-            runStatus: "done",
-            phase: "idle",
-          };
-        }
+        case "turn.completed":
+        case "session.waiting":
+        case "session.completed":
+          return finalizeAssistantTurn(data);
 
         case "turn.failed":
         case "step.failed":

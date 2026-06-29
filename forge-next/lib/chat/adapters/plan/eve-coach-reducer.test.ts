@@ -60,6 +60,30 @@ describe("createEveCoachReducer", () => {
     expect(state.runStatus).toBe("done");
   });
 
+  it("finalizes assistant text on session.waiting", () => {
+    let state = reducer.initial();
+    state = {
+      ...state,
+      messages: [{ role: "user", content: "Hi" }],
+      streamingAssistantText: "Here is a plan.",
+    };
+
+    state = reducer.reduce(state, {
+      type: "session.waiting",
+      data: {
+        turnId: "turn-1",
+        sequence: 2,
+      },
+    });
+
+    expect(state.messages).toEqual([
+      { role: "user", content: "Hi" },
+      { role: "assistant", content: "Here is a plan." },
+    ]);
+    expect(state.streamingAssistantText).toBe("");
+    expect(state.runStatus).toBe("done");
+  });
+
   it("surfaces session.failed in errors", () => {
     const next = reducer.reduce(reducer.initial(), {
       type: "session.failed",

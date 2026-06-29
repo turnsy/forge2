@@ -84,36 +84,48 @@ export async function restoreEveSessionEvents(
     return [];
   }
 
-  const replayed = await collectStreamEvents(
-    toSessionState(pointer),
-    forgeSessionId,
-    {
-      startIndex: 0,
-      untilTurnBoundary: true,
-      signal: options?.signal,
-    },
-  );
+  const allEvents: HandleMessageStreamEvent[] = [];
+  let startIndex = 0;
 
-  if (options?.signal?.aborted) {
-    return replayed;
+  while (!options?.signal?.aborted) {
+    const batch = await collectStreamEvents(
+      toSessionState(pointer, startIndex),
+      forgeSessionId,
+      {
+        startIndex,
+        untilTurnBoundary: true,
+        signal: options?.signal,
+      },
+    );
+
+    if (batch.length === 0) {
+      break;
+    }
+
+    allEvents.push(...batch);
+    startIndex += batch.length;
+
+    const lastEvent = batch[batch.length - 1];
+    if (!lastEvent || !isCurrentTurnBoundaryEvent(lastEvent)) {
+      const tailed = await collectStreamEvents(
+        toSessionState(pointer, startIndex),
+        forgeSessionId,
+        {
+          startIndex,
+          untilTurnBoundary: true,
+          signal: options?.signal,
+        },
+      );
+
+      if (tailed.length > 0) {
+        allEvents.push(...tailed);
+      }
+
+      break;
+    }
   }
 
-  const lastEvent = replayed[replayed.length - 1];
-  if (lastEvent && isCurrentTurnBoundaryEvent(lastEvent)) {
-    return replayed;
-  }
-
-  const tailed = await collectStreamEvents(
-    toSessionState(pointer, replayed.length),
-    forgeSessionId,
-    {
-      startIndex: replayed.length,
-      untilTurnBoundary: true,
-      signal: options?.signal,
-    },
-  );
-
-  return [...replayed, ...tailed];
+  return allEvents;
 }
 
 export function isTurnComplete(

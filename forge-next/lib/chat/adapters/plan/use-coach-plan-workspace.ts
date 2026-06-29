@@ -169,6 +169,10 @@ export function useCoachPlanWorkspace(options?: {
   const persistedEveSessionIdRef = useRef<string | null>(
     normalizedSnapshot?.eve?.sessionId ?? null,
   );
+  const lastPersistedPointerRef = useRef<ForgeEvePointer | null>(
+    normalizedSnapshot?.eve ?? null,
+  );
+  const latestAgentSessionRef = useRef<SessionState | null>(null);
 
   const buildClientArtifactSnapshot = useCallback(
     (agentData: {
@@ -245,8 +249,9 @@ export function useCoachPlanWorkspace(options?: {
       }
 
       if (
-        persistedEveSessionIdRef.current === pointer.sessionId &&
-        normalizedSnapshot?.eve?.continuationToken === pointer.continuationToken
+        lastPersistedPointerRef.current?.sessionId === pointer.sessionId &&
+        lastPersistedPointerRef.current?.continuationToken ===
+          pointer.continuationToken
       ) {
         return;
       }
@@ -254,9 +259,10 @@ export function useCoachPlanWorkspace(options?: {
       const result = await persistCoachSessionEve(forgeSessionId, pointer);
       if (result.ok) {
         persistedEveSessionIdRef.current = pointer.sessionId;
+        lastPersistedPointerRef.current = pointer;
       }
     },
-    [forgeSessionId, normalizedSnapshot?.eve?.continuationToken],
+    [forgeSessionId],
   );
 
   const agent = useEveAgent({
@@ -297,6 +303,7 @@ export function useCoachPlanWorkspace(options?: {
       };
     },
     onSessionChange: (session) => {
+      latestAgentSessionRef.current = session;
       if (!threadInitializedRef.current) {
         return;
       }
@@ -329,6 +336,7 @@ export function useCoachPlanWorkspace(options?: {
       }
 
       persistedEveSessionIdRef.current = pointer.sessionId;
+      lastPersistedPointerRef.current = pointer;
 
       if (!hasSyncedSessionUrlRef.current && onSessionPersisted) {
         hasSyncedSessionUrlRef.current = true;
@@ -336,6 +344,21 @@ export function useCoachPlanWorkspace(options?: {
       }
     },
   });
+
+  useEffect(() => {
+    latestAgentSessionRef.current = agent.session;
+  }, [agent.session]);
+
+  useEffect(() => {
+    return () => {
+      const session = latestAgentSessionRef.current;
+      if (!session?.sessionId || !threadInitializedRef.current) {
+        return;
+      }
+
+      void persistEvePointer(session);
+    };
+  }, [persistEvePointer]);
 
   const [attachmentState, dispatchAttachments] = useReducer(
     attachmentReducer,

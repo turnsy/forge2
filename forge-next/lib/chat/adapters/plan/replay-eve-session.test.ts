@@ -108,4 +108,43 @@ describe("restoreEveSessionEvents", () => {
       signal: undefined,
     });
   });
+
+  it("replays every completed turn in the session", async () => {
+    const turnOne = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.completed", data: { message: "Hi there" } },
+      { type: "session.waiting", data: {} },
+    ];
+    const turnTwo = [
+      { type: "message.received", data: { message: "Again" } },
+      { type: "message.completed", data: { message: "Sure" } },
+      { type: "session.waiting", data: {} },
+    ];
+
+    mockStream
+      .mockImplementationOnce(async function* () {
+        for (const event of turnOne) {
+          yield event;
+        }
+      })
+      .mockImplementationOnce(async function* () {
+        for (const event of turnTwo) {
+          yield event;
+        }
+      })
+      .mockImplementationOnce(async function* () {});
+
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1"),
+    ).resolves.toEqual([...turnOne, ...turnTwo]);
+
+    expect(mockStream).toHaveBeenNthCalledWith(1, {
+      startIndex: 0,
+      signal: undefined,
+    });
+    expect(mockStream).toHaveBeenNthCalledWith(2, {
+      startIndex: 3,
+      signal: undefined,
+    });
+  });
 });
