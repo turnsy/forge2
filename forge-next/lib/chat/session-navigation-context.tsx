@@ -4,11 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -35,7 +36,10 @@ type SessionNavigationContextValue = {
 const SessionNavigationContext =
   createContext<SessionNavigationContextValue | null>(null);
 
+const COACH_WORKSPACE_PATH = "/coach";
+
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
   const [insertedSessions, setInsertedSessions] = useState<
@@ -44,9 +48,26 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const pendingFirstSendRef = useRef<PendingFirstSend | null>(null);
   const currentSessionId = searchParams.get("sessionId");
   const pendingSessionId =
-    targetSessionId !== null && targetSessionId !== currentSessionId
+    pathname === COACH_WORKSPACE_PATH &&
+    targetSessionId !== null &&
+    targetSessionId !== currentSessionId
       ? targetSessionId
       : null;
+
+  useEffect(() => {
+    if (targetSessionId === null) {
+      return;
+    }
+
+    if (currentSessionId === targetSessionId) {
+      setTargetSessionId(null);
+      return;
+    }
+
+    if (pathname !== COACH_WORKSPACE_PATH) {
+      setTargetSessionId(null);
+    }
+  }, [currentSessionId, pathname, targetSessionId]);
 
   const startSessionNavigation = useCallback((sessionId: string) => {
     setTargetSessionId(sessionId);

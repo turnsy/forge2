@@ -8,9 +8,11 @@ import {
 } from "@/lib/chat/session-navigation-context";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
+const mockPathname = vi.fn(() => "/coach");
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams(),
+  usePathname: () => mockPathname(),
 }));
 
 function Probe() {
@@ -72,6 +74,7 @@ function Probe() {
 describe("SessionNavigationProvider", () => {
   beforeEach(() => {
     mockSearchParams.mockReturnValue(new URLSearchParams());
+    mockPathname.mockReturnValue("/coach");
   });
 
   it("clears pending navigation when the session id appears in the URL", async () => {
@@ -87,6 +90,30 @@ describe("SessionNavigationProvider", () => {
     expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
 
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
+    rerender(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("pending")).toHaveTextContent("idle");
+    });
+  });
+
+  it("clears pending first-send navigation when leaving the coach workspace", async () => {
+    const user = userEvent.setup();
+
+    const { rerender } = render(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Navigate" }));
+    expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
+
+    mockPathname.mockReturnValue("/coach/plans");
     rerender(
       <SessionNavigationProvider>
         <Probe />

@@ -9,6 +9,7 @@ import {
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/coach",
 }));
 
 function StartNavigationButton() {
