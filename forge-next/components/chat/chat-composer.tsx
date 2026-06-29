@@ -5,7 +5,7 @@ import { ChatAttachment } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
-import { Button, FadeIn, IconButton, Spinner } from "@/components/ui";
+import { Button, FadeIn, IconButton } from "@/components/ui";
 import { canSendChat } from "@/lib/chat/workspace-selectors";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
@@ -123,9 +123,18 @@ export function ChatComposer({
             <IconButton
               variant="primary"
               size="sm"
-              icon={isInitializing ? <Spinner className="h-4 w-4" /> : <ArrowRightIcon />}
+              icon={
+                isInitializing ? (
+                  <span
+                    aria-hidden
+                    className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
+                  />
+                ) : (
+                  <ArrowRightIcon />
+                )
+              }
               aria-label={isInitializing ? "Starting conversation" : "Send"}
-              disabled={!sendAllowed}
+              disabled={!sendAllowed && !isInitializing}
               onClick={handleSend}
             />
           </div>

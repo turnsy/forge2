@@ -36,6 +36,10 @@ import {
   serializePromptDocument,
   serializePromptForAgent,
 } from "@/lib/prompts/prompt-document";
+import {
+  useOptionalSessionNavigation,
+  type PendingFirstSend,
+} from "@/lib/chat/session-navigation-context";
 
 type AttachmentState = Pick<
   ChatWorkspaceState<WorkoutPlan>,
@@ -102,6 +106,7 @@ export function useCoachPlanWorkspace(options?: {
     sessionId: string;
     title: string | null;
   }) => void;
+  onFirstSendNavigate?: (pending: PendingFirstSend) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
@@ -110,7 +115,11 @@ export function useCoachPlanWorkspace(options?: {
   const onArtifactCleared = options?.onArtifactCleared;
   const onSessionPersisted = options?.onSessionPersisted;
   const onThreadInitialized = options?.onThreadInitialized;
+  const onFirstSendNavigate = options?.onFirstSendNavigate;
+  const sessionNavigation = useOptionalSessionNavigation();
   const hasSyncedSessionUrlRef = useRef(false);
+  const pendingContextFileIdsRef = useRef<string[]>([]);
+  const consumedPendingSendRef = useRef(false);
 
   const normalizedSnapshot = useMemo(() => {
     if (!initialSession) {
@@ -403,6 +412,33 @@ export function useCoachPlanWorkspace(options?: {
     hasSyncedSessionUrlRef.current = false;
   }, [forgeSessionId]);
 
+  useEffect(() => {
+    if (!initialSession || consumedPendingSendRef.current) {
+      return;
+    }
+
+    const pending = sessionNavigation?.consumePendingFirstSend(forgeSessionId);
+    if (!pending) {
+      return;
+    }
+
+    consumedPendingSendRef.current = true;
+
+    if (pending.clientArtifact) {
+      setLocalArtifact(pending.clientArtifact.plan);
+      setLocalPlanId(pending.clientArtifact.planId ?? null);
+      setLocalArtifactTitle(
+        pending.clientArtifact.title ?? pending.clientArtifact.plan.name,
+      );
+    }
+
+    if (pending.contextFileIds?.length) {
+      pendingContextFileIdsRef.current = pending.contextFileIds;
+    }
+
+    void agent.send({ message: pending.message });
+  }, [agent, forgeSessionId, initialSession, sessionNavigation]);
+
   const attachFiles = useCallback(
     async (files: File[]) => {
       const validation = validateClientFiles(files);
@@ -470,13 +506,50 @@ export function useCoachPlanWorkspace(options?: {
         if (!initialized) {
           return;
         }
-
-        await agent.send({ message: agentPrompt });
       } finally {
         setIsInitializingThread(false);
       }
+
+      if (!initialSession) {
+        const clientArtifact = resolveEffectiveClientArtifact({
+          agentArtifact: agentDataRef.current.currentArtifact,
+          agentPlanId: agentDataRef.current.planId,
+          agentTitle: agentDataRef.current.artifactTitle,
+          localArtifact: localArtifactRef.current,
+          localPlanId: localPlanIdRef.current,
+          localTitle: localArtifactTitleRef.current,
+        });
+
+        onFirstSendNavigate?.({
+          sessionId: forgeSessionId,
+          message: agentPrompt,
+          clientArtifact: clientArtifact
+            ? {
+                plan: clientArtifact.plan,
+                planId: clientArtifact.planId,
+                title: clientArtifact.title,
+              }
+            : null,
+          contextFileIds:
+            attachmentState.contextFileIds.length > 0
+              ? attachmentState.contextFileIds
+              : undefined,
+        });
+        return;
+      }
+
+      await agent.send({ message: agentPrompt });
     },
-    [agent, ensureThreadInitialized, isBusy, isInitializingThread],
+    [
+      agent,
+      attachmentState.contextFileIds,
+      ensureThreadInitialized,
+      forgeSessionId,
+      initialSession,
+      isBusy,
+      isInitializingThread,
+      onFirstSendNavigate,
+    ],
   );
 
   const restart = useCallback(() => {

@@ -236,13 +236,30 @@ function CoachWorkspaceInner({
         title: title?.trim() || "New conversation",
         updatedAt: new Date().toISOString(),
       });
-      syncCoachWorkspaceUrl({ sessionId, planId: null });
     },
     [sessionNavigation],
   );
 
-  const handleSessionPersisted = useCallback((sessionId: string) => {
-    syncCoachWorkspaceUrl({ sessionId, planId: null });
+  const handleFirstSendNavigate = useCallback(
+    (pending: {
+      sessionId: string;
+      message: string;
+      clientArtifact?: {
+        plan: WorkoutPlan;
+        planId?: string | null;
+        title?: string;
+      } | null;
+      contextFileIds?: string[];
+    }) => {
+      sessionNavigation?.stashPendingFirstSend(pending);
+      sessionNavigation?.startSessionNavigation(pending.sessionId);
+      router.replace(`/coach?sessionId=${pending.sessionId}`);
+    },
+    [router, sessionNavigation],
+  );
+
+  const handleSessionPersisted = useCallback(() => {
+    // URL is set when the thread is created on first send.
   }, []);
 
   const handleArtifactCleared = useCallback(() => {
@@ -272,6 +289,7 @@ function CoachWorkspaceInner({
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
           onThreadInitialized: handleThreadBound,
+          onFirstSendNavigate: handleFirstSendNavigate,
           onSessionPersisted: handleSessionPersisted,
         }
       : initialSession
@@ -286,6 +304,7 @@ function CoachWorkspaceInner({
         : {
             onArtifactCleared: handleArtifactCleared,
             onThreadInitialized: handleThreadBound,
+            onFirstSendNavigate: handleFirstSendNavigate,
             onSessionPersisted: handleSessionPersisted,
           },
   );

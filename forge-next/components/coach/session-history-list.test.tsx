@@ -30,13 +30,15 @@ vi.mock("@/lib/chat/session-navigation-context", async () => {
       ],
       startSessionNavigation: mockStartSessionNavigation,
       registerNewSession: vi.fn(),
+      stashPendingFirstSend: vi.fn(),
+      consumePendingFirstSend: vi.fn(),
     }),
   };
 });
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
-  useSearchParams: () => new URLSearchParams("sessionId=session-2"),
+  useSearchParams: () => new URLSearchParams("sessionId=session-new"),
 }));
 
 describe("SessionHistoryList integration", () => {
@@ -83,6 +85,7 @@ describe("SessionHistoryList integration", () => {
       inserted.compareDocumentPosition(fetched) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(inserted.closest("[aria-current='true']")).toBeTruthy();
   });
 
   it("preserves server-provided updatedAt order", async () => {

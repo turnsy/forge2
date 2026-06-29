@@ -82,8 +82,9 @@ describe("useCoachPlanWorkspace", () => {
 
   it("initializes the forge thread before the first send", async () => {
     const onThreadInitialized = vi.fn();
+    const onFirstSendNavigate = vi.fn();
     const { result } = renderHook(() =>
-      useCoachPlanWorkspace({ onThreadInitialized }),
+      useCoachPlanWorkspace({ onThreadInitialized, onFirstSendNavigate }),
     );
 
     await act(async () => {
@@ -98,7 +99,12 @@ describe("useCoachPlanWorkspace", () => {
       sessionId: expect.any(String),
       title: "Strength block",
     });
-    expect(mockSend).toHaveBeenCalledWith({ message: "Hello" });
+    expect(onFirstSendNavigate).toHaveBeenCalledWith({
+      sessionId: expect.any(String),
+      message: "Hello",
+      clientArtifact: null,
+    });
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it("sets initializing phase while the forge thread is created", async () => {
@@ -131,7 +137,10 @@ describe("useCoachPlanWorkspace", () => {
   });
 
   it("starts title generation on the first user message before sending", async () => {
-    const { result } = renderHook(() => useCoachPlanWorkspace());
+    const onFirstSendNavigate = vi.fn();
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({ onFirstSendNavigate }),
+    );
 
     await act(async () => {
       await result.current.sendMessage([
@@ -142,6 +151,9 @@ describe("useCoachPlanWorkspace", () => {
     expect(generateSessionTitleFromPrompt).toHaveBeenCalledWith(
       "Build a bench plan",
     );
-    expect(mockSend).toHaveBeenCalledWith({ message: "Build a bench plan" });
+    expect(onFirstSendNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Build a bench plan" }),
+    );
+    expect(mockSend).not.toHaveBeenCalled();
   });
 });

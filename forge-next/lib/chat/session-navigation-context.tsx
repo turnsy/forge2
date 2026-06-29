@@ -4,17 +4,32 @@ import {
   createContext,
   useCallback,
   useContext,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
+import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+
+export type PendingFirstSend = {
+  sessionId: string;
+  message: string;
+  clientArtifact?: {
+    plan: WorkoutPlan;
+    planId?: string | null;
+    title?: string;
+  } | null;
+  contextFileIds?: string[];
+};
 
 type SessionNavigationContextValue = {
   pendingSessionId: string | null;
   insertedSessions: readonly SessionListItemData[];
   startSessionNavigation: (sessionId: string) => void;
   registerNewSession: (session: SessionListItemData) => void;
+  stashPendingFirstSend: (pending: PendingFirstSend) => void;
+  consumePendingFirstSend: (sessionId: string) => PendingFirstSend | null;
 };
 
 const SessionNavigationContext =
@@ -26,6 +41,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const [insertedSessions, setInsertedSessions] = useState<
     SessionListItemData[]
   >([]);
+  const pendingFirstSendRef = useRef<PendingFirstSend | null>(null);
   const currentSessionId = searchParams.get("sessionId");
   const pendingSessionId =
     targetSessionId !== null && targetSessionId !== currentSessionId
@@ -41,7 +57,20 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       const withoutDuplicate = current.filter((entry) => entry.id !== session.id);
       return [session, ...withoutDuplicate];
     });
-    setTargetSessionId(session.id);
+  }, []);
+
+  const stashPendingFirstSend = useCallback((pending: PendingFirstSend) => {
+    pendingFirstSendRef.current = pending;
+  }, []);
+
+  const consumePendingFirstSend = useCallback((sessionId: string) => {
+    const pending = pendingFirstSendRef.current;
+    if (pending?.sessionId !== sessionId) {
+      return null;
+    }
+
+    pendingFirstSendRef.current = null;
+    return pending;
   }, []);
 
   return (
@@ -51,6 +80,8 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
         insertedSessions,
         startSessionNavigation,
         registerNewSession,
+        stashPendingFirstSend,
+        consumePendingFirstSend,
       }}
     >
       {children}

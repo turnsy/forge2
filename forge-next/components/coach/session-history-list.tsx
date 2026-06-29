@@ -62,8 +62,6 @@ export function SessionHistoryList({
   const [showAll, setShowAll] = useState(false);
 
   const resolvedActiveSessionId = searchParams.get("sessionId");
-  const highlightedSessionId =
-    resolvedActiveSessionId ?? sessionNavigation?.pendingSessionId ?? null;
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -186,7 +184,7 @@ export function SessionHistoryList({
     <SessionListItem
       key={session.id}
       session={session}
-      isActive={session.id === highlightedSessionId}
+      isActive={session.id === resolvedActiveSessionId}
       onOpen={handleOpen}
       onRenamed={handleRenamed}
       onDeleted={handleDeleted}
