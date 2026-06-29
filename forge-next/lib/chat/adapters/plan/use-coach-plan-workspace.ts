@@ -13,6 +13,8 @@ import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reduce
 import { buildForgeClientContext } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
+  resolveOutboundClientArtifact,
+  stablePlanJson,
 } from "@/lib/chat/adapters/plan/plan-artifact-diff";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
@@ -185,6 +187,7 @@ export function useCoachPlanWorkspace(options?: {
     normalizedSnapshot?.eve ?? null,
   );
   const latestAgentSessionRef = useRef<SessionState | null>(null);
+  const lastSyncedAgentArtifactRef = useRef<string | null>(null);
 
   const buildClientArtifactSnapshot = useCallback(
     (agentData: {
@@ -299,7 +302,7 @@ export function useCoachPlanWorkspace(options?: {
       [FORGE_SESSION_HEADER]: forgeSessionId,
     }),
     prepareSend: (input) => {
-      const clientArtifact = resolveEffectiveClientArtifact({
+      const clientArtifact = resolveOutboundClientArtifact({
         agentArtifact: agentDataRef.current.currentArtifact,
         agentPlanId: agentDataRef.current.planId,
         agentTitle: agentDataRef.current.artifactTitle,
@@ -389,6 +392,34 @@ export function useCoachPlanWorkspace(options?: {
 
   const isBusy =
     agent.status === "submitted" || agent.status === "streaming";
+
+  useEffect(() => {
+    const agentPlan = agent.data.currentArtifact;
+    if (!agentPlan) {
+      lastSyncedAgentArtifactRef.current = null;
+      return;
+    }
+
+    const agentJson = stablePlanJson(agentPlan);
+    if (agentJson === lastSyncedAgentArtifactRef.current) {
+      return;
+    }
+
+    lastSyncedAgentArtifactRef.current = agentJson;
+
+    if (!isBusy) {
+      return;
+    }
+
+    setLocalArtifact(agentPlan);
+    setLocalPlanId(agent.data.planId);
+    setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+  }, [
+    agent.data.artifactTitle,
+    agent.data.currentArtifact,
+    agent.data.planId,
+    isBusy,
+  ]);
 
   const effectiveArtifact = buildClientArtifactSnapshot(agent.data);
   const displayedArtifact = effectiveArtifact?.plan ?? null;
