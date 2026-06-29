@@ -19,6 +19,7 @@ from forge_plan.builders import (
     move_list_item,
 )
 from forge_plan.ids import format_day_code, new_id, next_set_id
+from forge_plan.paths import OUTPUT_PATH, SEED_PATH
 from forge_plan.target import parse_target
 
 
@@ -475,12 +476,11 @@ class Plan:
             self._data = empty_plan_template()
 
     @classmethod
-    def from_json_file(cls, path: str) -> Plan:
-        """Load seed from ``current_plan.json`` (empty template when missing or invalid)."""
-        seed = load_seed_from_file(path)
-        if not seed.get("name"):
-            return cls(data=seed)
-        return cls(data=seed)
+    def from_dict(cls, value: dict[str, Any]) -> Plan:
+        """Wrap an existing v3 plan dict."""
+        if value.get("schemaVersion") != SCHEMA_VERSION:
+            raise ValueError(f"expected schemaVersion {SCHEMA_VERSION}")
+        return cls(data=dict(value))
 
     @classmethod
     def empty(cls, name: str) -> Plan:
@@ -488,11 +488,10 @@ class Plan:
         return cls(name=name)
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> Plan:
-        """Wrap an existing v3 plan dict."""
-        if value.get("schemaVersion") != SCHEMA_VERSION:
-            raise ValueError(f"expected schemaVersion {SCHEMA_VERSION}")
-        return cls(data=dict(value))
+    def load(cls) -> Plan:
+        """Load ``current_plan.json`` or return an empty template when missing/invalid."""
+        seed = load_seed_from_file(SEED_PATH)
+        return cls(data=seed)
 
     def is_empty(self) -> bool:
         """True when the plan has no weeks."""
@@ -514,9 +513,9 @@ class Plan:
         """Return JSON-serializable plan data (schema v3.0.0)."""
         return dict(self._data)
 
-    def write_json(self, path: str) -> None:
-        """Write plan JSON (creates parent dirs)."""
-        target = Path(path)
+    def save(self) -> None:
+        """Write plan JSON to ``output/plan.json``."""
+        target = Path(OUTPUT_PATH)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(self.to_dict(), indent=2, ensure_ascii=False) + "\n",

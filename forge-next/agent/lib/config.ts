@@ -1,5 +1,8 @@
-/** Max characters returned from read_session_file (tool output). */
-export const SESSION_UPLOAD_READ_MAX_CHARS = 48_000;
+/** Agent runtime limits, sandbox paths, and shared plan seed defaults. */
+
+export const SESSION_UPLOAD_READ_MAX_CHARS = 96_000;
+
+export const MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN = 5;
 
 export const CURRENT_PLAN_PATH = "current_plan.json";
 export const RUN_SCRIPT_PATH = "run.py";

@@ -1,4 +1,4 @@
-import { SESSION_UPLOAD_READ_MAX_CHARS } from "./constants";
+import { SESSION_UPLOAD_READ_MAX_CHARS } from "./config";
 import { loadUploadContextById } from "@/lib/uploads/context-storage";
 import { listSessionUploads } from "@/lib/uploads/list-session-uploads";
 

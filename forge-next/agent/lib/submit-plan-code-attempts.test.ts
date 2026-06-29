@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
-  nextSubmitPlanCodeAttempt,
-} from "@/agent/lib/submit-plan-code-attempts";
+import { MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN } from "@/agent/lib/config";
+import { nextSubmitPlanCodeAttempt } from "@/agent/lib/submit-plan-code-attempts";
 
 describe("nextSubmitPlanCodeAttempt", () => {
   it("allows up to MAX attempts within one turn", () => {

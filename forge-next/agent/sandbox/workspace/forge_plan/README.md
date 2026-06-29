@@ -34,8 +34,10 @@ plan = (
 )
 
 plan.week(0).day(0).block(0).exercise(0).set(0).update(reps=6, target=55, unit="kg")
-plan.write_json("output/plan.json")
+plan.save()
 ```
+
+Use `Plan.load()` to read `current_plan.json` and `plan.save()` to write `output/plan.json` — paths are fixed inside the library.
 
 ## Target values
 

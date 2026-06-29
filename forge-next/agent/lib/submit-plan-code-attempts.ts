@@ -1,6 +1,5 @@
 import { defineState } from "eve/context";
-
-export const MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN = 5;
+import { MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN } from "./config";
 
 export type SubmitPlanCodeAttemptState = {
   turnId: string | null;

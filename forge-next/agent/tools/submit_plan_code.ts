@@ -8,13 +8,11 @@ import {
 import {
   CURRENT_PLAN_PATH,
   EMPTY_PLAN_SEED,
+  MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
   OUTPUT_PLAN_PATH,
   RUN_SCRIPT_PATH,
-} from "../lib/constants";
-import {
-  MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
-  reserveSubmitPlanCodeAttempt,
-} from "../lib/submit-plan-code-attempts";
+} from "../lib/config";
+import { reserveSubmitPlanCodeAttempt } from "../lib/submit-plan-code-attempts";
 
 export default defineTool({
   description:
@@ -24,7 +22,7 @@ export default defineTool({
       .string()
       .min(1)
       .describe(
-        "Complete run.py body: load seed, build all requested weeks/days/exercises, write output/plan.json.",
+        "Complete run.py body: use Plan.load(), build all requested weeks/days/exercises, then plan.save().",
       ),
   }),
   async execute({ python }, ctx) {
