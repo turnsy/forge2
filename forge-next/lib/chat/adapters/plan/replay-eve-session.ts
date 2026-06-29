@@ -8,6 +8,9 @@ export type ReplayEveSessionOptions = {
   signal?: AbortSignal;
 };
 
+/** How long to wait for the first event when probing for another turn. */
+const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
+
 function createReplayClient(forgeSessionId: string): Client {
   return new Client({
     host: "",
@@ -25,6 +28,26 @@ function toSessionState(
   return toEveSessionState(pointer, streamIndex);
 }
 
+function createLinkedAbortSignal(
+  parent: AbortSignal | undefined,
+  timeoutMs: number,
+): { signal: AbortSignal; dispose: () => void } {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const onParentAbort = () => controller.abort();
+  parent?.addEventListener("abort", onParentAbort);
+
+  return {
+    signal: parent
+      ? AbortSignal.any([parent, controller.signal])
+      : controller.signal,
+    dispose: () => {
+      clearTimeout(timeout);
+      parent?.removeEventListener("abort", onParentAbort);
+    },
+  };
+}
+
 async function collectStreamEvents(
   session: SessionState,
   forgeSessionId: string,
@@ -32,28 +55,48 @@ async function collectStreamEvents(
     startIndex?: number;
     untilTurnBoundary?: boolean;
     signal?: AbortSignal;
+    firstEventTimeoutMs?: number;
   },
 ): Promise<HandleMessageStreamEvent[]> {
   const client = createReplayClient(forgeSessionId);
   const eveSession = client.session(session);
   const events: HandleMessageStreamEvent[] = [];
 
-  for await (const event of eveSession.stream({
-    startIndex: options.startIndex ?? 0,
-    signal: options.signal,
-  })) {
-    if (options.signal?.aborted) {
-      break;
+  const timeout =
+    options.firstEventTimeoutMs !== undefined
+      ? createLinkedAbortSignal(options.signal, options.firstEventTimeoutMs)
+      : null;
+
+  try {
+    for await (const event of eveSession.stream({
+      startIndex: options.startIndex ?? 0,
+      signal: timeout?.signal ?? options.signal,
+    })) {
+      if (options.signal?.aborted) {
+        break;
+      }
+
+      events.push(event);
+
+      if (
+        options.untilTurnBoundary &&
+        isCurrentTurnBoundaryEvent(event)
+      ) {
+        break;
+      }
     }
-
-    events.push(event);
-
+  } catch (error) {
     if (
-      options.untilTurnBoundary &&
-      isCurrentTurnBoundaryEvent(event)
+      events.length === 0 &&
+      timeout?.signal.aborted &&
+      !options.signal?.aborted
     ) {
-      break;
+      return [];
     }
+
+    throw error;
+  } finally {
+    timeout?.dispose();
   }
 
   return events;
@@ -95,6 +138,8 @@ export async function restoreEveSessionEvents(
         startIndex,
         untilTurnBoundary: true,
         signal: options?.signal,
+        firstEventTimeoutMs:
+          startIndex > 0 ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
       },
     );
 
