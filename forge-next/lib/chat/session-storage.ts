@@ -1,5 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
-import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
+import type {
+  CoachWorkspaceSnapshot,
+  ForgeEvePointer,
+} from "@/lib/chat/session-types";
 import { SESSION_FALLBACK_TITLE } from "@/lib/chat/session-title/generate";
 
 type ChatSessionRow = {
@@ -39,6 +42,14 @@ export type SaveSessionSnapshotResult =
   | { ok: true; title: string | null }
   | { ok: false; message: string };
 
+export type InitCoachSessionResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export type UpdateCoachSessionEveResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export async function saveChatSession(
   coachId: string,
   sessionId: string,
@@ -76,6 +87,51 @@ export async function saveSessionSnapshot(
   }
 
   return { ok: true, title: result.title };
+}
+
+export async function initCoachChatSession(
+  coachId: string,
+  forgeSessionId: string,
+  title: string | null,
+): Promise<InitCoachSessionResult> {
+  const result = await saveChatSession(coachId, forgeSessionId, {
+    forgeSessionId,
+    title,
+    eve: null,
+  });
+
+  if (result.status === "error") {
+    return { ok: false, message: result.message };
+  }
+
+  return { ok: true };
+}
+
+export async function updateCoachSessionEve(
+  coachId: string,
+  forgeSessionId: string,
+  eve: ForgeEvePointer,
+): Promise<UpdateCoachSessionEveResult> {
+  const loadResult = await loadChatSession(coachId, forgeSessionId);
+
+  if (loadResult.status === "not_found") {
+    return { ok: false, message: "Session not found." };
+  }
+
+  if (loadResult.status === "error") {
+    return { ok: false, message: loadResult.message };
+  }
+
+  const saveResult = await saveChatSession(coachId, forgeSessionId, {
+    ...loadResult.session.snapshot,
+    eve,
+  });
+
+  if (saveResult.status === "error") {
+    return { ok: false, message: saveResult.message };
+  }
+
+  return { ok: true };
 }
 
 export async function loadChatSession(

@@ -31,7 +31,6 @@ import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-w
 import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
 import type { HandleMessageStreamEvent } from "eve/client";
 import {
-  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
@@ -212,27 +211,24 @@ function CoachWorkspaceInner({
   const [showArtifact, setShowArtifact] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
-  const normalizedInitialSession = initialSession
-    ? withForgeSessionId(initialSession.id, initialSession.snapshot)
-    : null;
+  const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
+    initialPlanId ?? null,
+  );
   const initialSavedSnapshot =
     initialPlan != null && initialPlanId
       ? createPlanSnapshot(initialPlan, initialPlan.name)
-      : normalizedInitialSession?.ui.planId &&
-          normalizedInitialSession.ui.currentArtifact
-        ? createPlanSnapshot(
-            normalizedInitialSession.ui.currentArtifact,
-            normalizedInitialSession.ui.artifactTitle,
-          )
-        : null;
+      : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
 
-  const shouldSyncSessionUrl = !initialPlanId && !initialSession;
+  const handleThreadBound = useCallback((sessionId: string) => {
+    syncCoachWorkspaceUrl({ sessionId, planId: null });
+  }, []);
 
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
+    setBacklinkPlanId(null);
     if (stripPlanIdOnClear) {
       syncCoachWorkspaceUrl({
         sessionId: sessionIdRef.current,
@@ -241,9 +237,12 @@ function CoachWorkspaceInner({
     }
   }, [stripPlanIdOnClear]);
 
-  const handleSessionPersisted = useCallback((sessionId: string) => {
-    syncCoachWorkspaceUrl({ sessionId });
-  }, []);
+  const handleSessionPersisted = useCallback(
+    (sessionId: string) => {
+      handleThreadBound(sessionId);
+    },
+    [handleThreadBound],
+  );
 
   const {
     state,
@@ -259,6 +258,8 @@ function CoachWorkspaceInner({
           initialPlan,
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
+          onThreadInitialized: handleThreadBound,
+          onSessionPersisted: handleSessionPersisted,
         }
       : initialSession
         ? {
@@ -271,9 +272,8 @@ function CoachWorkspaceInner({
           }
         : {
             onArtifactCleared: handleArtifactCleared,
-            onSessionPersisted: shouldSyncSessionUrl
-              ? handleSessionPersisted
-              : undefined,
+            onThreadInitialized: handleThreadBound,
+            onSessionPersisted: handleSessionPersisted,
           },
   );
 
@@ -291,9 +291,16 @@ function CoachWorkspaceInner({
   }, [isMobile]);
 
   const activePlanId = state.planId;
-  const resolvedBackHref = activePlanId
-    ? `/coach/plans/${activePlanId}`
+  const resolvedBackPlanId = backlinkPlanId ?? activePlanId;
+  const resolvedBackHref = resolvedBackPlanId
+    ? `/coach/plans/${resolvedBackPlanId}`
     : undefined;
+
+  useEffect(() => {
+    if (state.planId) {
+      setBacklinkPlanId(state.planId);
+    }
+  }, [state.planId]);
 
   const { saveStatus, saveError, savePlan, resetSaveStatus } =
     useSavePlan(activePlanId, {
@@ -345,6 +352,7 @@ function CoachWorkspaceInner({
 
     if (!activePlanId) {
       setPlanId(result.planId);
+      setBacklinkPlanId(result.planId);
       syncCoachWorkspaceUrl({
         sessionId: state.sessionId,
         planId: result.planId,
@@ -392,8 +400,8 @@ function CoachWorkspaceInner({
       return;
     }
 
-    if (activePlanId) {
-      router.push(`/coach/plans/${activePlanId}`);
+    if (backlinkPlanId ?? activePlanId) {
+      router.push(`/coach/plans/${backlinkPlanId ?? activePlanId}`);
       return;
     }
 
@@ -403,7 +411,7 @@ function CoachWorkspaceInner({
     syncCoachWorkspaceUrl({ sessionId: null, planId: null });
     router.replace("/coach");
     router.refresh();
-  }, [activePlanId, restart, router, state]);
+  }, [activePlanId, backlinkPlanId, restart, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();

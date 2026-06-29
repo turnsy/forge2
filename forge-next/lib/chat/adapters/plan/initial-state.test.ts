@@ -11,12 +11,6 @@ describe("createSessionWorkspaceState", () => {
         eve: {
           sessionId: "eve-1",
           continuationToken: "token",
-          streamIndex: 2,
-        },
-        ui: {
-          currentArtifact: null,
-          planId: null,
-          artifactTitle: "Draft",
         },
       },
     });
@@ -24,7 +18,7 @@ describe("createSessionWorkspaceState", () => {
     expect(state.sessionId).toBe("session-42");
     expect(state.hasStarted).toBe(true);
     expect(state.messages).toEqual([]);
-    expect(state.artifactTitle).toBe("Draft");
+    expect(state.artifactTitle).toBe("");
     expect(state.contextFileIds).toEqual([]);
     expect(state.sessionTitle).toBe("Hypertrophy Block");
     expect(state.phase).toBe("idle");

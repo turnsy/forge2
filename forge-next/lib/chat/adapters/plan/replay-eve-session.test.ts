@@ -17,7 +17,15 @@ vi.mock("eve/client", async (importOriginal) => {
   };
 });
 
-import { replayEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
+import {
+  replayEveSessionEvents,
+  restoreEveSessionEvents,
+} from "@/lib/chat/adapters/plan/replay-eve-session";
+
+const evePointer = {
+  sessionId: "eve-1",
+  continuationToken: "token",
+};
 
 describe("replayEveSessionEvents", () => {
   beforeEach(() => {
@@ -26,22 +34,15 @@ describe("replayEveSessionEvents", () => {
 
   it("returns an empty array when sessionId is missing", async () => {
     await expect(
-      replayEveSessionEvents({ streamIndex: 0 }, "forge-session-1"),
-    ).resolves.toEqual([]);
-    expect(mockClient).not.toHaveBeenCalled();
-  });
-
-  it("returns an empty array when streamIndex is zero", async () => {
-    await expect(
       replayEveSessionEvents(
-        { sessionId: "eve-1", continuationToken: "token", streamIndex: 0 },
+        { sessionId: "", continuationToken: "token" },
         "forge-session-1",
       ),
     ).resolves.toEqual([]);
     expect(mockClient).not.toHaveBeenCalled();
   });
 
-  it("replays stream events from the beginning through the saved cursor", async () => {
+  it("replays stream events from the beginning through the latest turn boundary", async () => {
     const events = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "message.completed", data: { message: "Hi there" } },
@@ -55,47 +56,56 @@ describe("replayEveSessionEvents", () => {
     });
 
     await expect(
-      replayEveSessionEvents(
-        {
-          sessionId: "eve-1",
-          continuationToken: "token",
-          streamIndex: 2,
-        },
-        "forge-session-1",
-      ),
-    ).resolves.toEqual(events.slice(0, 2));
+      replayEveSessionEvents(evePointer, "forge-session-1"),
+    ).resolves.toEqual(events);
 
     expect(mockSession).toHaveBeenCalledWith({
       sessionId: "eve-1",
       continuationToken: "token",
-      streamIndex: 2,
+      streamIndex: 0,
     });
     expect(mockStream).toHaveBeenCalledWith({
       startIndex: 0,
       signal: undefined,
     });
   });
+});
 
-  it("passes through abort signals", async () => {
-    const abortController = new AbortController();
+describe("restoreEveSessionEvents", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    mockStream.mockImplementation(async function* () {
-      yield { type: "message.received", data: { message: "Hello" } };
-    });
+  it("tails the stream when the replayed turn has not completed", async () => {
+    const replayEvents = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.appended", data: { messageSoFar: "Working" } },
+    ];
+    const tailEvents = [{ type: "session.waiting", data: {} }];
 
-    await replayEveSessionEvents(
-      {
-        sessionId: "eve-1",
-        continuationToken: "token",
-        streamIndex: 1,
-      },
-      "forge-session-1",
-      { signal: abortController.signal },
-    );
+    mockStream
+      .mockImplementationOnce(async function* () {
+        for (const event of replayEvents) {
+          yield event;
+        }
+      })
+      .mockImplementationOnce(async function* () {
+        for (const event of tailEvents) {
+          yield event;
+        }
+      });
 
-    expect(mockStream).toHaveBeenCalledWith({
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1"),
+    ).resolves.toEqual([...replayEvents, ...tailEvents]);
+
+    expect(mockStream).toHaveBeenNthCalledWith(1, {
       startIndex: 0,
-      signal: abortController.signal,
+      signal: undefined,
+    });
+    expect(mockStream).toHaveBeenNthCalledWith(2, {
+      startIndex: 2,
+      signal: undefined,
     });
   });
 });

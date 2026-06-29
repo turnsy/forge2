@@ -7,19 +7,15 @@ import type {
 } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
-export type EveCoachSnapshot = {
-  eve: SessionState | null;
+export type ForgeEvePointer = {
+  sessionId: string;
+  continuationToken: string;
 };
 
 export type CoachWorkspaceSnapshot = {
   title: string | null;
   forgeSessionId: string;
-  eve: EveCoachSnapshot["eve"];
-  ui: {
-    planId: string | null;
-    artifactTitle: string;
-    currentArtifact: WorkoutPlan | null;
-  };
+  eve: ForgeEvePointer | null;
 };
 
 export type EveCoachReducerData = {
@@ -44,14 +40,23 @@ export function withForgeSessionId(
 export function buildCoachWorkspaceSnapshot(input: {
   forgeSessionId: string;
   title: string | null;
-  ui: CoachWorkspaceSnapshot["ui"];
-  eve: EveCoachSnapshot["eve"];
+  eve: CoachWorkspaceSnapshot["eve"];
 }): CoachWorkspaceSnapshot {
   return {
     title: input.title,
     forgeSessionId: input.forgeSessionId,
     eve: input.eve,
-    ui: input.ui,
+  };
+}
+
+export function toEveSessionState(
+  pointer: ForgeEvePointer,
+  streamIndex = 0,
+): SessionState {
+  return {
+    sessionId: pointer.sessionId,
+    continuationToken: pointer.continuationToken,
+    streamIndex,
   };
 }
 

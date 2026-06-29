@@ -6,11 +6,15 @@ import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 const {
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
+  initCoachThread,
+  persistCoachSessionEve,
   mockSend,
   mockReset,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
+  initCoachThread: vi.fn(),
+  persistCoachSessionEve: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
 }));
@@ -18,10 +22,16 @@ const {
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
+  initCoachThread,
+  persistCoachSessionEve,
 }));
 
 vi.mock("eve/react", () => ({
-  useEveAgent: () => ({
+  useEveAgent: (options?: {
+    onFinish?: (snapshot: {
+      session: { sessionId?: string; continuationToken?: string };
+    }) => Promise<void>;
+  }) => ({
     data: {
       messages: [],
       currentArtifact: null,
@@ -40,6 +50,7 @@ vi.mock("eve/react", () => ({
     send: mockSend,
     reset: mockReset,
     stop: vi.fn(),
+    onFinish: options?.onFinish,
   }),
 }));
 
@@ -47,6 +58,8 @@ describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSend.mockResolvedValue(undefined);
+    initCoachThread.mockResolvedValue({ ok: true });
+    persistCoachSessionEve.mockResolvedValue({ ok: true });
     saveSessionSnapshot.mockResolvedValue({
       ok: true,
       title: "Strength block",
@@ -67,13 +80,21 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
-  it("delegates sendMessage to useEveAgent", async () => {
-    const { result } = renderHook(() => useCoachPlanWorkspace());
+  it("initializes the forge thread before the first send", async () => {
+    const onThreadInitialized = vi.fn();
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({ onThreadInitialized }),
+    );
 
     await act(async () => {
       await result.current.sendMessage([{ type: "text", value: "Hello" }]);
     });
 
+    expect(initCoachThread).toHaveBeenCalledWith(
+      expect.any(String),
+      "Strength block",
+    );
+    expect(onThreadInitialized).toHaveBeenCalledWith(expect.any(String));
     expect(mockSend).toHaveBeenCalledWith({ message: "Hello" });
   });
 

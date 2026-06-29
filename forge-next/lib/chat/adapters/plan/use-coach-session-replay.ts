@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
-import { replayEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
+import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
@@ -31,7 +31,7 @@ function getReplayKey(initialSession?: {
     return null;
   }
 
-  return `${initialSession.id}:${eve.sessionId}:${eve.streamIndex ?? 0}`;
+  return `${initialSession.id}:${eve.sessionId}`;
 }
 
 export function useCoachSessionReplay(initialSession?: {
@@ -69,7 +69,7 @@ export function useCoachSessionReplay(initialSession?: {
     let cancelled = false;
     setState({ status: "loading" });
 
-    void replayEveSessionEvents(eve, initialSession.id, {
+    void restoreEveSessionEvents(eve, initialSession.id, {
       signal: abortController.signal,
     })
       .then((events) => {

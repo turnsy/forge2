@@ -35,12 +35,6 @@ function createSnapshot() {
     eve: {
       sessionId: "eve-1",
       continuationToken: "token",
-      streamIndex: 1,
-    },
-    ui: {
-      planId: "plan-1",
-      artifactTitle: "Strength Block",
-      currentArtifact: null,
     },
   };
 }
