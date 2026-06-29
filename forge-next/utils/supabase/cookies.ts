@@ -1,8 +1,6 @@
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export { parseCookieHeader };
-
 export function createSupabaseFromCookieHeader(
   cookieHeader: string,
 ): SupabaseClient {

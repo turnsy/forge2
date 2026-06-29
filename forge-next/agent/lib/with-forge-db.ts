@@ -7,7 +7,11 @@ type ForgeDbContext = {
   };
 };
 
-/** Threads the Eve auth cookie header into Supabase repository calls. */
+/** Threads the Eve auth cookie header into Supabase repository calls.
+ *
+ * Eve tools run in the agent harness, not inside a Next.js App Router request
+ * scope, so `cookies()` from `next/headers` is unavailable there. Channel auth
+ * captures the inbound `Cookie` header once; repositories read it via ALS. */
 function getCookieHeaderFromSession(session: ForgeDbContext["session"]): string {
   const attributes = session.auth.current?.attributes as
     | { cookieHeader?: string }

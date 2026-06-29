@@ -1,8 +1,7 @@
-import { createServerClient } from "@supabase/ssr";
-import { parseCookieHeader } from "@supabase/ssr";
 import type { AuthUser } from "@/lib/auth/types";
 import { isUserRole } from "@/lib/auth/redirects";
 import { FORGE_SESSION_HEADER } from "@/lib/chat/constants";
+import { createSupabaseFromCookieHeader } from "@/utils/supabase/cookies";
 
 export async function getAuthUserFromRequest(
   request: Request,
@@ -14,16 +13,9 @@ export async function getAuthUserFromRequest(
     return null;
   }
 
-  const cookies = parseCookieHeader(request.headers.get("cookie") ?? "");
-
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return cookies;
-      },
-      setAll() {},
-    },
-  });
+  const supabase = createSupabaseFromCookieHeader(
+    request.headers.get("cookie") ?? "",
+  );
 
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) {
