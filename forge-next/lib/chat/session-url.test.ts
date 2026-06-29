@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   hasCoachSessionInUrl,
+  hasCoachWorkspaceQueryParams,
+  navigateToCoachHome,
   syncCoachSessionUrl,
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
@@ -140,5 +142,48 @@ describe("hasCoachSessionInUrl", () => {
     });
 
     expect(hasCoachSessionInUrl()).toBe(true);
+  });
+});
+
+describe("hasCoachWorkspaceQueryParams", () => {
+  it("returns true when coach workspace query params are present", () => {
+    expect(
+      hasCoachWorkspaceQueryParams(new URLSearchParams("sessionId=session-1")),
+    ).toBe(true);
+    expect(hasCoachWorkspaceQueryParams(new URLSearchParams("planId=plan-1"))).toBe(
+      true,
+    );
+    expect(hasCoachWorkspaceQueryParams(new URLSearchParams("new=1"))).toBe(true);
+  });
+
+  it("returns false on bare /coach", () => {
+    expect(hasCoachWorkspaceQueryParams(new URLSearchParams())).toBe(false);
+  });
+});
+
+describe("navigateToCoachHome", () => {
+  it("clears workspace query params and refreshes the coach home route", () => {
+    const replaceState = vi.fn();
+    const replace = vi.fn();
+    const refresh = vi.fn();
+
+    vi.stubGlobal("window", {
+      location: {
+        href: "https://example.com/coach?sessionId=session-42&planId=plan-9&new=1",
+        pathname: "/coach",
+        search: "?sessionId=session-42&planId=plan-9&new=1",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
+      },
+    });
+
+    navigateToCoachHome({ replace, refresh });
+
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
+    expect(replace).toHaveBeenCalledWith("/coach");
+    expect(refresh).toHaveBeenCalled();
   });
 });

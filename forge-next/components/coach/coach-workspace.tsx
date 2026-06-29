@@ -34,7 +34,7 @@ import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
-import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { navigateToCoachHome, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -459,9 +459,7 @@ function CoachWorkspaceInner({
     restart();
     savedSnapshotRef.current = null;
     setShowArtifact(false);
-    syncCoachWorkspaceUrl({ sessionId: null, planId: null });
-    router.replace("/coach");
-    router.refresh();
+    navigateToCoachHome(router);
   }, [activePlanId, backlinkPlanId, restart, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {

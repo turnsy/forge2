@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { SessionHistorySidebar } from "@/components/coach/session-history-sidebar";
+import { CoachHomeNavLink } from "@/components/coach/coach-home-nav-link";
 import { SidebarProfileMenu } from "@/components/sidebar-profile-menu";
 import { IconButton } from "@/components/ui";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
@@ -70,17 +71,27 @@ export function Sidebar({
             collapsed ? "px-2" : "px-3",
           ].join(" ")}
         >
-          {navItems.map((item) => (
-            <SidebarNavLink
-              key={item.href}
-              href={item.href}
-              icon={renderNavIcon(item.icon)}
-              exact={item.exact}
-              collapsed={collapsed}
-            >
-              {item.label}
-            </SidebarNavLink>
-          ))}
+          {navItems.map((item) =>
+            role === "coach" && item.href === "/coach" ? (
+              <CoachHomeNavLink
+                key={item.href}
+                icon={renderNavIcon(item.icon)}
+                collapsed={collapsed}
+              >
+                {item.label}
+              </CoachHomeNavLink>
+            ) : (
+              <SidebarNavLink
+                key={item.href}
+                href={item.href}
+                icon={renderNavIcon(item.icon)}
+                exact={item.exact}
+                collapsed={collapsed}
+              >
+                {item.label}
+              </SidebarNavLink>
+            ),
+          )}
 
           {showHistory ? (
             <SessionHistorySidebar

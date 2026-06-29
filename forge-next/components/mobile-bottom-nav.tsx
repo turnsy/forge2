@@ -28,7 +28,10 @@ import {
   settingsPathForRole,
   type RoleNavItem,
 } from "@/lib/navigation/role-nav";
-import { roleFocusRingClass } from "@/lib/theme/roles";
+import {
+  navigateToCoachHome,
+  shouldForceCoachHomeNavigation,
+} from "@/lib/chat/session-url";
 
 const DRAG_THRESHOLD_PX = 10;
 
@@ -174,6 +177,7 @@ function BottomNavSlot({
   item,
   pathname,
   searchParams,
+  router,
   slotRef,
   onActivePointerDown,
   onActivePointerMove,
@@ -183,6 +187,7 @@ function BottomNavSlot({
   item: RoleNavItem;
   pathname: string;
   searchParams: URLSearchParams;
+  router: ReturnType<typeof useRouter>;
   slotRef: (node: HTMLButtonElement | HTMLAnchorElement | null) => void;
   onActivePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
@@ -193,6 +198,17 @@ function BottomNavSlot({
   const className = [slotClass, active ? slotActiveClass : ""]
     .filter(Boolean)
     .join(" ");
+
+  const handleCoachHomeClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    if (!shouldForceCoachHomeNavigation(pathname, searchParams)) {
+      return;
+    }
+
+    event.preventDefault();
+    navigateToCoachHome(router);
+  };
 
   if (active) {
     return (
@@ -218,6 +234,7 @@ function BottomNavSlot({
       href={item.href}
       aria-label={item.label}
       className={className}
+      onClick={item.href === "/coach" ? handleCoachHomeClick : undefined}
     >
       {renderNavIcon(item.icon)}
     </Link>
@@ -506,6 +523,7 @@ export function MobileBottomNav({
               item={item}
               pathname={pathname}
               searchParams={searchParams}
+              router={router}
               slotRef={(node) => {
                 if (node) {
                   slotRefs.current.set(item.href, node);
