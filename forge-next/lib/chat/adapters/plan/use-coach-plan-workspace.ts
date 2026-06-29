@@ -15,7 +15,7 @@ import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import {
   buildCoachWorkspaceSnapshot,
-  normalizeCoachWorkspaceSnapshot,
+  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
@@ -93,10 +93,7 @@ export function useCoachPlanWorkspace(options?: {
       return null;
     }
 
-    return normalizeCoachWorkspaceSnapshot(
-      initialSession.id,
-      initialSession.snapshot,
-    );
+    return withForgeSessionId(initialSession.id, initialSession.snapshot);
   }, [initialSession]);
 
   const [forgeSessionId] = useState(() => {

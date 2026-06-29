@@ -1,8 +1,10 @@
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
-import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
-import { normalizeCoachWorkspaceSnapshot } from "@/lib/chat/session-types";
+import {
+  snapshotHasConversation,
+} from "@/lib/chat/snapshot-messages";
+import { withForgeSessionId } from "@/lib/chat/session-types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function createEditPlanWorkspaceState(
@@ -22,19 +24,16 @@ export function createSessionWorkspaceState(session: {
   id: string;
   snapshot: CoachWorkspaceSnapshot;
 }): PlanWorkspaceState {
-  const normalized = normalizeCoachWorkspaceSnapshot(
-    session.id,
-    session.snapshot,
-  );
+  const snapshot = withForgeSessionId(session.id, session.snapshot);
 
   return {
     ...createInitialChatWorkspaceState<WorkoutPlan>(session.id),
     hasStarted:
-      snapshotHasConversation(normalized) ||
-      normalized.ui.currentArtifact !== null,
-    currentArtifact: normalized.ui.currentArtifact,
-    planId: normalized.ui.planId,
-    artifactTitle: normalized.ui.artifactTitle,
-    sessionTitle: normalized.title,
+      snapshotHasConversation(snapshot) ||
+      snapshot.ui.currentArtifact !== null,
+    currentArtifact: snapshot.ui.currentArtifact,
+    planId: snapshot.ui.planId,
+    artifactTitle: snapshot.ui.artifactTitle,
+    sessionTitle: snapshot.title,
   };
 }

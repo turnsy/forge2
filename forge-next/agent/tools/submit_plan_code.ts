@@ -13,6 +13,7 @@ import {
   RUN_SCRIPT_PATH,
 } from "../lib/config";
 import { reserveSubmitPlanCodeAttempt } from "../lib/submit-plan-code-attempts";
+import type { SubmitPlanCodeOutput } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 
 export default defineTool({
   description:
@@ -25,7 +26,7 @@ export default defineTool({
         "Complete run.py body: use Plan.load(), build all requested weeks/days/exercises, then plan.save().",
       ),
   }),
-  async execute({ python }, ctx) {
+  async execute({ python }, ctx): Promise<SubmitPlanCodeOutput> {
     const turnId = ctx.session.turn.id;
     const attempt = reserveSubmitPlanCodeAttempt(turnId);
 

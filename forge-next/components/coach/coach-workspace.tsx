@@ -31,7 +31,7 @@ import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-w
 import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
 import type { HandleMessageStreamEvent } from "eve/client";
 import {
-  normalizeCoachWorkspaceSnapshot,
+  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
@@ -213,10 +213,7 @@ function CoachWorkspaceInner({
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const normalizedInitialSession = initialSession
-    ? normalizeCoachWorkspaceSnapshot(
-        initialSession.id,
-        initialSession.snapshot,
-      )
+    ? withForgeSessionId(initialSession.id, initialSession.snapshot)
     : null;
   const initialSavedSnapshot =
     initialPlan != null && initialPlanId

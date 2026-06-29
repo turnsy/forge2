@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
 import { replayEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
-  normalizeCoachWorkspaceSnapshot,
+  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 
@@ -21,17 +21,17 @@ function getReplayKey(initialSession?: {
     return null;
   }
 
-  const normalized = normalizeCoachWorkspaceSnapshot(
+  const snapshot = withForgeSessionId(
     initialSession.id,
     initialSession.snapshot,
   );
-  const eve = normalized.eve;
+  const eve = snapshot.eve;
 
   if (!eve?.sessionId) {
     return null;
   }
 
-  return `${initialSession.id}:${eve.sessionId}:${eve.streamIndex}`;
+  return `${initialSession.id}:${eve.sessionId}:${eve.streamIndex ?? 0}`;
 }
 
 export function useCoachSessionReplay(initialSession?: {
@@ -54,11 +54,11 @@ export function useCoachSessionReplay(initialSession?: {
       return;
     }
 
-    const normalized = normalizeCoachWorkspaceSnapshot(
+    const snapshot = withForgeSessionId(
       initialSession.id,
       initialSession.snapshot,
     );
-    const eve = normalized.eve;
+    const eve = snapshot.eve;
 
     if (!eve?.sessionId) {
       setState({ status: "ready", events: [] });

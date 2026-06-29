@@ -4,6 +4,9 @@ import { summarizePlan } from "@/lib/plans/summarize-plan";
 import { setCoachArtifact } from "../lib/coach-artifact-state";
 import { getCoachId } from "../lib/coach-context";
 import { fetchCoachPlanForTool } from "../lib/plans";
+import type {
+  SetCurrentArtifactOutput,
+} from "@/lib/chat/adapters/plan/forge-tool-outputs";
 
 export default defineTool({
   description:
@@ -11,7 +14,7 @@ export default defineTool({
   inputSchema: z.object({
     planId: z.string().uuid().describe("Saved plan id."),
   }),
-  async execute({ planId }, ctx) {
+  async execute({ planId }, ctx): Promise<SetCurrentArtifactOutput> {
     const coachId = getCoachId(ctx);
     const result = await fetchCoachPlanForTool(coachId, planId);
 

@@ -34,29 +34,11 @@ export type EveCoachReducerData = {
   warnings: string[];
 };
 
-export function normalizeCoachWorkspaceSnapshot(
+export function withForgeSessionId(
   forgeSessionId: string,
   snapshot: CoachWorkspaceSnapshot,
 ): CoachWorkspaceSnapshot {
-  return {
-    ...snapshot,
-    forgeSessionId,
-    eve: normalizeEveSessionState(snapshot.eve),
-  };
-}
-
-function normalizeEveSessionState(
-  eve: SessionState | null | undefined,
-): SessionState | null {
-  if (!eve?.sessionId) {
-    return null;
-  }
-
-  return {
-    sessionId: eve.sessionId,
-    continuationToken: eve.continuationToken,
-    streamIndex: eve.streamIndex ?? 0,
-  };
+  return { ...snapshot, forgeSessionId };
 }
 
 export function buildCoachWorkspaceSnapshot(input: {
