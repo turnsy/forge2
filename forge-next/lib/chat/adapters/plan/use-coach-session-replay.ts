@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
 import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
+  getPersistedEveEvents,
+  hasPersistedEveEvents,
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
@@ -25,6 +27,11 @@ function getReplayKey(initialSession?: {
     initialSession.id,
     initialSession.snapshot,
   );
+
+  if (hasPersistedEveEvents(snapshot)) {
+    return `${initialSession.id}:persisted`;
+  }
+
   const eve = snapshot.eve;
 
   if (!eve?.sessionId) {
@@ -41,6 +48,19 @@ export function useCoachSessionReplay(initialSession?: {
   const replayKey = getReplayKey(initialSession);
 
   const [state, setState] = useState<CoachSessionReplayState>(() => {
+    if (!initialSession) {
+      return { status: "ready", events: [] };
+    }
+
+    const snapshot = withForgeSessionId(
+      initialSession.id,
+      initialSession.snapshot,
+    );
+
+    if (hasPersistedEveEvents(snapshot)) {
+      return { status: "ready", events: [...getPersistedEveEvents(snapshot)] };
+    }
+
     if (!replayKey) {
       return { status: "ready", events: [] };
     }
@@ -58,6 +78,15 @@ export function useCoachSessionReplay(initialSession?: {
       initialSession.id,
       initialSession.snapshot,
     );
+
+    if (hasPersistedEveEvents(snapshot)) {
+      setState({
+        status: "ready",
+        events: [...getPersistedEveEvents(snapshot)],
+      });
+      return;
+    }
+
     const eve = snapshot.eve;
 
     if (!eve?.sessionId) {

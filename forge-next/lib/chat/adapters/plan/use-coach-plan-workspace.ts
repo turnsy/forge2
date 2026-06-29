@@ -21,10 +21,11 @@ import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import {
   buildCoachWorkspaceSnapshot,
+  getPersistedEveEvents,
   toEveSessionState,
+  toForgeEvePointer,
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
-  type ForgeEvePointer,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
@@ -84,15 +85,26 @@ function attachmentReducer(
   };
 }
 
-function toForgeEvePointer(session: SessionState): ForgeEvePointer | null {
-  if (!session.sessionId) {
-    return null;
+function resolveInitialEveEvents(
+  snapshot: CoachWorkspaceSnapshot | null,
+  replayedEvents: readonly HandleMessageStreamEvent[],
+): readonly HandleMessageStreamEvent[] {
+  if (replayedEvents.length > 0) {
+    return replayedEvents;
   }
 
-  return {
-    sessionId: session.sessionId,
-    continuationToken: session.continuationToken ?? "",
-  };
+  return snapshot ? getPersistedEveEvents(snapshot) : [];
+}
+
+function resolveInitialEveSession(
+  snapshot: CoachWorkspaceSnapshot | null,
+  initialEvents: readonly HandleMessageStreamEvent[],
+): SessionState | undefined {
+  if (!snapshot?.eve?.sessionId) {
+    return undefined;
+  }
+
+  return toEveSessionState(snapshot.eve, initialEvents.length);
 }
 
 export function useCoachPlanWorkspace(options?: {
@@ -251,7 +263,8 @@ export function useCoachPlanWorkspace(options?: {
       if (
         lastPersistedPointerRef.current?.sessionId === pointer.sessionId &&
         lastPersistedPointerRef.current?.continuationToken ===
-          pointer.continuationToken
+          pointer.continuationToken &&
+        lastPersistedPointerRef.current?.streamIndex === pointer.streamIndex
       ) {
         return;
       }
@@ -265,15 +278,22 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
+  const initialEveEvents = useMemo(
+    () =>
+      resolveInitialEveEvents(
+        normalizedSnapshot,
+        initialReplayedEvents,
+      ),
+    [initialReplayedEvents, normalizedSnapshot],
+  );
+
   const agent = useEveAgent({
     reducer: eveReducer,
-    initialSession: normalizedSnapshot?.eve
-      ? toEveSessionState(
-          normalizedSnapshot.eve,
-          initialReplayedEvents.length,
-        )
-      : undefined,
-    initialEvents: initialReplayedEvents,
+    initialSession: resolveInitialEveSession(
+      normalizedSnapshot,
+      initialEveEvents,
+    ),
+    initialEvents: initialEveEvents,
     preserveCompletedSessions: true,
     headers: () => ({
       [FORGE_SESSION_HEADER]: forgeSessionId,
@@ -324,6 +344,7 @@ export function useCoachPlanWorkspace(options?: {
         forgeSessionId,
         title: sessionTitleRef.current,
         eve: pointer,
+        eveEvents: snapshot.events,
       });
 
       const result = await saveSessionSnapshot(

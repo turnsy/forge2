@@ -144,7 +144,46 @@ describe("restoreEveSessionEvents", () => {
     });
     expect(mockStream).toHaveBeenNthCalledWith(2, {
       startIndex: 3,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("stops after the final turn instead of waiting on a live stream", async () => {
+    const turnOne = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.completed", data: { message: "Hi there" } },
+      { type: "session.waiting", data: {} },
+    ];
+
+    mockStream
+      .mockImplementationOnce(async function* () {
+        for (const event of turnOne) {
+          yield event;
+        }
+      })
+      .mockImplementationOnce(async function* ({
+        signal,
+      }: {
+        signal?: AbortSignal;
+      } = {}) {
+        await new Promise<void>((resolve) => {
+          if (!signal || signal.aborted) {
+            resolve();
+            return;
+          }
+
+          signal.addEventListener("abort", () => resolve(), { once: true });
+        });
+      });
+
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1"),
+    ).resolves.toEqual(turnOne);
+
+    expect(mockStream).toHaveBeenCalledTimes(2);
+    expect(mockStream).toHaveBeenNthCalledWith(2, {
+      startIndex: 3,
+      signal: expect.any(AbortSignal),
     });
   });
 });

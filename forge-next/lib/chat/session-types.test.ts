@@ -10,6 +10,7 @@ describe("buildCoachWorkspaceSnapshot", () => {
         eve: {
           sessionId: "eve-1",
           continuationToken: "token",
+          streamIndex: 0,
         },
       }),
     ).toEqual({
@@ -18,6 +19,7 @@ describe("buildCoachWorkspaceSnapshot", () => {
       eve: {
         sessionId: "eve-1",
         continuationToken: "token",
+        streamIndex: 0,
       },
     });
   });
