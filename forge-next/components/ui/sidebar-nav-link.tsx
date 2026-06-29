@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { isNavItemActive } from "@/lib/navigation/active-path";
 import {
@@ -34,7 +34,8 @@ export function SidebarNavLink({
   onClick?: () => void;
 }) {
   const pathname = usePathname();
-  const active = isNavItemActive(pathname, href, exact);
+  const searchParams = useSearchParams();
+  const active = isNavItemActive(pathname, href, exact, searchParams);
   const label =
     typeof children === "string" || typeof children === "number"
       ? String(children)

@@ -9,6 +9,36 @@ describe("isNavItemActive", () => {
     expect(isNavItemActive("/athlete/settings", "/athlete", true)).toBe(false);
   });
 
+  it("does not activate coach home when a workspace query param is present", () => {
+    expect(
+      isNavItemActive(
+        "/coach",
+        "/coach",
+        true,
+        new URLSearchParams("sessionId=session-1"),
+      ),
+    ).toBe(false);
+    expect(
+      isNavItemActive(
+        "/coach",
+        "/coach",
+        true,
+        new URLSearchParams("planId=plan-1"),
+      ),
+    ).toBe(false);
+    expect(
+      isNavItemActive(
+        "/coach",
+        "/coach",
+        true,
+        new URLSearchParams("new=1"),
+      ),
+    ).toBe(false);
+    expect(
+      isNavItemActive("/coach", "/coach", true, new URLSearchParams()),
+    ).toBe(true);
+  });
+
   it("activates nested routes for non-exact hrefs", () => {
     expect(isNavItemActive("/coach/plans", "/coach/plans")).toBe(true);
     expect(isNavItemActive("/coach/plans/weekly", "/coach/plans")).toBe(true);

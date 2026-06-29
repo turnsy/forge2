@@ -33,6 +33,7 @@ import type { HandleMessageStreamEvent } from "eve/client";
 import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
+import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
@@ -239,6 +240,18 @@ function CoachWorkspaceInner({
     },
     [sessionNavigation],
   );
+
+  useEffect(() => {
+    if (!initialSession || !snapshotHasConversation(initialSession.snapshot)) {
+      return;
+    }
+
+    sessionNavigation?.registerNewSession({
+      id: initialSession.id,
+      title: initialSession.snapshot.title?.trim() || "New conversation",
+      updatedAt: initialSession.updatedAt,
+    });
+  }, [initialSession, sessionNavigation]);
 
   const handleFirstSendNavigate = useCallback(
     (pending: {

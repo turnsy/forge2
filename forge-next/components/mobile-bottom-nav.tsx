@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -173,6 +173,7 @@ function MobileBottomProfileButton({
 function BottomNavSlot({
   item,
   pathname,
+  searchParams,
   slotRef,
   onActivePointerDown,
   onActivePointerMove,
@@ -181,13 +182,14 @@ function BottomNavSlot({
 }: {
   item: RoleNavItem;
   pathname: string;
+  searchParams: URLSearchParams;
   slotRef: (node: HTMLButtonElement | HTMLAnchorElement | null) => void;
   onActivePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerCancel: (event: React.PointerEvent<HTMLButtonElement>) => void;
 }) {
-  const active = isNavItemActive(pathname, item.href, item.exact);
+  const active = isNavItemActive(pathname, item.href, item.exact, searchParams);
   const className = [slotClass, active ? slotActiveClass : ""]
     .filter(Boolean)
     .join(" ");
@@ -233,6 +235,7 @@ export function MobileBottomNav({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const navItems = roleNavItems[role];
   const trayRef = useRef<HTMLDivElement>(null);
   const slotRefs = useRef(new Map<string, HTMLElement>());
@@ -266,9 +269,10 @@ export function MobileBottomNav({
 
   const getActiveItem = useCallback(
     () =>
-      navItems.find((item) => isNavItemActive(pathname, item.href, item.exact)) ??
-      null,
-    [navItems, pathname],
+      navItems.find((item) =>
+        isNavItemActive(pathname, item.href, item.exact, searchParams),
+      ) ?? null,
+    [navItems, pathname, searchParams],
   );
 
   const activeHref = getActiveItem()?.href ?? null;
@@ -501,6 +505,7 @@ export function MobileBottomNav({
               key={item.href}
               item={item}
               pathname={pathname}
+              searchParams={searchParams}
               slotRef={(node) => {
                 if (node) {
                   slotRefs.current.set(item.href, node);
