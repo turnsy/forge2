@@ -5,6 +5,8 @@ import { CoachSessionLoadingView } from "@/components/coach/coach-session-loadin
 import { requireRole } from "@/lib/auth/session";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
+export const dynamic = "force-dynamic";
+
 export default async function CoachAppLayout({
   children,
 }: Readonly<{

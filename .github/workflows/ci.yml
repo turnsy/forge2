@@ -27,6 +27,9 @@ jobs:
   ci:
     name: Lint, test, build, and schema types
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-build-placeholder-key
     defaults:
       run:
         working-directory: forge-next
