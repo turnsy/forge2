@@ -5,7 +5,7 @@ import {
   toPaginatedResult,
 } from "@/lib/lists/query";
 import type { ListQuery, PaginatedResult } from "@/lib/lists/types";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/data-client";
 import type { CoachAthleteListItem, CoachAthleteRow } from "@/lib/athletes/types";
 
 type CoachAthleteRowWithCount = CoachAthleteRow & {

@@ -1,25 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SESSION_FALLBACK_TITLE,
-  generateSessionTitle,
+  generateSessionTitleFromText,
   normalizeSessionTitle,
-  shouldGenerateSessionTitle,
 } from "@/lib/chat/session-title/generate";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-
-function snapshot(
-  overrides: Partial<ChatSessionSnapshot> = {},
-): ChatSessionSnapshot {
-  return {
-    title: null,
-    messages: [],
-    currentArtifact: null,
-    planId: null,
-    artifactTitle: "",
-    contextFileIds: [],
-    ...overrides,
-  };
-}
 
 const aiDeps = {
   isGatewayConfigured: () => true,
@@ -27,15 +11,10 @@ const aiDeps = {
   createModel: () => "mock-model" as never,
 };
 
-describe("generateSessionTitle", () => {
+describe("generateSessionTitleFromText", () => {
   it("returns a normalized model title", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [
-          { role: "user", content: "Build a 4-week bench press plan" },
-          { role: "assistant", content: "I can help with that." },
-        ],
-      }),
+    const title = await generateSessionTitleFromText(
+      "Build a 4-week bench press plan",
       {
         ...aiDeps,
         generateTextFn: vi.fn().mockResolvedValue({
@@ -53,19 +32,11 @@ describe("generateSessionTitle", () => {
       .fn()
       .mockResolvedValue({ text: "Sky Color Question", content: [] });
 
-    await generateSessionTitle(
-      snapshot({
-        messages: [
-          { role: "user", content: "what color is the sky" },
-          { role: "assistant", content: "Blue." },
-        ],
-      }),
-      {
-        isGatewayConfigured: () => true,
-        generateTextFn,
-        createModel: () => "mock-model" as never,
-      },
-    );
+    await generateSessionTitleFromText("what color is the sky", {
+      isGatewayConfigured: () => true,
+      generateTextFn,
+      createModel: () => "mock-model" as never,
+    });
 
     expect(generateTextFn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -75,89 +46,44 @@ describe("generateSessionTitle", () => {
   });
 
   it("reads text from content parts when text is empty", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [{ role: "user", content: "what color is the sky" }],
+    const title = await generateSessionTitleFromText("what color is the sky", {
+      ...aiDeps,
+      generateTextFn: vi.fn().mockResolvedValue({
+        text: "",
+        content: [{ type: "text", text: "Sky Appears Blue" }],
       }),
-      {
-        ...aiDeps,
-        generateTextFn: vi.fn().mockResolvedValue({
-          text: "",
-          content: [{ type: "text", text: "Sky Appears Blue" }],
-        }),
-      },
-    );
+    });
 
     expect(title).toBe("Sky Appears Blue");
   });
 
   it("falls back for verbose meta responses", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [{ role: "user", content: "what color is the sky" }],
+    const title = await generateSessionTitleFromText("what color is the sky", {
+      ...aiDeps,
+      generateTextFn: vi.fn().mockResolvedValue({
+        text: 'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
+        content: [],
       }),
-      {
-        ...aiDeps,
-        generateTextFn: vi.fn().mockResolvedValue({
-          text: 'We need to summarize "What color is the sky?" in 3-4 words. A typical answer',
-          content: [],
-        }),
-      },
-    );
+    });
 
     expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 
   it("falls back when gateway is unavailable", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [{ role: "user", content: "Build a plan" }],
-      }),
-      { isGatewayConfigured: () => false },
-    );
+    const title = await generateSessionTitleFromText("Build a plan", {
+      isGatewayConfigured: () => false,
+    });
 
     expect(title).toBe(SESSION_FALLBACK_TITLE);
   });
 
   it("falls back on api errors", async () => {
-    const title = await generateSessionTitle(
-      snapshot({
-        messages: [{ role: "user", content: "Build a plan" }],
-      }),
-      {
-        ...aiDeps,
-        generateTextFn: vi.fn().mockRejectedValue(new Error("gateway down")),
-      },
-    );
+    const title = await generateSessionTitleFromText("Build a plan", {
+      ...aiDeps,
+      generateTextFn: vi.fn().mockRejectedValue(new Error("gateway down")),
+    });
 
     expect(title).toBe(SESSION_FALLBACK_TITLE);
-  });
-});
-
-describe("shouldGenerateSessionTitle", () => {
-  it("is true only for the first user message on main saves", () => {
-    expect(
-      shouldGenerateSessionTitle(
-        snapshot({
-          messages: [
-            { role: "user", content: "Build a plan" },
-            { role: "assistant", content: "Sure." },
-          ],
-        }),
-        { generateTitle: true },
-      ),
-    ).toBe(true);
-  });
-
-  it("is false for beacon saves", () => {
-    expect(
-      shouldGenerateSessionTitle(
-        snapshot({
-          messages: [{ role: "user", content: "Build a plan" }],
-        }),
-        { generateTitle: false },
-      ),
-    ).toBe(false);
   });
 });
 

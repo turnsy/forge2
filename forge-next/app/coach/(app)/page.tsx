@@ -34,6 +34,24 @@ export default async function CoachHomePage({
   const { planId, sessionId, new: newPlan } = await searchParams;
   const promptEnabled = isPromptBetaEnabled(user.email);
 
+  if (sessionId) {
+    const result = await loadChatSession(user.id, sessionId);
+
+    if (result.status === "found") {
+      return (
+        <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
+          <CoachWorkspace
+            key={`session-${result.session.id}`}
+            firstName={firstName(user.fullName)}
+            role="coach"
+            initialSession={result.session}
+            promptEnabled={promptEnabled}
+          />
+        </PageContent>
+      );
+    }
+  }
+
   if (planId) {
     const result = await getCoachPlanById(user.id, planId);
 
@@ -91,24 +109,6 @@ export default async function CoachHomePage({
         />
       </PageContent>
     );
-  }
-
-  if (sessionId) {
-    const result = await loadChatSession(user.id, sessionId);
-
-    if (result.status === "found") {
-      return (
-        <PageContent className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0">
-          <CoachWorkspace
-            key={`session-${result.session.id}`}
-            firstName={firstName(user.fullName)}
-            role="coach"
-            initialSession={result.session}
-            promptEnabled={promptEnabled}
-          />
-        </PageContent>
-      );
-    }
   }
 
   return (

@@ -9,17 +9,6 @@ const mockEqSecond = vi.fn();
 const mockEqFirst = vi.fn();
 const mockSelect = vi.fn();
 
-vi.mock("@/lib/chat/session-title/generate", () => ({
-  SESSION_FALLBACK_TITLE: "Untitled conversation",
-  shouldGenerateSessionTitle: vi.fn(
-    (
-      _snapshot: { messages: { role: string; content: string }[] },
-      options?: { generateTitle?: boolean },
-    ) => options?.generateTitle === true,
-  ),
-  generateSessionTitle: vi.fn(async () => "Bench Press Block"),
-}));
-
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     from: vi.fn(() => ({
@@ -32,7 +21,6 @@ vi.mock("@/utils/supabase/server", () => ({
 
 import {
   deleteChatSession,
-  extractSessionPreview,
   listRecentChatSessions,
   loadChatSession,
   renameChatSession,
@@ -42,44 +30,14 @@ import {
 
 function createSnapshot() {
   return {
-    title: null,
-    messages: [{ role: "user" as const, content: "Build a plan" }],
-    currentArtifact: null,
-    planId: "plan-1",
-    artifactTitle: "Strength Block",
-    contextFileIds: ["ctx-1"],
+    title: "Bench Press Block",
+    forgeSessionId: "session-1",
+    eve: {
+      sessionId: "eve-1",
+      continuationToken: "token",
+    },
   };
 }
-
-describe("extractSessionPreview", () => {
-  it("returns the first message content", () => {
-    expect(
-      extractSessionPreview({
-        title: null,
-        messages: [{ role: "user", content: "Hello coach" }],
-        currentArtifact: null,
-        planId: null,
-        artifactTitle: "",
-        contextFileIds: [],
-      }),
-    ).toBe("Hello coach");
-  });
-
-  it("truncates long previews", () => {
-    const content = "a".repeat(150);
-    const preview = extractSessionPreview({
-      title: null,
-      messages: [{ role: "user", content }],
-      currentArtifact: null,
-      planId: null,
-      artifactTitle: "",
-      contextFileIds: [],
-    });
-
-    expect(preview).toHaveLength(121);
-    expect(preview.endsWith("…")).toBe(true);
-  });
-});
 
 describe("saveChatSession", () => {
   beforeEach(() => {
@@ -98,34 +56,14 @@ describe("saveChatSession", () => {
   it("upserts by session id and coach id", async () => {
     const snapshot = createSnapshot();
 
-    const result = await saveChatSession("coach-1", "session-1", snapshot, {
-      generateTitle: true,
-    });
+    const result = await saveChatSession("coach-1", "session-1", snapshot);
 
     expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
     expect(mockUpsert).toHaveBeenCalledWith(
       {
         id: "session-1",
         coach_id: "coach-1",
-        snapshot: { ...snapshot, title: "Bench Press Block" },
-      },
-      { onConflict: "id" },
-    );
-  });
-
-  it("uses a client-provided title without generating a new one", async () => {
-    const snapshot = { ...createSnapshot(), title: "Existing title" };
-
-    const result = await saveChatSession("coach-1", "session-1", snapshot, {
-      generateTitle: true,
-    });
-
-    expect(result).toEqual({ status: "saved", title: "Existing title" });
-    expect(mockUpsert).toHaveBeenCalledWith(
-      {
-        id: "session-1",
-        coach_id: "coach-1",
-        snapshot: { ...snapshot, title: "Existing title" },
+        snapshot,
       },
       { onConflict: "id" },
     );
@@ -142,22 +80,6 @@ describe("saveChatSession", () => {
 
     expect(result).toEqual({ status: "error", message: "db down" });
   });
-
-  it("generates a title by default when the snapshot has none", async () => {
-    const snapshot = createSnapshot();
-
-    const result = await saveChatSession("coach-1", "session-1", snapshot);
-
-    expect(result).toEqual({ status: "saved", title: "Bench Press Block" });
-    expect(mockUpsert).toHaveBeenCalledWith(
-      {
-        id: "session-1",
-        coach_id: "coach-1",
-        snapshot: { ...snapshot, title: "Bench Press Block" },
-      },
-      { onConflict: "id" },
-    );
-  });
 });
 
 describe("saveSessionSnapshot", () => {
@@ -172,22 +94,6 @@ describe("saveSessionSnapshot", () => {
     const result = await saveSessionSnapshot("coach-1", "session-1", snapshot);
 
     expect(result).toEqual({ ok: true, title: "Bench Press Block" });
-  });
-
-  it("skips title generation when the snapshot already has a title", async () => {
-    const snapshot = { ...createSnapshot(), title: "Existing title" };
-
-    const result = await saveSessionSnapshot("coach-1", "session-1", snapshot);
-
-    expect(result).toEqual({ ok: true, title: "Existing title" });
-    expect(mockUpsert).toHaveBeenCalledWith(
-      {
-        id: "session-1",
-        coach_id: "coach-1",
-        snapshot: { ...snapshot, title: "Existing title" },
-      },
-      { onConflict: "id" },
-    );
   });
 
   it("returns an error when persistence fails", async () => {
@@ -272,16 +178,15 @@ describe("listRecentChatSessions", () => {
     mockSelect.mockReturnValue({ eq: mockEqFirst });
   });
 
-  it("maps recent sessions with previews", async () => {
+  it("maps recent sessions with titles", async () => {
     const result = await listRecentChatSessions("coach-1", 5);
 
     expect(result.sessions).toEqual([
       {
         id: "session-1",
-        title: "Untitled conversation",
+        title: "Bench Press Block",
         createdAt: "2026-06-01T00:00:00.000Z",
         updatedAt: "2026-06-02T00:00:00.000Z",
-        preview: "Build a plan",
       },
     ]);
     expect(mockOrder).toHaveBeenCalledWith("updated_at", { ascending: false });

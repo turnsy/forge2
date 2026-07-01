@@ -12,6 +12,21 @@ import { staggerDelayMs } from "@/lib/motion/stagger";
 const INITIAL_VISIBLE_COUNT = 5;
 const EXPANDED_LIST_LIMIT = 50;
 
+function mergeSessionLists(
+  fetched: SessionListItemData[],
+  inserted: readonly SessionListItemData[],
+): SessionListItemData[] {
+  if (inserted.length === 0) {
+    return fetched;
+  }
+
+  const insertedIds = new Set(inserted.map((session) => session.id));
+  return [
+    ...inserted,
+    ...fetched.filter((session) => !insertedIds.has(session.id)),
+  ];
+}
+
 function ShowMoreButton({ onClick }: { onClick: () => void }) {
   return (
     <button
@@ -96,7 +111,6 @@ export function SessionHistoryList({
     if (sessionId !== resolvedActiveSessionId) {
       sessionNavigation?.startSessionNavigation(sessionId);
       router.push(`/coach?sessionId=${sessionId}`);
-      router.refresh();
     }
 
     onSessionOpen?.(sessionId);
@@ -144,7 +158,7 @@ export function SessionHistoryList({
     );
   }
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && (sessionNavigation?.insertedSessions.length ?? 0) === 0) {
     return (
       <p className={`px-2 py-2 text-sm text-surface-muted ${className}`.trim()}>
         No conversations yet
@@ -152,12 +166,19 @@ export function SessionHistoryList({
     );
   }
 
+  const mergedSessions = mergeSessionLists(
+    sessions,
+    sessionNavigation?.insertedSessions ?? [],
+  );
+
   const visibleSessions =
     variant === "mobile" || showAll
-      ? sessions
-      : sessions.slice(0, INITIAL_VISIBLE_COUNT);
+      ? mergedSessions
+      : mergedSessions.slice(0, INITIAL_VISIBLE_COUNT);
   const canShowMore =
-    variant !== "mobile" && !showAll && sessions.length > INITIAL_VISIBLE_COUNT;
+    variant !== "mobile" &&
+    !showAll &&
+    mergedSessions.length > INITIAL_VISIBLE_COUNT;
 
   const listItems = visibleSessions.map((session, index) => (
     <SessionListItem

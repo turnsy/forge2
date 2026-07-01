@@ -1,14 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
-import {
-  SESSION_FALLBACK_TITLE,
-  generateSessionTitle,
-  shouldGenerateSessionTitle,
-} from "@/lib/chat/session-title/generate";
+import type {
+  CoachWorkspaceSnapshot,
+  ForgeEvePointer,
+} from "@/lib/chat/session-types";
+import { SESSION_FALLBACK_TITLE } from "@/lib/chat/session-title/generate";
 
 type ChatSessionRow = {
   id: string;
-  snapshot: ChatSessionSnapshot;
+  snapshot: CoachWorkspaceSnapshot;
   created_at: string;
   updated_at: string;
 };
@@ -22,7 +21,7 @@ export type LoadSessionResult =
       status: "found";
       session: {
         id: string;
-        snapshot: ChatSessionSnapshot;
+        snapshot: CoachWorkspaceSnapshot;
         createdAt: string;
         updatedAt: string;
       };
@@ -36,56 +35,29 @@ export type ListSessionsResult = {
     title: string;
     createdAt: string;
     updatedAt: string;
-    preview: string;
   }[];
 };
-
-const PREVIEW_MAX_LENGTH = 120;
-
-export function extractSessionPreview(snapshot: ChatSessionSnapshot): string {
-  const firstMessage = snapshot.messages[0];
-  if (!firstMessage?.content) {
-    return "";
-  }
-
-  const trimmed = firstMessage.content.trim();
-  if (trimmed.length <= PREVIEW_MAX_LENGTH) {
-    return trimmed;
-  }
-
-  return `${trimmed.slice(0, PREVIEW_MAX_LENGTH)}…`;
-}
-
-async function resolveSnapshotTitle(
-  snapshot: ChatSessionSnapshot,
-  options?: { generateTitle?: boolean },
-): Promise<string | null> {
-  const clientTitle = snapshot.title?.trim();
-  if (clientTitle) {
-    return clientTitle;
-  }
-
-  if (shouldGenerateSessionTitle(snapshot, options)) {
-    return generateSessionTitle(snapshot);
-  }
-
-  return null;
-}
 
 export type SaveSessionSnapshotResult =
   | { ok: true; title: string | null }
   | { ok: false; message: string };
 
+export type InitCoachSessionResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export type UpdateCoachSessionEveResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export async function saveChatSession(
   coachId: string,
   sessionId: string,
-  snapshot: ChatSessionSnapshot,
-  options?: { generateTitle?: boolean },
+  snapshot: CoachWorkspaceSnapshot,
 ): Promise<SaveSessionResult> {
   const supabase = await createClient();
-  const generateTitle = options?.generateTitle ?? snapshot.title == null;
-  const title = await resolveSnapshotTitle(snapshot, { generateTitle });
-  const snapshotToSave: ChatSessionSnapshot = { ...snapshot, title };
+  const title = snapshot.title?.trim() || null;
+  const snapshotToSave: CoachWorkspaceSnapshot = { ...snapshot, title };
 
   const { error } = await supabase.from("chat_sessions").upsert(
     {
@@ -106,7 +78,7 @@ export async function saveChatSession(
 export async function saveSessionSnapshot(
   coachId: string,
   sessionId: string,
-  snapshot: ChatSessionSnapshot,
+  snapshot: CoachWorkspaceSnapshot,
 ): Promise<SaveSessionSnapshotResult> {
   const result = await saveChatSession(coachId, sessionId, snapshot);
 
@@ -115,6 +87,51 @@ export async function saveSessionSnapshot(
   }
 
   return { ok: true, title: result.title };
+}
+
+export async function initCoachChatSession(
+  coachId: string,
+  forgeSessionId: string,
+  title: string | null,
+): Promise<InitCoachSessionResult> {
+  const result = await saveChatSession(coachId, forgeSessionId, {
+    forgeSessionId,
+    title,
+    eve: null,
+  });
+
+  if (result.status === "error") {
+    return { ok: false, message: result.message };
+  }
+
+  return { ok: true };
+}
+
+export async function updateCoachSessionEve(
+  coachId: string,
+  forgeSessionId: string,
+  eve: ForgeEvePointer,
+): Promise<UpdateCoachSessionEveResult> {
+  const loadResult = await loadChatSession(coachId, forgeSessionId);
+
+  if (loadResult.status === "not_found") {
+    return { ok: false, message: "Session not found." };
+  }
+
+  if (loadResult.status === "error") {
+    return { ok: false, message: loadResult.message };
+  }
+
+  const saveResult = await saveChatSession(coachId, forgeSessionId, {
+    ...loadResult.session.snapshot,
+    eve,
+  });
+
+  if (saveResult.status === "error") {
+    return { ok: false, message: saveResult.message };
+  }
+
+  return { ok: true };
 }
 
 export async function loadChatSession(
@@ -230,7 +247,6 @@ export async function listRecentChatSessions(
       title: row.snapshot.title?.trim() || SESSION_FALLBACK_TITLE,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      preview: extractSessionPreview(row.snapshot),
     })),
   };
 }

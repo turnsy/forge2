@@ -10,7 +10,7 @@ function plan(overrides: Partial<AssignedPlan> = {}): AssignedPlan {
     coachId: "coach-1",
     status: "completed",
     assignedAt: "2026-01-10T00:00:00.000Z",
-    completedAt: "2026-02-01T00:00:00.000Z",
+    completedAt: "2026-02-01T12:00:00.000Z",
     unassignedAt: null,
     planVersionId: null,
     plan: minimalWorkoutPlan,
@@ -32,7 +32,7 @@ describe("getAssignedPlanHistoryMeta", () => {
         plan({
           status: "unassigned",
           completedAt: null,
-          unassignedAt: "2026-06-12T00:00:00.000Z",
+          unassignedAt: "2026-06-12T12:00:00.000Z",
         }),
       ),
     ).toEqual({

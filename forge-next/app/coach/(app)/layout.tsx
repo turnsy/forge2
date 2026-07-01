@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { CoachAppContent } from "@/components/coach/coach-app-content";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { requireRole } from "@/lib/auth/session";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
 export default async function CoachAppLayout({
   children,
@@ -12,10 +13,12 @@ export default async function CoachAppLayout({
   const user = await requireRole("coach");
 
   return (
-    <AppShell role="coach" fullName={user.fullName} email={user.email}>
-      <Suspense fallback={<CoachSessionLoadingView />}>
-        <CoachAppContent>{children}</CoachAppContent>
-      </Suspense>
-    </AppShell>
+    <SessionNavigationProvider>
+      <AppShell role="coach" fullName={user.fullName} email={user.email}>
+        <Suspense fallback={<CoachSessionLoadingView />}>
+          <CoachAppContent>{children}</CoachAppContent>
+        </Suspense>
+      </AppShell>
+    </SessionNavigationProvider>
   );
 }

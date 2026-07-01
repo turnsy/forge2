@@ -2,10 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CoachAppContent } from "@/components/coach/coach-app-content";
-import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
+import {
+  SessionNavigationProvider,
+  useSessionNavigation,
+} from "@/lib/chat/session-navigation-context";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/coach",
 }));
 
 function StartNavigationButton() {
@@ -23,10 +27,12 @@ describe("CoachAppContent", () => {
     const user = userEvent.setup();
 
     render(
-      <CoachAppContent>
-        <StartNavigationButton />
-        <p>Workspace content</p>
-      </CoachAppContent>,
+      <SessionNavigationProvider>
+        <CoachAppContent>
+          <StartNavigationButton />
+          <p>Workspace content</p>
+        </CoachAppContent>
+      </SessionNavigationProvider>,
     );
 
     expect(screen.getByText("Workspace content")).toBeInTheDocument();

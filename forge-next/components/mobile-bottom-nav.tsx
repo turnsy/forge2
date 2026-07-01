@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -28,6 +28,10 @@ import {
   settingsPathForRole,
   type RoleNavItem,
 } from "@/lib/navigation/role-nav";
+import {
+  navigateToCoachHome,
+  shouldForceCoachHomeNavigation,
+} from "@/lib/chat/session-url";
 import { roleFocusRingClass } from "@/lib/theme/roles";
 
 const DRAG_THRESHOLD_PX = 10;
@@ -173,6 +177,8 @@ function MobileBottomProfileButton({
 function BottomNavSlot({
   item,
   pathname,
+  searchParams,
+  router,
   slotRef,
   onActivePointerDown,
   onActivePointerMove,
@@ -181,16 +187,29 @@ function BottomNavSlot({
 }: {
   item: RoleNavItem;
   pathname: string;
+  searchParams: URLSearchParams;
+  router: ReturnType<typeof useRouter>;
   slotRef: (node: HTMLButtonElement | HTMLAnchorElement | null) => void;
   onActivePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerCancel: (event: React.PointerEvent<HTMLButtonElement>) => void;
 }) {
-  const active = isNavItemActive(pathname, item.href, item.exact);
+  const active = isNavItemActive(pathname, item.href, item.exact, searchParams);
   const className = [slotClass, active ? slotActiveClass : ""]
     .filter(Boolean)
     .join(" ");
+
+  const handleCoachHomeClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    if (!shouldForceCoachHomeNavigation(pathname, searchParams)) {
+      return;
+    }
+
+    event.preventDefault();
+    navigateToCoachHome(router);
+  };
 
   if (active) {
     return (
@@ -216,6 +235,7 @@ function BottomNavSlot({
       href={item.href}
       aria-label={item.label}
       className={className}
+      onClick={item.href === "/coach" ? handleCoachHomeClick : undefined}
     >
       {renderNavIcon(item.icon)}
     </Link>
@@ -233,6 +253,7 @@ export function MobileBottomNav({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const navItems = roleNavItems[role];
   const trayRef = useRef<HTMLDivElement>(null);
   const slotRefs = useRef(new Map<string, HTMLElement>());
@@ -266,9 +287,10 @@ export function MobileBottomNav({
 
   const getActiveItem = useCallback(
     () =>
-      navItems.find((item) => isNavItemActive(pathname, item.href, item.exact)) ??
-      null,
-    [navItems, pathname],
+      navItems.find((item) =>
+        isNavItemActive(pathname, item.href, item.exact, searchParams),
+      ) ?? null,
+    [navItems, pathname, searchParams],
   );
 
   const activeHref = getActiveItem()?.href ?? null;
@@ -501,6 +523,8 @@ export function MobileBottomNav({
               key={item.href}
               item={item}
               pathname={pathname}
+              searchParams={searchParams}
+              router={router}
               slotRef={(node) => {
                 if (node) {
                   slotRefs.current.set(item.href, node);

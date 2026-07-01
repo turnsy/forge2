@@ -37,6 +37,7 @@ export function ChatComposer({
   }
 
   const isDragging = dragDepth > 0;
+  const isInitializing = state.phase === "initializing";
   const sendAllowed = canSendChat(state) && !documentEmpty;
 
   function addFiles(files: File[]) {
@@ -122,9 +123,18 @@ export function ChatComposer({
             <IconButton
               variant="primary"
               size="sm"
-              icon={<ArrowRightIcon />}
-              aria-label="Send"
-              disabled={!sendAllowed}
+              icon={
+                isInitializing ? (
+                  <span
+                    aria-hidden
+                    className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
+                  />
+                ) : (
+                  <ArrowRightIcon />
+                )
+              }
+              aria-label={isInitializing ? "Starting conversation" : "Send"}
+              disabled={!sendAllowed && !isInitializing}
               onClick={handleSend}
             />
           </div>

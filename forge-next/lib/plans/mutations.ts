@@ -5,7 +5,7 @@ import {
   type ServiceError,
   type ServiceResult,
 } from "@/lib/errors/service-error";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/data-client";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 type PlansClient = Awaited<ReturnType<typeof createClient>>;

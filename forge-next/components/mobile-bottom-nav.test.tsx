@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPush = vi.fn();
 const usePathname = vi.fn();
+const mockSearchParams = vi.fn(() => new URLSearchParams());
 
 vi.mock("next/navigation", () => ({
   usePathname: () => usePathname(),
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams(),
 }));
 
 vi.mock("next/link", () => ({

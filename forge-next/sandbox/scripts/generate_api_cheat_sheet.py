@@ -55,14 +55,14 @@ def build_cheat_sheet() -> str:
         for name, member in _iter_public_methods(cls):
             if cls is Plan and name not in {
                 "__init__",
-                "from_json_file",
                 "empty",
                 "from_dict",
+                "load",
                 "is_empty",
                 "add_week",
                 "week",
                 "to_dict",
-                "write_json",
+                "save",
             }:
                 continue
             if cls is Week and name != "add_day":
@@ -83,10 +83,10 @@ def build_cheat_sheet() -> str:
             lines.append(_format_callable(cls.__name__, name, member))
             lines.append("")
 
+    lines.extend([validation_rules_cheat_sheet(), ""])
+
     lines.extend(
         [
-            validation_rules_cheat_sheet(),
-            "",
             "Example run.py (fluent build — preferred for new plans):",
             "",
             "  from forge_plan import Plan, Week, Day, Exercise",
@@ -101,17 +101,17 @@ def build_cheat_sheet() -> str:
             "          )",
             "      )",
             "  )",
-            '  plan.write_json("output/plan.json")',
+            "  plan.save()",
             "",
             "Example run.py (iterate existing plan):",
             "",
             "  from forge_plan import Plan",
             "",
-            '  plan = Plan.from_json_file("current_plan.json")',
+            "  plan = Plan.load()",
             "  if plan.is_empty():",
             '      plan = Plan("Strength block").add_week(...)',
             "  plan.week(0).day(0).block(0).exercise(0).set(0).update(reps=6, target=55, unit=\"kg\")",
-            '  plan.write_json("output/plan.json")',
+            "  plan.save()",
         ]
     )
     return "\n".join(lines).strip()
@@ -122,8 +122,7 @@ def main() -> None:
     out_ts = (
         ROOT.parent
         / "lib"
-        / "ai"
-        / "plan-chat"
+        / "plans"
         / "prompts"
         / "forge_plan_api_cheat_sheet.generated.ts"
     )

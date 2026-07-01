@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -168,18 +169,28 @@ class ForgePlanEditTests(unittest.TestCase):
 
 
 class ForgePlanSeedTests(unittest.TestCase):
-    def test_from_json_file_empty_when_missing(self) -> None:
+    def test_plan_load_empty_when_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            plan = Plan.from_json_file(str(Path(tmp) / "missing.json"))
-            self.assertTrue(plan.is_empty())
+            previous = Path.cwd()
+            try:
+                os.chdir(tmp)
+                self.assertTrue(Plan.load().is_empty())
+            finally:
+                os.chdir(previous)
 
-    def test_write_json_round_trip(self) -> None:
+    def test_plan_save_writes_output(self) -> None:
         plan = build_sample_plan()
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "output" / "plan.json"
-            plan.write_json(str(path))
-            loaded = Plan.from_json_file(str(path))
-            self.assertEqual(loaded.to_dict(), plan.to_dict())
+            previous = Path.cwd()
+            try:
+                os.chdir(tmp)
+                plan.save()
+                output = Path("output/plan.json")
+                self.assertTrue(output.is_file())
+                loaded = json.loads(output.read_text(encoding="utf-8"))
+                self.assertEqual(loaded, plan.to_dict())
+            finally:
+                os.chdir(previous)
 
 
 class SummarizeTests(unittest.TestCase):

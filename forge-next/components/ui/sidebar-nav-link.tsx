@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import type { MouseEventHandler, ReactNode } from "react";
 import { isNavItemActive } from "@/lib/navigation/active-path";
 import {
   sidebarItemActiveClassName,
@@ -31,10 +31,11 @@ export function SidebarNavLink({
   trailingIcon?: ReactNode;
   exact?: boolean;
   collapsed?: boolean;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   const pathname = usePathname();
-  const active = isNavItemActive(pathname, href, exact);
+  const searchParams = useSearchParams();
+  const active = isNavItemActive(pathname, href, exact, searchParams);
   const label =
     typeof children === "string" || typeof children === "number"
       ? String(children)

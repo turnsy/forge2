@@ -1,8 +1,6 @@
 import { generateText } from "ai";
 import { createSessionTitleGatewayModel } from "@/lib/chat/session-title/gateway";
 import { isAiGatewayConfigured } from "@/lib/env/plan-generation";
-import type { ChatMessage } from "@/lib/chat/types";
-import type { ChatSessionSnapshot } from "@/lib/chat/session-types";
 
 export const SESSION_FALLBACK_TITLE = "Untitled conversation";
 
@@ -18,33 +16,6 @@ export type GenerateSessionTitleDeps = {
   isGatewayConfigured?: () => boolean;
   createModel?: () => ReturnType<typeof createSessionTitleGatewayModel>;
 };
-
-function countUserMessages(snapshot: ChatSessionSnapshot): number {
-  return snapshot.messages.filter((message) => message.role === "user").length;
-}
-
-function formatMessageForTitle(message: ChatMessage): string {
-  if (message.segments?.length) {
-    return message.segments
-      .map((segment) => (segment.type === "text" ? segment.value : segment.label))
-      .join("")
-      .trim();
-  }
-
-  return message.content.trim();
-}
-
-function getFirstUserMessageText(snapshot: ChatSessionSnapshot): string {
-  const firstUserMessage = snapshot.messages.find(
-    (message) => message.role === "user",
-  );
-
-  if (!firstUserMessage) {
-    return "";
-  }
-
-  return formatMessageForTitle(firstUserMessage);
-}
 
 function readGeneratedText(result: Awaited<ReturnType<typeof generateText>>): string {
   const direct = result.text.trim();
@@ -101,22 +72,15 @@ export function normalizeSessionTitle(raw: string): string | null {
   return `${trimmed.slice(0, SESSION_TITLE_MAX_CHARS - 1).trimEnd()}…`;
 }
 
-export function shouldGenerateSessionTitle(
-  snapshot: ChatSessionSnapshot,
-  options?: { generateTitle?: boolean },
-): boolean {
-  return options?.generateTitle === true && countUserMessages(snapshot) === 1;
-}
-
-export async function generateSessionTitle(
-  snapshot: ChatSessionSnapshot,
+export async function generateSessionTitleFromText(
+  firstMessage: string,
   deps: GenerateSessionTitleDeps = {},
 ): Promise<string> {
   const isGatewayConfigured = deps.isGatewayConfigured ?? isAiGatewayConfigured;
   const generateTextFn = deps.generateTextFn ?? generateText;
-  const firstMessage = getFirstUserMessageText(snapshot);
+  const trimmed = firstMessage.trim();
 
-  if (!isGatewayConfigured() || !firstMessage) {
+  if (!isGatewayConfigured() || !trimmed) {
     return SESSION_FALLBACK_TITLE;
   }
 
@@ -125,7 +89,7 @@ export async function generateSessionTitle(
     const result = await generateTextFn({
       model: createModel(),
       system: SESSION_TITLE_SYSTEM,
-      messages: [{ role: "user", content: firstMessage }],
+      messages: [{ role: "user", content: trimmed }],
       maxOutputTokens: 16,
       temperature: 0,
     });

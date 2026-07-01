@@ -13,7 +13,8 @@
     "generate:plan-types": "json2ts -i ../schemas/workout-plan.schema.json -o lib/plans/workout-plan.generated.ts --bannerComment \"/* AUTO-GENERATED — do not edit */\"",
     "generate:forge-plan-cheat-sheet": "python3 sandbox/scripts/generate_api_cheat_sheet.py",
     "generate:db-types": "bash ../scripts/generate-database-types.sh",
-    "generate:check": "pnpm generate:plan-types && pnpm generate:forge-plan-cheat-sheet && git diff --exit-code -- lib/plans/workout-plan.generated.ts lib/ai/plan-chat/prompts/forge_plan_api_cheat_sheet.generated.ts"
+    "generate:check": "pnpm generate:plan-types && pnpm generate:forge-plan-cheat-sheet && git diff --exit-code -- lib/plans/workout-plan.generated.ts lib/plans/prompts/forge_plan_api_cheat_sheet.generated.ts",
+    "sync:forge-plan-sandbox": "rm -rf agent/sandbox/workspace/forge_plan && cp -r sandbox/forge_plan agent/sandbox/workspace/ && find agent/sandbox/workspace/forge_plan -name 'test_*.py' -delete"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.122",
@@ -22,9 +23,11 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
+    "@vercel/connect": "0.2.2",
     "@vercel/sandbox": "^2.1.0",
-    "ai": "^6.0.194",
+    "ai": "^7.0.4",
     "ajv": "^8.20.0",
+    "eve": "^0.16.2",
     "next": "16.2.6",
     "pdf-parse": "^2.4.5",
     "react": "19.2.4",
@@ -47,5 +50,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
