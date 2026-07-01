@@ -6,7 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockStream, mockSession, mockClient } = vi.hoisted(() => {
   const mockStream = vi.fn();
-  const mockSession = vi.fn(() => ({ stream: mockStream }));
+  const mockSession = vi.fn(() => ({
+    stream: mockStream,
+    state: {
+      sessionId: "eve-1",
+      continuationToken: "token",
+      streamIndex: 3,
+    },
+  }));
   const mockClient = vi.fn(() => ({ session: mockSession }));
   return { mockStream, mockSession, mockClient };
 });
@@ -37,6 +44,7 @@ describe("useCoachEveLiveTail", () => {
       { type: "message.appended", data: { messageSoFar: "Working" } },
     ];
     const tailEvents = [{ type: "session.waiting", data: {} }];
+    const onComplete = vi.fn();
 
     mockStream.mockImplementation(async function* () {
       for (const event of tailEvents) {
@@ -50,6 +58,7 @@ describe("useCoachEveLiveTail", () => {
         eve: evePointer,
         baseEvents,
         enabled: true,
+        onComplete,
       }),
     );
 
@@ -57,8 +66,11 @@ describe("useCoachEveLiveTail", () => {
       expect(result.current.status).toBe("complete");
     });
 
-    if (result.current.status === "complete") {
-      expect(result.current.events).toEqual([...baseEvents, ...tailEvents]);
-    }
+    expect(onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        events: [...baseEvents, ...tailEvents],
+        session: expect.objectContaining({ sessionId: "eve-1" }),
+      }),
+    );
   });
 });

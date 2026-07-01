@@ -1,5 +1,8 @@
 import type { HandleMessageStreamEvent } from "eve/client";
 import {
+  mayHaveInFlightEveTurn,
+} from "@/lib/chat/adapters/plan/eve-session-status";
+import {
   isTurnComplete,
   restoreEveSessionEvents,
   tailEveSessionEvents,
@@ -34,12 +37,13 @@ export async function resolveCoachSessionEvents(
         return [...persisted, ...tail];
       }
 
-      if (isTurnComplete(persisted)) {
+      if (
+        isTurnComplete(persisted) &&
+        !mayHaveInFlightEveTurn(snapshot, persisted)
+      ) {
         return persisted;
       }
 
-      // Prefer the persisted snapshot over a full replay — artifact turns can
-      // leave streamIndex ahead of eveEvents and replaying from 0 may hang.
       return persisted;
     }
 

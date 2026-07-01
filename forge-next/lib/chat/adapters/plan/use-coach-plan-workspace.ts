@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
-import { useRouter } from "next/navigation";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
+import { mayHaveInFlightEveTurn } from "@/lib/chat/adapters/plan/eve-session-status";
 import { useCoachEveLiveTail } from "@/lib/chat/adapters/plan/use-coach-eve-live-tail";
 import {
   generateSessionTitleFromPrompt,
@@ -130,8 +130,8 @@ export function useCoachPlanWorkspace(options?: {
     title: string | null;
   }) => void;
   onFirstSendNavigate?: (pending: PendingFirstSend) => void;
+  onLiveTailComplete?: (events: readonly HandleMessageStreamEvent[]) => void;
 }) {
-  const router = useRouter();
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
@@ -140,6 +140,7 @@ export function useCoachPlanWorkspace(options?: {
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onFirstSendNavigate = options?.onFirstSendNavigate;
+  const onLiveTailComplete = options?.onLiveTailComplete;
   const sessionNavigation = useOptionalSessionNavigation();
   const pendingContextFileIdsRef = useRef<string[]>([]);
   const consumedPendingSendRef = useRef(false);
@@ -374,9 +375,9 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const shouldResumeLiveTail = Boolean(
-    normalizedSnapshot?.eve?.sessionId &&
+    normalizedSnapshot &&
       initialSession &&
-      !isTurnComplete(initialEveEvents),
+      mayHaveInFlightEveTurn(normalizedSnapshot, initialEveEvents),
   );
 
   const liveTail = useCoachEveLiveTail({
@@ -387,17 +388,15 @@ export function useCoachPlanWorkspace(options?: {
     onEventsUpdate: (events) => {
       eventsForPersistenceRef.current = [...events];
     },
-    onComplete: (events) => {
+    onComplete: ({ events, session }) => {
       eventsForPersistenceRef.current = [...events];
+      latestAgentSessionRef.current = session;
 
-      const session = latestAgentSessionRef.current;
-      if (session && threadInitializedRef.current) {
-        void persistEventSnapshot(events, session).then(() => {
-          router.refresh();
-        });
-      } else {
-        router.refresh();
+      if (threadInitializedRef.current) {
+        void persistEventSnapshot(events, session);
       }
+
+      onLiveTailComplete?.(events);
     },
   });
 

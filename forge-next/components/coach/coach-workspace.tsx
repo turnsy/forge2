@@ -11,7 +11,6 @@ import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button"
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
-import { CoachWorkspaceSessionSync } from "@/components/coach/coach-workspace-session-sync";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_CHAT_AREA_CLASS,
@@ -161,21 +160,43 @@ export function CoachWorkspace(
   },
 ) {
   const replay = useCoachSessionReplay(props.initialSession);
+  const [resolvedEvents, setResolvedEvents] = useState<
+    readonly HandleMessageStreamEvent[]
+  >([]);
+  const [agentRemountKey, setAgentRemountKey] = useState(0);
+
+  useEffect(() => {
+    if (replay.status === "ready") {
+      setResolvedEvents(replay.events);
+    }
+  }, [replay.events, replay.status]);
+
+  const handleLiveTailComplete = useCallback(
+    (events: readonly HandleMessageStreamEvent[]) => {
+      setResolvedEvents([...events]);
+      setAgentRemountKey((current) => current + 1);
+    },
+    [],
+  );
 
   if (replay.status === "loading") {
     return <CoachSessionLoadingView />;
   }
 
+  const replayedEvents =
+    resolvedEvents.length > 0 ? resolvedEvents : replay.events;
+
   return (
-    <>
-      {props.initialSession ? (
-        <CoachWorkspaceSessionSync sessionId={props.initialSession.id} />
-      ) : null}
-      <CoachWorkspaceInner
-        {...props}
-        initialReplayedEvents={replay.events}
-      />
-    </>
+    <CoachWorkspaceInner
+      key={
+        props.initialSession
+          ? `${props.initialSession.id}:${agentRemountKey}`
+          : "coach-home"
+      }
+      {...props}
+      initialReplayedEvents={replayedEvents}
+      onLiveTailComplete={handleLiveTailComplete}
+    />
   );
 }
 
@@ -188,6 +209,7 @@ function CoachWorkspaceInner({
   initialReplayedEvents = [],
   stripPlanIdOnClear = false,
   promptEnabled = true,
+  onLiveTailComplete,
 }: {
   firstName: string;
   role: UserRole;
@@ -202,6 +224,7 @@ function CoachWorkspaceInner({
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
+  onLiveTailComplete?: (events: readonly HandleMessageStreamEvent[]) => void;
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -310,6 +333,7 @@ function CoachWorkspaceInner({
             },
             initialReplayedEvents,
             onArtifactCleared: handleArtifactCleared,
+            onLiveTailComplete,
           }
         : {
             onArtifactCleared: handleArtifactCleared,

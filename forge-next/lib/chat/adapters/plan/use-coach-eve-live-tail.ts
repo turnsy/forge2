@@ -1,9 +1,10 @@
 "use client";
 
 import { Client } from "eve/client";
-import type { HandleMessageStreamEvent } from "eve/client";
+import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEffect, useRef, useState } from "react";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import { getEveStreamTailStartIndex } from "@/lib/chat/adapters/plan/eve-session-status";
 import { isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
 import { FORGE_SESSION_HEADER } from "@/lib/chat/constants";
 import {
@@ -19,7 +20,16 @@ export type CoachEveLiveTailState =
       events: HandleMessageStreamEvent[];
       data: EveCoachReducerData;
     }
-  | { status: "complete"; events: HandleMessageStreamEvent[] };
+  | {
+      status: "complete";
+      events: HandleMessageStreamEvent[];
+      session: SessionState;
+    };
+
+function getBaseEventsKey(events: readonly HandleMessageStreamEvent[]): string {
+  const last = events.at(-1);
+  return `${events.length}:${last?.type ?? "none"}`;
+}
 
 export function useCoachEveLiveTail(options: {
   forgeSessionId: string;
@@ -27,7 +37,10 @@ export function useCoachEveLiveTail(options: {
   baseEvents: readonly HandleMessageStreamEvent[];
   enabled: boolean;
   onEventsUpdate?: (events: readonly HandleMessageStreamEvent[]) => void;
-  onComplete?: (events: readonly HandleMessageStreamEvent[]) => void;
+  onComplete?: (payload: {
+    events: readonly HandleMessageStreamEvent[];
+    session: SessionState;
+  }) => void;
 }): CoachEveLiveTailState {
   const {
     forgeSessionId,
@@ -41,16 +54,22 @@ export function useCoachEveLiveTail(options: {
   const [state, setState] = useState<CoachEveLiveTailState>({ status: "idle" });
   const callbacksRef = useRef({ onEventsUpdate, onComplete });
   callbacksRef.current = { onEventsUpdate, onComplete };
+  const baseEventsKey = getBaseEventsKey(baseEvents);
 
   useEffect(() => {
-    if (!enabled || !eve?.sessionId || isTurnComplete(baseEvents)) {
+    if (!enabled || !eve?.sessionId) {
       setState({ status: "idle" });
       return;
     }
 
     const abortController = new AbortController();
     const reducer = createEveCoachReducer();
-    let events = [...baseEvents];
+    const seedEvents = [...baseEvents];
+    const streamStartIndex = getEveStreamTailStartIndex(eve, seedEvents);
+    let events =
+      streamStartIndex > seedEvents.length
+        ? seedEvents
+        : [...seedEvents];
     let data = events.reduce(
       (current, event) => reducer.reduce(current, event),
       reducer.initial(),
@@ -66,12 +85,14 @@ export function useCoachEveLiveTail(options: {
       preserveCompletedSessions: true,
     });
 
-    const session = client.session(toEveSessionState(eve, baseEvents.length));
+    const eveSession = client.session(
+      toEveSessionState(eve, streamStartIndex),
+    );
 
     void (async () => {
       try {
-        for await (const event of session.stream({
-          startIndex: baseEvents.length,
+        for await (const event of eveSession.stream({
+          startIndex: streamStartIndex,
           signal: abortController.signal,
         })) {
           if (abortController.signal.aborted) {
@@ -97,15 +118,16 @@ export function useCoachEveLiveTail(options: {
         return;
       }
 
-      setState({ status: "complete", events });
-      callbacksRef.current.onComplete?.(events);
+      const session = eveSession.state;
+      setState({ status: "complete", events, session });
+      callbacksRef.current.onComplete?.({ events, session });
     })();
 
     return () => {
       abortController.abort();
     };
   }, [
-    baseEvents,
+    baseEventsKey,
     enabled,
     eve?.continuationToken,
     eve?.sessionId,
