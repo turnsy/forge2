@@ -24,6 +24,7 @@ const {
   persistCoachSessionEve,
   mockSend,
   mockReset,
+  mockStop,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
@@ -31,6 +32,7 @@ const {
   persistCoachSessionEve: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
+  mockStop: vi.fn(),
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -70,7 +72,7 @@ vi.mock("eve/react", () => ({
       return mockSend(prepared);
     },
     reset: mockReset,
-    stop: vi.fn(),
+    stop: mockStop,
     onFinish: options?.onFinish,
   }),
 }));
@@ -257,5 +259,15 @@ describe("useCoachPlanWorkspace", () => {
       expect.objectContaining({ message: "Build a bench plan" }),
     );
     expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("stops the in-flight agent response", () => {
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    expect(mockStop).toHaveBeenCalledOnce();
   });
 });
