@@ -11,8 +11,7 @@ import {
 
 export type CoachSessionReplayState =
   | { status: "loading" }
-  | { status: "ready"; events: HandleMessageStreamEvent[] }
-  | { status: "error"; message: string };
+  | { status: "ready"; events: HandleMessageStreamEvent[] };
 
 function getReplayKey(initialSession?: {
   id: string;
@@ -57,14 +56,19 @@ export function useCoachSessionReplay(initialSession?: {
       initialSession.id,
       initialSession.snapshot,
     );
+    const persisted = [...getPersistedEveEvents(snapshot)];
 
     if (needsEveReconciliation(snapshot)) {
+      if (persisted.length > 0) {
+        return { status: "ready", events: persisted };
+      }
+
       return { status: "loading" };
     }
 
     return {
       status: "ready",
-      events: [...getPersistedEveEvents(snapshot)],
+      events: persisted,
     };
   });
 
@@ -99,9 +103,16 @@ export function useCoachSessionReplay(initialSession?: {
         }
 
         console.error("Failed to restore Eve session replay", error);
+
+        const persisted = [...getPersistedEveEvents(snapshot)];
+        if (persisted.length > 0) {
+          setState({ status: "ready", events: persisted });
+          return;
+        }
+
         setState({
-          status: "error",
-          message: "Couldn't load conversation.",
+          status: "ready",
+          events: [],
         });
       });
 

@@ -37,6 +37,10 @@ export async function resolveCoachSessionEvents(
       if (isTurnComplete(persisted)) {
         return persisted;
       }
+
+      // Prefer the persisted snapshot over a full replay — artifact turns can
+      // leave streamIndex ahead of eveEvents and replaying from 0 may hang.
+      return persisted;
     }
 
     const restored = await restoreEveSessionEvents(

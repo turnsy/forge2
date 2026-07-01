@@ -15,6 +15,11 @@ const mockPathname = vi.fn(() => "/coach");
 vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams(),
   usePathname: () => mockPathname(),
+  useRouter: () => ({
+    refresh: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
 }));
 
 const {
@@ -42,6 +47,10 @@ const {
   },
 }));
 
+vi.mock("@/lib/chat/adapters/plan/use-coach-eve-live-tail", () => ({
+  useCoachEveLiveTail: () => ({ status: "idle" }),
+}));
+
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
@@ -62,28 +71,32 @@ vi.mock("eve/react", () => ({
   }) => {
     latestEveAgentOptions.current = options ?? null;
     return {
-    data: {
-      messages: [],
-      currentArtifact: null,
-      planId: null,
-      artifactTitle: "",
-      runStatus: null,
-      streamingAssistantText: "",
-      errors: [],
-      phase: "idle",
-      warnings: [],
-    },
-    status: "ready",
-    error: null,
-    events: [],
-    session: { sessionId: undefined, continuationToken: undefined, streamIndex: 0 },
-    send: (input: { message: string }) => {
-      const prepared = options?.prepareSend?.(input) ?? input;
-      return mockSend(prepared);
-    },
-    reset: mockReset,
-    stop: vi.fn(),
-  };
+      data: {
+        messages: [],
+        currentArtifact: null,
+        planId: null,
+        artifactTitle: "",
+        runStatus: null,
+        streamingAssistantText: "",
+        errors: [],
+        phase: "idle",
+        warnings: [],
+      },
+      status: "ready",
+      error: null,
+      events: [],
+      session: {
+        sessionId: undefined,
+        continuationToken: undefined,
+        streamIndex: 0,
+      },
+      send: (input: { message: string }) => {
+        const prepared = options?.prepareSend?.(input) ?? input;
+        return mockSend(prepared);
+      },
+      reset: mockReset,
+      stop: vi.fn(),
+    };
   },
 }));
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
+import { useCoachEveLiveTail } from "@/lib/chat/adapters/plan/use-coach-eve-live-tail";
 import {
   generateSessionTitleFromPrompt,
   initCoachThread,
@@ -49,6 +51,8 @@ import {
   useOptionalSessionNavigation,
   type PendingFirstSend,
 } from "@/lib/chat/session-navigation-context";
+
+const EMPTY_REPLAYED_EVENTS: readonly HandleMessageStreamEvent[] = [];
 
 type AttachmentState = Pick<
   ChatWorkspaceState<WorkoutPlan>,
@@ -127,10 +131,12 @@ export function useCoachPlanWorkspace(options?: {
   }) => void;
   onFirstSendNavigate?: (pending: PendingFirstSend) => void;
 }) {
+  const router = useRouter();
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
-  const initialReplayedEvents = options?.initialReplayedEvents ?? [];
+  const initialReplayedEvents =
+    options?.initialReplayedEvents ?? EMPTY_REPLAYED_EVENTS;
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onFirstSendNavigate = options?.onFirstSendNavigate;
@@ -367,6 +373,34 @@ export function useCoachPlanWorkspace(options?: {
     [persistEvePointer, persistEventSnapshot],
   );
 
+  const shouldResumeLiveTail = Boolean(
+    normalizedSnapshot?.eve?.sessionId &&
+      initialSession &&
+      !isTurnComplete(initialEveEvents),
+  );
+
+  const liveTail = useCoachEveLiveTail({
+    forgeSessionId,
+    eve: normalizedSnapshot?.eve,
+    baseEvents: initialEveEvents,
+    enabled: shouldResumeLiveTail,
+    onEventsUpdate: (events) => {
+      eventsForPersistenceRef.current = [...events];
+    },
+    onComplete: (events) => {
+      eventsForPersistenceRef.current = [...events];
+
+      const session = latestAgentSessionRef.current;
+      if (session && threadInitializedRef.current) {
+        void persistEventSnapshot(events, session).then(() => {
+          router.refresh();
+        });
+      } else {
+        router.refresh();
+      }
+    },
+  });
+
   const agent = useEveAgent({
     reducer: eveReducer,
     initialSession: resolveInitialEveSession(
@@ -378,14 +412,14 @@ export function useCoachPlanWorkspace(options?: {
       [FORGE_SESSION_HEADER]: forgeSessionId,
     }),
     prepareSend: (input) => {
-      const clientArtifact = resolveOutboundClientArtifact({
-        agentArtifact: agentDataRef.current.currentArtifact,
-        agentPlanId: agentDataRef.current.planId,
-        agentTitle: agentDataRef.current.artifactTitle,
-        localArtifact: localArtifactRef.current,
-        localPlanId: localPlanIdRef.current,
-        localTitle: localArtifactTitleRef.current,
-      });
+        const clientArtifact = resolveOutboundClientArtifact({
+          agentArtifact: agentDataRef.current.currentArtifact,
+          agentPlanId: agentDataRef.current.planId,
+          agentTitle: agentDataRef.current.artifactTitle,
+          localArtifact: localArtifactRef.current,
+          localPlanId: localPlanIdRef.current,
+          localTitle: localArtifactTitleRef.current,
+        });
 
       return {
         ...input,
@@ -477,11 +511,29 @@ export function useCoachPlanWorkspace(options?: {
   );
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
+  const isLiveTailing = liveTail.status === "streaming";
+  const liveTailData = useMemo(() => {
+    if (liveTail.status === "streaming") {
+      return liveTail.data;
+    }
+
+    if (liveTail.status === "complete") {
+      return liveTail.events.reduce(
+        (current, event) => eveReducer.reduce(current, event),
+        eveReducer.initial(),
+      );
+    }
+
+    return null;
+  }, [eveReducer, liveTail]);
+
   const isBusy =
-    agent.status === "submitted" || agent.status === "streaming";
+    isLiveTailing ||
+    agent.status === "submitted" ||
+    agent.status === "streaming";
 
   useEffect(() => {
-    const agentPlan = agent.data.currentArtifact;
+    const agentPlan = (liveTailData ?? agent.data).currentArtifact;
     if (!agentPlan) {
       lastSyncedAgentArtifactRef.current = null;
       return;
@@ -498,70 +550,77 @@ export function useCoachPlanWorkspace(options?: {
       return;
     }
 
+    const source = liveTailData ?? agent.data;
     startTransition(() => {
       setLocalArtifact(agentPlan);
-      setLocalPlanId(agent.data.planId);
-      setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+      setLocalPlanId(source.planId);
+      setLocalArtifactTitle(source.artifactTitle || agentPlan.name);
     });
   }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
+    agent.data,
     isBusy,
+    liveTailData,
   ]);
 
-  const effectiveArtifact = buildClientArtifactSnapshot(agent.data);
+  const effectiveArtifact = buildClientArtifactSnapshot(
+    liveTailData ?? agent.data,
+  );
   const displayedArtifact = effectiveArtifact?.plan ?? null;
   const displayedPlanId = effectiveArtifact?.planId ?? null;
   const displayedArtifactTitle = effectiveArtifact?.title ?? "";
 
+  const agentMessages = liveTailData?.messages ?? agent.data.messages;
+  const agentRunStatus = liveTailData?.runStatus ?? agent.data.runStatus;
+  const agentPhase = liveTailData?.phase ?? agent.data.phase;
+  const agentWarnings = liveTailData?.warnings ?? agent.data.warnings;
+  const agentErrors = liveTailData?.errors ?? agent.data.errors;
+  const agentStreamingText =
+    liveTailData?.streamingAssistantText ?? agent.data.streamingAssistantText;
+
   useEffect(() => {
+    const source = liveTailData ?? agent.data;
     agentDataRef.current = {
-      currentArtifact: agent.data.currentArtifact,
-      planId: agent.data.planId,
-      artifactTitle: agent.data.artifactTitle,
+      currentArtifact: source.currentArtifact,
+      planId: source.planId,
+      artifactTitle: source.artifactTitle,
     };
-  }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
-  ]);
+  }, [agent.data, liveTailData]);
 
   const phase: PlanWorkspaceState["phase"] = isInitializingThread
     ? "initializing"
     : attachmentState.phase === "uploading"
       ? "uploading"
-      : agent.status === "error" || agent.data.phase === "error"
+      : agent.status === "error" || agentPhase === "error"
         ? "error"
         : isBusy
           ? "streaming"
-          : agent.data.phase;
+          : agentPhase;
 
   const state: PlanWorkspaceState = {
     sessionId: forgeSessionId,
     hasStarted:
-      agent.data.messages.length > 0 ||
+      agentMessages.length > 0 ||
       isBusy ||
       agent.status === "error" ||
-      agent.data.phase === "error" ||
-      agent.data.errors.length > 0 ||
+      agentPhase === "error" ||
+      agentErrors.length > 0 ||
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
     sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
-    messages: agent.data.messages,
+    messages: agentMessages,
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
-    runStatus: agent.data.runStatus,
-    warnings: agent.data.warnings,
+    runStatus: agentRunStatus,
+    warnings: agentWarnings,
     errors: agent.error
-      ? [{ message: agent.error.message }, ...agent.data.errors]
-      : agent.data.errors,
+      ? [{ message: agent.error.message }, ...agentErrors]
+      : agentErrors,
     phase,
-    streamingAssistantText: agent.data.streamingAssistantText,
+    streamingAssistantText: agentStreamingText,
   };
 
   const previousArtifactRef = useRef<WorkoutPlan | null>(null);

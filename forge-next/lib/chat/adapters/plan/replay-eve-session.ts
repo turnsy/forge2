@@ -12,7 +12,10 @@ export type ReplayEveSessionOptions = {
 const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
 
 /** How long to wait for the first event on an initial replay batch. */
-const FIRST_BATCH_TIMEOUT_MS = 30_000;
+export const FIRST_BATCH_TIMEOUT_MS = 30_000;
+
+/** How long to wait when finishing an interrupted turn during replay. */
+const INCOMPLETE_TURN_TAIL_TIMEOUT_MS = 120_000;
 
 function createReplayClient(forgeSessionId: string): Client {
   return new Client({
@@ -164,6 +167,7 @@ export async function tailEveSessionEvents(
           startIndex: index,
           untilTurnBoundary: true,
           signal: options?.signal,
+          firstEventTimeoutMs: INCOMPLETE_TURN_TAIL_TIMEOUT_MS,
         },
       );
 
@@ -199,7 +203,9 @@ export async function restoreEveSessionEvents(
         untilTurnBoundary: true,
         signal: options?.signal,
         firstEventTimeoutMs:
-          startIndex > 0 ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
+          startIndex > 0
+            ? NEXT_TURN_PROBE_TIMEOUT_MS
+            : FIRST_BATCH_TIMEOUT_MS,
       },
     );
 
@@ -219,6 +225,7 @@ export async function restoreEveSessionEvents(
           startIndex,
           untilTurnBoundary: true,
           signal: options?.signal,
+          firstEventTimeoutMs: INCOMPLETE_TURN_TAIL_TIMEOUT_MS,
         },
       );
 

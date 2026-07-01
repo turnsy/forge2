@@ -19,7 +19,7 @@ describe("useCoachSessionReplay", () => {
     vi.clearAllMocks();
   });
 
-  it("reconciles with Eve even when persisted events already exist", async () => {
+  it("shows persisted events immediately while reconciling with Eve", async () => {
     const mergedEvents = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "session.waiting", data: {} },
@@ -41,15 +41,18 @@ describe("useCoachSessionReplay", () => {
       }),
     );
 
-    expect(result.current.status).toBe("loading");
+    expect(result.current.status).toBe("ready");
+    if (result.current.status === "ready") {
+      expect(result.current.events).toEqual(mergedEvents.slice(0, 2));
+    }
 
     await waitFor(() => {
       expect(result.current.status).toBe("ready");
+      if (result.current.status === "ready") {
+        expect(result.current.events).toEqual(mergedEvents);
+      }
     });
 
     expect(mockResolve).toHaveBeenCalledOnce();
-    if (result.current.status === "ready") {
-      expect(result.current.events).toEqual(mergedEvents);
-    }
   });
 });

@@ -101,11 +101,11 @@ describe("restoreEveSessionEvents", () => {
 
     expect(mockStream).toHaveBeenNthCalledWith(1, {
       startIndex: 0,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
     expect(mockStream).toHaveBeenNthCalledWith(2, {
       startIndex: 2,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -140,7 +140,7 @@ describe("restoreEveSessionEvents", () => {
 
     expect(mockStream).toHaveBeenNthCalledWith(1, {
       startIndex: 0,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
     expect(mockStream).toHaveBeenNthCalledWith(2, {
       startIndex: 3,

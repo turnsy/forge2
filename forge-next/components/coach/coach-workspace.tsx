@@ -166,17 +166,6 @@ export function CoachWorkspace(
     return <CoachSessionLoadingView />;
   }
 
-  if (replay.status === "error") {
-    return (
-      <div
-        className="flex min-h-0 flex-1 flex-col items-center justify-center p-6"
-        role="alert"
-      >
-        <p className="text-sm text-surface-muted">{replay.message}</p>
-      </div>
-    );
-  }
-
   return (
     <>
       {props.initialSession ? (

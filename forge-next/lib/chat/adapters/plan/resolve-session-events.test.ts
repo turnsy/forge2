@@ -69,17 +69,36 @@ describe("resolveCoachSessionEvents", () => {
     expect(mockRestore).not.toHaveBeenCalled();
   });
 
-  it("falls back to a full Eve restore when tailing returns nothing", async () => {
-    const persisted = [
-      { type: "message.received", data: { message: "Hello" } },
-    ];
+  it("restores from Eve when no persisted events exist", async () => {
     const restored = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "session.waiting", data: {} },
     ];
 
-    mockTail.mockResolvedValue([]);
     mockRestore.mockResolvedValue(restored);
+
+    const events = await resolveCoachSessionEvents(
+      {
+        title: "Test",
+        forgeSessionId: "forge-1",
+        eve: evePointer,
+        eveEvents: [],
+      },
+      "forge-1",
+    );
+
+    expect(mockTail).not.toHaveBeenCalled();
+    expect(mockRestore).toHaveBeenCalled();
+    expect(events).toEqual(restored);
+  });
+
+  it("returns incomplete persisted events instead of replaying from scratch", async () => {
+    const persisted = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "actions.requested", data: { actions: [] } },
+    ];
+
+    mockTail.mockResolvedValue([]);
 
     const events = await resolveCoachSessionEvents(
       {
@@ -91,7 +110,7 @@ describe("resolveCoachSessionEvents", () => {
       "forge-1",
     );
 
-    expect(mockRestore).toHaveBeenCalled();
-    expect(events).toEqual(restored);
+    expect(mockRestore).not.toHaveBeenCalled();
+    expect(events).toEqual(persisted);
   });
 });
