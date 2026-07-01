@@ -89,6 +89,7 @@ function mockWorkspaceReturn(state: PlanWorkspaceState) {
     state,
     attachFiles: vi.fn(),
     sendMessage: vi.fn(),
+    stopResponse: vi.fn(),
     setArtifactTitle: vi.fn(),
     setPlanId: mockSetPlanId,
     setArtifact: vi.fn(),
@@ -407,5 +408,43 @@ describe("CoachWorkspace layout", () => {
     await user.click(screen.getByRole("button", { name: "Edit plan" }));
 
     expect(mockResetSaveStatus).toHaveBeenCalled();
+  });
+
+  it("shows collapse chat control when an artifact is present on desktop", () => {
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(screen.getByRole("button", { name: "Collapse chat" })).toBeVisible();
+  });
+
+  it("centers the artifact and shows expand chat after collapse", async () => {
+    const user = userEvent.setup();
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+        }),
+      ),
+    );
+
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    await user.click(screen.getByRole("button", { name: "Collapse chat" }));
+
+    expect(screen.getByRole("button", { name: "Expand chat" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Collapse chat" }),
+    ).not.toBeInTheDocument();
+    expect(container.innerHTML).toContain("max-w-5xl");
   });
 });

@@ -60,6 +60,9 @@ jobs:
 
       - name: Production build
         run: pnpm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_example
 
   db-types:
     name: Database types

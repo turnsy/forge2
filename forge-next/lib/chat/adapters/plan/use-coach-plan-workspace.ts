@@ -653,10 +653,15 @@ export function useCoachPlanWorkspace(options?: {
     setLocalArtifactTitle(artifact.name);
   }, []);
 
+  const stopResponse = useCallback(() => {
+    agent.stop();
+  }, [agent]);
+
   return {
     state,
     attachFiles,
     sendMessage,
+    stopResponse,
     restart,
     setArtifactTitle,
     setPlanId,

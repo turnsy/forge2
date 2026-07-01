@@ -3,10 +3,11 @@
 import { useRef, useState } from "react";
 import { ChatAttachment } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
+import { StopIcon } from "@/components/icons/stop-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
-import { canSendChat } from "@/lib/chat/workspace-selectors";
+import { canSendChat, canStopChat } from "@/lib/chat/workspace-selectors";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
@@ -15,6 +16,7 @@ export function ChatComposer({
   composerKey,
   onAttach,
   onSend,
+  onStop,
   promptEnabled = true,
   className = "",
   compact = false,
@@ -23,6 +25,7 @@ export function ChatComposer({
   composerKey: string;
   onAttach: (files: File[]) => void;
   onSend: (segments: PromptSegment[]) => void;
+  onStop?: () => void;
   promptEnabled?: boolean;
   className?: string;
   compact?: boolean;
@@ -38,6 +41,7 @@ export function ChatComposer({
 
   const isDragging = dragDepth > 0;
   const isInitializing = state.phase === "initializing";
+  const stopAllowed = canStopChat(state) && Boolean(onStop);
   const sendAllowed = canSendChat(state) && !documentEmpty;
 
   function addFiles(files: File[]) {
@@ -124,7 +128,9 @@ export function ChatComposer({
               variant="primary"
               size="sm"
               icon={
-                isInitializing ? (
+                stopAllowed ? (
+                  <StopIcon className="h-3 w-3" />
+                ) : isInitializing ? (
                   <span
                     aria-hidden
                     className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
@@ -133,9 +139,15 @@ export function ChatComposer({
                   <ArrowRightIcon />
                 )
               }
-              aria-label={isInitializing ? "Starting conversation" : "Send"}
-              disabled={!sendAllowed && !isInitializing}
-              onClick={handleSend}
+              aria-label={
+                stopAllowed
+                  ? "Stop response"
+                  : isInitializing
+                    ? "Starting conversation"
+                    : "Send"
+              }
+              disabled={!stopAllowed && !sendAllowed && !isInitializing}
+              onClick={stopAllowed ? onStop : handleSend}
             />
           </div>
         </div>
