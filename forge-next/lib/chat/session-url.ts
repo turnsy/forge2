@@ -69,7 +69,6 @@ export function navigateToCoachHome(router: {
 }): void {
   clearCoachWorkspaceQueryParams();
   router.replace(COACH_HOME_PATH);
-  router.refresh();
 }
 
 export function shouldForceCoachHomeNavigation(

@@ -162,7 +162,7 @@ describe("hasCoachWorkspaceQueryParams", () => {
 });
 
 describe("navigateToCoachHome", () => {
-  it("clears workspace query params and refreshes the coach home route", () => {
+  it("clears workspace query params and replaces the coach home route", () => {
     const replaceState = vi.fn();
     const replace = vi.fn();
     const refresh = vi.fn();
@@ -184,6 +184,6 @@ describe("navigateToCoachHome", () => {
 
     expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
     expect(replace).toHaveBeenCalledWith("/coach");
-    expect(refresh).toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

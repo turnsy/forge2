@@ -7,6 +7,7 @@ import {
   navigateToCoachHome,
   shouldForceCoachHomeNavigation,
 } from "@/lib/chat/session-url";
+import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 
 export function CoachHomeNavLink({
   children,
@@ -20,6 +21,7 @@ export function CoachHomeNavLink({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const sessionNavigation = useOptionalSessionNavigation();
 
   return (
     <SidebarNavLink
@@ -33,6 +35,7 @@ export function CoachHomeNavLink({
         }
 
         event.preventDefault();
+        sessionNavigation?.clearSessionNavigation();
         navigateToCoachHome(router);
       }}
     >

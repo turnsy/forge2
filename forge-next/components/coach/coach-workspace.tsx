@@ -160,26 +160,42 @@ export function CoachWorkspace(
   },
 ) {
   const replay = useCoachSessionReplay(props.initialSession);
+  const [resolvedEvents, setResolvedEvents] = useState<
+    readonly HandleMessageStreamEvent[]
+  >([]);
+  const [agentRemountKey, setAgentRemountKey] = useState(0);
+
+  useEffect(() => {
+    if (replay.status === "ready") {
+      setResolvedEvents(replay.events);
+    }
+  }, [replay.events, replay.status]);
+
+  const handleLiveTailComplete = useCallback(
+    (events: readonly HandleMessageStreamEvent[]) => {
+      setResolvedEvents([...events]);
+      setAgentRemountKey((current) => current + 1);
+    },
+    [],
+  );
 
   if (replay.status === "loading") {
     return <CoachSessionLoadingView />;
   }
 
-  if (replay.status === "error") {
-    return (
-      <div
-        className="flex min-h-0 flex-1 flex-col items-center justify-center p-6"
-        role="alert"
-      >
-        <p className="text-sm text-surface-muted">{replay.message}</p>
-      </div>
-    );
-  }
+  const replayedEvents =
+    resolvedEvents.length > 0 ? resolvedEvents : replay.events;
 
   return (
     <CoachWorkspaceInner
+      key={
+        props.initialSession
+          ? `${props.initialSession.id}:${agentRemountKey}`
+          : "coach-home"
+      }
       {...props}
-      initialReplayedEvents={replay.events}
+      initialReplayedEvents={replayedEvents}
+      onLiveTailComplete={handleLiveTailComplete}
     />
   );
 }
@@ -193,6 +209,7 @@ function CoachWorkspaceInner({
   initialReplayedEvents = [],
   stripPlanIdOnClear = false,
   promptEnabled = true,
+  onLiveTailComplete,
 }: {
   firstName: string;
   role: UserRole;
@@ -207,6 +224,7 @@ function CoachWorkspaceInner({
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
+  onLiveTailComplete?: (events: readonly HandleMessageStreamEvent[]) => void;
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -273,6 +291,7 @@ function CoachWorkspaceInner({
       sessionNavigation?.stashPendingFirstSend(pending);
       sessionNavigation?.startSessionNavigation(pending.sessionId);
       router.replace(`/coach?sessionId=${pending.sessionId}`);
+      router.refresh();
     },
     [router, sessionNavigation],
   );
@@ -314,6 +333,7 @@ function CoachWorkspaceInner({
             },
             initialReplayedEvents,
             onArtifactCleared: handleArtifactCleared,
+            onLiveTailComplete,
           }
         : {
             onArtifactCleared: handleArtifactCleared,
@@ -447,8 +467,9 @@ function CoachWorkspaceInner({
     restart();
     savedSnapshotRef.current = null;
     setShowArtifact(false);
+    sessionNavigation?.clearSessionNavigation();
     navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, restart, router, state]);
+  }, [activePlanId, backlinkPlanId, restart, router, sessionNavigation, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();

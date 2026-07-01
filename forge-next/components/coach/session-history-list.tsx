@@ -111,6 +111,7 @@ export function SessionHistoryList({
     if (sessionId !== resolvedActiveSessionId) {
       sessionNavigation?.startSessionNavigation(sessionId);
       router.push(`/coach?sessionId=${sessionId}`);
+      router.refresh();
     }
 
     onSessionOpen?.(sessionId);

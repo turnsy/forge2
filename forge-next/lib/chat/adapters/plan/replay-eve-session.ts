@@ -11,6 +11,12 @@ export type ReplayEveSessionOptions = {
 /** How long to wait for the first event when probing for another turn. */
 const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
 
+/** How long to wait for the first event on an initial replay batch. */
+export const FIRST_BATCH_TIMEOUT_MS = 30_000;
+
+/** How long to wait when finishing an interrupted turn during replay. */
+const INCOMPLETE_TURN_TAIL_TIMEOUT_MS = 120_000;
+
 function createReplayClient(forgeSessionId: string): Client {
   return new Client({
     host: "",
@@ -115,7 +121,65 @@ export async function replayEveSessionEvents(
     startIndex: 0,
     untilTurnBoundary: true,
     signal: options?.signal,
+    firstEventTimeoutMs: FIRST_BATCH_TIMEOUT_MS,
   });
+}
+
+export async function tailEveSessionEvents(
+  pointer: ForgeEvePointer,
+  forgeSessionId: string,
+  startIndex: number,
+  options?: ReplayEveSessionOptions,
+): Promise<HandleMessageStreamEvent[]> {
+  if (!pointer.sessionId || startIndex < 0) {
+    return [];
+  }
+
+  const allEvents: HandleMessageStreamEvent[] = [];
+  let index = startIndex;
+
+  while (!options?.signal?.aborted) {
+    const batch = await collectStreamEvents(
+      toSessionState(pointer, index),
+      forgeSessionId,
+      {
+        startIndex: index,
+        untilTurnBoundary: true,
+        signal: options?.signal,
+        firstEventTimeoutMs:
+          index === startIndex ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
+      },
+    );
+
+    if (batch.length === 0) {
+      break;
+    }
+
+    allEvents.push(...batch);
+    index += batch.length;
+
+    const lastEvent = batch[batch.length - 1];
+    if (!lastEvent || !isCurrentTurnBoundaryEvent(lastEvent)) {
+      const tailed = await collectStreamEvents(
+        toSessionState(pointer, index),
+        forgeSessionId,
+        {
+          startIndex: index,
+          untilTurnBoundary: true,
+          signal: options?.signal,
+          firstEventTimeoutMs: INCOMPLETE_TURN_TAIL_TIMEOUT_MS,
+        },
+      );
+
+      if (tailed.length > 0) {
+        allEvents.push(...tailed);
+      }
+
+      break;
+    }
+  }
+
+  return allEvents;
 }
 
 export async function restoreEveSessionEvents(
@@ -139,7 +203,9 @@ export async function restoreEveSessionEvents(
         untilTurnBoundary: true,
         signal: options?.signal,
         firstEventTimeoutMs:
-          startIndex > 0 ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
+          startIndex > 0
+            ? NEXT_TURN_PROBE_TIMEOUT_MS
+            : FIRST_BATCH_TIMEOUT_MS,
       },
     );
 
@@ -159,6 +225,7 @@ export async function restoreEveSessionEvents(
           startIndex,
           untilTurnBoundary: true,
           signal: options?.signal,
+          firstEventTimeoutMs: INCOMPLETE_TURN_TAIL_TIMEOUT_MS,
         },
       );
 
@@ -171,6 +238,12 @@ export async function restoreEveSessionEvents(
   }
 
   return allEvents;
+}
+
+export function isTurnBoundaryEvent(
+  event: HandleMessageStreamEvent,
+): boolean {
+  return isCurrentTurnBoundaryEvent(event);
 }
 
 export function isTurnComplete(

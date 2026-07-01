@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
+import { mayHaveInFlightEveTurn } from "@/lib/chat/adapters/plan/eve-session-status";
+import { useCoachEveLiveTail } from "@/lib/chat/adapters/plan/use-coach-eve-live-tail";
 import {
   generateSessionTitleFromPrompt,
   initCoachThread,
@@ -10,6 +12,10 @@ import {
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import {
+  isTurnBoundaryEvent,
+  isTurnComplete,
+} from "@/lib/chat/adapters/plan/replay-eve-session";
 import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
@@ -45,6 +51,8 @@ import {
   useOptionalSessionNavigation,
   type PendingFirstSend,
 } from "@/lib/chat/session-navigation-context";
+
+const EMPTY_REPLAYED_EVENTS: readonly HandleMessageStreamEvent[] = [];
 
 type AttachmentState = Pick<
   ChatWorkspaceState<WorkoutPlan>,
@@ -122,14 +130,17 @@ export function useCoachPlanWorkspace(options?: {
     title: string | null;
   }) => void;
   onFirstSendNavigate?: (pending: PendingFirstSend) => void;
+  onLiveTailComplete?: (events: readonly HandleMessageStreamEvent[]) => void;
 }) {
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
-  const initialReplayedEvents = options?.initialReplayedEvents ?? [];
+  const initialReplayedEvents =
+    options?.initialReplayedEvents ?? EMPTY_REPLAYED_EVENTS;
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onFirstSendNavigate = options?.onFirstSendNavigate;
+  const onLiveTailComplete = options?.onLiveTailComplete;
   const sessionNavigation = useOptionalSessionNavigation();
   const pendingContextFileIdsRef = useRef<string[]>([]);
   const consumedPendingSendRef = useRef(false);
@@ -172,6 +183,15 @@ export function useCoachPlanWorkspace(options?: {
     [reducerSeedMessages],
   );
 
+  const initialEveEvents = useMemo(
+    () =>
+      resolveInitialEveEvents(
+        normalizedSnapshot,
+        initialReplayedEvents,
+      ),
+    [initialReplayedEvents, normalizedSnapshot],
+  );
+
   const [sessionTitle, setSessionTitle] = useState<string | null>(
     normalizedSnapshot?.title ?? null,
   );
@@ -187,6 +207,21 @@ export function useCoachPlanWorkspace(options?: {
   );
   const latestAgentSessionRef = useRef<SessionState | null>(null);
   const lastSyncedAgentArtifactRef = useRef<string | null>(null);
+  const sessionTitleRef = useRef(sessionTitle);
+  const eventsForPersistenceRef = useRef<HandleMessageStreamEvent[]>([
+    ...initialEveEvents,
+  ]);
+  const debouncedPersistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    sessionTitleRef.current = sessionTitle;
+  }, [sessionTitle]);
+
+  useEffect(() => {
+    eventsForPersistenceRef.current = [...initialEveEvents];
+  }, [initialEveEvents]);
 
   const buildClientArtifactSnapshot = useCallback(
     (agentData: {
@@ -280,14 +315,90 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
-  const initialEveEvents = useMemo(
-    () =>
-      resolveInitialEveEvents(
-        normalizedSnapshot,
-        initialReplayedEvents,
-      ),
-    [initialReplayedEvents, normalizedSnapshot],
+  const persistEventSnapshot = useCallback(
+    async (
+      events: readonly HandleMessageStreamEvent[],
+      session: SessionState,
+    ) => {
+      if (!threadInitializedRef.current) {
+        return;
+      }
+
+      const pointer = toForgeEvePointer(session);
+      if (!pointer) {
+        return;
+      }
+
+      if (!isTurnComplete(events)) {
+        await persistEvePointer(session);
+        return;
+      }
+
+      const workspaceSnapshot = buildCoachWorkspaceSnapshot({
+        forgeSessionId,
+        title: sessionTitleRef.current,
+        eve: pointer,
+        eveEvents: events,
+      });
+
+      const result = await saveSessionSnapshot(
+        forgeSessionId,
+        workspaceSnapshot,
+      );
+
+      if (!result.ok) {
+        return;
+      }
+
+      persistedEveSessionIdRef.current = pointer.sessionId;
+      lastPersistedPointerRef.current = pointer;
+    },
+    [forgeSessionId, persistEvePointer],
   );
+
+  const scheduleDebouncedPersist = useCallback(
+    (events: readonly HandleMessageStreamEvent[], session: SessionState) => {
+      if (debouncedPersistTimeoutRef.current) {
+        clearTimeout(debouncedPersistTimeoutRef.current);
+      }
+
+      debouncedPersistTimeoutRef.current = setTimeout(() => {
+        debouncedPersistTimeoutRef.current = null;
+        if (isTurnComplete(events)) {
+          void persistEventSnapshot(events, session);
+        } else {
+          void persistEvePointer(session);
+        }
+      }, 500);
+    },
+    [persistEvePointer, persistEventSnapshot],
+  );
+
+  const shouldResumeLiveTail = Boolean(
+    normalizedSnapshot &&
+      initialSession &&
+      mayHaveInFlightEveTurn(normalizedSnapshot, initialEveEvents),
+  );
+
+  const liveTail = useCoachEveLiveTail({
+    forgeSessionId,
+    eve: normalizedSnapshot?.eve,
+    baseEvents: initialEveEvents,
+    enabled: shouldResumeLiveTail,
+    onEventsUpdate: (events) => {
+      eventsForPersistenceRef.current = [...events];
+    },
+    onComplete: ({ events, session }) => {
+      eventsForPersistenceRef.current = [...events];
+      latestAgentSessionRef.current = session;
+
+      if (threadInitializedRef.current) {
+        void persistEventSnapshot(events, session);
+      }
+
+      onLiveTailComplete?.(events);
+    },
+  });
 
   const agent = useEveAgent({
     reducer: eveReducer,
@@ -300,14 +411,14 @@ export function useCoachPlanWorkspace(options?: {
       [FORGE_SESSION_HEADER]: forgeSessionId,
     }),
     prepareSend: (input) => {
-      const clientArtifact = resolveOutboundClientArtifact({
-        agentArtifact: agentDataRef.current.currentArtifact,
-        agentPlanId: agentDataRef.current.planId,
-        agentTitle: agentDataRef.current.artifactTitle,
-        localArtifact: localArtifactRef.current,
-        localPlanId: localPlanIdRef.current,
-        localTitle: localArtifactTitleRef.current,
-      });
+        const clientArtifact = resolveOutboundClientArtifact({
+          agentArtifact: agentDataRef.current.currentArtifact,
+          agentPlanId: agentDataRef.current.planId,
+          agentTitle: agentDataRef.current.artifactTitle,
+          localArtifact: localArtifactRef.current,
+          localPlanId: localPlanIdRef.current,
+          localTitle: localArtifactTitleRef.current,
+        });
 
       return {
         ...input,
@@ -331,34 +442,46 @@ export function useCoachPlanWorkspace(options?: {
 
       void persistEvePointer(session);
     },
+    onEvent: (event) => {
+      eventsForPersistenceRef.current = [
+        ...eventsForPersistenceRef.current,
+        event,
+      ];
+
+      if (!threadInitializedRef.current) {
+        return;
+      }
+
+      const session = latestAgentSessionRef.current;
+      if (!session) {
+        return;
+      }
+
+      if (isTurnBoundaryEvent(event)) {
+        void persistEventSnapshot(eventsForPersistenceRef.current, session);
+        return;
+      }
+
+      scheduleDebouncedPersist(eventsForPersistenceRef.current, session);
+    },
     onFinish: async (snapshot) => {
       if (!threadInitializedRef.current) {
         return;
       }
+
+      eventsForPersistenceRef.current = [...snapshot.events];
 
       const pointer = toForgeEvePointer(snapshot.session);
       if (!pointer) {
         return;
       }
 
-      const workspaceSnapshot = buildCoachWorkspaceSnapshot({
-        forgeSessionId,
-        title: sessionTitle,
-        eve: pointer,
-        eveEvents: snapshot.events,
-      });
-
-      const result = await saveSessionSnapshot(
-        forgeSessionId,
-        workspaceSnapshot,
-      );
-
-      if (!result.ok) {
+      if (!isTurnComplete(snapshot.events)) {
+        await persistEvePointer(snapshot.session);
         return;
       }
 
-      persistedEveSessionIdRef.current = pointer.sessionId;
-      lastPersistedPointerRef.current = pointer;
+      await persistEventSnapshot(snapshot.events, snapshot.session);
     },
   });
 
@@ -368,6 +491,10 @@ export function useCoachPlanWorkspace(options?: {
 
   useEffect(() => {
     return () => {
+      if (debouncedPersistTimeoutRef.current) {
+        clearTimeout(debouncedPersistTimeoutRef.current);
+      }
+
       const session = latestAgentSessionRef.current;
       if (!session?.sessionId || !threadInitializedRef.current) {
         return;
@@ -383,11 +510,29 @@ export function useCoachPlanWorkspace(options?: {
   );
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
+  const isLiveTailing = liveTail.status === "streaming";
+  const liveTailData = useMemo(() => {
+    if (liveTail.status === "streaming") {
+      return liveTail.data;
+    }
+
+    if (liveTail.status === "complete") {
+      return liveTail.events.reduce(
+        (current, event) => eveReducer.reduce(current, event),
+        eveReducer.initial(),
+      );
+    }
+
+    return null;
+  }, [eveReducer, liveTail]);
+
   const isBusy =
-    agent.status === "submitted" || agent.status === "streaming";
+    isLiveTailing ||
+    agent.status === "submitted" ||
+    agent.status === "streaming";
 
   useEffect(() => {
-    const agentPlan = agent.data.currentArtifact;
+    const agentPlan = (liveTailData ?? agent.data).currentArtifact;
     if (!agentPlan) {
       lastSyncedAgentArtifactRef.current = null;
       return;
@@ -404,70 +549,77 @@ export function useCoachPlanWorkspace(options?: {
       return;
     }
 
+    const source = liveTailData ?? agent.data;
     startTransition(() => {
       setLocalArtifact(agentPlan);
-      setLocalPlanId(agent.data.planId);
-      setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+      setLocalPlanId(source.planId);
+      setLocalArtifactTitle(source.artifactTitle || agentPlan.name);
     });
   }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
+    agent.data,
     isBusy,
+    liveTailData,
   ]);
 
-  const effectiveArtifact = buildClientArtifactSnapshot(agent.data);
+  const effectiveArtifact = buildClientArtifactSnapshot(
+    liveTailData ?? agent.data,
+  );
   const displayedArtifact = effectiveArtifact?.plan ?? null;
   const displayedPlanId = effectiveArtifact?.planId ?? null;
   const displayedArtifactTitle = effectiveArtifact?.title ?? "";
 
+  const agentMessages = liveTailData?.messages ?? agent.data.messages;
+  const agentRunStatus = liveTailData?.runStatus ?? agent.data.runStatus;
+  const agentPhase = liveTailData?.phase ?? agent.data.phase;
+  const agentWarnings = liveTailData?.warnings ?? agent.data.warnings;
+  const agentErrors = liveTailData?.errors ?? agent.data.errors;
+  const agentStreamingText =
+    liveTailData?.streamingAssistantText ?? agent.data.streamingAssistantText;
+
   useEffect(() => {
+    const source = liveTailData ?? agent.data;
     agentDataRef.current = {
-      currentArtifact: agent.data.currentArtifact,
-      planId: agent.data.planId,
-      artifactTitle: agent.data.artifactTitle,
+      currentArtifact: source.currentArtifact,
+      planId: source.planId,
+      artifactTitle: source.artifactTitle,
     };
-  }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
-  ]);
+  }, [agent.data, liveTailData]);
 
   const phase: PlanWorkspaceState["phase"] = isInitializingThread
     ? "initializing"
     : attachmentState.phase === "uploading"
       ? "uploading"
-      : agent.status === "error" || agent.data.phase === "error"
+      : agent.status === "error" || agentPhase === "error"
         ? "error"
         : isBusy
           ? "streaming"
-          : agent.data.phase;
+          : agentPhase;
 
   const state: PlanWorkspaceState = {
     sessionId: forgeSessionId,
     hasStarted:
-      agent.data.messages.length > 0 ||
+      agentMessages.length > 0 ||
       isBusy ||
       agent.status === "error" ||
-      agent.data.phase === "error" ||
-      agent.data.errors.length > 0 ||
+      agentPhase === "error" ||
+      agentErrors.length > 0 ||
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
     sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
-    messages: agent.data.messages,
+    messages: agentMessages,
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
-    runStatus: agent.data.runStatus,
-    warnings: agent.data.warnings,
+    runStatus: agentRunStatus,
+    warnings: agentWarnings,
     errors: agent.error
-      ? [{ message: agent.error.message }, ...agent.data.errors]
-      : agent.data.errors,
+      ? [{ message: agent.error.message }, ...agentErrors]
+      : agentErrors,
     phase,
-    streamingAssistantText: agent.data.streamingAssistantText,
+    streamingAssistantText: agentStreamingText,
   };
 
   const previousArtifactRef = useRef<WorkoutPlan | null>(null);
@@ -625,12 +777,18 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const restart = useCallback(() => {
+    if (debouncedPersistTimeoutRef.current) {
+      clearTimeout(debouncedPersistTimeoutRef.current);
+      debouncedPersistTimeoutRef.current = null;
+    }
+
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     setSessionTitle(null);
     initPromiseRef.current = null;
     threadInitializedRef.current = false;
     persistedEveSessionIdRef.current = null;
+    eventsForPersistenceRef.current = [];
     setIsInitializingThread(false);
     setLocalArtifact(initialPlan ?? null);
     setLocalPlanId(entryPlanId ?? null);

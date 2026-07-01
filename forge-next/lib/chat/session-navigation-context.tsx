@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -28,6 +29,7 @@ type SessionNavigationContextValue = {
   pendingSessionId: string | null;
   insertedSessions: readonly SessionListItemData[];
   startSessionNavigation: (sessionId: string) => void;
+  clearSessionNavigation: () => void;
   registerNewSession: (session: SessionListItemData) => void;
   stashPendingFirstSend: (pending: PendingFirstSend) => void;
   consumePendingFirstSend: (sessionId: string) => PendingFirstSend | null;
@@ -59,6 +61,20 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     setTargetSessionId(sessionId);
   }, []);
 
+  const clearSessionNavigation = useCallback(() => {
+    setTargetSessionId(null);
+  }, []);
+
+  useEffect(() => {
+    if (targetSessionId === null) {
+      return;
+    }
+
+    if (currentSessionId === targetSessionId) {
+      setTargetSessionId(null);
+    }
+  }, [currentSessionId, targetSessionId]);
+
   const registerNewSession = useCallback((session: SessionListItemData) => {
     setInsertedSessions((current) => {
       if (current.some((entry) => entry.id === session.id)) {
@@ -88,12 +104,14 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       pendingSessionId,
       insertedSessions,
       startSessionNavigation,
+      clearSessionNavigation,
       registerNewSession,
       stashPendingFirstSend,
       consumePendingFirstSend,
     }),
     [
       consumePendingFirstSend,
+      clearSessionNavigation,
       insertedSessions,
       pendingSessionId,
       registerNewSession,

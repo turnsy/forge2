@@ -20,6 +20,7 @@ function Probe() {
     pendingSessionId,
     insertedSessions,
     startSessionNavigation,
+    clearSessionNavigation,
     registerNewSession,
     stashPendingFirstSend,
     consumePendingFirstSend,
@@ -33,6 +34,9 @@ function Probe() {
       <span data-testid="consumed">{consumedMessage ?? "none"}</span>
       <button type="button" onClick={() => startSessionNavigation("session-1")}>
         Navigate
+      </button>
+      <button type="button" onClick={() => clearSessionNavigation()}>
+        Clear
       </button>
       <button
         type="button"
@@ -123,6 +127,23 @@ describe("SessionNavigationProvider", () => {
     await waitFor(() => {
       expect(screen.getByTestId("pending")).toHaveTextContent("idle");
     });
+  });
+
+  it("clears pending navigation when returning to coach home", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionNavigationProvider>
+        <Probe />
+      </SessionNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Navigate" }));
+    expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
+
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(screen.getByTestId("pending")).toHaveTextContent("idle");
   });
 
   it("inserts a new session without starting pending navigation", async () => {
