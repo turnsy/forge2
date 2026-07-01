@@ -288,6 +288,7 @@ function CoachWorkspaceInner({
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
+    setIsChatCollapsed(false);
     setBacklinkPlanId(null);
     if (stripPlanIdOnClear) {
       syncCoachWorkspaceUrl({
@@ -356,12 +357,7 @@ function CoachWorkspaceInner({
     });
 
   const showSplitPane = Boolean(state.currentArtifact);
-
-  useEffect(() => {
-    if (!showSplitPane) {
-      setIsChatCollapsed(false);
-    }
-  }, [showSplitPane]);
+  const chatCollapsed = showSplitPane && isChatCollapsed;
 
   const toggleChatCollapsed = useCallback(() => {
     setIsChatCollapsed((current) => !current);
@@ -679,7 +675,7 @@ function CoachWorkspaceInner({
   }
 
   const desktopChatCollapseControl =
-    showSplitPane && !isChatCollapsed ? (
+    showSplitPane && !chatCollapsed ? (
       <IconButton
         variant="ghost"
         size="sm"
@@ -700,7 +696,7 @@ function CoachWorkspaceInner({
         }`}
         style={{
           gridTemplateColumns: showSplitPane
-            ? isChatCollapsed
+            ? chatCollapsed
               ? "1fr"
               : "minmax(320px, 1fr) minmax(280px, 33%)"
             : "1fr",
@@ -710,7 +706,7 @@ function CoachWorkspaceInner({
           className={
             showSplitPane
               ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
-                  isChatCollapsed ? "items-center justify-center" : ""
+                  chatCollapsed ? "items-center justify-center" : ""
                 } ${pageShellClass()} !mx-0 !max-w-none`
               : "hidden"
           }
@@ -718,7 +714,7 @@ function CoachWorkspaceInner({
           {showSplitPane ? (
             <div
               className={`flex h-full min-h-0 w-full flex-col overflow-hidden${
-                isChatCollapsed ? " max-w-5xl" : ""
+                chatCollapsed ? " max-w-5xl" : ""
               }`}
             >
               <ArtifactPanel
@@ -739,7 +735,7 @@ function CoachWorkspaceInner({
 
         <div
           className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
-            showSplitPane && !isChatCollapsed
+            showSplitPane && !chatCollapsed
               ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
               : showSplitPane
                 ? "hidden"
@@ -767,7 +763,7 @@ function CoachWorkspaceInner({
         </div>
       </div>
 
-      {showSplitPane && isChatCollapsed ? (
+      {chatCollapsed ? (
         <IconButton
           variant="ghost"
           size="sm"
