@@ -32,6 +32,7 @@ import {
   navigateToCoachHome,
   shouldForceCoachHomeNavigation,
 } from "@/lib/chat/session-url";
+import { roleFocusRingClass } from "@/lib/theme/roles";
 
 const DRAG_THRESHOLD_PX = 10;
 

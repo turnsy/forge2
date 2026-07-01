@@ -500,11 +500,14 @@ export function useCoachPlanWorkspace(options?: {
     consumedPendingSendRef.current = true;
 
     if (pending.clientArtifact) {
+      const title =
+        pending.clientArtifact.title ?? pending.clientArtifact.plan.name;
+      localArtifactRef.current = pending.clientArtifact.plan;
+      localPlanIdRef.current = pending.clientArtifact.planId ?? null;
+      localArtifactTitleRef.current = title;
       setLocalArtifact(pending.clientArtifact.plan);
       setLocalPlanId(pending.clientArtifact.planId ?? null);
-      setLocalArtifactTitle(
-        pending.clientArtifact.title ?? pending.clientArtifact.plan.name,
-      );
+      setLocalArtifactTitle(title);
     }
 
     if (pending.contextFileIds?.length) {
