@@ -29,6 +29,7 @@ vi.mock("@/lib/chat/session-navigation-context", async () => {
         },
       ],
       startSessionNavigation: mockStartSessionNavigation,
+      clearSessionNavigation: vi.fn(),
       registerNewSession: vi.fn(),
       stashPendingFirstSend: vi.fn(),
       consumePendingFirstSend: vi.fn(),
@@ -73,6 +74,7 @@ describe("SessionHistoryList integration", () => {
 
     expect(mockStartSessionNavigation).toHaveBeenCalledWith("session-1");
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalledOnce();
   });
 
   it("prepends inserted sessions ahead of fetched history", async () => {

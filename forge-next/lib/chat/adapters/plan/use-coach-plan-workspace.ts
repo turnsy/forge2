@@ -10,6 +10,10 @@ import {
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import {
+  isTurnBoundaryEvent,
+  isTurnComplete,
+} from "@/lib/chat/adapters/plan/replay-eve-session";
 import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
@@ -172,6 +176,15 @@ export function useCoachPlanWorkspace(options?: {
     [reducerSeedMessages],
   );
 
+  const initialEveEvents = useMemo(
+    () =>
+      resolveInitialEveEvents(
+        normalizedSnapshot,
+        initialReplayedEvents,
+      ),
+    [initialReplayedEvents, normalizedSnapshot],
+  );
+
   const [sessionTitle, setSessionTitle] = useState<string | null>(
     normalizedSnapshot?.title ?? null,
   );
@@ -187,6 +200,21 @@ export function useCoachPlanWorkspace(options?: {
   );
   const latestAgentSessionRef = useRef<SessionState | null>(null);
   const lastSyncedAgentArtifactRef = useRef<string | null>(null);
+  const sessionTitleRef = useRef(sessionTitle);
+  const eventsForPersistenceRef = useRef<HandleMessageStreamEvent[]>([
+    ...initialEveEvents,
+  ]);
+  const debouncedPersistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    sessionTitleRef.current = sessionTitle;
+  }, [sessionTitle]);
+
+  useEffect(() => {
+    eventsForPersistenceRef.current = [...initialEveEvents];
+  }, [initialEveEvents]);
 
   const buildClientArtifactSnapshot = useCallback(
     (agentData: {
@@ -280,13 +308,63 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
-  const initialEveEvents = useMemo(
-    () =>
-      resolveInitialEveEvents(
-        normalizedSnapshot,
-        initialReplayedEvents,
-      ),
-    [initialReplayedEvents, normalizedSnapshot],
+  const persistEventSnapshot = useCallback(
+    async (
+      events: readonly HandleMessageStreamEvent[],
+      session: SessionState,
+    ) => {
+      if (!threadInitializedRef.current) {
+        return;
+      }
+
+      const pointer = toForgeEvePointer(session);
+      if (!pointer) {
+        return;
+      }
+
+      if (!isTurnComplete(events)) {
+        await persistEvePointer(session);
+        return;
+      }
+
+      const workspaceSnapshot = buildCoachWorkspaceSnapshot({
+        forgeSessionId,
+        title: sessionTitleRef.current,
+        eve: pointer,
+        eveEvents: events,
+      });
+
+      const result = await saveSessionSnapshot(
+        forgeSessionId,
+        workspaceSnapshot,
+      );
+
+      if (!result.ok) {
+        return;
+      }
+
+      persistedEveSessionIdRef.current = pointer.sessionId;
+      lastPersistedPointerRef.current = pointer;
+    },
+    [forgeSessionId, persistEvePointer],
+  );
+
+  const scheduleDebouncedPersist = useCallback(
+    (events: readonly HandleMessageStreamEvent[], session: SessionState) => {
+      if (debouncedPersistTimeoutRef.current) {
+        clearTimeout(debouncedPersistTimeoutRef.current);
+      }
+
+      debouncedPersistTimeoutRef.current = setTimeout(() => {
+        debouncedPersistTimeoutRef.current = null;
+        if (isTurnComplete(events)) {
+          void persistEventSnapshot(events, session);
+        } else {
+          void persistEvePointer(session);
+        }
+      }, 500);
+    },
+    [persistEvePointer, persistEventSnapshot],
   );
 
   const agent = useEveAgent({
@@ -331,34 +409,46 @@ export function useCoachPlanWorkspace(options?: {
 
       void persistEvePointer(session);
     },
+    onEvent: (event) => {
+      eventsForPersistenceRef.current = [
+        ...eventsForPersistenceRef.current,
+        event,
+      ];
+
+      if (!threadInitializedRef.current) {
+        return;
+      }
+
+      const session = latestAgentSessionRef.current;
+      if (!session) {
+        return;
+      }
+
+      if (isTurnBoundaryEvent(event)) {
+        void persistEventSnapshot(eventsForPersistenceRef.current, session);
+        return;
+      }
+
+      scheduleDebouncedPersist(eventsForPersistenceRef.current, session);
+    },
     onFinish: async (snapshot) => {
       if (!threadInitializedRef.current) {
         return;
       }
+
+      eventsForPersistenceRef.current = [...snapshot.events];
 
       const pointer = toForgeEvePointer(snapshot.session);
       if (!pointer) {
         return;
       }
 
-      const workspaceSnapshot = buildCoachWorkspaceSnapshot({
-        forgeSessionId,
-        title: sessionTitle,
-        eve: pointer,
-        eveEvents: snapshot.events,
-      });
-
-      const result = await saveSessionSnapshot(
-        forgeSessionId,
-        workspaceSnapshot,
-      );
-
-      if (!result.ok) {
+      if (!isTurnComplete(snapshot.events)) {
+        await persistEvePointer(snapshot.session);
         return;
       }
 
-      persistedEveSessionIdRef.current = pointer.sessionId;
-      lastPersistedPointerRef.current = pointer;
+      await persistEventSnapshot(snapshot.events, snapshot.session);
     },
   });
 
@@ -368,6 +458,10 @@ export function useCoachPlanWorkspace(options?: {
 
   useEffect(() => {
     return () => {
+      if (debouncedPersistTimeoutRef.current) {
+        clearTimeout(debouncedPersistTimeoutRef.current);
+      }
+
       const session = latestAgentSessionRef.current;
       if (!session?.sessionId || !threadInitializedRef.current) {
         return;
@@ -625,12 +719,18 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const restart = useCallback(() => {
+    if (debouncedPersistTimeoutRef.current) {
+      clearTimeout(debouncedPersistTimeoutRef.current);
+      debouncedPersistTimeoutRef.current = null;
+    }
+
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     setSessionTitle(null);
     initPromiseRef.current = null;
     threadInitializedRef.current = false;
     persistedEveSessionIdRef.current = null;
+    eventsForPersistenceRef.current = [];
     setIsInitializingThread(false);
     setLocalArtifact(initialPlan ?? null);
     setLocalPlanId(entryPlanId ?? null);

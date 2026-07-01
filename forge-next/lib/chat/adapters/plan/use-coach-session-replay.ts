@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
-import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
+import { resolveCoachSessionEvents } from "@/lib/chat/adapters/plan/resolve-session-events";
 import {
   getPersistedEveEvents,
-  hasPersistedEveEvents,
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
@@ -28,17 +27,19 @@ function getReplayKey(initialSession?: {
     initialSession.snapshot,
   );
 
-  if (hasPersistedEveEvents(snapshot)) {
+  if (snapshot.eve?.sessionId) {
+    return `${initialSession.id}:${snapshot.eve.sessionId}:${getPersistedEveEvents(snapshot).length}`;
+  }
+
+  if (getPersistedEveEvents(snapshot).length > 0) {
     return `${initialSession.id}:persisted`;
   }
 
-  const eve = snapshot.eve;
+  return null;
+}
 
-  if (!eve?.sessionId) {
-    return null;
-  }
-
-  return `${initialSession.id}:${eve.sessionId}`;
+function needsEveReconciliation(snapshot: CoachWorkspaceSnapshot): boolean {
+  return Boolean(snapshot.eve?.sessionId);
 }
 
 export function useCoachSessionReplay(initialSession?: {
@@ -57,15 +58,14 @@ export function useCoachSessionReplay(initialSession?: {
       initialSession.snapshot,
     );
 
-    if (hasPersistedEveEvents(snapshot)) {
-      return { status: "ready", events: [...getPersistedEveEvents(snapshot)] };
+    if (needsEveReconciliation(snapshot)) {
+      return { status: "loading" };
     }
 
-    if (!replayKey) {
-      return { status: "ready", events: [] };
-    }
-
-    return { status: "loading" };
+    return {
+      status: "ready",
+      events: [...getPersistedEveEvents(snapshot)],
+    };
   });
 
   useEffect(() => {
@@ -78,20 +78,14 @@ export function useCoachSessionReplay(initialSession?: {
       initialSession.snapshot,
     );
 
-    if (hasPersistedEveEvents(snapshot)) {
-      return;
-    }
-
-    const eve = snapshot.eve;
-
-    if (!eve?.sessionId) {
+    if (!needsEveReconciliation(snapshot)) {
       return;
     }
 
     const abortController = new AbortController();
     let cancelled = false;
 
-    void restoreEveSessionEvents(eve, initialSession.id, {
+    void resolveCoachSessionEvents(snapshot, initialSession.id, {
       signal: abortController.signal,
     })
       .then((events) => {
@@ -115,7 +109,7 @@ export function useCoachSessionReplay(initialSession?: {
       cancelled = true;
       abortController.abort();
     };
-  }, [initialSession, replayKey]);
+  }, [initialSession?.id, replayKey]);
 
   return state;
 }

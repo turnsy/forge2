@@ -24,6 +24,7 @@ const {
   persistCoachSessionEve,
   mockSend,
   mockReset,
+  latestEveAgentOptions,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
@@ -31,6 +32,14 @@ const {
   persistCoachSessionEve: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
+  latestEveAgentOptions: {
+    current: null as {
+      onFinish?: (snapshot: {
+        session: { sessionId?: string; continuationToken?: string };
+        events: { type: string; data?: Record<string, unknown> }[];
+      }) => Promise<void>;
+    } | null,
+  },
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -48,8 +57,11 @@ vi.mock("eve/react", () => ({
     };
     onFinish?: (snapshot: {
       session: { sessionId?: string; continuationToken?: string };
+      events: { type: string; data?: Record<string, unknown> }[];
     }) => Promise<void>;
-  }) => ({
+  }) => {
+    latestEveAgentOptions.current = options ?? null;
+    return {
     data: {
       messages: [],
       currentArtifact: null,
@@ -71,8 +83,8 @@ vi.mock("eve/react", () => ({
     },
     reset: mockReset,
     stop: vi.fn(),
-    onFinish: options?.onFinish,
-  }),
+  };
+  },
 }));
 
 function createSessionNavigationWrapper(pending: PendingFirstSend) {
@@ -105,6 +117,7 @@ function createSessionNavigationWrapper(pending: PendingFirstSend) {
 describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    latestEveAgentOptions.current = null;
     mockSend.mockResolvedValue(undefined);
     initCoachThread.mockResolvedValue({ ok: true });
     persistCoachSessionEve.mockResolvedValue({ ok: true });
@@ -257,5 +270,33 @@ describe("useCoachPlanWorkspace", () => {
       expect.objectContaining({ message: "Build a bench plan" }),
     );
     expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("does not persist partial eveEvents when a turn ends before completion", async () => {
+    renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: "session-123",
+          snapshot: {
+            title: "Strength block",
+            forgeSessionId: "session-123",
+            eve: { sessionId: "eve-1", continuationToken: "token" },
+          },
+        },
+      }),
+    );
+
+    await act(async () => {
+      await latestEveAgentOptions.current?.onFinish?.({
+        session: { sessionId: "eve-1", continuationToken: "token-2" },
+        events: [
+          { type: "message.received", data: { message: "Hello" } },
+          { type: "message.appended", data: { messageSoFar: "Working" } },
+        ],
+      });
+    });
+
+    expect(saveSessionSnapshot).not.toHaveBeenCalled();
+    expect(persistCoachSessionEve).toHaveBeenCalled();
   });
 });

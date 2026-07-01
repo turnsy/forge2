@@ -66,7 +66,7 @@ describe("replayEveSessionEvents", () => {
     });
     expect(mockStream).toHaveBeenCalledWith({
       startIndex: 0,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
   });
 });

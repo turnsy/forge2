@@ -11,6 +11,7 @@ import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button"
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
+import { CoachWorkspaceSessionSync } from "@/components/coach/coach-workspace-session-sync";
 import { Button, FadeIn, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_CHAT_AREA_CLASS,
@@ -177,10 +178,15 @@ export function CoachWorkspace(
   }
 
   return (
-    <CoachWorkspaceInner
-      {...props}
-      initialReplayedEvents={replay.events}
-    />
+    <>
+      {props.initialSession ? (
+        <CoachWorkspaceSessionSync sessionId={props.initialSession.id} />
+      ) : null}
+      <CoachWorkspaceInner
+        {...props}
+        initialReplayedEvents={replay.events}
+      />
+    </>
   );
 }
 
@@ -273,6 +279,7 @@ function CoachWorkspaceInner({
       sessionNavigation?.stashPendingFirstSend(pending);
       sessionNavigation?.startSessionNavigation(pending.sessionId);
       router.replace(`/coach?sessionId=${pending.sessionId}`);
+      router.refresh();
     },
     [router, sessionNavigation],
   );
@@ -447,8 +454,9 @@ function CoachWorkspaceInner({
     restart();
     savedSnapshotRef.current = null;
     setShowArtifact(false);
+    sessionNavigation?.clearSessionNavigation();
     navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, restart, router, state]);
+  }, [activePlanId, backlinkPlanId, restart, router, sessionNavigation, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();

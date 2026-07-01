@@ -50,6 +50,28 @@ export default async function CoachHomePage({
         </PageContent>
       );
     }
+
+    if (result.status === "error") {
+      return (
+        <PageShell back={{ href: "/coach", ariaLabel: "Back to coach home" }}>
+          <PageHeader title="Conversation" />
+          <ErrorState
+            title="Couldn't load conversation"
+            description="Something went wrong while loading this conversation."
+          />
+        </PageShell>
+      );
+    }
+
+    return (
+      <PageShell back={{ href: "/coach", ariaLabel: "Back to coach home" }}>
+        <PageHeader title="Conversation" />
+        <ErrorState
+          title="Conversation not found"
+          description="This conversation may have been deleted or is no longer available."
+        />
+      </PageShell>
+    );
   }
 
   if (planId) {
