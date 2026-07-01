@@ -27,7 +27,7 @@ describe("nextSubmitPlanCodeAttempt", () => {
   });
 
   it("resets the counter when a new turn starts", () => {
-    let state = { turnId: "turn-1", count: 4 };
+    const state = { turnId: "turn-1", count: 4 };
     const nextTurn = nextSubmitPlanCodeAttempt(state, "turn-2");
 
     expect(nextTurn.allowed).toBe(true);

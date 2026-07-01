@@ -16,7 +16,11 @@ export function createSupabaseFromCookieHeader(
   return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
-        return cookies;
+        return cookies.flatMap((cookie) =>
+          cookie.value === undefined
+            ? []
+            : [{ name: cookie.name, value: cookie.value }],
+        );
       },
       setAll() {},
     },

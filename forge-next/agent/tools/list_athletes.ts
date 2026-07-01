@@ -1,5 +1,4 @@
 import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
-import { z } from "zod";
 import { listCoachAthletes } from "@/lib/athletes/repository";
 import { getCoachId } from "../lib/coach-context";
 import { listInputSchema, toListQuery } from "../lib/list-schema";

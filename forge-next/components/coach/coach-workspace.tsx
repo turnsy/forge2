@@ -277,10 +277,6 @@ function CoachWorkspaceInner({
     [router, sessionNavigation],
   );
 
-  const handleSessionPersisted = useCallback(() => {
-    // URL is set when the thread is created on first send.
-  }, []);
-
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
@@ -309,7 +305,6 @@ function CoachWorkspaceInner({
           onArtifactCleared: handleArtifactCleared,
           onThreadInitialized: handleThreadBound,
           onFirstSendNavigate: handleFirstSendNavigate,
-          onSessionPersisted: handleSessionPersisted,
         }
       : initialSession
         ? {
@@ -324,7 +319,6 @@ function CoachWorkspaceInner({
             onArtifactCleared: handleArtifactCleared,
             onThreadInitialized: handleThreadBound,
             onFirstSendNavigate: handleFirstSendNavigate,
-            onSessionPersisted: handleSessionPersisted,
           },
   );
 
@@ -346,12 +340,6 @@ function CoachWorkspaceInner({
   const resolvedBackHref = resolvedBackPlanId
     ? `/coach/plans/${resolvedBackPlanId}`
     : undefined;
-
-  useEffect(() => {
-    if (state.planId) {
-      setBacklinkPlanId(state.planId);
-    }
-  }, [state.planId]);
 
   const { saveStatus, saveError, savePlan, resetSaveStatus } =
     useSavePlan(activePlanId, {

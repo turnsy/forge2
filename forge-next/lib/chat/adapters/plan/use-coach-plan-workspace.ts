@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
@@ -10,11 +10,12 @@ import {
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
-import { buildForgeClientContext } from "@/lib/chat/adapters/plan/forge-client-context";
+import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
   resolveOutboundClientArtifact,
   stablePlanJson,
+  type ClientArtifactSnapshot,
 } from "@/lib/chat/adapters/plan/plan-artifact-diff";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
@@ -28,6 +29,7 @@ import {
   toForgeEvePointer,
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
+  type ForgeEvePointer,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
@@ -115,7 +117,6 @@ export function useCoachPlanWorkspace(options?: {
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   onArtifactCleared?: () => void;
-  onSessionPersisted?: (sessionId: string) => void;
   onThreadInitialized?: (payload: {
     sessionId: string;
     title: string | null;
@@ -127,11 +128,9 @@ export function useCoachPlanWorkspace(options?: {
   const initialSession = options?.initialSession;
   const initialReplayedEvents = options?.initialReplayedEvents ?? [];
   const onArtifactCleared = options?.onArtifactCleared;
-  const onSessionPersisted = options?.onSessionPersisted;
   const onThreadInitialized = options?.onThreadInitialized;
   const onFirstSendNavigate = options?.onFirstSendNavigate;
   const sessionNavigation = useOptionalSessionNavigation();
-  const hasSyncedSessionUrlRef = useRef(false);
   const pendingContextFileIdsRef = useRef<string[]>([]);
   const consumedPendingSendRef = useRef(false);
 
@@ -173,7 +172,7 @@ export function useCoachPlanWorkspace(options?: {
     [reducerSeedMessages],
   );
 
-  const sessionTitleRef = useRef<string | null>(
+  const [sessionTitle, setSessionTitle] = useState<string | null>(
     normalizedSnapshot?.title ?? null,
   );
   const threadInitializedRef = useRef(
@@ -235,7 +234,7 @@ export function useCoachPlanWorkspace(options?: {
               () => null,
             ));
 
-          sessionTitleRef.current = resolvedTitle;
+          setSessionTitle(resolvedTitle);
 
           const result = await initCoachThread(forgeSessionId, resolvedTitle);
           if (!result.ok) {
@@ -245,7 +244,7 @@ export function useCoachPlanWorkspace(options?: {
           threadInitializedRef.current = true;
           onThreadInitialized?.({
             sessionId: forgeSessionId,
-            title: sessionTitleRef.current,
+            title: resolvedTitle,
           });
           return true;
         })();
@@ -297,7 +296,6 @@ export function useCoachPlanWorkspace(options?: {
       initialEveEvents,
     ),
     initialEvents: initialEveEvents,
-    preserveCompletedSessions: true,
     headers: () => ({
       [FORGE_SESSION_HEADER]: forgeSessionId,
     }),
@@ -313,7 +311,7 @@ export function useCoachPlanWorkspace(options?: {
 
       return {
         ...input,
-        clientContext: buildForgeClientContext({
+        clientContext: buildForgeClientContextForSend({
           forgeSessionId,
           clientArtifact: clientArtifact
             ? {
@@ -345,7 +343,7 @@ export function useCoachPlanWorkspace(options?: {
 
       const workspaceSnapshot = buildCoachWorkspaceSnapshot({
         forgeSessionId,
-        title: sessionTitleRef.current,
+        title: sessionTitle,
         eve: pointer,
         eveEvents: snapshot.events,
       });
@@ -361,11 +359,6 @@ export function useCoachPlanWorkspace(options?: {
 
       persistedEveSessionIdRef.current = pointer.sessionId;
       lastPersistedPointerRef.current = pointer;
-
-      if (!hasSyncedSessionUrlRef.current && onSessionPersisted) {
-        hasSyncedSessionUrlRef.current = true;
-        onSessionPersisted(forgeSessionId);
-      }
     },
   });
 
@@ -411,9 +404,11 @@ export function useCoachPlanWorkspace(options?: {
       return;
     }
 
-    setLocalArtifact(agentPlan);
-    setLocalPlanId(agent.data.planId);
-    setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+    startTransition(() => {
+      setLocalArtifact(agentPlan);
+      setLocalPlanId(agent.data.planId);
+      setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+    });
   }, [
     agent.data.artifactTitle,
     agent.data.currentArtifact,
@@ -459,7 +454,7 @@ export function useCoachPlanWorkspace(options?: {
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
-    sessionTitle: sessionTitleRef.current,
+    sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
     messages: agent.data.messages,
@@ -475,17 +470,13 @@ export function useCoachPlanWorkspace(options?: {
     streamingAssistantText: agent.data.streamingAssistantText,
   };
 
-  const previousArtifactRef = useRef(state.currentArtifact);
+  const previousArtifactRef = useRef<WorkoutPlan | null>(null);
   useEffect(() => {
     if (previousArtifactRef.current && !state.currentArtifact) {
       onArtifactCleared?.();
     }
     previousArtifactRef.current = state.currentArtifact;
   }, [state.currentArtifact, onArtifactCleared]);
-
-  useEffect(() => {
-    hasSyncedSessionUrlRef.current = false;
-  }, [forgeSessionId]);
 
   useEffect(() => {
     if (!initialSession || consumedPendingSendRef.current) {
@@ -499,22 +490,24 @@ export function useCoachPlanWorkspace(options?: {
 
     consumedPendingSendRef.current = true;
 
-    if (pending.clientArtifact) {
-      const title =
-        pending.clientArtifact.title ?? pending.clientArtifact.plan.name;
-      localArtifactRef.current = pending.clientArtifact.plan;
-      localPlanIdRef.current = pending.clientArtifact.planId ?? null;
-      localArtifactTitleRef.current = title;
-      setLocalArtifact(pending.clientArtifact.plan);
-      setLocalPlanId(pending.clientArtifact.planId ?? null);
-      setLocalArtifactTitle(title);
-    }
+    queueMicrotask(() => {
+      if (pending.clientArtifact) {
+        const title =
+          pending.clientArtifact.title ?? pending.clientArtifact.plan.name;
+        localArtifactRef.current = pending.clientArtifact.plan;
+        localPlanIdRef.current = pending.clientArtifact.planId ?? null;
+        localArtifactTitleRef.current = title;
+        setLocalArtifact(pending.clientArtifact.plan);
+        setLocalPlanId(pending.clientArtifact.planId ?? null);
+        setLocalArtifactTitle(title);
+      }
 
-    if (pending.contextFileIds?.length) {
-      pendingContextFileIdsRef.current = pending.contextFileIds;
-    }
+      if (pending.contextFileIds?.length) {
+        pendingContextFileIdsRef.current = pending.contextFileIds;
+      }
 
-    void agent.send({ message: pending.message });
+      void agent.send({ message: pending.message });
+    });
   }, [agent, forgeSessionId, initialSession, sessionNavigation]);
 
   const attachFiles = useCallback(
@@ -578,7 +571,7 @@ export function useCoachPlanWorkspace(options?: {
       setIsInitializingThread(true);
       try {
         const initialized = await ensureThreadInitialized(
-          sessionTitleRef.current,
+          sessionTitle,
           displayPrompt,
         );
         if (!initialized) {
@@ -627,13 +620,14 @@ export function useCoachPlanWorkspace(options?: {
       isBusy,
       isInitializingThread,
       onFirstSendNavigate,
+      sessionTitle,
     ],
   );
 
   const restart = useCallback(() => {
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
-    sessionTitleRef.current = null;
+    setSessionTitle(null);
     initPromiseRef.current = null;
     threadInitializedRef.current = false;
     persistedEveSessionIdRef.current = null;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import { isNavItemActive } from "@/lib/navigation/active-path";
 import {
   sidebarItemActiveClassName,
@@ -31,7 +31,7 @@ export function SidebarNavLink({
   trailingIcon?: ReactNode;
   exact?: boolean;
   collapsed?: boolean;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();

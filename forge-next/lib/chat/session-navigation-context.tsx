@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -48,27 +47,13 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   >([]);
   const pendingFirstSendRef = useRef<PendingFirstSend | null>(null);
   const currentSessionId = searchParams.get("sessionId");
+  const navigationTargetSessionId =
+    pathname === COACH_WORKSPACE_PATH ? targetSessionId : null;
   const pendingSessionId =
-    pathname === COACH_WORKSPACE_PATH &&
-    targetSessionId !== null &&
-    targetSessionId !== currentSessionId
-      ? targetSessionId
+    navigationTargetSessionId !== null &&
+    navigationTargetSessionId !== currentSessionId
+      ? navigationTargetSessionId
       : null;
-
-  useEffect(() => {
-    if (targetSessionId === null) {
-      return;
-    }
-
-    if (currentSessionId === targetSessionId) {
-      setTargetSessionId(null);
-      return;
-    }
-
-    if (pathname !== COACH_WORKSPACE_PATH) {
-      setTargetSessionId(null);
-    }
-  }, [currentSessionId, pathname, targetSessionId]);
 
   const startSessionNavigation = useCallback((sessionId: string) => {
     setTargetSessionId(sessionId);

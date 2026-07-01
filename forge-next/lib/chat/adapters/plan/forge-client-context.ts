@@ -1,3 +1,4 @@
+import type { SendTurnPayload } from "eve/client";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export const FORGE_CLIENT_CONTEXT_MARKER = "forge";
@@ -23,4 +24,12 @@ export function buildForgeClientContext(input: {
     forgeSessionId: input.forgeSessionId,
     ...(input.clientArtifact ? { clientArtifact: input.clientArtifact } : {}),
   };
+}
+
+export function buildForgeClientContextForSend(
+  input: Parameters<typeof buildForgeClientContext>[0],
+): NonNullable<SendTurnPayload["clientContext"]> {
+  return JSON.parse(
+    JSON.stringify(buildForgeClientContext(input)),
+  ) as NonNullable<SendTurnPayload["clientContext"]>;
 }

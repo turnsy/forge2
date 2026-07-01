@@ -70,7 +70,6 @@ export function useCoachSessionReplay(initialSession?: {
 
   useEffect(() => {
     if (!initialSession || !replayKey) {
-      setState({ status: "ready", events: [] });
       return;
     }
 
@@ -80,23 +79,17 @@ export function useCoachSessionReplay(initialSession?: {
     );
 
     if (hasPersistedEveEvents(snapshot)) {
-      setState({
-        status: "ready",
-        events: [...getPersistedEveEvents(snapshot)],
-      });
       return;
     }
 
     const eve = snapshot.eve;
 
     if (!eve?.sessionId) {
-      setState({ status: "ready", events: [] });
       return;
     }
 
     const abortController = new AbortController();
     let cancelled = false;
-    setState({ status: "loading" });
 
     void restoreEveSessionEvents(eve, initialSession.id, {
       signal: abortController.signal,
