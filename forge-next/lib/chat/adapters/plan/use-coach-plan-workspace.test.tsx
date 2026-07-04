@@ -24,6 +24,7 @@ const {
   persistCoachSessionEve,
   mockSend,
   mockReset,
+  capturedEveAgentOptions,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
@@ -31,6 +32,20 @@ const {
   persistCoachSessionEve: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
+  capturedEveAgentOptions: {
+    current: undefined as
+      | {
+          onFinish?: (snapshot: {
+            session: {
+              sessionId?: string;
+              continuationToken?: string;
+              streamIndex?: number;
+            };
+            events: unknown[];
+          }) => Promise<void>;
+        }
+      | undefined,
+  },
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -47,9 +62,12 @@ vi.mock("eve/react", () => ({
       clientContext?: unknown;
     };
     onFinish?: (snapshot: {
-      session: { sessionId?: string; continuationToken?: string };
+      session: { sessionId?: string; continuationToken?: string; streamIndex?: number };
+      events: unknown[];
     }) => Promise<void>;
-  }) => ({
+  }) => {
+    capturedEveAgentOptions.current = options;
+    return {
     data: {
       messages: [],
       currentArtifact: null,
@@ -72,7 +90,8 @@ vi.mock("eve/react", () => ({
     reset: mockReset,
     stop: vi.fn(),
     onFinish: options?.onFinish,
-  }),
+    };
+  },
 }));
 
 function createSessionNavigationWrapper(pending: PendingFirstSend) {
@@ -105,6 +124,7 @@ function createSessionNavigationWrapper(pending: PendingFirstSend) {
 describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedEveAgentOptions.current = undefined;
     mockSend.mockResolvedValue(undefined);
     initCoachThread.mockResolvedValue({ ok: true });
     persistCoachSessionEve.mockResolvedValue({ ok: true });
@@ -257,5 +277,43 @@ describe("useCoachPlanWorkspace", () => {
       expect.objectContaining({ message: "Build a bench plan" }),
     );
     expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("persists a non-null title when onFinish runs after title generation", async () => {
+    const sessionId = "session-title-test";
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: sessionId,
+          snapshot: {
+            title: null,
+            forgeSessionId: sessionId,
+            eve: null,
+          },
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.sendMessage([
+        { type: "text", value: "Build a bench plan" },
+      ]);
+    });
+
+    await act(async () => {
+      await capturedEveAgentOptions.current?.onFinish?.({
+        session: {
+          sessionId: "eve-session",
+          continuationToken: "token",
+          streamIndex: 1,
+        },
+        events: [{ type: "session.completed" }],
+      });
+    });
+
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({ title: "Strength block" }),
+    );
   });
 });

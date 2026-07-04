@@ -1,6 +1,6 @@
-import { Client, isCurrentTurnBoundaryEvent } from "eve/client";
+import { isCurrentTurnBoundaryEvent } from "eve/client";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
-import { FORGE_SESSION_HEADER } from "@/lib/chat/constants";
+import { createForgeEveClient } from "@/lib/chat/adapters/plan/forge-eve-client";
 import type { ForgeEvePointer } from "@/lib/chat/session-types";
 import { toEveSessionState } from "@/lib/chat/session-types";
 
@@ -10,16 +10,6 @@ export type ReplayEveSessionOptions = {
 
 /** How long to wait for the first event when probing for another turn. */
 const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
-
-function createReplayClient(forgeSessionId: string): Client {
-  return new Client({
-    host: "",
-    headers: {
-      [FORGE_SESSION_HEADER]: forgeSessionId,
-    },
-    preserveCompletedSessions: true,
-  });
-}
 
 function toSessionState(
   pointer: ForgeEvePointer,
@@ -58,7 +48,7 @@ async function collectStreamEvents(
     firstEventTimeoutMs?: number;
   },
 ): Promise<HandleMessageStreamEvent[]> {
-  const client = createReplayClient(forgeSessionId);
+  const client = createForgeEveClient(forgeSessionId);
   const eveSession = client.session(session);
   const events: HandleMessageStreamEvent[] = [];
 

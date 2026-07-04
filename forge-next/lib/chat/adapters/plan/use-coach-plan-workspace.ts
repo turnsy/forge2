@@ -10,6 +10,7 @@ import {
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import { createForgeEveClient } from "@/lib/chat/adapters/plan/forge-eve-client";
 import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
@@ -19,7 +20,6 @@ import {
 } from "@/lib/chat/adapters/plan/plan-artifact-diff";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
-import { FORGE_SESSION_HEADER } from "@/lib/chat/constants";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import {
@@ -172,6 +172,9 @@ export function useCoachPlanWorkspace(options?: {
     [reducerSeedMessages],
   );
 
+  const sessionTitleRef = useRef<string | null>(
+    normalizedSnapshot?.title ?? null,
+  );
   const [sessionTitle, setSessionTitle] = useState<string | null>(
     normalizedSnapshot?.title ?? null,
   );
@@ -234,6 +237,7 @@ export function useCoachPlanWorkspace(options?: {
               () => null,
             ));
 
+          sessionTitleRef.current = resolvedTitle;
           setSessionTitle(resolvedTitle);
 
           const result = await initCoachThread(forgeSessionId, resolvedTitle);
@@ -289,16 +293,23 @@ export function useCoachPlanWorkspace(options?: {
     [initialReplayedEvents, normalizedSnapshot],
   );
 
+  const eveClient = useMemo(
+    () => createForgeEveClient(forgeSessionId),
+    [forgeSessionId],
+  );
+
+  const eveSession = useMemo(
+    () =>
+      eveClient.session(
+        resolveInitialEveSession(normalizedSnapshot, initialEveEvents),
+      ),
+    [eveClient, initialEveEvents, normalizedSnapshot],
+  );
+
   const agent = useEveAgent({
     reducer: eveReducer,
-    initialSession: resolveInitialEveSession(
-      normalizedSnapshot,
-      initialEveEvents,
-    ),
+    session: eveSession,
     initialEvents: initialEveEvents,
-    headers: () => ({
-      [FORGE_SESSION_HEADER]: forgeSessionId,
-    }),
     prepareSend: (input) => {
       const clientArtifact = resolveOutboundClientArtifact({
         agentArtifact: agentDataRef.current.currentArtifact,
@@ -343,7 +354,7 @@ export function useCoachPlanWorkspace(options?: {
 
       const workspaceSnapshot = buildCoachWorkspaceSnapshot({
         forgeSessionId,
-        title: sessionTitle,
+        title: sessionTitleRef.current,
         eve: pointer,
         eveEvents: snapshot.events,
       });
@@ -571,7 +582,7 @@ export function useCoachPlanWorkspace(options?: {
       setIsInitializingThread(true);
       try {
         const initialized = await ensureThreadInitialized(
-          sessionTitle,
+          sessionTitleRef.current,
           displayPrompt,
         );
         if (!initialized) {
@@ -620,13 +631,13 @@ export function useCoachPlanWorkspace(options?: {
       isBusy,
       isInitializingThread,
       onFirstSendNavigate,
-      sessionTitle,
     ],
   );
 
   const restart = useCallback(() => {
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
+    sessionTitleRef.current = null;
     setSessionTitle(null);
     initPromiseRef.current = null;
     threadInitializedRef.current = false;
