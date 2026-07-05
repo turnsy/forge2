@@ -247,7 +247,10 @@ export function useCoachPlanWorkspace(options?: {
       session: SessionState,
       events: readonly HandleMessageStreamEvent[],
     ) => {
-      const pointer = toForgeEvePointer(session);
+      const pointer = toForgeEvePointer({
+        ...session,
+        streamIndex: events.length,
+      });
       if (!pointer) {
         return false;
       }

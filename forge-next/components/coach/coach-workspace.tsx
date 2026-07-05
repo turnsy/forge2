@@ -34,7 +34,7 @@ import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
-import { navigateToCoachHome, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -259,13 +259,11 @@ function CoachWorkspaceInner({
     });
   }, [initialSession, sessionNavigation?.registerNewSession]);
 
-  const handleSessionUrlNavigate = useCallback(
-    (sessionId: string) => {
-      sessionNavigation?.startSessionNavigation(sessionId);
-      router.replace(`/coach?sessionId=${sessionId}`);
-    },
-    [router, sessionNavigation],
-  );
+  const handleSessionUrlNavigate = useCallback((sessionId: string) => {
+    // Keep the live Eve stream on the current workspace instance. A hard
+    // router navigation would remount, abort the turn, and replay from DB.
+    syncCoachSessionUrl(sessionId);
+  }, []);
 
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
