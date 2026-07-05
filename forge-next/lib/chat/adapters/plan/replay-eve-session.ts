@@ -13,6 +13,24 @@ export type ReplayEveSessionOptions = {
 /** How long to wait for the first event when probing for another turn. */
 const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
 
+/** How long to wait for live events when tailing an in-flight turn on reload. */
+export const IN_FLIGHT_TAIL_TIMEOUT_MS = 30_000;
+
+function resolveFirstEventTimeoutMs(
+  startIndex: number,
+  events: readonly HandleMessageStreamEvent[],
+): number | undefined {
+  if (startIndex > 0 && isTurnComplete(events)) {
+    return NEXT_TURN_PROBE_TIMEOUT_MS;
+  }
+
+  if (startIndex > 0 && !isTurnComplete(events)) {
+    return IN_FLIGHT_TAIL_TIMEOUT_MS;
+  }
+
+  return undefined;
+}
+
 function toSessionState(
   pointer: ForgeEvePointer,
   streamIndex = 0,
@@ -131,10 +149,7 @@ export async function restoreEveSessionEvents(
         startIndex,
         untilTurnBoundary: true,
         signal: options?.signal,
-        firstEventTimeoutMs:
-          startIndex > 0 && isTurnComplete(allEvents)
-            ? NEXT_TURN_PROBE_TIMEOUT_MS
-            : undefined,
+        firstEventTimeoutMs: resolveFirstEventTimeoutMs(startIndex, allEvents),
       },
     );
 
@@ -145,24 +160,27 @@ export async function restoreEveSessionEvents(
     allEvents.push(...batch);
     startIndex += batch.length;
 
-    const lastEvent = batch[batch.length - 1];
-    if (!lastEvent || !isCurrentTurnBoundaryEvent(lastEvent)) {
-      const tailed = await collectStreamEvents(
-        toSessionState(pointer, startIndex),
-        forgeSessionId,
-        {
-          startIndex,
-          untilTurnBoundary: true,
-          signal: options?.signal,
-        },
-      );
-
-      if (tailed.length > 0) {
-        allEvents.push(...tailed);
-      }
-
-      break;
+    if (isTurnComplete(allEvents)) {
+      continue;
     }
+
+    const tailed = await collectStreamEvents(
+      toSessionState(pointer, startIndex),
+      forgeSessionId,
+      {
+        startIndex,
+        untilTurnBoundary: true,
+        signal: options?.signal,
+        firstEventTimeoutMs: IN_FLIGHT_TAIL_TIMEOUT_MS,
+      },
+    );
+
+    if (tailed.length > 0) {
+      allEvents.push(...tailed);
+      startIndex += tailed.length;
+    }
+
+    break;
   }
 
   return allEvents;

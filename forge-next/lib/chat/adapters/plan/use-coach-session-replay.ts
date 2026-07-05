@@ -16,6 +16,8 @@ export type CoachSessionReplayState =
       status: "ready";
       events: HandleMessageStreamEvent[];
       isSyncing: boolean;
+      /** True when Eve tail finished but the latest turn never reached a boundary. */
+      isInterrupted?: boolean;
     }
   | { status: "error"; message: string };
 
@@ -176,10 +178,12 @@ export function useCoachSessionReplay(initialSession?: {
   }
 
   if (fetchResult?.replayKey === replayKey) {
+    const interrupted = !isTurnComplete(fetchResult.events);
     return {
       status: "ready",
       events: fetchResult.events,
       isSyncing: false,
+      ...(interrupted ? { isInterrupted: true } : {}),
     };
   }
 
@@ -189,6 +193,7 @@ export function useCoachSessionReplay(initialSession?: {
         status: "ready",
         events: checkpoint,
         isSyncing: false,
+        ...(!isTurnComplete(checkpoint) ? { isInterrupted: true } : {}),
       };
     }
 

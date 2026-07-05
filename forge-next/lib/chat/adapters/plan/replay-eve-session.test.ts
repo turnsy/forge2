@@ -18,6 +18,7 @@ vi.mock("eve/client", async (importOriginal) => {
 });
 
 import {
+  IN_FLIGHT_TAIL_TIMEOUT_MS,
   replayEveSessionEvents,
   restoreEveSessionEvents,
 } from "@/lib/chat/adapters/plan/replay-eve-session";
@@ -105,7 +106,7 @@ describe("restoreEveSessionEvents", () => {
     });
     expect(mockStream).toHaveBeenNthCalledWith(2, {
       startIndex: 2,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -221,10 +222,52 @@ describe("restoreEveSessionEvents", () => {
       }),
     ).resolves.toEqual([...persistedPrefix, ...tailEvents]);
 
+    expect(mockStream).toHaveBeenNthCalledWith(1, {
+      startIndex: 2,
+      signal: expect.any(AbortSignal),
+    });
+    expect(mockStream).toHaveBeenNthCalledWith(2, {
+      startIndex: 3,
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("returns the persisted prefix when tailing an in-flight turn times out", async () => {
+    vi.useFakeTimers();
+
+    const persistedPrefix = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
+    ];
+
+    mockStream.mockImplementation(async function* ({
+      signal,
+    }: {
+      signal?: AbortSignal;
+    } = {}) {
+      await new Promise<void>((resolve) => {
+        if (!signal || signal.aborted) {
+          resolve();
+          return;
+        }
+
+        signal.addEventListener("abort", () => resolve(), { once: true });
+      });
+    });
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persistedPrefix,
+    });
+
+    await vi.advanceTimersByTimeAsync(IN_FLIGHT_TAIL_TIMEOUT_MS + 1);
+    await expect(promise).resolves.toEqual(persistedPrefix);
+
     expect(mockStream).toHaveBeenCalledWith({
       startIndex: 2,
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
+
+    vi.useRealTimers();
   });
 
   it("returns persisted events when the checkpoint is already complete and no new turns exist", async () => {

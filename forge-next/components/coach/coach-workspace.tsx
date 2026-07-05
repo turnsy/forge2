@@ -186,6 +186,7 @@ export function CoachWorkspace(
       {...props}
       initialReplayedEvents={replay.events}
       isResumingStream={replay.isSyncing}
+      isInterruptedReplay={replay.status === "ready" && replay.isInterrupted === true}
     />
   );
 }
@@ -198,6 +199,7 @@ function CoachWorkspaceInner({
   initialSession,
   initialReplayedEvents = [],
   isResumingStream = false,
+  isInterruptedReplay = false,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -213,6 +215,7 @@ function CoachWorkspaceInner({
   };
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   isResumingStream?: boolean;
+  isInterruptedReplay?: boolean;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -310,6 +313,7 @@ function CoachWorkspaceInner({
             },
             initialReplayedEvents,
             isResumingStream,
+            isInterruptedReplay,
             onArtifactCleared: handleArtifactCleared,
           }
         : {

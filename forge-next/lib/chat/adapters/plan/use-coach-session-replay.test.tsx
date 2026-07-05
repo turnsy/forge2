@@ -23,8 +23,8 @@ const persistedEvent = {
 } as HandleMessageStreamEvent;
 
 const tailedEvent = {
-  type: "message.completed",
-  data: { message: "Hi there" },
+  type: "session.waiting",
+  data: {},
 } as HandleMessageStreamEvent;
 
 const otherPersistedEvent = {
@@ -75,16 +75,12 @@ describe("useCoachSessionReplay", () => {
   });
 
   it("shows the loading spinner while syncing a completed checkpoint", async () => {
-    const turnBoundary = {
-      type: "session.waiting",
-      data: {},
-    } as HandleMessageStreamEvent;
-    const syncedEvents = [persistedEvent, turnBoundary, tailedEvent];
+    const syncedEvents = [persistedEvent, tailedEvent];
     mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
 
     const session = createSession("session-complete", {
       eve: evePointer,
-      eveEvents: [persistedEvent, turnBoundary],
+      eveEvents: [persistedEvent, tailedEvent],
     });
 
     const { result } = renderHook(() => useCoachSessionReplay(session));
@@ -135,8 +131,39 @@ describe("useCoachSessionReplay", () => {
     );
   });
 
+  it("marks interrupted replay when Eve tail finishes without a turn boundary", async () => {
+    const inFlightCheckpoint = [
+      {
+        type: "message.received",
+        data: { message: "Hello" },
+      },
+      {
+        type: "turn.started",
+        data: { turnId: "turn-1", sequence: 1 },
+      },
+    ] as HandleMessageStreamEvent[];
+
+    mockRestoreEveSessionEvents.mockResolvedValue(inFlightCheckpoint);
+
+    const session = createSession("session-stale", {
+      eve: evePointer,
+      eveEvents: inFlightCheckpoint,
+    });
+
+    const { result } = renderHook(() => useCoachSessionReplay(session));
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "ready",
+        events: inFlightCheckpoint,
+        isSyncing: false,
+        isInterrupted: true,
+      });
+    });
+  });
+
   it("loads events from the network when only an Eve pointer exists", async () => {
-    const replayedEvents = [otherPersistedEvent];
+    const replayedEvents = [otherPersistedEvent, tailedEvent];
     mockRestoreEveSessionEvents.mockResolvedValue(replayedEvents);
 
     const session = createSession("session-2", {
@@ -175,7 +202,7 @@ describe("useCoachSessionReplay", () => {
 
   it("clears stale events when the replay key changes", async () => {
     const firstSynced = [persistedEvent, tailedEvent];
-    const secondSynced = [otherPersistedEvent];
+    const secondSynced = [otherPersistedEvent, tailedEvent];
     mockRestoreEveSessionEvents
       .mockResolvedValueOnce(firstSynced)
       .mockResolvedValueOnce(secondSynced);

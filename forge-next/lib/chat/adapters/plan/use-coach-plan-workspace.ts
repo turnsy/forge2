@@ -7,7 +7,7 @@ import {
   generateSessionTitleFromPrompt,
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
-import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import { createEveCoachReducer, normalizeInterruptedReplayState } from "@/lib/chat/adapters/plan/eve-coach-reducer";
 import {
   bindForgeEveSessionSend,
   createForgeEveClient,
@@ -21,6 +21,7 @@ import {
   type ClientArtifactSnapshot,
 } from "@/lib/chat/adapters/plan/plan-artifact-diff";
 import { uploadContextFile } from "@/lib/chat/adapters/plan/upload-context-client";
+import { isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
 import { validateClientFiles } from "@/lib/chat/adapters/plan/validate-client-files";
 import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
@@ -115,6 +116,7 @@ export function useCoachPlanWorkspace(options?: {
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
   isResumingStream?: boolean;
+  isInterruptedReplay?: boolean;
   onArtifactCleared?: () => void;
   onThreadInitialized?: (payload: {
     sessionId: string;
@@ -127,6 +129,7 @@ export function useCoachPlanWorkspace(options?: {
   const initialSession = options?.initialSession;
   const initialReplayedEvents = options?.initialReplayedEvents ?? [];
   const isResumingStream = options?.isResumingStream ?? false;
+  const isInterruptedReplay = options?.isInterruptedReplay ?? false;
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onSessionUrlNavigate = options?.onSessionUrlNavigate;
@@ -428,6 +431,53 @@ export function useCoachPlanWorkspace(options?: {
   }, [agent.events, agent.session]);
 
   useEffect(() => {
+    if (
+      !initialSession ||
+      !normalizedSnapshot?.eve?.sessionId ||
+      isResumingStream ||
+      initialReplayedEvents.length === 0
+    ) {
+      return;
+    }
+
+    const persisted = getPersistedEveEvents(normalizedSnapshot);
+    const replayAdvanced =
+      initialReplayedEvents.length > persisted.length ||
+      (persisted.length > 0 &&
+        !isTurnComplete(persisted) &&
+        isTurnComplete(initialReplayedEvents));
+
+    if (!replayAdvanced) {
+      return;
+    }
+
+    const pointer = toForgeEvePointer({
+      ...normalizedSnapshot.eve,
+      streamIndex: initialReplayedEvents.length,
+    });
+
+    if (!pointer) {
+      return;
+    }
+
+    void saveSessionSnapshot(
+      forgeSessionId,
+      buildCoachWorkspaceSnapshot({
+        forgeSessionId,
+        title: normalizedSnapshot.title ?? sessionTitleRef.current,
+        eve: pointer,
+        eveEvents: initialReplayedEvents,
+      }),
+    );
+  }, [
+    forgeSessionId,
+    initialReplayedEvents,
+    initialSession,
+    isResumingStream,
+    normalizedSnapshot,
+  ]);
+
+  useEffect(() => {
     return () => {
       const session = latestAgentSessionRef.current;
       const events = latestAgentEventsRef.current;
@@ -498,41 +548,52 @@ export function useCoachPlanWorkspace(options?: {
     agent.data.planId,
   ]);
 
+  const shouldNormalizeInterruptedReplay =
+    !isResumingStream &&
+    agent.status === "ready" &&
+    initialReplayedEvents.length > 0 &&
+    (isInterruptedReplay ||
+      (agent.events.length > 0 && !isTurnComplete(agent.events)));
+
+  const workspaceData = shouldNormalizeInterruptedReplay
+    ? normalizeInterruptedReplayState(agent.data)
+    : agent.data;
+
   const phase: PlanWorkspaceState["phase"] = isInitializingThread
     ? "initializing"
     : attachmentState.phase === "uploading"
       ? "uploading"
-      : agent.status === "error" || agent.data.phase === "error"
+      : agent.status === "error" || workspaceData.phase === "error"
         ? "error"
         : isBusy
           ? "streaming"
-          : agent.data.phase;
+          : workspaceData.phase;
 
   const state: PlanWorkspaceState = {
     sessionId: forgeSessionId,
     hasStarted:
-      agent.data.messages.length > 0 ||
+      workspaceData.messages.length > 0 ||
       isBusy ||
       agent.status === "error" ||
-      agent.data.phase === "error" ||
-      agent.data.errors.length > 0 ||
+      workspaceData.phase === "error" ||
+      workspaceData.errors.length > 0 ||
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
     sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
-    messages: agent.data.messages,
+    messages: workspaceData.messages,
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
-    runStatus: agent.data.runStatus,
-    warnings: agent.data.warnings,
+    runStatus: workspaceData.runStatus,
+    warnings: workspaceData.warnings,
     errors: agent.error
-      ? [{ message: agent.error.message }, ...agent.data.errors]
-      : agent.data.errors,
+      ? [{ message: agent.error.message }, ...workspaceData.errors]
+      : workspaceData.errors,
     phase,
-    streamingAssistantText: agent.data.streamingAssistantText,
+    streamingAssistantText: workspaceData.streamingAssistantText,
   };
 
   const previousArtifactRef = useRef<WorkoutPlan | null>(null);
