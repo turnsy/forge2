@@ -177,11 +177,7 @@ export function useCoachPlanWorkspace(options?: {
     Boolean(normalizedSnapshot?.eve?.sessionId),
   );
   const hasRedirectedRef = useRef(Boolean(initialSession));
-  const bootstrapInFlightRef = useRef(false);
   const titlePromiseRef = useRef<Promise<boolean> | null>(null);
-  const persistedEveSessionIdRef = useRef<string | null>(
-    normalizedSnapshot?.eve?.sessionId ?? null,
-  );
   const lastPersistedPointerRef = useRef<ForgeEvePointer | null>(
     normalizedSnapshot?.eve ?? null,
   );
@@ -272,7 +268,6 @@ export function useCoachPlanWorkspace(options?: {
         return false;
       }
 
-      persistedEveSessionIdRef.current = pointer.sessionId;
       lastPersistedPointerRef.current = pointer;
       hasPersistedSessionRef.current = true;
       return true;
@@ -280,50 +275,39 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
-  const tryFirstSessionBootstrap = useCallback(
-    async (
-      session: SessionState,
-      events: readonly HandleMessageStreamEvent[],
-    ) => {
-      if (
-        initialSession ||
-        hasPersistedSessionRef.current ||
-        bootstrapInFlightRef.current
-      ) {
-        return;
+  const maybeRedirectToSessionUrl = useCallback(() => {
+    if (
+      initialSession ||
+      hasRedirectedRef.current ||
+      !hasPersistedSessionRef.current ||
+      latestAgentEventsRef.current.length === 0
+    ) {
+      return;
+    }
+
+    hasRedirectedRef.current = true;
+    onThreadInitialized?.({
+      sessionId: forgeSessionId,
+      title: sessionTitleRef.current,
+    });
+    onSessionUrlNavigate?.(forgeSessionId);
+  }, [
+    forgeSessionId,
+    initialSession,
+    onSessionUrlNavigate,
+    onThreadInitialized,
+  ]);
+
+  const syncPersistedSnapshot = useCallback(
+    async (events: readonly HandleMessageStreamEvent[]) => {
+      const session = latestAgentSessionRef.current;
+      if (!session?.sessionId) {
+        return false;
       }
 
-      const pointer = toForgeEvePointer(session);
-      if (!pointer) {
-        return;
-      }
-
-      bootstrapInFlightRef.current = true;
-      try {
-        const saved = await persistWorkspaceSnapshot(session, events);
-        if (!saved) {
-          return;
-        }
-
-        if (!hasRedirectedRef.current) {
-          hasRedirectedRef.current = true;
-          onThreadInitialized?.({
-            sessionId: forgeSessionId,
-            title: sessionTitleRef.current,
-          });
-          onSessionUrlNavigate?.(forgeSessionId);
-        }
-      } finally {
-        bootstrapInFlightRef.current = false;
-      }
+      return persistWorkspaceSnapshot(session, events);
     },
-    [
-      forgeSessionId,
-      initialSession,
-      onSessionUrlNavigate,
-      onThreadInitialized,
-      persistWorkspaceSnapshot,
-    ],
+    [persistWorkspaceSnapshot],
   );
 
   const initialEveEvents = useMemo(
@@ -340,40 +324,35 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
+  const maybeRedirectToSessionUrlRef = useRef(maybeRedirectToSessionUrl);
+  maybeRedirectToSessionUrlRef.current = maybeRedirectToSessionUrl;
+
+  const syncPersistedSnapshotRef = useRef(syncPersistedSnapshot);
+  syncPersistedSnapshotRef.current = syncPersistedSnapshot;
+
   const onEvePostResponseRef = useRef<(response: ForgeEvePostResponse) => void>(
     () => {},
   );
   onEvePostResponseRef.current = (response) => {
-    const sessionState: SessionState = {
+    latestAgentSessionRef.current = {
       sessionId: response.sessionId,
       continuationToken: response.continuationToken,
       streamIndex: latestAgentEventsRef.current.length,
     };
-    latestAgentSessionRef.current = sessionState;
-    void tryFirstSessionBootstrap(sessionState, latestAgentEventsRef.current);
   };
 
-  const onEveEventRef = useRef<(event: HandleMessageStreamEvent) => void>(
-    () => {},
-  );
-  onEveEventRef.current = (event) => {
+  const handleAgentStreamEventRef = useRef<
+    (event: HandleMessageStreamEvent) => void
+  >(() => {});
+  handleAgentStreamEventRef.current = (event) => {
     const nextEvents = [...latestAgentEventsRef.current, event];
     latestAgentEventsRef.current = nextEvents;
 
-    if (!hasPersistedSessionRef.current) {
-      return;
-    }
-
-    const pointer = lastPersistedPointerRef.current;
-    const session =
-      latestAgentSessionRef.current ??
-      (pointer ? toEveSessionState(pointer, nextEvents.length) : null);
-
-    if (!session?.sessionId) {
-      return;
-    }
-
-    void persistWorkspaceSnapshot(session, nextEvents);
+    void syncPersistedSnapshotRef.current(nextEvents).then((saved) => {
+      if (saved) {
+        maybeRedirectToSessionUrlRef.current();
+      }
+    });
   };
 
   const eveSession = useMemo(
@@ -418,7 +397,7 @@ export function useCoachPlanWorkspace(options?: {
       };
     },
     onEvent: (event) => {
-      onEveEventRef.current(event);
+      handleAgentStreamEventRef.current(event);
     },
     onFinish: async (snapshot) => {
       const pointer = toForgeEvePointer(snapshot.session);
@@ -428,7 +407,13 @@ export function useCoachPlanWorkspace(options?: {
 
       latestAgentSessionRef.current = snapshot.session;
       latestAgentEventsRef.current = snapshot.events;
-      await persistWorkspaceSnapshot(snapshot.session, snapshot.events);
+      const saved = await persistWorkspaceSnapshot(
+        snapshot.session,
+        snapshot.events,
+      );
+      if (saved) {
+        maybeRedirectToSessionUrlRef.current();
+      }
     },
   });
 
@@ -635,8 +620,6 @@ export function useCoachPlanWorkspace(options?: {
     titlePromiseRef.current = null;
     hasPersistedSessionRef.current = false;
     hasRedirectedRef.current = false;
-    bootstrapInFlightRef.current = false;
-    persistedEveSessionIdRef.current = null;
     lastPersistedPointerRef.current = null;
     setIsInitializingThread(false);
     setLocalArtifact(initialPlan ?? null);

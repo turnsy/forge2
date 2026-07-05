@@ -123,6 +123,7 @@ vi.mock("eve/react", () => ({
           continuationToken: "token",
           streamIndex: 0,
         };
+        options?.onEvent?.({ type: "message.received" });
         agentEventsState.current = [{ type: "message.received" }];
         await mockSend(prepared);
       },
@@ -165,15 +166,16 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
-  it("bootstraps persistence immediately after Eve POST returns a session id", async () => {
+  it("persists and redirects after the first Eve event", async () => {
     const onThreadInitialized = vi.fn();
     const onSessionUrlNavigate = vi.fn();
     const plan = createEmptyWorkoutPlan();
+    let resolveSend: (() => void) | undefined;
 
     mockSend.mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(resolve, 50);
+          resolveSend = resolve;
         }),
     );
 
@@ -187,7 +189,7 @@ describe("useCoachPlanWorkspace", () => {
     );
 
     let sendPromise: Promise<void> | undefined;
-    await act(async () => {
+    act(() => {
       sendPromise = result.current.sendMessage([{ type: "text", value: "Hello" }]);
     });
 
@@ -197,17 +199,18 @@ describe("useCoachPlanWorkspace", () => {
         expect.objectContaining({
           title: "Strength block",
           eve: expect.objectContaining({ sessionId: "eve-session" }),
+          eveEvents: [{ type: "message.received" }],
         }),
       );
+      expect(onThreadInitialized).toHaveBeenCalledWith({
+        sessionId: expect.any(String),
+        title: "Strength block",
+      });
+      expect(onSessionUrlNavigate).toHaveBeenCalledWith(expect.any(String));
     });
-
-    expect(onThreadInitialized).toHaveBeenCalledWith({
-      sessionId: expect.any(String),
-      title: "Strength block",
-    });
-    expect(onSessionUrlNavigate).toHaveBeenCalledWith(expect.any(String));
 
     await act(async () => {
+      resolveSend?.();
       await sendPromise;
     });
 
