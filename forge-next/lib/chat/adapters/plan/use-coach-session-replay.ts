@@ -12,7 +12,11 @@ import {
 
 export type CoachSessionReplayState =
   | { status: "loading" }
-  | { status: "ready"; events: HandleMessageStreamEvent[] }
+  | {
+      status: "ready";
+      events: HandleMessageStreamEvent[];
+      isSyncing: boolean;
+    }
   | { status: "error"; message: string };
 
 type ResolvedReplayState =
@@ -56,7 +60,7 @@ function resolveReplayState(
   replayKey?: string | null,
 ): ResolvedReplayState {
   if (!initialSession) {
-    return { status: "ready", events: [] };
+    return { status: "ready", events: [], isSyncing: false };
   }
 
   const snapshot = withForgeSessionId(
@@ -71,14 +75,15 @@ function resolveReplayState(
       return {
         status: "ready",
         events: [...getPersistedEveEvents(snapshot)],
+        isSyncing: false,
       };
     }
 
-    return { status: "ready", events: [] };
+    return { status: "ready", events: [], isSyncing: false };
   }
 
   if (!replayKey) {
-    return { status: "ready", events: [] };
+    return { status: "ready", events: [], isSyncing: false };
   }
 
   return {
@@ -100,10 +105,17 @@ export function useCoachSessionReplay(initialSession?: {
     [initialSession, replayKey],
   );
 
-  const [fetchedState, setFetchedState] = useState<CoachSessionReplayState | null>(
-    null,
-  );
-  const [fetchedReplayKey, setFetchedReplayKey] = useState<string | null>(null);
+  const checkpoint =
+    resolvedState.status === "needs-fetch"
+      ? [...(resolvedState.persistedEvents ?? [])]
+      : [];
+
+  const [fetchResult, setFetchResult] = useState<{
+    replayKey: string;
+    events: HandleMessageStreamEvent[];
+  } | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
     if (resolvedState.status !== "needs-fetch" || !initialSession || !replayKey) {
@@ -123,14 +135,17 @@ export function useCoachSessionReplay(initialSession?: {
     const abortController = new AbortController();
     let cancelled = false;
 
+    setFetchResult(null);
+    setFetchError(null);
+    setIsFetching(true);
+
     void restoreEveSessionEvents(eve, initialSession.id, {
       signal: abortController.signal,
       fromEvents: resolvedState.persistedEvents,
     })
       .then((events) => {
         if (!cancelled) {
-          setFetchedState({ status: "ready", events });
-          setFetchedReplayKey(replayKey);
+          setFetchResult({ replayKey, events });
         }
       })
       .catch((error: unknown) => {
@@ -139,11 +154,12 @@ export function useCoachSessionReplay(initialSession?: {
         }
 
         console.error("Failed to restore Eve session replay", error);
-        setFetchedState({
-          status: "error",
-          message: "Couldn't load conversation.",
-        });
-        setFetchedReplayKey(replayKey);
+        setFetchError("Couldn't load conversation.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsFetching(false);
+        }
       });
 
     return () => {
@@ -156,8 +172,32 @@ export function useCoachSessionReplay(initialSession?: {
     return resolvedState;
   }
 
-  if (fetchedState && fetchedReplayKey === replayKey) {
-    return fetchedState;
+  if (fetchError) {
+    if (checkpoint.length > 0) {
+      return {
+        status: "ready",
+        events: checkpoint,
+        isSyncing: false,
+      };
+    }
+
+    return { status: "error", message: fetchError };
+  }
+
+  if (fetchResult?.replayKey === replayKey) {
+    return {
+      status: "ready",
+      events: fetchResult.events,
+      isSyncing: false,
+    };
+  }
+
+  if (checkpoint.length > 0) {
+    return {
+      status: "ready",
+      events: checkpoint,
+      isSyncing: isFetching,
+    };
   }
 
   return { status: "loading" };

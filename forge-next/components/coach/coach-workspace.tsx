@@ -176,10 +176,16 @@ export function CoachWorkspace(
     );
   }
 
+  const sessionKey = props.initialSession
+    ? `${props.initialSession.id}:${replay.events.length}:${replay.isSyncing ? "sync" : "ready"}`
+    : "coach-home";
+
   return (
     <CoachWorkspaceInner
+      key={sessionKey}
       {...props}
       initialReplayedEvents={replay.events}
+      isResumingStream={replay.isSyncing}
     />
   );
 }
@@ -191,6 +197,7 @@ function CoachWorkspaceInner({
   initialPlan,
   initialSession,
   initialReplayedEvents = [],
+  isResumingStream = false,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -205,6 +212,7 @@ function CoachWorkspaceInner({
     updatedAt: string;
   };
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
+  isResumingStream?: boolean;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -301,6 +309,7 @@ function CoachWorkspaceInner({
               snapshot: initialSession.snapshot,
             },
             initialReplayedEvents,
+            isResumingStream,
             onArtifactCleared: handleArtifactCleared,
           }
         : {

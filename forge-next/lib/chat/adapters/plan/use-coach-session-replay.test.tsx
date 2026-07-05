@@ -63,11 +63,12 @@ describe("useCoachSessionReplay", () => {
     expect(result.current).toEqual({
       status: "ready",
       events: [persistedEvent],
+      isSyncing: false,
     });
     expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
   });
 
-  it("tails Eve from the persisted checkpoint when eveEvents and a pointer exist", async () => {
+  it("shows the checkpoint immediately while tailing Eve for newer events", async () => {
     const syncedEvents = [persistedEvent, tailedEvent];
     mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
 
@@ -78,12 +79,17 @@ describe("useCoachSessionReplay", () => {
 
     const { result } = renderHook(() => useCoachSessionReplay(session));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current).toEqual({
+      status: "ready",
+      events: [persistedEvent],
+      isSyncing: true,
+    });
 
     await waitFor(() => {
       expect(result.current).toEqual({
         status: "ready",
         events: syncedEvents,
+        isSyncing: false,
       });
     });
 
@@ -120,6 +126,7 @@ describe("useCoachSessionReplay", () => {
       expect(result.current).toEqual({
         status: "ready",
         events: replayedEvents,
+        isSyncing: false,
       });
     });
 
@@ -163,15 +170,23 @@ describe("useCoachSessionReplay", () => {
       expect(result.current).toEqual({
         status: "ready",
         events: firstSynced,
+        isSyncing: false,
       });
     });
 
     rerender({ session: secondSession });
 
+    expect(result.current).toEqual({
+      status: "ready",
+      events: [otherPersistedEvent],
+      isSyncing: true,
+    });
+
     await waitFor(() => {
       expect(result.current).toEqual({
         status: "ready",
         events: secondSynced,
+        isSyncing: false,
       });
     });
   });

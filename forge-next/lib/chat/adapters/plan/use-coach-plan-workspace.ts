@@ -114,6 +114,7 @@ export function useCoachPlanWorkspace(options?: {
   planId?: string;
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
   initialReplayedEvents?: readonly HandleMessageStreamEvent[];
+  isResumingStream?: boolean;
   onArtifactCleared?: () => void;
   onThreadInitialized?: (payload: {
     sessionId: string;
@@ -125,6 +126,7 @@ export function useCoachPlanWorkspace(options?: {
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
   const initialReplayedEvents = options?.initialReplayedEvents ?? [];
+  const isResumingStream = options?.isResumingStream ?? false;
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onSessionUrlNavigate = options?.onSessionUrlNavigate;
@@ -445,7 +447,9 @@ export function useCoachPlanWorkspace(options?: {
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
   const isBusy =
-    agent.status === "submitted" || agent.status === "streaming";
+    agent.status === "submitted" ||
+    agent.status === "streaming" ||
+    isResumingStream;
 
   useEffect(() => {
     const agentPlan = agent.data.currentArtifact;
