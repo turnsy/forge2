@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
-import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
+import { restoreEveSessionEvents, isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
   getPersistedEveEvents,
   hasPersistedEveEvents,
@@ -110,6 +110,9 @@ export function useCoachSessionReplay(initialSession?: {
       ? [...(resolvedState.persistedEvents ?? [])]
       : [];
 
+  const isInFlightCheckpoint =
+    checkpoint.length > 0 && !isTurnComplete(checkpoint);
+
   const [fetchResult, setFetchResult] = useState<{
     replayKey: string;
     events: HandleMessageStreamEvent[];
@@ -172,6 +175,14 @@ export function useCoachSessionReplay(initialSession?: {
     return resolvedState;
   }
 
+  if (fetchResult?.replayKey === replayKey) {
+    return {
+      status: "ready",
+      events: fetchResult.events,
+      isSyncing: false,
+    };
+  }
+
   if (fetchError) {
     if (checkpoint.length > 0) {
       return {
@@ -184,20 +195,16 @@ export function useCoachSessionReplay(initialSession?: {
     return { status: "error", message: fetchError };
   }
 
-  if (fetchResult?.replayKey === replayKey) {
-    return {
-      status: "ready",
-      events: fetchResult.events,
-      isSyncing: false,
-    };
-  }
-
-  if (checkpoint.length > 0) {
+  if (isInFlightCheckpoint) {
     return {
       status: "ready",
       events: checkpoint,
       isSyncing: isFetching,
     };
+  }
+
+  if (isFetching) {
+    return { status: "loading" };
   }
 
   return { status: "loading" };

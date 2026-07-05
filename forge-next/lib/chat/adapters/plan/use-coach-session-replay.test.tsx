@@ -5,9 +5,15 @@ import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-ses
 import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
 import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 
-vi.mock("@/lib/chat/adapters/plan/replay-eve-session", () => ({
-  restoreEveSessionEvents: vi.fn(),
-}));
+vi.mock("@/lib/chat/adapters/plan/replay-eve-session", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("@/lib/chat/adapters/plan/replay-eve-session")
+  >();
+  return {
+    ...actual,
+    restoreEveSessionEvents: vi.fn(),
+  };
+});
 
 const mockRestoreEveSessionEvents = vi.mocked(restoreEveSessionEvents);
 
@@ -66,6 +72,32 @@ describe("useCoachSessionReplay", () => {
       isSyncing: false,
     });
     expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
+  });
+
+  it("shows the loading spinner while syncing a completed checkpoint", async () => {
+    const turnBoundary = {
+      type: "session.waiting",
+      data: {},
+    } as HandleMessageStreamEvent;
+    const syncedEvents = [persistedEvent, turnBoundary, tailedEvent];
+    mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
+
+    const session = createSession("session-complete", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, turnBoundary],
+    });
+
+    const { result } = renderHook(() => useCoachSessionReplay(session));
+
+    expect(result.current).toEqual({ status: "loading" });
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "ready",
+        events: syncedEvents,
+        isSyncing: false,
+      });
+    });
   });
 
   it("shows the checkpoint immediately while tailing Eve for newer events", async () => {
