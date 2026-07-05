@@ -17,6 +17,7 @@ const {
   mockSend,
   mockReset,
   capturedEveAgentOptions,
+  capturedOnPostResponse,
   agentSessionState,
   agentEventsState,
 } = vi.hoisted(() => ({
@@ -27,6 +28,7 @@ const {
   capturedEveAgentOptions: {
     current: undefined as
       | {
+          onEvent?: (event: { type: string }) => void;
           onFinish?: (snapshot: {
             session: {
               sessionId?: string;
@@ -36,6 +38,14 @@ const {
             events: unknown[];
           }) => Promise<void>;
         }
+      | undefined,
+  },
+  capturedOnPostResponse: {
+    current: undefined as
+      | ((response: {
+          sessionId: string;
+          continuationToken?: string;
+        }) => void)
       | undefined,
   },
   agentSessionState: {
@@ -55,12 +65,27 @@ vi.mock("@/lib/chat/actions", () => ({
   generateSessionTitleFromPrompt,
 }));
 
+vi.mock("@/lib/chat/adapters/plan/forge-eve-client", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/lib/chat/adapters/plan/forge-eve-client")
+    >();
+  return {
+    ...actual,
+    bindForgeEveSessionSend: vi.fn((session, onPostResponse) => {
+      capturedOnPostResponse.current = onPostResponse;
+      return session;
+    }),
+  };
+});
+
 vi.mock("eve/react", () => ({
   useEveAgent: (options?: {
     prepareSend?: (input: { message: string }) => {
       message: string;
       clientContext?: unknown;
     };
+    onEvent?: (event: { type: string }) => void;
     onFinish?: (snapshot: {
       session: { sessionId?: string; continuationToken?: string; streamIndex?: number };
       events: unknown[];
@@ -89,6 +114,10 @@ vi.mock("eve/react", () => ({
       },
       send: async (input: { message: string }) => {
         const prepared = options?.prepareSend?.(input) ?? input;
+        capturedOnPostResponse.current?.({
+          sessionId: "eve-session",
+          continuationToken: "token",
+        });
         agentSessionState.current = {
           sessionId: "eve-session",
           continuationToken: "token",
@@ -108,6 +137,7 @@ describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedEveAgentOptions.current = undefined;
+    capturedOnPostResponse.current = undefined;
     agentSessionState.current = {
       sessionId: undefined,
       continuationToken: undefined,
@@ -135,12 +165,19 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
-  it("sends on the first message and bootstraps persistence once Eve assigns a session", async () => {
+  it("bootstraps persistence immediately after Eve POST returns a session id", async () => {
     const onThreadInitialized = vi.fn();
     const onSessionUrlNavigate = vi.fn();
     const plan = createEmptyWorkoutPlan();
 
-    const { result, rerender } = renderHook(() =>
+    mockSend.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        }),
+    );
+
+    const { result } = renderHook(() =>
       useCoachPlanWorkspace({
         initialPlan: plan,
         planId: "plan-abc",
@@ -149,24 +186,9 @@ describe("useCoachPlanWorkspace", () => {
       }),
     );
 
+    let sendPromise: Promise<void> | undefined;
     await act(async () => {
-      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
-    });
-
-    rerender();
-
-    await waitFor(() => {
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Hello",
-          clientContext: expect.objectContaining({
-            clientArtifact: expect.objectContaining({
-              plan,
-              planId: "plan-abc",
-            }),
-          }),
-        }),
-      );
+      sendPromise = result.current.sendMessage([{ type: "text", value: "Hello" }]);
     });
 
     await waitFor(() => {
@@ -175,7 +197,6 @@ describe("useCoachPlanWorkspace", () => {
         expect.objectContaining({
           title: "Strength block",
           eve: expect.objectContaining({ sessionId: "eve-session" }),
-          eveEvents: [{ type: "message.received" }],
         }),
       );
     });
@@ -185,6 +206,50 @@ describe("useCoachPlanWorkspace", () => {
       title: "Strength block",
     });
     expect(onSessionUrlNavigate).toHaveBeenCalledWith(expect.any(String));
+
+    await act(async () => {
+      await sendPromise;
+    });
+
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Hello",
+        clientContext: expect.objectContaining({
+          clientArtifact: expect.objectContaining({
+            plan,
+            planId: "plan-abc",
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("persists incrementally as Eve events arrive after bootstrap", async () => {
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+    });
+
+    saveSessionSnapshot.mockClear();
+
+    await act(async () => {
+      capturedEveAgentOptions.current?.onEvent?.({
+        type: "message.delta",
+      });
+    });
+
+    await waitFor(() => {
+      expect(saveSessionSnapshot).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          eveEvents: [
+            { type: "message.received" },
+            { type: "message.delta" },
+          ],
+        }),
+      );
+    });
   });
 
   it("sets initializing phase while the session title is generated", async () => {

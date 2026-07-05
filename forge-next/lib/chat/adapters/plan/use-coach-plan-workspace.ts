@@ -8,7 +8,11 @@ import {
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
-import { createForgeEveClient } from "@/lib/chat/adapters/plan/forge-eve-client";
+import {
+  bindForgeEveSessionSend,
+  createForgeEveClient,
+  type ForgeEvePostResponse,
+} from "@/lib/chat/adapters/plan/forge-eve-client";
 import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
@@ -336,10 +340,51 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
+  const onEvePostResponseRef = useRef<(response: ForgeEvePostResponse) => void>(
+    () => {},
+  );
+  onEvePostResponseRef.current = (response) => {
+    const sessionState: SessionState = {
+      sessionId: response.sessionId,
+      continuationToken: response.continuationToken,
+      streamIndex: latestAgentEventsRef.current.length,
+    };
+    latestAgentSessionRef.current = sessionState;
+    void tryFirstSessionBootstrap(sessionState, latestAgentEventsRef.current);
+  };
+
+  const onEveEventRef = useRef<(event: HandleMessageStreamEvent) => void>(
+    () => {},
+  );
+  onEveEventRef.current = (event) => {
+    const nextEvents = [...latestAgentEventsRef.current, event];
+    latestAgentEventsRef.current = nextEvents;
+
+    if (!hasPersistedSessionRef.current) {
+      return;
+    }
+
+    const pointer = lastPersistedPointerRef.current;
+    const session =
+      latestAgentSessionRef.current ??
+      (pointer ? toEveSessionState(pointer, nextEvents.length) : null);
+
+    if (!session?.sessionId) {
+      return;
+    }
+
+    void persistWorkspaceSnapshot(session, nextEvents);
+  };
+
   const eveSession = useMemo(
     () =>
-      eveClient.session(
-        resolveInitialEveSession(normalizedSnapshot, initialEveEvents),
+      bindForgeEveSessionSend(
+        eveClient.session(
+          resolveInitialEveSession(normalizedSnapshot, initialEveEvents),
+        ),
+        (response) => {
+          onEvePostResponseRef.current(response);
+        },
       ),
     [eveClient, initialEveEvents, normalizedSnapshot],
   );
@@ -372,16 +417,17 @@ export function useCoachPlanWorkspace(options?: {
         }),
       };
     },
+    onEvent: (event) => {
+      onEveEventRef.current(event);
+    },
     onFinish: async (snapshot) => {
       const pointer = toForgeEvePointer(snapshot.session);
       if (!pointer) {
         return;
       }
 
-      if (!hasPersistedSessionRef.current && !initialSession) {
-        await tryFirstSessionBootstrap(snapshot.session, snapshot.events);
-      }
-
+      latestAgentSessionRef.current = snapshot.session;
+      latestAgentEventsRef.current = snapshot.events;
       await persistWorkspaceSnapshot(snapshot.session, snapshot.events);
     },
   });
@@ -390,23 +436,6 @@ export function useCoachPlanWorkspace(options?: {
     latestAgentSessionRef.current = agent.session;
     latestAgentEventsRef.current = agent.events;
   }, [agent.events, agent.session]);
-
-  useEffect(() => {
-    if (initialSession || hasPersistedSessionRef.current) {
-      return;
-    }
-
-    if (!agent.session.sessionId) {
-      return;
-    }
-
-    void tryFirstSessionBootstrap(agent.session, agent.events);
-  }, [
-    agent.events,
-    agent.session,
-    initialSession,
-    tryFirstSessionBootstrap,
-  ]);
 
   useEffect(() => {
     return () => {
