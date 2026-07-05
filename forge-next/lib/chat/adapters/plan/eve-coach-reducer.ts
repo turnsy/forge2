@@ -6,8 +6,6 @@ import type {
 } from "eve/client";
 import type { EveCoachReducerData } from "@/lib/chat/session-types";
 import type { ChatMessage } from "@/lib/chat/types";
-import { isActiveRunStatus } from "@/lib/chat/run-status-copy";
-import { STREAM_INTERRUPTED_MESSAGE } from "@/lib/chat/stream-completion";
 import {
   isPlanArtifactToolSuccess,
   isSubmitPlanCodeOutput,
@@ -152,46 +150,6 @@ function finalizeAssistantTurn(
     streamingAssistantText: "",
     runStatus: "done",
     phase: "idle",
-  };
-}
-
-/** Clear stale in-flight run status after a replay that never reached a turn boundary. */
-export function normalizeInterruptedReplayState(
-  data: EveCoachReducerData,
-): EveCoachReducerData {
-  const hadActiveRun =
-    data.runStatus !== null && isActiveRunStatus(data.runStatus);
-  const hadStreamingPhase = data.phase === "streaming";
-
-  if (!hadActiveRun && !hadStreamingPhase) {
-    return data;
-  }
-
-  let next =
-    data.streamingAssistantText.trim().length > 0
-      ? finalizeAssistantTurn(data)
-      : {
-          ...data,
-          runStatus: null,
-          phase: "idle" as const,
-          streamingAssistantText: "",
-        };
-
-  if (!hadActiveRun) {
-    return next;
-  }
-
-  const alreadyNotified = next.errors.some(
-    (error) => error.message === STREAM_INTERRUPTED_MESSAGE,
-  );
-
-  if (alreadyNotified) {
-    return next;
-  }
-
-  return {
-    ...next,
-    errors: [...next.errors, { message: STREAM_INTERRUPTED_MESSAGE }],
   };
 }
 

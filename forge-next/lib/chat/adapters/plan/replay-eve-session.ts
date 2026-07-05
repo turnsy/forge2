@@ -112,22 +112,6 @@ async function collectStreamEvents(
   return events;
 }
 
-export async function replayEveSessionEvents(
-  pointer: ForgeEvePointer,
-  forgeSessionId: string,
-  options?: ReplayEveSessionOptions,
-): Promise<HandleMessageStreamEvent[]> {
-  if (!pointer.sessionId) {
-    return [];
-  }
-
-  return collectStreamEvents(toSessionState(pointer), forgeSessionId, {
-    startIndex: 0,
-    untilTurnBoundary: true,
-    signal: options?.signal,
-  });
-}
-
 export async function restoreEveSessionEvents(
   pointer: ForgeEvePointer,
   forgeSessionId: string,

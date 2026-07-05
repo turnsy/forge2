@@ -19,7 +19,6 @@ vi.mock("eve/client", async (importOriginal) => {
 
 import {
   IN_FLIGHT_TAIL_TIMEOUT_MS,
-  replayEveSessionEvents,
   restoreEveSessionEvents,
 } from "@/lib/chat/adapters/plan/replay-eve-session";
 
@@ -27,50 +26,6 @@ const evePointer = {
   sessionId: "eve-1",
   continuationToken: "token",
 };
-
-describe("replayEveSessionEvents", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns an empty array when sessionId is missing", async () => {
-    await expect(
-      replayEveSessionEvents(
-        { sessionId: "", continuationToken: "token" },
-        "forge-session-1",
-      ),
-    ).resolves.toEqual([]);
-    expect(mockClient).not.toHaveBeenCalled();
-  });
-
-  it("replays stream events from the beginning through the latest turn boundary", async () => {
-    const events = [
-      { type: "message.received", data: { message: "Hello" } },
-      { type: "message.completed", data: { message: "Hi there" } },
-      { type: "session.waiting", data: {} },
-    ];
-
-    mockStream.mockImplementationOnce(async function* () {
-      for (const event of events) {
-        yield event;
-      }
-    });
-
-    await expect(
-      replayEveSessionEvents(evePointer, "forge-session-1"),
-    ).resolves.toEqual(events);
-
-    expect(mockSession).toHaveBeenCalledWith({
-      sessionId: "eve-1",
-      continuationToken: "token",
-      streamIndex: 0,
-    });
-    expect(mockStream).toHaveBeenCalledWith({
-      startIndex: 0,
-      signal: undefined,
-    });
-  });
-});
 
 describe("restoreEveSessionEvents", () => {
   beforeEach(() => {

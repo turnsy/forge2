@@ -227,7 +227,9 @@ describe("useCoachPlanWorkspace", () => {
     );
   });
 
-  it("persists incrementally as Eve events arrive after bootstrap", async () => {
+  it("debounces mid-turn persistence after bootstrap", async () => {
+    vi.useFakeTimers();
+
     const { result } = renderHook(() => useCoachPlanWorkspace());
 
     await act(async () => {
@@ -242,17 +244,23 @@ describe("useCoachPlanWorkspace", () => {
       });
     });
 
-    await waitFor(() => {
-      expect(saveSessionSnapshot).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          eveEvents: [
-            { type: "message.received" },
-            { type: "message.delta" },
-          ],
-        }),
-      );
+    expect(saveSessionSnapshot).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
     });
+
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        eveEvents: [
+          { type: "message.received" },
+          { type: "message.delta" },
+        ],
+      }),
+    );
+
+    vi.useRealTimers();
   });
 
   it("sets initializing phase while the session title is generated", async () => {

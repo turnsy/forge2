@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createEveCoachReducer,
-  normalizeInterruptedReplayState,
-} from "@/lib/chat/adapters/plan/eve-coach-reducer";
-import { STREAM_INTERRUPTED_MESSAGE } from "@/lib/chat/stream-completion";
+import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
 
 describe("createEveCoachReducer", () => {
   const reducer = createEveCoachReducer();
@@ -179,21 +175,5 @@ describe("createEveCoachReducer", () => {
       weeks: [],
     });
     expect(state.artifactTitle).toBe("Bench Plan");
-  });
-
-  it("clears stale generating state after an interrupted replay", () => {
-    let state = reducer.initial();
-    state = reducer.reduce(state, {
-      type: "turn.started",
-      data: { turnId: "turn-1", sequence: 1 },
-    });
-
-    const normalized = normalizeInterruptedReplayState(state);
-
-    expect(normalized.runStatus).toBeNull();
-    expect(normalized.phase).toBe("idle");
-    expect(normalized.errors).toEqual([
-      { message: STREAM_INTERRUPTED_MESSAGE },
-    ]);
   });
 });

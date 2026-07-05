@@ -8,7 +8,7 @@ Authoritative layout for the coach plan agent (Eve cutover). See [overview.md](.
 | --- | --- | --- |
 | Eve agent | `forge-next/agent/` | Model, tools, sandbox, skills, instructions, coach auth channel |
 | Agent shared lib | `forge-next/agent/lib/` | DB helpers, artifact state, uploads, codegen prompt |
-| Plan client adapter | `forge-next/lib/chat/adapters/plan/` | `useEveAgent` workspace hook, Eve event reducer |
+| Plan client adapter | `forge-next/lib/chat/adapters/plan/` | Eve catch-up, persistence, workspace hook, reducer |
 | Generic chat state | `forge-next/lib/chat/` | Workspace reducer, session storage, snapshot types |
 | Uploads | `forge-next/lib/uploads/` | Parsers, Storage I/O, batch validation |
 | Eve sandbox workspace | `forge-next/agent/sandbox/workspace/forge_plan/` | Seeded into Eve sandbox VM (sync from `sandbox/forge_plan/`) |
@@ -34,9 +34,8 @@ Eve is wired into Next via `withEve()` in `next.config.ts`. Agent HTTP surface i
 | Route | Handler |
 | --- | --- |
 | `POST /api/coach/upload-context` | `app/api/coach/upload-context/route.ts` → `lib/uploads/upload-context-handler.ts` |
-| `POST /api/coach/save-session` | Beacon/unload save of slim workspace snapshot (no message array) |
 
-Coach auth required. **`x-forge-session-id`** header on Eve requests carries the Forge workspace session UUID (`chat_sessions.id`); upload Storage uses the same id.
+Coach auth required. **`x-forge-session-id`** header on Eve requests carries the Forge workspace session UUID (`chat_sessions.id`); upload Storage uses the same id. Session snapshots are saved via the `saveSessionSnapshot` server action during live turns and after Eve catch-up on reload.
 
 ## Coach UI
 
@@ -45,6 +44,9 @@ Coach auth required. **`x-forge-session-id`** header on Eve requests carries the
 | Page | `app/coach/(app)/page.tsx` |
 | Workspace shell | `components/coach/coach-workspace.tsx` |
 | Plan workspace hook | `lib/chat/adapters/plan/use-coach-plan-workspace.ts` (`useEveAgent`) |
+| Eve catch-up on reload | `lib/chat/adapters/plan/coach-eve-session.ts` (`useCoachEveCatchUp`) |
+| Eve stream restore | `lib/chat/adapters/plan/replay-eve-session.ts` (`restoreEveSessionEvents`) |
+| Snapshot persistence | `lib/chat/adapters/plan/coach-eve-persist.ts` |
 | Eve event reducer | `lib/chat/adapters/plan/eve-coach-reducer.ts` |
 | Chat thread / composer | `components/chat/chat-thread.tsx`, `chat-composer.tsx` |
 | Artifact preview | `components/artifact/artifact-preview.tsx` → `PlanViewer` |
@@ -65,20 +67,23 @@ Coach auth required. **`x-forge-session-id`** header on Eve requests carries the
 
 ## Session storage
 
-Forge keeps a **bookmark snapshot** in `chat_sessions.snapshot`:
+Forge keeps a **write-through cache** in `chat_sessions.snapshot`:
 
 - `forgeSessionId`, `title`
-- `eve`: `{ sessionId, continuationToken, streamIndex, events? }` for resume
-- `ui`: `{ planId, artifactTitle, currentArtifact }` for preview without an active Eve session
+- `eve`: `{ sessionId, continuationToken, streamIndex }` — Eve session cursor
+- `eveEvents`: persisted Eve stream events for instant reload (cache; Eve is ground truth on catch-up)
 
-Eve owns conversation history; legacy snapshots with `messages[]` are still readable via `getSnapshotMessages()`.
+Plan artifacts are recovered by replaying tool events through the Eve reducer, not stored separately in the snapshot.
 
 ## Tests (representative)
 
 | Area | Path |
 | --- | --- |
 | Eve workspace hook | `lib/chat/adapters/plan/use-coach-plan-workspace.test.tsx` |
-| Eve reducer | `lib/chat/adapters/plan/eve-coach-reducer.ts` (via hook tests) |
+| Eve catch-up | `lib/chat/adapters/plan/coach-eve-session.test.tsx` |
+| Eve restore | `lib/chat/adapters/plan/replay-eve-session.test.ts` |
+| Eve persistence | `lib/chat/adapters/plan/coach-eve-persist.test.ts` |
+| Eve reducer | `lib/chat/adapters/plan/eve-coach-reducer.test.ts` |
 | Snapshot types | `lib/chat/session-types.test.ts` |
 | Agent tools | `agent/tools/*.test.ts` (as added) |
 

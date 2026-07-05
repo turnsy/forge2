@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
@@ -28,9 +28,20 @@ import {
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
-import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
-import type { HandleMessageStreamEvent } from "eve/client";
 import {
+  isCoachEveAgentReady,
+  useCoachEveCatchUp,
+} from "@/lib/chat/adapters/plan/coach-eve-session";
+import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import { saveSessionSnapshot } from "@/lib/chat/actions";
+import {
+  buildPersistedCoachSnapshot,
+} from "@/lib/chat/adapters/plan/coach-eve-persist";
+import { isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
+import {
+  getPersistedEveEvents,
+  toEveSessionState,
+  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
@@ -45,6 +56,8 @@ import {
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
+import type { HandleMessageStreamEvent } from "eve/client";
+import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 function ChatWorkspaceShell({
@@ -143,6 +156,59 @@ function ArtifactPanel({
   );
 }
 
+function buildCatchUpPreviewState(
+  sessionId: string,
+  events: readonly HandleMessageStreamEvent[],
+): PlanWorkspaceState {
+  const reducer = createEveCoachReducer();
+  let data = reducer.initial();
+
+  for (const event of events) {
+    data = reducer.reduce(data, event);
+  }
+
+  return {
+    sessionId,
+    hasStarted: data.messages.length > 0,
+    sessionTitle: null,
+    artifactTitle: "",
+    planId: null,
+    messages: data.messages,
+    currentArtifact: null,
+    contextFileIds: [],
+    attachments: [],
+    runStatus: null,
+    warnings: [],
+    errors: [],
+    phase: "streaming",
+    streamingAssistantText: data.streamingAssistantText,
+  };
+}
+
+function CoachWorkspaceCatchUpPreview({
+  sessionId,
+  events,
+}: {
+  sessionId: string;
+  events: readonly HandleMessageStreamEvent[];
+}) {
+  const state = useMemo(
+    () => buildCatchUpPreviewState(sessionId, events),
+    [events, sessionId],
+  );
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <CoachConversationPanel
+        state={state}
+        onAttach={async () => {}}
+        onSend={async () => {}}
+        promptEnabled={false}
+      />
+    </div>
+  );
+}
+
 export function CoachWorkspace(
   props: {
     firstName: string;
@@ -159,34 +225,77 @@ export function CoachWorkspace(
     promptEnabled?: boolean;
   },
 ) {
-  const replay = useCoachSessionReplay(props.initialSession);
+  const catchUp = useCoachEveCatchUp(props.initialSession);
 
-  if (replay.status === "loading") {
+  useEffect(() => {
+    if (!props.initialSession || !isCoachEveAgentReady(catchUp.loadPhase)) {
+      return;
+    }
+
+    const snapshot = withForgeSessionId(
+      props.initialSession.id,
+      props.initialSession.snapshot,
+    );
+    const eve = snapshot.eve;
+
+    if (!eve?.sessionId) {
+      return;
+    }
+
+    const persisted = getPersistedEveEvents(snapshot);
+    const replayAdvanced =
+      catchUp.events.length > persisted.length ||
+      (persisted.length > 0 &&
+        !isTurnComplete(persisted) &&
+        isTurnComplete(catchUp.events));
+
+    if (!replayAdvanced) {
+      return;
+    }
+
+    void saveSessionSnapshot(
+      props.initialSession.id,
+      buildPersistedCoachSnapshot({
+        forgeSessionId: props.initialSession.id,
+        title: snapshot.title,
+        session: toEveSessionState(eve, catchUp.events.length),
+        events: catchUp.events,
+      }),
+    );
+  }, [catchUp.events, catchUp.loadPhase, props.initialSession]);
+
+  if (catchUp.loadPhase === "hydrating") {
     return <CoachSessionLoadingView />;
   }
 
-  if (replay.status === "error") {
+  if (catchUp.loadPhase === "error") {
     return (
       <div
         className="flex min-h-0 flex-1 flex-col items-center justify-center p-6"
         role="alert"
       >
-        <p className="text-sm text-surface-muted">{replay.message}</p>
+        <p className="text-sm text-surface-muted">{catchUp.errorMessage}</p>
       </div>
     );
   }
 
-  const sessionKey = props.initialSession
-    ? `${props.initialSession.id}:${replay.events.length}:${replay.isSyncing ? "sync" : "ready"}`
-    : "coach-home";
+  if (catchUp.loadPhase === "catching-up" && props.initialSession) {
+    return (
+      <CoachWorkspaceCatchUpPreview
+        sessionId={props.initialSession.id}
+        events={catchUp.events}
+      />
+    );
+  }
+
+  const sessionKey = props.initialSession?.id ?? "coach-home";
 
   return (
     <CoachWorkspaceInner
       key={sessionKey}
       {...props}
-      initialReplayedEvents={replay.events}
-      isResumingStream={replay.isSyncing}
-      isInterruptedReplay={replay.status === "ready" && replay.isInterrupted === true}
+      syncedEvents={catchUp.events}
+      loadPhase={catchUp.loadPhase}
     />
   );
 }
@@ -197,9 +306,8 @@ function CoachWorkspaceInner({
   planId: initialPlanId,
   initialPlan,
   initialSession,
-  initialReplayedEvents = [],
-  isResumingStream = false,
-  isInterruptedReplay = false,
+  syncedEvents = [],
+  loadPhase = "idle",
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -213,9 +321,8 @@ function CoachWorkspaceInner({
     createdAt: string;
     updatedAt: string;
   };
-  initialReplayedEvents?: readonly HandleMessageStreamEvent[];
-  isResumingStream?: boolean;
-  isInterruptedReplay?: boolean;
+  syncedEvents?: readonly HandleMessageStreamEvent[];
+  loadPhase?: CoachEveLoadPhase;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -311,9 +418,8 @@ function CoachWorkspaceInner({
               id: initialSession.id,
               snapshot: initialSession.snapshot,
             },
-            initialReplayedEvents,
-            isResumingStream,
-            isInterruptedReplay,
+            syncedEvents,
+            loadPhase,
             onArtifactCleared: handleArtifactCleared,
           }
         : {
