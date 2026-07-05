@@ -49,7 +49,7 @@ describe("replayEveSessionEvents", () => {
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream.mockImplementation(async function* () {
+    mockStream.mockImplementationOnce(async function* () {
       for (const event of events) {
         yield event;
       }
@@ -182,6 +182,80 @@ describe("restoreEveSessionEvents", () => {
 
     expect(mockStream).toHaveBeenCalledTimes(2);
     expect(mockStream).toHaveBeenNthCalledWith(2, {
+      startIndex: 3,
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("tails from a persisted checkpoint when the turn is still in flight", async () => {
+    const persistedPrefix = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.appended", data: { messageSoFar: "Working" } },
+    ];
+    const tailEvents = [{ type: "session.waiting", data: {} }];
+
+    mockStream
+      .mockImplementationOnce(async function* () {
+        for (const event of tailEvents) {
+          yield event;
+        }
+      })
+      .mockImplementationOnce(async function* ({
+        signal,
+      }: {
+        signal?: AbortSignal;
+      } = {}) {
+        await new Promise<void>((resolve) => {
+          if (!signal || signal.aborted) {
+            resolve();
+            return;
+          }
+
+          signal.addEventListener("abort", () => resolve(), { once: true });
+        });
+      });
+
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1", {
+        fromEvents: persistedPrefix,
+      }),
+    ).resolves.toEqual([...persistedPrefix, ...tailEvents]);
+
+    expect(mockStream).toHaveBeenCalledWith({
+      startIndex: 2,
+      signal: undefined,
+    });
+  });
+
+  it("returns persisted events when the checkpoint is already complete and no new turns exist", async () => {
+    const persistedPrefix = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.completed", data: { message: "Hi there" } },
+      { type: "session.waiting", data: {} },
+    ];
+
+    mockStream.mockImplementationOnce(async function* ({
+      signal,
+    }: {
+      signal?: AbortSignal;
+    } = {}) {
+      await new Promise<void>((resolve) => {
+        if (!signal || signal.aborted) {
+          resolve();
+          return;
+        }
+
+        signal.addEventListener("abort", () => resolve(), { once: true });
+      });
+    });
+
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1", {
+        fromEvents: persistedPrefix,
+      }),
+    ).resolves.toEqual(persistedPrefix);
+
+    expect(mockStream).toHaveBeenCalledWith({
       startIndex: 3,
       signal: expect.any(AbortSignal),
     });

@@ -13,13 +13,24 @@ const mockRestoreEveSessionEvents = vi.mocked(restoreEveSessionEvents);
 
 const persistedEvent = {
   type: "message.received",
-  data: { message: { role: "user", content: "Hello" } },
+  data: { message: "Hello" },
+} as HandleMessageStreamEvent;
+
+const tailedEvent = {
+  type: "message.completed",
+  data: { message: "Hi there" },
 } as HandleMessageStreamEvent;
 
 const otherPersistedEvent = {
   type: "message.received",
-  data: { message: { role: "user", content: "Follow up" } },
+  data: { message: "Follow up" },
 } as HandleMessageStreamEvent;
+
+const evePointer = {
+  sessionId: "eve-session-1",
+  continuationToken: "token-1",
+  streamIndex: 1,
+};
 
 function createSession(
   id: string,
@@ -39,10 +50,10 @@ function createSession(
 describe("useCoachSessionReplay", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRestoreEveSessionEvents.mockResolvedValue([persistedEvent]);
+    mockRestoreEveSessionEvents.mockResolvedValue([persistedEvent, tailedEvent]);
   });
 
-  it("returns ready immediately when eveEvents are persisted", () => {
+  it("returns persisted events immediately when no Eve pointer exists", () => {
     const session = createSession("session-1", {
       eveEvents: [persistedEvent],
     });
@@ -54,6 +65,36 @@ describe("useCoachSessionReplay", () => {
       events: [persistedEvent],
     });
     expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
+  });
+
+  it("tails Eve from the persisted checkpoint when eveEvents and a pointer exist", async () => {
+    const syncedEvents = [persistedEvent, tailedEvent];
+    mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
+
+    const session = createSession("session-1", {
+      eve: evePointer,
+      eveEvents: [persistedEvent],
+    });
+
+    const { result } = renderHook(() => useCoachSessionReplay(session));
+
+    expect(result.current).toEqual({ status: "loading" });
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "ready",
+        events: syncedEvents,
+      });
+    });
+
+    expect(mockRestoreEveSessionEvents).toHaveBeenCalledWith(
+      evePointer,
+      "session-1",
+      expect.objectContaining({
+        fromEvents: [persistedEvent],
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 
   it("loads events from the network when only an Eve pointer exists", async () => {
@@ -94,10 +135,22 @@ describe("useCoachSessionReplay", () => {
   });
 
   it("clears stale events when the replay key changes", async () => {
+    const firstSynced = [persistedEvent, tailedEvent];
+    const secondSynced = [otherPersistedEvent];
+    mockRestoreEveSessionEvents
+      .mockResolvedValueOnce(firstSynced)
+      .mockResolvedValueOnce(secondSynced);
+
     const firstSession = createSession("session-a", {
+      eve: evePointer,
       eveEvents: [persistedEvent],
     });
     const secondSession = createSession("session-b", {
+      eve: {
+        sessionId: "eve-session-b",
+        continuationToken: "token-b",
+        streamIndex: 1,
+      },
       eveEvents: [otherPersistedEvent],
     });
 
@@ -106,9 +159,11 @@ describe("useCoachSessionReplay", () => {
       { initialProps: { session: firstSession } },
     );
 
-    expect(result.current).toEqual({
-      status: "ready",
-      events: [persistedEvent],
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "ready",
+        events: firstSynced,
+      });
     });
 
     rerender({ session: secondSession });
@@ -116,7 +171,7 @@ describe("useCoachSessionReplay", () => {
     await waitFor(() => {
       expect(result.current).toEqual({
         status: "ready",
-        events: [otherPersistedEvent],
+        events: secondSynced,
       });
     });
   });

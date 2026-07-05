@@ -17,7 +17,10 @@ export type CoachSessionReplayState =
 
 type ResolvedReplayState =
   | CoachSessionReplayState
-  | { status: "needs-fetch" };
+  | {
+      status: "needs-fetch";
+      persistedEvents?: readonly HandleMessageStreamEvent[];
+    };
 
 function getReplayKey(initialSession?: {
   id: string;
@@ -32,17 +35,17 @@ function getReplayKey(initialSession?: {
     initialSession.snapshot,
   );
 
-  if (hasPersistedEveEvents(snapshot)) {
-    return `${initialSession.id}:persisted`;
-  }
-
   const eve = snapshot.eve;
 
   if (!eve?.sessionId) {
+    if (hasPersistedEveEvents(snapshot)) {
+      return `${initialSession.id}:persisted-only`;
+    }
     return null;
   }
 
-  return `${initialSession.id}:${eve.sessionId}`;
+  const persistedCount = getPersistedEveEvents(snapshot).length;
+  return `${initialSession.id}:${eve.sessionId}:${persistedCount}`;
 }
 
 function resolveReplayState(
@@ -61,24 +64,29 @@ function resolveReplayState(
     initialSession.snapshot,
   );
 
-  if (hasPersistedEveEvents(snapshot)) {
-    return {
-      status: "ready",
-      events: [...getPersistedEveEvents(snapshot)],
-    };
+  const eve = snapshot.eve;
+
+  if (!eve?.sessionId) {
+    if (hasPersistedEveEvents(snapshot)) {
+      return {
+        status: "ready",
+        events: [...getPersistedEveEvents(snapshot)],
+      };
+    }
+
+    return { status: "ready", events: [] };
   }
 
   if (!replayKey) {
     return { status: "ready", events: [] };
   }
 
-  const eve = snapshot.eve;
-
-  if (!eve?.sessionId) {
-    return { status: "ready", events: [] };
-  }
-
-  return { status: "needs-fetch" };
+  return {
+    status: "needs-fetch",
+    persistedEvents: hasPersistedEveEvents(snapshot)
+      ? getPersistedEveEvents(snapshot)
+      : undefined,
+  };
 }
 
 export function useCoachSessionReplay(initialSession?: {
@@ -117,6 +125,7 @@ export function useCoachSessionReplay(initialSession?: {
 
     void restoreEveSessionEvents(eve, initialSession.id, {
       signal: abortController.signal,
+      fromEvents: resolvedState.persistedEvents,
     })
       .then((events) => {
         if (!cancelled) {
@@ -141,7 +150,7 @@ export function useCoachSessionReplay(initialSession?: {
       cancelled = true;
       abortController.abort();
     };
-  }, [initialSession, replayKey, resolvedState.status]);
+  }, [initialSession, replayKey, resolvedState]);
 
   if (resolvedState.status === "ready" || resolvedState.status === "error") {
     return resolvedState;

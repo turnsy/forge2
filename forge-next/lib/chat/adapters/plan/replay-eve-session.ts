@@ -6,6 +6,8 @@ import { toEveSessionState } from "@/lib/chat/session-types";
 
 export type ReplayEveSessionOptions = {
   signal?: AbortSignal;
+  /** Persisted prefix to hydrate instantly and tail from `fromEvents.length`. */
+  fromEvents?: readonly HandleMessageStreamEvent[];
 };
 
 /** How long to wait for the first event when probing for another turn. */
@@ -114,11 +116,12 @@ export async function restoreEveSessionEvents(
   options?: ReplayEveSessionOptions,
 ): Promise<HandleMessageStreamEvent[]> {
   if (!pointer.sessionId) {
-    return [];
+    return [...(options?.fromEvents ?? [])];
   }
 
-  const allEvents: HandleMessageStreamEvent[] = [];
-  let startIndex = 0;
+  const prefix = options?.fromEvents ? [...options.fromEvents] : [];
+  const allEvents: HandleMessageStreamEvent[] = [...prefix];
+  let startIndex = prefix.length;
 
   while (!options?.signal?.aborted) {
     const batch = await collectStreamEvents(
@@ -129,7 +132,9 @@ export async function restoreEveSessionEvents(
         untilTurnBoundary: true,
         signal: options?.signal,
         firstEventTimeoutMs:
-          startIndex > 0 ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
+          startIndex > 0 && isTurnComplete(allEvents)
+            ? NEXT_TURN_PROBE_TIMEOUT_MS
+            : undefined,
       },
     );
 
