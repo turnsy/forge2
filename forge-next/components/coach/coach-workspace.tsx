@@ -259,20 +259,10 @@ function CoachWorkspaceInner({
     });
   }, [initialSession, sessionNavigation?.registerNewSession]);
 
-  const handleFirstSendNavigate = useCallback(
-    (pending: {
-      sessionId: string;
-      message: string;
-      clientArtifact?: {
-        plan: WorkoutPlan;
-        planId?: string | null;
-        title?: string;
-      } | null;
-      contextFileIds?: string[];
-    }) => {
-      sessionNavigation?.stashPendingFirstSend(pending);
-      sessionNavigation?.startSessionNavigation(pending.sessionId);
-      router.replace(`/coach?sessionId=${pending.sessionId}`);
+  const handleSessionUrlNavigate = useCallback(
+    (sessionId: string) => {
+      sessionNavigation?.startSessionNavigation(sessionId);
+      router.replace(`/coach?sessionId=${sessionId}`);
     },
     [router, sessionNavigation],
   );
@@ -304,7 +294,7 @@ function CoachWorkspaceInner({
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
           onThreadInitialized: handleThreadBound,
-          onFirstSendNavigate: handleFirstSendNavigate,
+          onSessionUrlNavigate: handleSessionUrlNavigate,
         }
       : initialSession
         ? {
@@ -318,7 +308,7 @@ function CoachWorkspaceInner({
         : {
             onArtifactCleared: handleArtifactCleared,
             onThreadInitialized: handleThreadBound,
-            onFirstSendNavigate: handleFirstSendNavigate,
+            onSessionUrlNavigate: handleSessionUrlNavigate,
           },
   );
 

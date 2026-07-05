@@ -1,12 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
-import {
-  SessionNavigationProvider,
-  useSessionNavigation,
-  type PendingFirstSend,
-} from "@/lib/chat/session-navigation-context";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
@@ -20,16 +14,14 @@ vi.mock("next/navigation", () => ({
 const {
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
-  initCoachThread,
-  persistCoachSessionEve,
   mockSend,
   mockReset,
   capturedEveAgentOptions,
+  agentSessionState,
+  agentEventsState,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
-  initCoachThread: vi.fn(),
-  persistCoachSessionEve: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
   capturedEveAgentOptions: {
@@ -46,13 +38,21 @@ const {
         }
       | undefined,
   },
+  agentSessionState: {
+    current: {
+      sessionId: undefined as string | undefined,
+      continuationToken: undefined as string | undefined,
+      streamIndex: 0,
+    },
+  },
+  agentEventsState: {
+    current: [] as unknown[],
+  },
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
-  initCoachThread,
-  persistCoachSessionEve,
 }));
 
 vi.mock("eve/react", () => ({
@@ -68,66 +68,53 @@ vi.mock("eve/react", () => ({
   }) => {
     capturedEveAgentOptions.current = options;
     return {
-    data: {
-      messages: [],
-      currentArtifact: null,
-      planId: null,
-      artifactTitle: "",
-      runStatus: null,
-      streamingAssistantText: "",
-      errors: [],
-      phase: "idle",
-      warnings: [],
-    },
-    status: "ready",
-    error: null,
-    events: [],
-    session: { sessionId: undefined, continuationToken: undefined, streamIndex: 0 },
-    send: (input: { message: string }) => {
-      const prepared = options?.prepareSend?.(input) ?? input;
-      return mockSend(prepared);
-    },
-    reset: mockReset,
-    stop: vi.fn(),
-    onFinish: options?.onFinish,
+      data: {
+        messages: [],
+        currentArtifact: null,
+        planId: null,
+        artifactTitle: "",
+        runStatus: null,
+        streamingAssistantText: "",
+        errors: [],
+        phase: "idle",
+        warnings: [],
+      },
+      status: "ready",
+      error: null,
+      get events() {
+        return agentEventsState.current;
+      },
+      get session() {
+        return agentSessionState.current;
+      },
+      send: async (input: { message: string }) => {
+        const prepared = options?.prepareSend?.(input) ?? input;
+        agentSessionState.current = {
+          sessionId: "eve-session",
+          continuationToken: "token",
+          streamIndex: 0,
+        };
+        agentEventsState.current = [{ type: "message.received" }];
+        await mockSend(prepared);
+      },
+      reset: mockReset,
+      stop: vi.fn(),
+      onFinish: options?.onFinish,
     };
   },
 }));
-
-function createSessionNavigationWrapper(pending: PendingFirstSend) {
-  let stashed = false;
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    const sessionNavigation = useSessionNavigation();
-
-    if (!stashed) {
-      sessionNavigation.stashPendingFirstSend(pending);
-      stashed = true;
-    }
-
-    return children;
-  }
-
-  return function SessionNavigationTestWrapper({
-    children,
-  }: {
-    children: ReactNode;
-  }) {
-    return (
-      <SessionNavigationProvider>
-        <Wrapper>{children}</Wrapper>
-      </SessionNavigationProvider>
-    );
-  };
-}
 
 describe("useCoachPlanWorkspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedEveAgentOptions.current = undefined;
+    agentSessionState.current = {
+      sessionId: undefined,
+      continuationToken: undefined,
+      streamIndex: 0,
+    };
+    agentEventsState.current = [];
     mockSend.mockResolvedValue(undefined);
-    initCoachThread.mockResolvedValue({ ok: true });
-    persistCoachSessionEve.mockResolvedValue({ ok: true });
     saveSessionSnapshot.mockResolvedValue({
       ok: true,
       title: "Strength block",
@@ -148,16 +135,17 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.artifactTitle).toBe("New Plan");
   });
 
-  it("initializes the forge thread before the first send", async () => {
+  it("sends on the first message and bootstraps persistence once Eve assigns a session", async () => {
     const onThreadInitialized = vi.fn();
-    const onFirstSendNavigate = vi.fn();
+    const onSessionUrlNavigate = vi.fn();
     const plan = createEmptyWorkoutPlan();
-    const { result } = renderHook(() =>
+
+    const { result, rerender } = renderHook(() =>
       useCoachPlanWorkspace({
         initialPlan: plan,
         planId: "plan-abc",
         onThreadInitialized,
-        onFirstSendNavigate,
+        onSessionUrlNavigate,
       }),
     );
 
@@ -165,75 +153,45 @@ describe("useCoachPlanWorkspace", () => {
       await result.current.sendMessage([{ type: "text", value: "Hello" }]);
     });
 
-    expect(initCoachThread).toHaveBeenCalledWith(
-      expect.any(String),
-      "Strength block",
-    );
-    expect(onThreadInitialized).toHaveBeenCalledWith({
-      sessionId: expect.any(String),
-      title: "Strength block",
-    });
-    expect(onFirstSendNavigate).toHaveBeenCalledWith({
-      sessionId: expect.any(String),
-      message: "Hello",
-      clientArtifact: expect.objectContaining({
-        plan,
-        planId: "plan-abc",
-      }),
-    });
-    expect(mockSend).not.toHaveBeenCalled();
-  });
-
-  it("includes the plan artifact in clientContext when consuming a pending first send", async () => {
-    const plan = createEmptyWorkoutPlan();
-    plan.name = "Existing plan";
-    const sessionId = "session-123";
-    const pending: PendingFirstSend = {
-      sessionId,
-      message: "Tweak week one volume",
-      clientArtifact: {
-        plan,
-        planId: "plan-abc",
-        title: "Existing plan",
-      },
-    };
-
-    renderHook(
-      () =>
-        useCoachPlanWorkspace({
-          initialSession: {
-            id: sessionId,
-            snapshot: {
-              title: null,
-              forgeSessionId: sessionId,
-              eve: null,
-            },
-          },
-        }),
-      { wrapper: createSessionNavigationWrapper(pending) },
-    );
+    rerender();
 
     await waitFor(() => {
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "Tweak week one volume",
+          message: "Hello",
           clientContext: expect.objectContaining({
             clientArtifact: expect.objectContaining({
               plan,
               planId: "plan-abc",
-              title: "Existing plan",
             }),
           }),
         }),
       );
     });
+
+    await waitFor(() => {
+      expect(saveSessionSnapshot).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          title: "Strength block",
+          eve: expect.objectContaining({ sessionId: "eve-session" }),
+          eveEvents: [{ type: "message.received" }],
+        }),
+      );
+    });
+
+    expect(onThreadInitialized).toHaveBeenCalledWith({
+      sessionId: expect.any(String),
+      title: "Strength block",
+    });
+    expect(onSessionUrlNavigate).toHaveBeenCalledWith(expect.any(String));
   });
 
-  it("sets initializing phase while the forge thread is created", async () => {
-    let resolveInit: (value: { ok: boolean }) => void = () => {};
-    initCoachThread.mockReturnValue(
+  it("sets initializing phase while the session title is generated", async () => {
+    let resolveTitle: (value: string) => void = () => {};
+    generateSessionTitleFromPrompt.mockReturnValue(
       new Promise((resolve) => {
-        resolveInit = resolve;
+        resolveTitle = resolve;
       }),
     );
 
@@ -251,7 +209,7 @@ describe("useCoachPlanWorkspace", () => {
     });
 
     await act(async () => {
-      resolveInit({ ok: true });
+      resolveTitle("Strength block");
       await sendPromise;
     });
 
@@ -259,10 +217,7 @@ describe("useCoachPlanWorkspace", () => {
   });
 
   it("starts title generation on the first user message before sending", async () => {
-    const onFirstSendNavigate = vi.fn();
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({ onFirstSendNavigate }),
-    );
+    const { result } = renderHook(() => useCoachPlanWorkspace());
 
     await act(async () => {
       await result.current.sendMessage([
@@ -273,10 +228,9 @@ describe("useCoachPlanWorkspace", () => {
     expect(generateSessionTitleFromPrompt).toHaveBeenCalledWith(
       "Build a bench plan",
     );
-    expect(onFirstSendNavigate).toHaveBeenCalledWith(
+    expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Build a bench plan" }),
     );
-    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it("persists a non-null title when onFinish runs after title generation", async () => {
