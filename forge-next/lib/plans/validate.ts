@@ -1,7 +1,7 @@
 import Ajv2020 from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import workoutPlanSchema from "../../../schemas/workout-plan.schema.json";
+import workoutPlanSchema from "@/schemas/workout-plan.schema.json";
 
 export type WorkoutPlanValidationError = {
   path: string;
