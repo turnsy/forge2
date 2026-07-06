@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   summarizeAssignedPlanProgress,
 } from "@/lib/athlete/plan/summarize-assigned-plan-progress";
-import { countFullySkippedDays } from "@/lib/athlete/plan/domain";
+import { listFullySkippedDays } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import {
   makeBlock,
@@ -36,7 +36,7 @@ function multiDayPlan(): WorkoutPlan {
 }
 
 describe("summarizeAssignedPlanProgress", () => {
-  it("summarizes overview with completion, current day, and skipped count", () => {
+  it("summarizes overview with completion, current day, and skipped locations", () => {
     const plan = multiDayPlan();
     plan.weeks[0].days[0].blocks[0].exercises[0].sets = [
       makeSet({
@@ -59,9 +59,9 @@ describe("summarizeAssignedPlanProgress", () => {
     expect(summary).toContain("Plan: Summer Block (active)");
     expect(summary).toContain("Completion:");
     expect(summary).toContain("Current: Week");
-    expect(summary).toContain("Skipped days: 1");
-    expect(summary).toContain("Days with skipped sets:");
-    expect(summary).toContain("Skipped sets:");
+    expect(summary).toContain("Skipped days: week 0, day 1 (Day 2)");
+    expect(summary).toContain("Days with skipped sets: week 0, day 1 (Day 2)");
+    expect(summary).not.toContain("Skipped sets:");
     expect(summary).toContain("Assigned: Jan 15, 2026");
   });
 
@@ -199,8 +199,8 @@ describe("summarizeAssignedPlanProgress", () => {
   });
 });
 
-describe("countFullySkippedDays", () => {
-  it("counts days where every set is skipped", () => {
+describe("listFullySkippedDays", () => {
+  it("returns week/day locations for days where every set is skipped", () => {
     const plan = makeWorkoutPlan({ name: "Skipped day plan", multiDay: true });
     plan.weeks[0].days[1] = makeDay({
       code: "w1d2",
@@ -218,6 +218,6 @@ describe("countFullySkippedDays", () => {
       ],
     });
 
-    expect(countFullySkippedDays(plan)).toBe(1);
+    expect(listFullySkippedDays(plan)).toEqual([{ weekPos: 0, dayPos: 1 }]);
   });
 });

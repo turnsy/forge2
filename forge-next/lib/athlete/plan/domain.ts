@@ -74,47 +74,44 @@ export function dayHasSkippedSets(day: Day): boolean {
   );
 }
 
-export function countFullySkippedDays(plan: WorkoutPlan): number {
-  let count = 0;
+export type PlanDayLocation = {
+  weekPos: number;
+  dayPos: number;
+};
 
-  for (const week of plan.weeks) {
-    for (const day of week.days ?? []) {
+export function listFullySkippedDays(plan: WorkoutPlan): PlanDayLocation[] {
+  const locations: PlanDayLocation[] = [];
+
+  for (let weekPos = 0; weekPos < plan.weeks.length; weekPos += 1) {
+    const week = plan.weeks[weekPos];
+    for (let dayPos = 0; dayPos < (week.days?.length ?? 0); dayPos += 1) {
+      const day = week.days[dayPos];
       if (isDayFullySkipped(day)) {
-        count += 1;
+        locations.push({ weekPos, dayPos });
       }
     }
   }
 
-  return count;
+  return locations;
 }
 
 /** Resolved days that include at least one skipped set (includes fully skipped days). */
-export function countResolvedDaysWithSkippedSets(plan: WorkoutPlan): number {
-  let count = 0;
+export function listResolvedDaysWithSkippedSets(
+  plan: WorkoutPlan,
+): PlanDayLocation[] {
+  const locations: PlanDayLocation[] = [];
 
-  for (const week of plan.weeks) {
-    for (const day of week.days ?? []) {
+  for (let weekPos = 0; weekPos < plan.weeks.length; weekPos += 1) {
+    const week = plan.weeks[weekPos];
+    for (let dayPos = 0; dayPos < (week.days?.length ?? 0); dayPos += 1) {
+      const day = week.days[dayPos];
       if (isDayResolved(day) && dayHasSkippedSets(day)) {
-        count += 1;
+        locations.push({ weekPos, dayPos });
       }
     }
   }
 
-  return count;
-}
-
-export function countSkippedSets(plan: WorkoutPlan): number {
-  let count = 0;
-
-  for (const week of plan.weeks) {
-    for (const day of week.days ?? []) {
-      for (const exercise of flattenDayExercises(day)) {
-        count += exercise.sets.filter((set) => set.status === "skipped").length;
-      }
-    }
-  }
-
-  return count;
+  return locations;
 }
 
 export function computePlanCompletionPercent(plan: WorkoutPlan): number {

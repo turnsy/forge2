@@ -1,12 +1,12 @@
 import {
   areAllDaysComplete,
   computePlanCompletionPercent,
-  countFullySkippedDays,
-  countResolvedDaysWithSkippedSets,
-  countSkippedSets,
   findCurrentDay,
   isDayFullySkipped,
   isDayResolved,
+  listFullySkippedDays,
+  listResolvedDaysWithSkippedSets,
+  type PlanDayLocation,
 } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import { formatDate } from "@/lib/format/date";
@@ -105,6 +105,23 @@ function getDayProgressStatus(
   return "upcoming";
 }
 
+function formatDayLocationList(
+  plan: WorkoutPlan,
+  locations: PlanDayLocation[],
+): string {
+  if (locations.length === 0) {
+    return "none";
+  }
+
+  return locations
+    .map(({ weekPos, dayPos }) => {
+      const day = plan.weeks[weekPos]?.days?.[dayPos];
+      const label = day ? getDayTitle(day, dayPos) : `Day ${dayPos}`;
+      return `week ${weekPos}, day ${dayPos} (${label})`;
+    })
+    .join("; ");
+}
+
 function summarizeAssignedOverview(
   athleteName: string,
   assignment: AssignedPlan,
@@ -128,9 +145,10 @@ function summarizeAssignedOverview(
     lines.push("Current: none");
   }
 
-  lines.push(`Skipped days: ${countFullySkippedDays(plan)}`);
-  lines.push(`Days with skipped sets: ${countResolvedDaysWithSkippedSets(plan)}`);
-  lines.push(`Skipped sets: ${countSkippedSets(plan)}`);
+  lines.push(`Skipped days: ${formatDayLocationList(plan, listFullySkippedDays(plan))}`);
+  lines.push(
+    `Days with skipped sets: ${formatDayLocationList(plan, listResolvedDaysWithSkippedSets(plan))}`,
+  );
   lines.push(`Assigned: ${formatDate(assignment.assignedAt)}`);
 
   return lines.join("\n");

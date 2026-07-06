@@ -12,9 +12,8 @@ import {
   buildActualFromInputs,
   completeDayInPlan,
   computePlanCompletionPercent,
-  countFullySkippedDays,
-  countResolvedDaysWithSkippedSets,
-  countSkippedSets,
+  listFullySkippedDays,
+  listResolvedDaysWithSkippedSets,
   dayHasSkippedSets,
   dayHasUnfilledNonTargetSets,
   findCurrentDay,
@@ -489,10 +488,10 @@ describe("day resolution helpers", () => {
 
     expect(dayHasSkippedSets(day)).toBe(true);
     expect(isDayFullySkipped(day)).toBe(false);
-    expect(countFullySkippedDays(resolved)).toBe(0);
+    expect(listFullySkippedDays(resolved)).toEqual([]);
   });
 
-  it("counts days where every set is skipped", () => {
+  it("lists days where every set is skipped", () => {
     const plan = makePlan();
     for (const exercise of plan.weeks[0].days[0].blocks[0].exercises) {
       exercise.sets = exercise.sets.map((set) => ({
@@ -503,7 +502,7 @@ describe("day resolution helpers", () => {
 
     expect(isDayFullySkipped(plan.weeks[0].days[0])).toBe(true);
     expect(isDayResolved(plan.weeks[0].days[0])).toBe(true);
-    expect(countFullySkippedDays(plan)).toBe(1);
+    expect(listFullySkippedDays(plan)).toEqual([{ weekPos: 0, dayPos: 0 }]);
     expect(computePlanCompletionPercent(plan)).toBe(50);
   });
 
@@ -562,12 +561,13 @@ describe("day resolution helpers", () => {
     expect(computePlanCompletionPercent(afterDayOne)).toBe(67);
   });
 
-  it("counts resolved days with skipped sets and total skipped sets", () => {
+  it("lists resolved days with skipped sets", () => {
     const plan = makePlan();
     const { plan: resolved } = completeDayInPlan(plan, 0, 0);
 
-    expect(countResolvedDaysWithSkippedSets(resolved)).toBe(1);
-    expect(countSkippedSets(resolved)).toBeGreaterThan(0);
-    expect(countFullySkippedDays(resolved)).toBe(0);
+    expect(listResolvedDaysWithSkippedSets(resolved)).toEqual([
+      { weekPos: 0, dayPos: 0 },
+    ]);
+    expect(listFullySkippedDays(resolved)).toEqual([]);
   });
 });

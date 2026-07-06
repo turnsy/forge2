@@ -6,7 +6,7 @@ import { getCoachId } from "../lib/coach-context";
 
 export default defineTool({
   description:
-    "Get progress on an athlete's active assigned plan. Without week/day: completion %, current position, skipped-day/set counts, and assignment date. With week: day list and status for that week. With week and day: prescribed work, set status, and logged actuals for that day.",
+    "Get progress on an athlete's active assigned plan. Without week/day: completion %, current position, skipped day locations (week/day indices), and assignment date. With week: day list and status for that week. With week and day: prescribed work, set status, and logged actuals for that day.",
   inputSchema: z.object({
     athleteId: z.string().uuid().describe("Athlete profile id."),
     week: z
