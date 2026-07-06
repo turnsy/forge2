@@ -20,10 +20,6 @@ export type CoachEvePersister = {
     events: readonly HandleMessageStreamEvent[],
     event: HandleMessageStreamEvent,
   ) => Promise<boolean>;
-  onFinish: (
-    session: SessionState,
-    events: readonly HandleMessageStreamEvent[],
-  ) => void;
   flush: (
     session: SessionState,
     events: readonly HandleMessageStreamEvent[],
@@ -115,9 +111,6 @@ export function createCoachEvePersister(options: {
 
       scheduleDebouncedFlush(session, events);
       return Promise.resolve(false);
-    },
-    onFinish(session, events) {
-      return flush(session, events);
     },
     flush,
     dispose() {

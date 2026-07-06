@@ -57,7 +57,7 @@ Coach auth required. **`x-forge-session-id`** header on Eve requests carries the
 | Concern | Path |
 | --- | --- |
 | Workspace snapshot shape | `lib/chat/session-types.ts` (`CoachWorkspaceSnapshot`) |
-| Legacy message extraction | `lib/chat/snapshot-messages.ts` |
+| Conversation detection | `lib/chat/snapshot-messages.ts` (`snapshotHasConversation`) |
 | List session uploads (tool) | `agent/tools/list_session_files.ts` → `agent/lib/uploads.ts` |
 | Submit plan code (tool) | `agent/tools/submit_plan_code.ts` → Eve sandbox |
 | Artifact state (server) | `agent/lib/coach-artifact-state.ts` |
