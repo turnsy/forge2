@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import { isCurrentTurnBoundaryEvent } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
@@ -16,6 +17,10 @@ import {
   createCoachEvePersister,
 } from "@/lib/chat/adapters/plan/coach-eve-persist";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import {
+  IN_FLIGHT_TAIL_TIMEOUT_MS,
+  isTurnComplete,
+} from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
   bindForgeEveSessionSend,
   createForgeEveClient,
@@ -49,6 +54,8 @@ import {
   serializePromptDocument,
   serializePromptForAgent,
 } from "@/lib/prompts/prompt-document";
+
+const EMPTY_SYNCED_EVENTS: readonly HandleMessageStreamEvent[] = [];
 
 type AttachmentState = Pick<
   ChatWorkspaceState<WorkoutPlan>,
@@ -120,7 +127,7 @@ export function useCoachPlanWorkspace(options?: {
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
-  const syncedEvents = options?.syncedEvents ?? [];
+  const syncedEvents = options?.syncedEvents ?? EMPTY_SYNCED_EVENTS;
   const loadPhase = options?.loadPhase ?? "idle";
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
@@ -405,6 +412,97 @@ export function useCoachPlanWorkspace(options?: {
     latestAgentEventsRef.current = agent.events;
   }, [agent.events, agent.session]);
 
+  const [resumedEvents, setResumedEvents] =
+    useState<readonly HandleMessageStreamEvent[]>(syncedEvents);
+  const [isResumingStream, setIsResumingStream] = useState(
+    () => loadPhase === "waiting",
+  );
+  const [resumeInterrupted, setResumeInterrupted] = useState(false);
+
+  useEffect(() => {
+    setResumedEvents(syncedEvents);
+    setResumeInterrupted(false);
+    setIsResumingStream(loadPhase === "waiting");
+  }, [loadPhase, syncedEvents]);
+
+  useEffect(() => {
+    if (loadPhase !== "waiting" || !normalizedSnapshot?.eve?.sessionId) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    let cancelled = false;
+    let events = [...syncedEvents];
+
+    const resume = async () => {
+      setIsResumingStream(true);
+      setResumeInterrupted(false);
+
+      const session = resolveInitialEveSession(normalizedSnapshot, events);
+      if (!session?.sessionId) {
+        setIsResumingStream(false);
+        return;
+      }
+
+      const timeout = setTimeout(
+        () => abortController.abort(),
+        IN_FLIGHT_TAIL_TIMEOUT_MS,
+      );
+
+      try {
+        const stream = eveClient.session(session).stream({
+          startIndex: events.length,
+          signal: abortController.signal,
+        });
+
+        for await (const event of stream) {
+          if (cancelled || abortController.signal.aborted) {
+            break;
+          }
+
+          events = [...events, event];
+          setResumedEvents(events);
+          latestAgentEventsRef.current = events;
+          handleAgentStreamEventRef.current(event);
+
+          if (isCurrentTurnBoundaryEvent(event)) {
+            break;
+          }
+        }
+      } catch (error) {
+        if (!cancelled && !abortController.signal.aborted) {
+          console.error("Failed to resume Eve session stream", error);
+        }
+      } finally {
+        clearTimeout(timeout);
+        if (cancelled) {
+          return;
+        }
+
+        setIsResumingStream(false);
+
+        if (!isTurnComplete(events)) {
+          setResumeInterrupted(true);
+          return;
+        }
+
+        if (normalizedSnapshot.eve) {
+          void persisterRef.current.flush(
+            toEveSessionState(normalizedSnapshot.eve, events.length),
+            events,
+          );
+        }
+      }
+    };
+
+    void resume();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
+  }, [eveClient, loadPhase, normalizedSnapshot, syncedEvents]);
+
   useEffect(() => {
     return () => {
       persisterRef.current.dispose();
@@ -417,8 +515,35 @@ export function useCoachPlanWorkspace(options?: {
   );
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
+  const resumedProjection = useMemo(() => {
+    if (
+      loadPhase !== "waiting" &&
+      resumedEvents.length <= syncedEvents.length
+    ) {
+      return null;
+    }
+
+    let data = eveReducer.initial();
+    for (const event of resumedEvents) {
+      data = eveReducer.reduce(data, event);
+    }
+    return data;
+  }, [eveReducer, loadPhase, resumedEvents, syncedEvents.length]);
+
+  const effectiveLoadPhase: CoachEveLoadPhase = resumeInterrupted
+    ? "interrupted"
+    : loadPhase === "waiting" && isTurnComplete(resumedEvents)
+      ? "ready"
+      : loadPhase;
+
+  const isWaitingOnAgent =
+    effectiveLoadPhase === "waiting" && !resumeInterrupted;
+
   const isBusy =
-    agent.status === "submitted" || agent.status === "streaming";
+    isResumingStream ||
+    isWaitingOnAgent ||
+    agent.status === "submitted" ||
+    agent.status === "streaming";
 
   useEffect(() => {
     const agentPlan = agent.data.currentArtifact;
@@ -450,24 +575,25 @@ export function useCoachPlanWorkspace(options?: {
     isBusy,
   ]);
 
-  const effectiveArtifact = buildClientArtifactSnapshot(agent.data);
+  const projectionData = resumedProjection ?? agent.data;
+  const effectiveArtifact = buildClientArtifactSnapshot(projectionData);
   const displayedArtifact = effectiveArtifact?.plan ?? null;
   const displayedPlanId = effectiveArtifact?.planId ?? null;
   const displayedArtifactTitle = effectiveArtifact?.title ?? "";
 
   useEffect(() => {
     agentDataRef.current = {
-      currentArtifact: agent.data.currentArtifact,
-      planId: agent.data.planId,
-      artifactTitle: agent.data.artifactTitle,
+      currentArtifact: projectionData.currentArtifact,
+      planId: projectionData.planId,
+      artifactTitle: projectionData.artifactTitle,
     };
   }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
+    projectionData.artifactTitle,
+    projectionData.currentArtifact,
+    projectionData.planId,
   ]);
 
-  const workspaceData = applyCoachEveLoadPhase(loadPhase, agent.data);
+  const workspaceData = applyCoachEveLoadPhase(effectiveLoadPhase, projectionData);
 
   const phase: PlanWorkspaceState["phase"] = isInitializingThread
     ? "initializing"
@@ -497,7 +623,9 @@ export function useCoachPlanWorkspace(options?: {
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
-    runStatus: workspaceData.runStatus,
+    runStatus: isWaitingOnAgent && workspaceData.runStatus === null
+      ? null
+      : workspaceData.runStatus,
     warnings: workspaceData.warnings,
     errors: agent.error
       ? [{ message: agent.error.message }, ...workspaceData.errors]

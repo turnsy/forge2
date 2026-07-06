@@ -86,7 +86,7 @@ describe("useCoachEveCatchUp", () => {
     expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
   });
 
-  it("hydrates from Eve when only a pointer exists", async () => {
+  it("shows loading until Eve hydration completes", async () => {
     const syncedEvents = [persistedEvent, turnBoundary];
     mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
 
@@ -100,7 +100,10 @@ describe("useCoachEveCatchUp", () => {
 
     const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(result.current.loadPhase).toBe("hydrating");
+    expect(result.current).toEqual({
+      loadPhase: "loading",
+      events: [],
+    });
 
     await waitFor(() => {
       expect(result.current).toEqual({
@@ -110,7 +113,7 @@ describe("useCoachEveCatchUp", () => {
     });
   });
 
-  it("shows catching-up with the cached checkpoint while tailing Eve", async () => {
+  it("does not expose cached events while loading from Eve", async () => {
     const syncedEvents = [persistedEvent, turnBoundary];
     mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
 
@@ -122,8 +125,8 @@ describe("useCoachEveCatchUp", () => {
     const { result } = renderHook(() => useCoachEveCatchUp(session));
 
     expect(result.current).toEqual({
-      loadPhase: "catching-up",
-      events: [persistedEvent],
+      loadPhase: "loading",
+      events: [],
     });
 
     await waitFor(() => {
@@ -134,7 +137,7 @@ describe("useCoachEveCatchUp", () => {
     });
   });
 
-  it("marks interrupted when Eve tail finishes without a turn boundary", async () => {
+  it("marks waiting when Eve tail finishes without a turn boundary", async () => {
     const inFlightCheckpoint = [
       persistedEvent,
       {
@@ -154,7 +157,7 @@ describe("useCoachEveCatchUp", () => {
 
     await waitFor(() => {
       expect(result.current).toEqual({
-        loadPhase: "interrupted",
+        loadPhase: "waiting",
         events: inFlightCheckpoint,
       });
     });
@@ -178,5 +181,19 @@ describe("applyCoachEveLoadPhase", () => {
     expect(normalized.errors).toEqual([
       { message: STREAM_INTERRUPTED_MESSAGE },
     ]);
+  });
+
+  it("leaves in-flight projection untouched while waiting", () => {
+    let state = reducer.initial();
+    state = reducer.reduce(state, {
+      type: "turn.started",
+      data: { turnId: "turn-1", sequence: 1 },
+    });
+
+    const normalized = applyCoachEveLoadPhase("waiting", state);
+
+    expect(normalized.runStatus).toBe("generating");
+    expect(normalized.phase).toBe("streaming");
+    expect(normalized.errors).toEqual([]);
   });
 });

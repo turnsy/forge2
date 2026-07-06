@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
@@ -30,9 +30,9 @@ import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-previe
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import {
   isCoachEveAgentReady,
+  isCoachEveSessionLoading,
   useCoachEveCatchUp,
 } from "@/lib/chat/adapters/plan/coach-eve-session";
-import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
 import { saveSessionSnapshot } from "@/lib/chat/actions";
 import {
   buildPersistedCoachSnapshot,
@@ -56,7 +56,6 @@ import {
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
-import type { HandleMessageStreamEvent } from "eve/client";
 import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
@@ -156,59 +155,6 @@ function ArtifactPanel({
   );
 }
 
-function buildCatchUpPreviewState(
-  sessionId: string,
-  events: readonly HandleMessageStreamEvent[],
-): PlanWorkspaceState {
-  const reducer = createEveCoachReducer();
-  let data = reducer.initial();
-
-  for (const event of events) {
-    data = reducer.reduce(data, event);
-  }
-
-  return {
-    sessionId,
-    hasStarted: data.messages.length > 0,
-    sessionTitle: null,
-    artifactTitle: "",
-    planId: null,
-    messages: data.messages,
-    currentArtifact: null,
-    contextFileIds: [],
-    attachments: [],
-    runStatus: null,
-    warnings: [],
-    errors: [],
-    phase: "streaming",
-    streamingAssistantText: data.streamingAssistantText,
-  };
-}
-
-function CoachWorkspaceCatchUpPreview({
-  sessionId,
-  events,
-}: {
-  sessionId: string;
-  events: readonly HandleMessageStreamEvent[];
-}) {
-  const state = useMemo(
-    () => buildCatchUpPreviewState(sessionId, events),
-    [events, sessionId],
-  );
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <CoachConversationPanel
-        state={state}
-        onAttach={async () => {}}
-        onSend={async () => {}}
-        promptEnabled={false}
-      />
-    </div>
-  );
-}
-
 export function CoachWorkspace(
   props: {
     firstName: string;
@@ -264,7 +210,7 @@ export function CoachWorkspace(
     );
   }, [catchUp.events, catchUp.loadPhase, props.initialSession]);
 
-  if (catchUp.loadPhase === "hydrating") {
+  if (isCoachEveSessionLoading(catchUp.loadPhase)) {
     return <CoachSessionLoadingView />;
   }
 
@@ -276,15 +222,6 @@ export function CoachWorkspace(
       >
         <p className="text-sm text-surface-muted">{catchUp.errorMessage}</p>
       </div>
-    );
-  }
-
-  if (catchUp.loadPhase === "catching-up" && props.initialSession) {
-    return (
-      <CoachWorkspaceCatchUpPreview
-        sessionId={props.initialSession.id}
-        events={catchUp.events}
-      />
     );
   }
 

@@ -19,9 +19,9 @@ import {
 /** How caught-up the workspace is with Eve on load. */
 export type CoachEveLoadPhase =
   | "idle"
-  | "hydrating"
-  | "catching-up"
+  | "loading"
   | "ready"
+  | "waiting"
   | "interrupted"
   | "error";
 
@@ -107,11 +107,11 @@ function resolveLoadPhase(
   }
 
   if (fetching) {
-    return request.cachedEvents.length > 0 ? "catching-up" : "hydrating";
+    return "loading";
   }
 
   if (!isTurnComplete(events)) {
-    return "interrupted";
+    return "waiting";
   }
 
   return "ready";
@@ -184,12 +184,13 @@ export function isCoachEveAgentReady(loadPhase: CoachEveLoadPhase): boolean {
   return (
     loadPhase === "idle" ||
     loadPhase === "ready" ||
+    loadPhase === "waiting" ||
     loadPhase === "interrupted"
   );
 }
 
-export function isCoachEveCatchUpBusy(loadPhase: CoachEveLoadPhase): boolean {
-  return loadPhase === "catching-up";
+export function isCoachEveSessionLoading(loadPhase: CoachEveLoadPhase): boolean {
+  return loadPhase === "loading";
 }
 
 export function useCoachEveCatchUp(initialSession?: {
@@ -264,9 +265,8 @@ export function useCoachEveCatchUp(initialSession?: {
     };
   }
 
-  const cachedEvents = [...request.cachedEvents];
   const resolvedEvents =
-    fetchState?.key === catchUpKey ? fetchState.events : cachedEvents;
+    fetchState?.key === catchUpKey ? fetchState.events : [];
   const fetchFailed = fetchState?.key === catchUpKey && fetchState.failed;
 
   const loadPhase = resolveLoadPhase(
@@ -286,7 +286,7 @@ export function useCoachEveCatchUp(initialSession?: {
 
   if (fetchFailed && resolvedEvents.length > 0) {
     return {
-      loadPhase: isTurnComplete(resolvedEvents) ? "ready" : "interrupted",
+      loadPhase: isTurnComplete(resolvedEvents) ? "ready" : "waiting",
       events: resolvedEvents,
     };
   }
