@@ -67,7 +67,7 @@ flowchart LR
 | v1 scope | **New plan create/iterate only** — client sends ephemeral `currentArtifact`; no loading/updating saved plans from DB |
 | `@` mentions | **Cosmetic in v1** — do not branch on athlete/plan mentions for routing |
 | Sandbox contents | **`current_plan.json` + `forge_plan/` + `run.py` only** — no upload summaries or `input_context` files in the VM |
-| Sandbox language | **Python** + thin **builder library** aligned to `schemas/workout-plan.schema.json` |
+| Sandbox language | **Python** + thin **builder library** aligned to `forge-next/schemas/workout-plan.schema.json` |
 | Codegen | Gateway produces **Python**; server writes it to sandbox and executes |
 | Local dev | **Real sandbox** connected (no mock runner) |
 | LLM routing | **Vercel AI Gateway** |

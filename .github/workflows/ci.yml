@@ -27,6 +27,9 @@ jobs:
   ci:
     name: Lint, test, build, and schema types
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-build-placeholder-key
     defaults:
       run:
         working-directory: forge-next
@@ -58,8 +61,36 @@ jobs:
       - name: Verify generated plan types
         run: pnpm generate:check
 
-      - name: Production build
+  production-build:
+    name: Production build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-build-placeholder-key
+    defaults:
+      run:
+        working-directory: forge-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: forge-next/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Next.js production build
         run: pnpm run build
+
+      - name: Eve agent production build
+        run: npx eve build
 
   db-types:
     name: Database types

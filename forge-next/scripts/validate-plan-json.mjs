@@ -12,7 +12,7 @@ if (!filePath) {
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const schemaPath = join(root, "..", "schemas", "workout-plan.schema.json");
+const schemaPath = join(root, "schemas", "workout-plan.schema.json");
 const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
 const data = JSON.parse(readFileSync(filePath, "utf8"));
 

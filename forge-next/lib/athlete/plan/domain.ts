@@ -43,18 +43,86 @@ export function areAllDaysComplete(plan: WorkoutPlan): boolean {
   return findCurrentDay(plan) === null;
 }
 
+/** True when every set on the day is completed or skipped (no planned sets remain). */
+export function isDayResolved(day: Day): boolean {
+  const exercises = flattenDayExercises(day);
+  if (exercises.length === 0) {
+    return false;
+  }
+
+  return exercises.every((exercise) =>
+    exercise.sets.every((set) => set.status !== "planned"),
+  );
+}
+
+/** True when every set on the day is skipped. */
+export function isDayFullySkipped(day: Day): boolean {
+  const exercises = flattenDayExercises(day);
+  if (exercises.length === 0) {
+    return false;
+  }
+
+  return exercises.every((exercise) =>
+    exercise.sets.every((set) => set.status === "skipped"),
+  );
+}
+
+/** True when the day has at least one skipped set. */
+export function dayHasSkippedSets(day: Day): boolean {
+  return flattenDayExercises(day).some((exercise) =>
+    exercise.sets.some((set) => set.status === "skipped"),
+  );
+}
+
+export type PlanDayLocation = {
+  weekPos: number;
+  dayPos: number;
+};
+
+export function listFullySkippedDays(plan: WorkoutPlan): PlanDayLocation[] {
+  const locations: PlanDayLocation[] = [];
+
+  for (let weekPos = 0; weekPos < plan.weeks.length; weekPos += 1) {
+    const week = plan.weeks[weekPos];
+    for (let dayPos = 0; dayPos < (week.days?.length ?? 0); dayPos += 1) {
+      const day = week.days[dayPos];
+      if (isDayFullySkipped(day)) {
+        locations.push({ weekPos, dayPos });
+      }
+    }
+  }
+
+  return locations;
+}
+
+/** Resolved days that include at least one skipped set (includes fully skipped days). */
+export function listResolvedDaysWithSkippedSets(
+  plan: WorkoutPlan,
+): PlanDayLocation[] {
+  const locations: PlanDayLocation[] = [];
+
+  for (let weekPos = 0; weekPos < plan.weeks.length; weekPos += 1) {
+    const week = plan.weeks[weekPos];
+    for (let dayPos = 0; dayPos < (week.days?.length ?? 0); dayPos += 1) {
+      const day = week.days[dayPos];
+      if (isDayResolved(day) && dayHasSkippedSets(day)) {
+        locations.push({ weekPos, dayPos });
+      }
+    }
+  }
+
+  return locations;
+}
+
 export function computePlanCompletionPercent(plan: WorkoutPlan): number {
   let totalDays = 0;
-  let completedDays = 0;
+  let resolvedDays = 0;
 
   for (const week of plan.weeks) {
     for (const day of week.days) {
       totalDays += 1;
-      const dayComplete = flattenDayExercises(day).every((exercise) =>
-        exercise.sets.every((set) => set.status === "completed"),
-      );
-      if (dayComplete) {
-        completedDays += 1;
+      if (isDayResolved(day)) {
+        resolvedDays += 1;
       }
     }
   }
@@ -63,7 +131,7 @@ export function computePlanCompletionPercent(plan: WorkoutPlan): number {
     return 0;
   }
 
-  return Math.round((completedDays / totalDays) * 100);
+  return Math.round((resolvedDays / totalDays) * 100);
 }
 
 export function isSetActualComplete(set: Set): boolean {
