@@ -14,7 +14,7 @@
     "generate:forge-plan-cheat-sheet": "python3 sandbox/scripts/generate_api_cheat_sheet.py",
     "generate:db-types": "bash ../scripts/generate-database-types.sh",
     "generate:check": "pnpm generate:plan-types && pnpm generate:forge-plan-cheat-sheet && git diff --exit-code -- lib/plans/workout-plan.generated.ts lib/plans/prompts/forge_plan_api_cheat_sheet.generated.ts",
-    "sync:forge-plan-sandbox": "rm -rf agent/sandbox/workspace/forge_plan agent/sandbox/workspace/schemas && cp -r sandbox/forge_plan agent/sandbox/workspace/ && mkdir -p agent/sandbox/workspace/schemas && cp ../schemas/workout-plan.schema.json agent/sandbox/workspace/schemas/ && find agent/sandbox/workspace/forge_plan -name 'test_*.py' -delete"
+    "sync:forge-plan-sandbox": "rm -rf agent/sandbox/workspace/forge_plan && cp -r sandbox/forge_plan agent/sandbox/workspace/ && find agent/sandbox/workspace/forge_plan -name 'test_*.py' -delete"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.122",

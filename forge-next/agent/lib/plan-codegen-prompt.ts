@@ -16,8 +16,6 @@ export function buildPythonCodegenRules(): string {
     "The script must:",
     "- Use Plan.load() to read the current seed and plan.save() to write the result",
     "- Avoid network access, subprocesses, and reading or writing any other files",
-    "- Do not read, write, or validate against schema files in run.py — the server validates output/plan.json after plan.save()",
-    "- Do not use jsonschema or paths such as /var/schemas; forge_plan builders enforce structure",
     "- Prefer the forge_plan API below over hand-built dicts",
     "- Be deterministic; use for-loops or data structures to build every week/day/exercise the user requested — do not stop after the first week or day",
     "",
