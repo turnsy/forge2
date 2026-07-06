@@ -59,8 +59,8 @@ describe("summarizeAssignedPlanProgress", () => {
     expect(summary).toContain("Plan: Summer Block (active)");
     expect(summary).toContain("Completion:");
     expect(summary).toContain("Current: Week");
-    expect(summary).toContain("Skipped days: week 0, day 1 (Day 2)");
-    expect(summary).toContain("Days with skipped sets: week 0, day 1 (Day 2)");
+    expect(summary).toContain("Skipped days: week 0, day 1");
+    expect(summary).toContain("Days with skipped sets: week 0, day 1");
     expect(summary).not.toContain("Skipped sets:");
     expect(summary).toContain("Assigned: Jan 15, 2026");
   });

@@ -105,20 +105,13 @@ function getDayProgressStatus(
   return "upcoming";
 }
 
-function formatDayLocationList(
-  plan: WorkoutPlan,
-  locations: PlanDayLocation[],
-): string {
+function formatDayLocationList(locations: PlanDayLocation[]): string {
   if (locations.length === 0) {
     return "none";
   }
 
   return locations
-    .map(({ weekPos, dayPos }) => {
-      const day = plan.weeks[weekPos]?.days?.[dayPos];
-      const label = day ? getDayTitle(day, dayPos) : `Day ${dayPos}`;
-      return `week ${weekPos}, day ${dayPos} (${label})`;
-    })
+    .map(({ weekPos, dayPos }) => `week ${weekPos}, day ${dayPos}`)
     .join("; ");
 }
 
@@ -145,9 +138,9 @@ function summarizeAssignedOverview(
     lines.push("Current: none");
   }
 
-  lines.push(`Skipped days: ${formatDayLocationList(plan, listFullySkippedDays(plan))}`);
+  lines.push(`Skipped days: ${formatDayLocationList(listFullySkippedDays(plan))}`);
   lines.push(
-    `Days with skipped sets: ${formatDayLocationList(plan, listResolvedDaysWithSkippedSets(plan))}`,
+    `Days with skipped sets: ${formatDayLocationList(listResolvedDaysWithSkippedSets(plan))}`,
   );
   lines.push(`Assigned: ${formatDate(assignment.assignedAt)}`);
 
