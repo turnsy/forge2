@@ -135,7 +135,7 @@ function finalizeInterruptedDisplay(
   }
 
   const assistantText = data.streamingAssistantText.trim();
-  let next: EveCoachReducerData = assistantText
+  const next: EveCoachReducerData = assistantText
     ? {
         ...data,
         messages: [

@@ -57,6 +57,7 @@ import {
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
 import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
+import type { HandleMessageStreamEvent } from "eve/client";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 function ChatWorkspaceShell({
