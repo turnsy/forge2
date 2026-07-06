@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetCoachAthleteRelationship = vi.fn();
-const mockGetActiveAthletePlan = vi.fn();
+const mockQueryActiveAssignedPlan = vi.fn();
 
 vi.mock("@/lib/links/repository", () => ({
   getCoachAthleteRelationship: (...args: unknown[]) =>
     mockGetCoachAthleteRelationship(...args),
 }));
 
-vi.mock("@/lib/athlete/plan/repository", () => ({
-  getActiveAthletePlan: (...args: unknown[]) => mockGetActiveAthletePlan(...args),
+vi.mock("@/lib/athlete/plan/assigned-plan-data", () => ({
+  queryActiveAssignedPlan: (...args: unknown[]) =>
+    mockQueryActiveAssignedPlan(...args),
 }));
 
 import { fetchCoachAthleteActiveAssignment } from "@/agent/lib/assigned-plans";
@@ -40,7 +41,7 @@ describe("fetchCoachAthleteActiveAssignment", () => {
       athleteName: "Jane Smith",
       status: "active",
     });
-    mockGetActiveAthletePlan.mockResolvedValue({ ok: true, plan: null });
+    mockQueryActiveAssignedPlan.mockResolvedValue({ ok: true, plan: null });
 
     const result = await fetchCoachAthleteActiveAssignment("coach-1", "athlete-1");
 
@@ -57,7 +58,7 @@ describe("fetchCoachAthleteActiveAssignment", () => {
       athleteName: "Jane Smith",
       status: "active",
     });
-    mockGetActiveAthletePlan.mockResolvedValue({
+    mockQueryActiveAssignedPlan.mockResolvedValue({
       ok: true,
       plan: {
         id: "assignment-1",
@@ -87,7 +88,7 @@ describe("fetchCoachAthleteActiveAssignment", () => {
       athleteName: "Jane Smith",
       status: "active",
     });
-    mockGetActiveAthletePlan.mockResolvedValue({
+    mockQueryActiveAssignedPlan.mockResolvedValue({
       ok: true,
       plan: {
         id: "assignment-1",

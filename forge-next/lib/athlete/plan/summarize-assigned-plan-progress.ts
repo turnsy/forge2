@@ -3,7 +3,7 @@ import {
   computePlanCompletionPercent,
   findCurrentDay,
 } from "@/lib/athlete/plan/domain";
-import type { AssignedPlan } from "@/lib/athlete/plan/repository";
+import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import { formatDate } from "@/lib/format/date";
 import { flattenDayExercises, isSupersetBlock } from "@/lib/plans/day-blocks";
 import {

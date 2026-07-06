@@ -13,11 +13,14 @@ import {
   completeDayInPlan,
   type SetCompletionStatus,
 } from "@/lib/athlete/plan/domain";
+import {
+  ASSIGNED_PLAN_COLUMNS,
+  mapAssignedPlanRow,
+  queryActiveAssignedPlan,
+  type AssignedPlan,
+} from "@/lib/athlete/plan/assigned-plan-data";
 
 type AthletePlanClient = Awaited<ReturnType<typeof createClient>>;
-
-const ASSIGNED_PLAN_COLUMNS =
-  "id, athlete_id, coach_id, plan_data, status, assigned_at, completed_at, unassigned_at, plan_version_id";
 
 type AssignedPlanRow = {
   id: string;
@@ -31,17 +34,8 @@ type AssignedPlanRow = {
   plan_version_id: string | null;
 };
 
-export type AssignedPlan = {
-  id: string;
-  athleteId: string;
-  coachId: string;
-  status: "active" | "completed" | "unassigned";
-  assignedAt: string;
-  completedAt: string | null;
-  unassignedAt: string | null;
-  planVersionId: string | null;
-  plan: WorkoutPlan;
-};
+export type { AssignedPlan };
+export { mapAssignedPlanRow };
 
 export type ActiveAthletePlanResult = ServiceResult<{ plan: AssignedPlan | null }>;
 export type AssignedPlanByIdResult = ServiceResult<{ plan: AssignedPlan | null }>;
@@ -58,50 +52,13 @@ async function resolveClient(client?: AthletePlanClient): Promise<AthletePlanCli
   return client ?? (await createClient());
 }
 
-export function mapAssignedPlanRow(row: AssignedPlanRow): AssignedPlan | null {
-  const result = loadWorkoutPlan(row.plan_data);
-
-  if (!result.ok) {
-    return null;
-  }
-
-  return {
-    id: row.id,
-    athleteId: row.athlete_id,
-    coachId: row.coach_id,
-    status: row.status,
-    assignedAt: row.assigned_at,
-    completedAt: row.completed_at,
-    unassignedAt: row.unassigned_at,
-    planVersionId: row.plan_version_id,
-    plan: result.plan,
-  };
-}
-
 export async function getActiveAthletePlan(
   userId: string,
   client?: AthletePlanClient,
 ): Promise<ActiveAthletePlanResult> {
   noStore();
   const supabase = await resolveClient(client);
-  const { data, error } = await supabase
-    .from("assigned_plans")
-    .select(ASSIGNED_PLAN_COLUMNS)
-    .eq("athlete_id", userId)
-    .eq("status", "active")
-    .order("assigned_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
-  }
-
-  if (!data) {
-    return { ok: true, plan: null };
-  }
-
-  return { ok: true, plan: mapAssignedPlanRow(data as AssignedPlanRow) };
+  return queryActiveAssignedPlan(userId, supabase);
 }
 
 export async function getAssignedPlanById(

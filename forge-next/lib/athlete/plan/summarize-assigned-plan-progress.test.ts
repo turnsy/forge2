@@ -3,7 +3,7 @@ import {
   countSkippedDays,
   summarizeAssignedPlanProgress,
 } from "@/lib/athlete/plan/summarize-assigned-plan-progress";
-import type { AssignedPlan } from "@/lib/athlete/plan/repository";
+import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import {
   makeBlock,
   makeDay,

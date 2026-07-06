@@ -1,7 +1,5 @@
-import {
-  getActiveAthletePlan,
-  type AssignedPlan,
-} from "@/lib/athlete/plan/repository";
+import { queryActiveAssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
+import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import { getCoachAthleteRelationship } from "@/lib/links/repository";
 import { toToolError, toToolNotFound } from "./db-tool-errors";
 
@@ -29,7 +27,7 @@ export async function fetchCoachAthleteActiveAssignment(
     return { ok: false, notFound: toToolNotFound("Athlete") };
   }
 
-  const result = await getActiveAthletePlan(athleteId);
+  const result = await queryActiveAssignedPlan(athleteId);
   if (!result.ok) {
     return toToolError(result);
   }
