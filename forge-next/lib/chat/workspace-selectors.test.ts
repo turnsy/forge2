@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 import {
   canSendChat,
+  canStopChat,
   isAwaitingFirstArtifact,
   isChatRunning,
 } from "@/lib/chat/workspace-selectors";
@@ -20,6 +21,15 @@ describe("workspace selectors", () => {
     const state = { ...createInitialChatWorkspaceState(), phase: "streaming" as const };
     expect(canSendChat(state)).toBe(false);
     expect(isChatRunning(state)).toBe(true);
+    expect(canStopChat(state)).toBe(true);
+  });
+
+  it("does not allow stop while initializing", () => {
+    const state = {
+      ...createInitialChatWorkspaceState(),
+      phase: "initializing" as const,
+    };
+    expect(canStopChat(state)).toBe(false);
   });
 
   it("detects awaiting first artifact", () => {

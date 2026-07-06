@@ -14,6 +14,7 @@ export {
 } from "@/lib/chat/run-status-copy";
 export {
   canSendChat,
+  canStopChat,
   hasUploadingAttachments,
   isAwaitingFirstArtifact,
   isChatRunning,

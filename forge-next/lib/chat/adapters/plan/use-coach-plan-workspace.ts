@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { isCurrentTurnBoundaryEvent } from "eve/client";
 import { useEveAgent } from "eve/react";
@@ -187,6 +187,7 @@ export function useCoachPlanWorkspace(options?: {
   );
   const latestAgentSessionRef = useRef<SessionState | null>(null);
   const latestAgentEventsRef = useRef<readonly HandleMessageStreamEvent[]>([]);
+  const tailResumeAbortRef = useRef<AbortController | null>(null);
   const lastSyncedAgentArtifactRef = useRef<string | null>(null);
 
   const buildClientArtifactSnapshot = useCallback(
@@ -246,6 +247,7 @@ export function useCoachPlanWorkspace(options?: {
     [],
   );
 
+  /* eslint-disable react-hooks/refs -- persistence and Eve callbacks read refs at event time */
   const persister = useMemo(
     () =>
       createCoachEvePersister({
@@ -301,42 +303,42 @@ export function useCoachPlanWorkspace(options?: {
   ]);
 
   const maybeRedirectToSessionUrlRef = useRef(maybeRedirectToSessionUrl);
-  maybeRedirectToSessionUrlRef.current = maybeRedirectToSessionUrl;
 
   const persisterRef = useRef(persister);
-  persisterRef.current = persister;
 
-  const onEvePostResponseRef = useRef<(response: ForgeEvePostResponse) => void>(
-    () => {},
-  );
-  onEvePostResponseRef.current = (response) => {
+  const handleEvePostResponse = useCallback((response: ForgeEvePostResponse) => {
     latestAgentSessionRef.current = {
       sessionId: response.sessionId,
       continuationToken: response.continuationToken,
       streamIndex: latestAgentEventsRef.current.length,
     };
-  };
+  }, []);
 
   const handleAgentStreamEventRef = useRef<
     (event: HandleMessageStreamEvent) => void
   >(() => {});
-  handleAgentStreamEventRef.current = (event) => {
-    const session = latestAgentSessionRef.current;
-    if (!session?.sessionId) {
-      return;
-    }
 
-    const nextEvents = [...latestAgentEventsRef.current, event];
-    latestAgentEventsRef.current = nextEvents;
+  useLayoutEffect(() => {
+    maybeRedirectToSessionUrlRef.current = maybeRedirectToSessionUrl;
+    persisterRef.current = persister;
+    handleAgentStreamEventRef.current = (event) => {
+      const session = latestAgentSessionRef.current;
+      if (!session?.sessionId) {
+        return;
+      }
 
-    void persisterRef.current
-      .onStreamEvent(session, nextEvents, event)
-      .then((saved) => {
-        if (saved) {
-          maybeRedirectToSessionUrlRef.current();
-        }
-      });
-  };
+      const nextEvents = [...latestAgentEventsRef.current, event];
+      latestAgentEventsRef.current = nextEvents;
+
+      void persisterRef.current
+        .onStreamEvent(session, nextEvents, event)
+        .then((saved) => {
+          if (saved) {
+            maybeRedirectToSessionUrlRef.current();
+          }
+        });
+    };
+  });
 
   const initialEveEvents = syncedEvents;
 
@@ -351,12 +353,11 @@ export function useCoachPlanWorkspace(options?: {
         eveClient.session(
           resolveInitialEveSession(normalizedSnapshot, initialEveEvents),
         ),
-        (response) => {
-          onEvePostResponseRef.current(response);
-        },
+        handleEvePostResponse,
       ),
-    [eveClient, initialEveEvents, normalizedSnapshot],
+    [eveClient, handleEvePostResponse, initialEveEvents, normalizedSnapshot],
   );
+  /* eslint-enable react-hooks/refs */
 
   const agent = useEveAgent({
     reducer: eveReducer,
@@ -420,8 +421,10 @@ export function useCoachPlanWorkspace(options?: {
   const syncedEventsRef = useRef(syncedEvents);
   const normalizedSnapshotRef = useRef(normalizedSnapshot);
 
-  syncedEventsRef.current = syncedEvents;
-  normalizedSnapshotRef.current = normalizedSnapshot;
+  useLayoutEffect(() => {
+    syncedEventsRef.current = syncedEvents;
+    normalizedSnapshotRef.current = normalizedSnapshot;
+  }, [normalizedSnapshot, syncedEvents]);
 
   const [resumedEvents, setResumedEvents] =
     useState<readonly HandleMessageStreamEvent[]>(syncedEvents);
@@ -442,6 +445,7 @@ export function useCoachPlanWorkspace(options?: {
     }
 
     const abortController = new AbortController();
+    tailResumeAbortRef.current = abortController;
     let cancelled = false;
     let events = [...syncedEventsRef.current];
 
@@ -510,6 +514,9 @@ export function useCoachPlanWorkspace(options?: {
     return () => {
       cancelled = true;
       abortController.abort();
+      if (tailResumeAbortRef.current === abortController) {
+        tailResumeAbortRef.current = null;
+      }
     };
   }, [eveClient, tailResumeKey]);
 
@@ -756,10 +763,17 @@ export function useCoachPlanWorkspace(options?: {
     setLocalArtifactTitle(artifact.name);
   }, []);
 
+  const stopResponse = useCallback(() => {
+    tailResumeAbortRef.current?.abort();
+    tailResumeAbortRef.current = null;
+    agent.stop();
+  }, [agent]);
+
   return {
     state,
     attachFiles,
     sendMessage,
+    stopResponse,
     restart,
     setArtifactTitle,
     setPlanId,

@@ -16,6 +16,7 @@ const {
   generateSessionTitleFromPrompt,
   mockSend,
   mockReset,
+  mockStop,
   capturedEveAgentOptions,
   capturedOnPostResponse,
   agentSessionState,
@@ -25,6 +26,7 @@ const {
   generateSessionTitleFromPrompt: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
+  mockStop: vi.fn(),
   capturedEveAgentOptions: {
     current: undefined as
       | {
@@ -128,7 +130,7 @@ vi.mock("eve/react", () => ({
         await mockSend(prepared);
       },
       reset: mockReset,
-      stop: vi.fn(),
+      stop: mockStop,
       onFinish: options?.onFinish,
     };
   },
@@ -345,5 +347,15 @@ describe("useCoachPlanWorkspace", () => {
       sessionId,
       expect.objectContaining({ title: "Strength block" }),
     );
+  });
+
+  it("stops the in-flight agent response", () => {
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    expect(mockStop).toHaveBeenCalledOnce();
   });
 });

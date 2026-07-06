@@ -34,6 +34,10 @@ export function isChatRunning<TArtifact>(state: ChatWorkspaceState<TArtifact>): 
   );
 }
 
+export function canStopChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
+  return state.phase === "streaming";
+}
+
 export function isAwaitingFirstArtifact<TArtifact>(
   state: ChatWorkspaceState<TArtifact>,
 ): boolean {

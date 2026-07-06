@@ -208,21 +208,16 @@ export function useCoachEveCatchUp(initialSession?: {
     events: HandleMessageStreamEvent[];
     failed: boolean;
   } | null>(null);
-  const [isFetching, setIsFetching] = useState(
-    () => request.kind === "fetch",
-  );
+  const shouldFetch = request.kind === "fetch" && Boolean(catchUpKey);
 
   useEffect(() => {
-    if (request.kind !== "fetch" || !catchUpKey) {
-      setIsFetching(false);
+    if (!shouldFetch || !catchUpKey) {
       return;
     }
 
     const abortController = new AbortController();
     let cancelled = false;
-
-    setFetchState(null);
-    setIsFetching(true);
+    const activeKey = catchUpKey;
 
     void restoreEveSessionEvents(request.eve, request.forgeSessionId, {
       signal: abortController.signal,
@@ -231,7 +226,7 @@ export function useCoachEveCatchUp(initialSession?: {
     })
       .then((events) => {
         if (!cancelled) {
-          setFetchState({ key: catchUpKey, events, failed: false });
+          setFetchState({ key: activeKey, events, failed: false });
         }
       })
       .catch((error: unknown) => {
@@ -241,22 +236,17 @@ export function useCoachEveCatchUp(initialSession?: {
 
         console.error("Failed to restore Eve session", error);
         setFetchState({
-          key: catchUpKey,
+          key: activeKey,
           events: [...request.cachedEvents],
           failed: true,
         });
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsFetching(false);
-        }
       });
 
     return () => {
       cancelled = true;
       abortController.abort();
     };
-  }, [catchUpKey, request]);
+  }, [catchUpKey, request, shouldFetch]);
 
   if (request.kind === "none") {
     return {
@@ -268,11 +258,12 @@ export function useCoachEveCatchUp(initialSession?: {
   const resolvedEvents =
     fetchState?.key === catchUpKey ? fetchState.events : [];
   const fetchFailed = fetchState?.key === catchUpKey && fetchState.failed;
+  const isPendingFetch = shouldFetch && fetchState?.key !== catchUpKey;
 
   const loadPhase = resolveLoadPhase(
     request,
     resolvedEvents,
-    isFetching,
+    isPendingFetch,
     fetchFailed,
   );
 
