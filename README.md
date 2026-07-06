@@ -2,8 +2,8 @@
 
 Schemas:
 
-- `schemas/workout-plan.schema.json`
+- `forge-next/schemas/workout-plan.schema.json`
 
 Example workout plan:
 
-- `schemas/examples/workout-plan.example.json`
+- `forge-next/schemas/examples/workout-plan.example.json`

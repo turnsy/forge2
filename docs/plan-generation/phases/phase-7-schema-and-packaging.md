@@ -12,7 +12,7 @@
 
 ### Schema version CI
 
-- [ ] CI check: `forge_plan.builders.SCHEMA_VERSION` (and any TS empty-seed constants) must equal `schemas/workout-plan.schema.json` → `properties.schemaVersion.const`
+- [ ] CI check: `forge_plan.builders.SCHEMA_VERSION` (and any TS empty-seed constants) must equal `forge-next/schemas/workout-plan.schema.json` → `properties.schemaVersion.const`
 - [ ] Wire into `pnpm generate:check` or a dedicated `pnpm check:schema-version` run in CI
 - [ ] Fail PRs when schema version bumps without updating Python/TS constants
 
