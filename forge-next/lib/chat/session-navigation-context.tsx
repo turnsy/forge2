@@ -4,33 +4,20 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useRef,
   useState,
+  startTransition,
   type ReactNode,
 } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-
-export type PendingFirstSend = {
-  sessionId: string;
-  message: string;
-  clientArtifact?: {
-    plan: WorkoutPlan;
-    planId?: string | null;
-    title?: string;
-  } | null;
-  contextFileIds?: string[];
-};
 
 type SessionNavigationContextValue = {
   pendingSessionId: string | null;
   insertedSessions: readonly SessionListItemData[];
   startSessionNavigation: (sessionId: string) => void;
   registerNewSession: (session: SessionListItemData) => void;
-  stashPendingFirstSend: (pending: PendingFirstSend) => void;
-  consumePendingFirstSend: (sessionId: string) => PendingFirstSend | null;
 };
 
 const SessionNavigationContext =
@@ -45,15 +32,32 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const [insertedSessions, setInsertedSessions] = useState<
     SessionListItemData[]
   >([]);
-  const pendingFirstSendRef = useRef<PendingFirstSend | null>(null);
   const currentSessionId = searchParams.get("sessionId");
-  const navigationTargetSessionId =
-    pathname === COACH_WORKSPACE_PATH ? targetSessionId : null;
   const pendingSessionId =
-    navigationTargetSessionId !== null &&
-    navigationTargetSessionId !== currentSessionId
-      ? navigationTargetSessionId
+    pathname === COACH_WORKSPACE_PATH &&
+    targetSessionId !== null &&
+    targetSessionId !== currentSessionId
+      ? targetSessionId
       : null;
+
+  useEffect(() => {
+    if (targetSessionId === null) {
+      return;
+    }
+
+    if (currentSessionId === targetSessionId) {
+      startTransition(() => {
+        setTargetSessionId(null);
+      });
+      return;
+    }
+
+    if (pathname !== COACH_WORKSPACE_PATH) {
+      startTransition(() => {
+        setTargetSessionId(null);
+      });
+    }
+  }, [currentSessionId, pathname, targetSessionId]);
 
   const startSessionNavigation = useCallback((sessionId: string) => {
     setTargetSessionId(sessionId);
@@ -69,37 +73,14 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     });
   }, []);
 
-  const stashPendingFirstSend = useCallback((pending: PendingFirstSend) => {
-    pendingFirstSendRef.current = pending;
-  }, []);
-
-  const consumePendingFirstSend = useCallback((sessionId: string) => {
-    const pending = pendingFirstSendRef.current;
-    if (pending?.sessionId !== sessionId) {
-      return null;
-    }
-
-    pendingFirstSendRef.current = null;
-    return pending;
-  }, []);
-
   const contextValue = useMemo(
     () => ({
       pendingSessionId,
       insertedSessions,
       startSessionNavigation,
       registerNewSession,
-      stashPendingFirstSend,
-      consumePendingFirstSend,
     }),
-    [
-      consumePendingFirstSend,
-      insertedSessions,
-      pendingSessionId,
-      registerNewSession,
-      startSessionNavigation,
-      stashPendingFirstSend,
-    ],
+    [insertedSessions, pendingSessionId, registerNewSession, startSessionNavigation],
   );
 
   return (

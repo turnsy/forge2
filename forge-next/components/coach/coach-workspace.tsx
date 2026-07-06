@@ -28,13 +28,24 @@ import {
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
-import { useCoachSessionReplay } from "@/lib/chat/adapters/plan/use-coach-session-replay";
-import type { HandleMessageStreamEvent } from "eve/client";
 import {
+  isCoachEveAgentReady,
+  isCoachEveSessionLoading,
+  useCoachEveCatchUp,
+} from "@/lib/chat/adapters/plan/coach-eve-session";
+import { saveSessionSnapshot } from "@/lib/chat/actions";
+import {
+  buildPersistedCoachSnapshot,
+} from "@/lib/chat/adapters/plan/coach-eve-persist";
+import { isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
+import {
+  getPersistedEveEvents,
+  toEveSessionState,
+  withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
-import { navigateToCoachHome, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -45,6 +56,8 @@ import {
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
+import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
+import type { HandleMessageStreamEvent } from "eve/client";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 function ChatWorkspaceShell({
@@ -159,27 +172,68 @@ export function CoachWorkspace(
     promptEnabled?: boolean;
   },
 ) {
-  const replay = useCoachSessionReplay(props.initialSession);
+  const catchUp = useCoachEveCatchUp(props.initialSession);
 
-  if (replay.status === "loading") {
+  useEffect(() => {
+    if (!props.initialSession || !isCoachEveAgentReady(catchUp.loadPhase)) {
+      return;
+    }
+
+    const snapshot = withForgeSessionId(
+      props.initialSession.id,
+      props.initialSession.snapshot,
+    );
+    const eve = snapshot.eve;
+
+    if (!eve?.sessionId) {
+      return;
+    }
+
+    const persisted = getPersistedEveEvents(snapshot);
+    const replayAdvanced =
+      catchUp.events.length > persisted.length ||
+      (persisted.length > 0 &&
+        !isTurnComplete(persisted) &&
+        isTurnComplete(catchUp.events));
+
+    if (!replayAdvanced) {
+      return;
+    }
+
+    void saveSessionSnapshot(
+      props.initialSession.id,
+      buildPersistedCoachSnapshot({
+        forgeSessionId: props.initialSession.id,
+        title: snapshot.title,
+        session: toEveSessionState(eve, catchUp.events.length),
+        events: catchUp.events,
+      }),
+    );
+  }, [catchUp.events, catchUp.loadPhase, props.initialSession]);
+
+  if (isCoachEveSessionLoading(catchUp.loadPhase)) {
     return <CoachSessionLoadingView />;
   }
 
-  if (replay.status === "error") {
+  if (catchUp.loadPhase === "error") {
     return (
       <div
         className="flex min-h-0 flex-1 flex-col items-center justify-center p-6"
         role="alert"
       >
-        <p className="text-sm text-surface-muted">{replay.message}</p>
+        <p className="text-sm text-surface-muted">{catchUp.errorMessage}</p>
       </div>
     );
   }
 
+  const sessionKey = props.initialSession?.id ?? "coach-home";
+
   return (
     <CoachWorkspaceInner
+      key={sessionKey}
       {...props}
-      initialReplayedEvents={replay.events}
+      syncedEvents={catchUp.events}
+      loadPhase={catchUp.loadPhase}
     />
   );
 }
@@ -190,7 +244,8 @@ function CoachWorkspaceInner({
   planId: initialPlanId,
   initialPlan,
   initialSession,
-  initialReplayedEvents = [],
+  syncedEvents = [],
+  loadPhase = "idle",
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -204,7 +259,8 @@ function CoachWorkspaceInner({
     createdAt: string;
     updatedAt: string;
   };
-  initialReplayedEvents?: readonly HandleMessageStreamEvent[];
+  syncedEvents?: readonly HandleMessageStreamEvent[];
+  loadPhase?: CoachEveLoadPhase;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -259,23 +315,11 @@ function CoachWorkspaceInner({
     });
   }, [initialSession, sessionNavigation?.registerNewSession]);
 
-  const handleFirstSendNavigate = useCallback(
-    (pending: {
-      sessionId: string;
-      message: string;
-      clientArtifact?: {
-        plan: WorkoutPlan;
-        planId?: string | null;
-        title?: string;
-      } | null;
-      contextFileIds?: string[];
-    }) => {
-      sessionNavigation?.stashPendingFirstSend(pending);
-      sessionNavigation?.startSessionNavigation(pending.sessionId);
-      router.replace(`/coach?sessionId=${pending.sessionId}`);
-    },
-    [router, sessionNavigation],
-  );
+  const handleSessionUrlNavigate = useCallback((sessionId: string) => {
+    // Keep the live Eve stream on the current workspace instance. A hard
+    // router navigation would remount, abort the turn, and replay from DB.
+    syncCoachSessionUrl(sessionId);
+  }, []);
 
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
@@ -304,7 +348,7 @@ function CoachWorkspaceInner({
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
           onThreadInitialized: handleThreadBound,
-          onFirstSendNavigate: handleFirstSendNavigate,
+          onSessionUrlNavigate: handleSessionUrlNavigate,
         }
       : initialSession
         ? {
@@ -312,13 +356,14 @@ function CoachWorkspaceInner({
               id: initialSession.id,
               snapshot: initialSession.snapshot,
             },
-            initialReplayedEvents,
+            syncedEvents,
+            loadPhase,
             onArtifactCleared: handleArtifactCleared,
           }
         : {
             onArtifactCleared: handleArtifactCleared,
             onThreadInitialized: handleThreadBound,
-            onFirstSendNavigate: handleFirstSendNavigate,
+            onSessionUrlNavigate: handleSessionUrlNavigate,
           },
   );
 

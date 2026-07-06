@@ -1,6 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   SessionNavigationProvider,
@@ -21,16 +20,12 @@ function Probe() {
     insertedSessions,
     startSessionNavigation,
     registerNewSession,
-    stashPendingFirstSend,
-    consumePendingFirstSend,
   } = useSessionNavigation();
-  const [consumedMessage, setConsumedMessage] = useState<string | null>(null);
 
   return (
     <div>
       <span data-testid="pending">{pendingSessionId ?? "idle"}</span>
       <span data-testid="inserted-count">{insertedSessions.length}</span>
-      <span data-testid="consumed">{consumedMessage ?? "none"}</span>
       <button type="button" onClick={() => startSessionNavigation("session-1")}>
         Navigate
       </button>
@@ -45,27 +40,6 @@ function Probe() {
         }
       >
         Register
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          stashPendingFirstSend({
-            sessionId: "session-new",
-            message: "Hello there",
-          })
-        }
-      >
-        Stash
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          setConsumedMessage(
-            consumePendingFirstSend("session-new")?.message ?? "none",
-          )
-        }
-      >
-        Consume
       </button>
     </div>
   );
@@ -153,22 +127,5 @@ describe("SessionNavigationProvider", () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
 
     expect(screen.getByTestId("inserted-count")).toHaveTextContent("1");
-  });
-
-  it("stashes and consumes a pending first send", async () => {
-    const user = userEvent.setup();
-
-    render(
-      <SessionNavigationProvider>
-        <Probe />
-      </SessionNavigationProvider>,
-    );
-
-    expect(screen.getByTestId("consumed")).toHaveTextContent("none");
-
-    await user.click(screen.getByRole("button", { name: "Stash" }));
-    await user.click(screen.getByRole("button", { name: "Consume" }));
-
-    expect(screen.getByTestId("consumed")).toHaveTextContent("Hello there");
   });
 });

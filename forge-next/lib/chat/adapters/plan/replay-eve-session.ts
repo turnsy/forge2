@@ -1,24 +1,30 @@
-import { Client, isCurrentTurnBoundaryEvent } from "eve/client";
+import { isCurrentTurnBoundaryEvent } from "eve/client";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
-import { FORGE_SESSION_HEADER } from "@/lib/chat/constants";
+import { createForgeEveClient } from "@/lib/chat/adapters/plan/forge-eve-client";
 import type { ForgeEvePointer } from "@/lib/chat/session-types";
 import { toEveSessionState } from "@/lib/chat/session-types";
 
 export type ReplayEveSessionOptions = {
   signal?: AbortSignal;
+  /** Persisted prefix to hydrate instantly and tail from `fromEvents.length`. */
+  fromEvents?: readonly HandleMessageStreamEvent[];
 };
 
 /** How long to wait for the first event when probing for another turn. */
 const NEXT_TURN_PROBE_TIMEOUT_MS = 2_000;
 
-function createReplayClient(forgeSessionId: string): Client {
-  return new Client({
-    host: "",
-    headers: {
-      [FORGE_SESSION_HEADER]: forgeSessionId,
-    },
-    preserveCompletedSessions: true,
-  });
+/** How long to wait for live events when tailing an in-flight turn on reload. */
+export const IN_FLIGHT_TAIL_TIMEOUT_MS = 30_000;
+
+function resolveProbeTimeoutMs(
+  startIndex: number,
+  events: readonly HandleMessageStreamEvent[],
+): number | undefined {
+  if (startIndex > 0 && isTurnComplete(events)) {
+    return NEXT_TURN_PROBE_TIMEOUT_MS;
+  }
+
+  return undefined;
 }
 
 function toSessionState(
@@ -58,7 +64,7 @@ async function collectStreamEvents(
     firstEventTimeoutMs?: number;
   },
 ): Promise<HandleMessageStreamEvent[]> {
-  const client = createReplayClient(forgeSessionId);
+  const client = createForgeEveClient(forgeSessionId);
   const eveSession = client.session(session);
   const events: HandleMessageStreamEvent[] = [];
 
@@ -86,12 +92,8 @@ async function collectStreamEvents(
       }
     }
   } catch (error) {
-    if (
-      events.length === 0 &&
-      timeout?.signal.aborted &&
-      !options.signal?.aborted
-    ) {
-      return [];
+    if (timeout?.signal.aborted && !options.signal?.aborted) {
+      return events;
     }
 
     throw error;
@@ -102,44 +104,42 @@ async function collectStreamEvents(
   return events;
 }
 
-export async function replayEveSessionEvents(
-  pointer: ForgeEvePointer,
-  forgeSessionId: string,
-  options?: ReplayEveSessionOptions,
-): Promise<HandleMessageStreamEvent[]> {
-  if (!pointer.sessionId) {
-    return [];
-  }
-
-  return collectStreamEvents(toSessionState(pointer), forgeSessionId, {
-    startIndex: 0,
-    untilTurnBoundary: true,
-    signal: options?.signal,
-  });
-}
-
+/**
+ * Hydrates saved Eve events up to the latest checkpoint. Replays completed turns
+ * and probes briefly for another finished turn, but does not block on in-flight
+ * generation — the workspace resumes the live stream in `waiting` phase.
+ */
 export async function restoreEveSessionEvents(
   pointer: ForgeEvePointer,
   forgeSessionId: string,
   options?: ReplayEveSessionOptions,
 ): Promise<HandleMessageStreamEvent[]> {
   if (!pointer.sessionId) {
-    return [];
+    return [...(options?.fromEvents ?? [])];
   }
 
-  const allEvents: HandleMessageStreamEvent[] = [];
-  let startIndex = 0;
+  const prefix = options?.fromEvents ? [...options.fromEvents] : [];
+
+  if (prefix.length > 0 && !isTurnComplete(prefix)) {
+    return prefix;
+  }
+
+  const allEvents: HandleMessageStreamEvent[] = [...prefix];
+  let startIndex = prefix.length;
 
   while (!options?.signal?.aborted) {
+    const inFlight = allEvents.length > 0 && !isTurnComplete(allEvents);
+
     const batch = await collectStreamEvents(
       toSessionState(pointer, startIndex),
       forgeSessionId,
       {
         startIndex,
-        untilTurnBoundary: true,
+        untilTurnBoundary: !inFlight,
         signal: options?.signal,
-        firstEventTimeoutMs:
-          startIndex > 0 ? NEXT_TURN_PROBE_TIMEOUT_MS : undefined,
+        firstEventTimeoutMs: inFlight
+          ? NEXT_TURN_PROBE_TIMEOUT_MS
+          : resolveProbeTimeoutMs(startIndex, allEvents),
       },
     );
 
@@ -150,22 +150,7 @@ export async function restoreEveSessionEvents(
     allEvents.push(...batch);
     startIndex += batch.length;
 
-    const lastEvent = batch[batch.length - 1];
-    if (!lastEvent || !isCurrentTurnBoundaryEvent(lastEvent)) {
-      const tailed = await collectStreamEvents(
-        toSessionState(pointer, startIndex),
-        forgeSessionId,
-        {
-          startIndex,
-          untilTurnBoundary: true,
-          signal: options?.signal,
-        },
-      );
-
-      if (tailed.length > 0) {
-        allEvents.push(...tailed);
-      }
-
+    if (!isTurnComplete(allEvents)) {
       break;
     }
   }

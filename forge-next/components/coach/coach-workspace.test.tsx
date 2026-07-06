@@ -18,6 +18,12 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
   useCoachPlanWorkspace: (...args: unknown[]) => mockUseCoachPlanWorkspace(...args),
 }));
 
+vi.mock("@/lib/chat/adapters/plan/coach-eve-session", () => ({
+  useCoachEveCatchUp: () => ({ loadPhase: "idle", events: [] }),
+  isCoachEveAgentReady: () => true,
+  isCoachEveSessionLoading: () => false,
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,

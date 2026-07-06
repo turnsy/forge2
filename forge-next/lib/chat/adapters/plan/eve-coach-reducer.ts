@@ -5,7 +5,6 @@ import type {
   EveAgentReducerEvent,
 } from "eve/client";
 import type { EveCoachReducerData } from "@/lib/chat/session-types";
-import type { ChatMessage } from "@/lib/chat/types";
 import {
   isPlanArtifactToolSuccess,
   isSubmitPlanCodeOutput,
@@ -105,32 +104,6 @@ function applyToolFailureErrors(
     phase: "error",
     runStatus: "error",
   };
-}
-
-function eveMessagesToChatMessages(
-  messages: readonly { role: string; parts: readonly { type: string; text?: string }[] }[],
-): ChatMessage[] {
-  const result: ChatMessage[] = [];
-
-  for (const message of messages) {
-    if (message.role !== "user" && message.role !== "assistant") {
-      continue;
-    }
-
-    const text = message.parts
-      .filter((part) => part.type === "text" && typeof part.text === "string")
-      .map((part) => part.text)
-      .join("");
-
-    if (message.role === "user" || text.trim().length > 0) {
-      result.push({
-        role: message.role as "user" | "assistant",
-        content: text,
-      });
-    }
-  }
-
-  return result;
 }
 
 function finalizeAssistantTurn(
@@ -279,5 +252,3 @@ export function createEveCoachReducer(
     },
   };
 }
-
-export { eveMessagesToChatMessages };

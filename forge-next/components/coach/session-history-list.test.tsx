@@ -30,8 +30,6 @@ vi.mock("@/lib/chat/session-navigation-context", async () => {
       ],
       startSessionNavigation: mockStartSessionNavigation,
       registerNewSession: vi.fn(),
-      stashPendingFirstSend: vi.fn(),
-      consumePendingFirstSend: vi.fn(),
     }),
   };
 });
