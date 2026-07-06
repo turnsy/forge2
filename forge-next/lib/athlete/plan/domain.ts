@@ -88,6 +88,35 @@ export function countFullySkippedDays(plan: WorkoutPlan): number {
   return count;
 }
 
+/** Resolved days that include at least one skipped set (includes fully skipped days). */
+export function countResolvedDaysWithSkippedSets(plan: WorkoutPlan): number {
+  let count = 0;
+
+  for (const week of plan.weeks) {
+    for (const day of week.days ?? []) {
+      if (isDayResolved(day) && dayHasSkippedSets(day)) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
+}
+
+export function countSkippedSets(plan: WorkoutPlan): number {
+  let count = 0;
+
+  for (const week of plan.weeks) {
+    for (const day of week.days ?? []) {
+      for (const exercise of flattenDayExercises(day)) {
+        count += exercise.sets.filter((set) => set.status === "skipped").length;
+      }
+    }
+  }
+
+  return count;
+}
+
 export function computePlanCompletionPercent(plan: WorkoutPlan): number {
   let totalDays = 0;
   let resolvedDays = 0;

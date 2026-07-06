@@ -13,6 +13,8 @@ import {
   completeDayInPlan,
   computePlanCompletionPercent,
   countFullySkippedDays,
+  countResolvedDaysWithSkippedSets,
+  countSkippedSets,
   dayHasSkippedSets,
   dayHasUnfilledNonTargetSets,
   findCurrentDay,
@@ -558,5 +560,14 @@ describe("day resolution helpers", () => {
       }),
     );
     expect(computePlanCompletionPercent(afterDayOne)).toBe(67);
+  });
+
+  it("counts resolved days with skipped sets and total skipped sets", () => {
+    const plan = makePlan();
+    const { plan: resolved } = completeDayInPlan(plan, 0, 0);
+
+    expect(countResolvedDaysWithSkippedSets(resolved)).toBe(1);
+    expect(countSkippedSets(resolved)).toBeGreaterThan(0);
+    expect(countFullySkippedDays(resolved)).toBe(0);
   });
 });

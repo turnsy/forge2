@@ -60,6 +60,8 @@ describe("summarizeAssignedPlanProgress", () => {
     expect(summary).toContain("Completion:");
     expect(summary).toContain("Current: Week");
     expect(summary).toContain("Skipped days: 1");
+    expect(summary).toContain("Days with skipped sets:");
+    expect(summary).toContain("Skipped sets:");
     expect(summary).toContain("Assigned: Jan 15, 2026");
   });
 

@@ -2,6 +2,8 @@ import {
   areAllDaysComplete,
   computePlanCompletionPercent,
   countFullySkippedDays,
+  countResolvedDaysWithSkippedSets,
+  countSkippedSets,
   findCurrentDay,
   isDayFullySkipped,
   isDayResolved,
@@ -127,6 +129,8 @@ function summarizeAssignedOverview(
   }
 
   lines.push(`Skipped days: ${countFullySkippedDays(plan)}`);
+  lines.push(`Days with skipped sets: ${countResolvedDaysWithSkippedSets(plan)}`);
+  lines.push(`Skipped sets: ${countSkippedSets(plan)}`);
   lines.push(`Assigned: ${formatDate(assignment.assignedAt)}`);
 
   return lines.join("\n");
