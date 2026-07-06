@@ -35,11 +35,11 @@ describe("ChatMessageBody", () => {
       <ChatMessageBody
         message={{
           role: "assistant",
-          content: "The plan is 1 week long.",
+          content: "The plan is **1 week** long.",
         }}
       />,
     );
 
-    expect(screen.getByText("The plan is 1 week long.")).toBeInTheDocument();
+    expect(screen.getByText("1 week").tagName).toBe("STRONG");
   });
 });

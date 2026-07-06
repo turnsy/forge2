@@ -32,3 +32,4 @@ export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
 export { Dropdown, DropdownItem } from "./dropdown";
 export { ChatBubble } from "./chat-bubble";
+export { MarkdownContent } from "./markdown-content";

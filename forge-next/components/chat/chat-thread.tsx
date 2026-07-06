@@ -1,11 +1,15 @@
+"use client";
+
 import { ChatMessageBody } from "@/components/chat/chat-message-body";
 import { ChatBubble } from "@/components/ui/chat-bubble";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { Spinner } from "@/components/ui";
 import {
   getRunStatusLabel,
   isActiveRunStatus,
 } from "@/lib/chat/run-status-copy";
 import { hasVisibleChatContent } from "@/lib/chat/message-content";
+import { useChatThreadAutoScroll } from "@/lib/chat/use-chat-thread-scroll";
 import type {
   ChatDisplayError,
   ChatMessage,
@@ -22,18 +26,29 @@ function isRenderableMessage(message: ChatMessage): boolean {
 }
 
 export function ChatThread({
+  threadKey,
   messages,
   streamingAssistantText,
   runStatus,
   errors,
   phase,
 }: {
+  threadKey: string;
   messages: ChatMessage[];
   streamingAssistantText: string;
   runStatus: ChatStatus | null;
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
 }) {
+  const { scrollRef, bottomRef } = useChatThreadAutoScroll({
+    threadKey,
+    messages,
+    streamingAssistantText,
+    runStatus,
+    errors,
+    phase,
+  });
+
   const visibleStreamingText = streamingAssistantText.trim();
   const showStreaming =
     visibleStreamingText.length > 0 &&
@@ -63,7 +78,10 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0">
+      <div
+        ref={scrollRef}
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0"
+      >
         {messages.filter(isRenderableMessage).map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>
             <ChatMessageBody message={message} />
@@ -71,7 +89,7 @@ export function ChatThread({
         ))}
         {showStreaming ? (
           <ChatBubble role="assistant" isStreaming>
-            <p className="whitespace-pre-wrap">{visibleStreamingText}</p>
+            <MarkdownContent content={visibleStreamingText} />
           </ChatBubble>
         ) : null}
         {showRunStatus && statusLabel ? (
@@ -98,6 +116,7 @@ export function ChatThread({
             </ul>
           </ChatBubble>
         ) : null}
+        <div ref={bottomRef} aria-hidden className="h-px shrink-0" />
       </div>
     </div>
   );

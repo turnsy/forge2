@@ -195,6 +195,30 @@ describe("CoachWorkspace layout", () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
+  it("keeps reset enabled while the agent is generating", async () => {
+    const user = userEvent.setup();
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          messages: [{ role: "user", content: "Hello" }],
+          phase: "streaming",
+          runStatus: "generating",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    const resetButton = screen.getByRole("button", { name: "Reset conversation" });
+    expect(resetButton).toBeEnabled();
+
+    await user.click(resetButton);
+
+    expect(mockRestart).toHaveBeenCalledOnce();
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+  });
+
   it("shows the back link when a saved plan is in workspace state", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(

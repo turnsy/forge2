@@ -25,6 +25,7 @@ export function CoachConversationPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatThread
+        threadKey={state.sessionId}
         messages={state.messages}
         streamingAssistantText={state.streamingAssistantText}
         runStatus={state.runStatus}

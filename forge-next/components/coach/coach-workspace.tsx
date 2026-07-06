@@ -60,10 +60,8 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
 import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
 import type { HandleMessageStreamEvent } from "eve/client";
-import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 function ChatWorkspaceShell({
-  state,
   onReset,
   children,
   headerClassName,
@@ -71,7 +69,6 @@ function ChatWorkspaceShell({
   headerStart,
   headerActions,
 }: {
-  state: PlanWorkspaceState;
   onReset: () => void;
   children: ReactNode;
   headerClassName: string;
@@ -87,7 +84,6 @@ function ChatWorkspaceShell({
           {headerActions}
           <WorkspaceCloseButton
             variant="reset"
-            disabled={isChatRunning(state)}
             onClick={onReset}
           />
         </div>
@@ -484,10 +480,6 @@ function CoachWorkspaceInner({
   );
 
   const handleClose = useCallback(() => {
-    if (isChatRunning(state)) {
-      return;
-    }
-
     if (
       savedSnapshotRef.current &&
       hasUnsavedPlanChanges(
@@ -652,7 +644,6 @@ function CoachWorkspaceInner({
     if (!showSplitPane) {
       return (
         <ChatWorkspaceShell
-          state={state}
           onReset={handleMobileReset}
           headerClassName={mobileChatHeaderClass}
           headerStart={mobileHistoryToggle}
@@ -692,7 +683,6 @@ function CoachWorkspaceInner({
           </div>
         ) : (
           <ChatWorkspaceShell
-            state={state}
             onReset={handleMobileReset}
             headerClassName={mobileChatHeaderClass}
             headerStart={mobileHistoryToggle}
@@ -791,7 +781,6 @@ function CoachWorkspaceInner({
             className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
           >
             <ChatWorkspaceShell
-              state={state}
               onReset={handleMobileReset}
               headerClassName={DESKTOP_CHAT_HEADER_CLASS}
               headerActions={desktopChatCollapseControl}
