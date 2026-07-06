@@ -172,4 +172,12 @@ describe("PromptComposer", () => {
     expect(onSend).not.toHaveBeenCalled();
     expect(editor.querySelector("[data-mention-id='a1']")).toBeTruthy();
   });
+
+  it("uses at least 16px text in compact mode to avoid iOS focus zoom", () => {
+    render(<PromptComposer compact placeholder="Ask Forge..." />);
+
+    const editor = screen.getByRole("textbox");
+    expect(editor.className).toContain("text-base");
+    expect(editor.className).toContain("md:text-sm");
+  });
 });
