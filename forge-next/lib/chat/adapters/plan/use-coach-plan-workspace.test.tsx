@@ -400,8 +400,6 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockStop).toHaveBeenCalledOnce();
     expect(result.current.state.runStatus).toBeNull();
     expect(result.current.state.phase).toBe("idle");
-    expect(result.current.state.errors[0]?.message).toMatch(
-      /stopped before finishing/i,
-    );
+    expect(result.current.state.errors).toEqual([]);
   });
 });

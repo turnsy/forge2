@@ -125,6 +125,7 @@ function initialSessionLoadPhase(
 
 export function applyUserStoppedTurn(
   data: EveCoachReducerData,
+  options?: { interrupted?: boolean },
 ): EveCoachReducerData {
   const hadActiveRun =
     data.runStatus !== null && isActiveRunStatus(data.runStatus);
@@ -153,7 +154,7 @@ export function applyUserStoppedTurn(
         streamingAssistantText: "",
       };
 
-  if (!hadActiveRun) {
+  if (!options?.interrupted || !hadActiveRun) {
     return next;
   }
 
@@ -177,7 +178,7 @@ export function applyCoachEveLoadPhase(
     return data;
   }
 
-  return applyUserStoppedTurn(data);
+  return applyUserStoppedTurn(data, { interrupted: true });
 }
 
 export function isCoachEveAgentReady(loadPhase: CoachEveLoadPhase): boolean {

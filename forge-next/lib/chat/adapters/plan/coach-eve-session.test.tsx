@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
   applyCoachEveLoadPhase,
+  applyUserStoppedTurn,
   useCoachEveCatchUp,
 } from "@/lib/chat/adapters/plan/coach-eve-session";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
@@ -181,6 +182,20 @@ describe("applyCoachEveLoadPhase", () => {
     expect(normalized.errors).toEqual([
       { message: STREAM_INTERRUPTED_MESSAGE },
     ]);
+  });
+
+  it("clears generating state without an error when the user stops", () => {
+    let state = reducer.initial();
+    state = reducer.reduce(state, {
+      type: "turn.started",
+      data: { turnId: "turn-1", sequence: 1 },
+    });
+
+    const normalized = applyUserStoppedTurn(state);
+
+    expect(normalized.runStatus).toBeNull();
+    expect(normalized.phase).toBe("idle");
+    expect(normalized.errors).toEqual([]);
   });
 
   it("leaves in-flight projection untouched while waiting", () => {
