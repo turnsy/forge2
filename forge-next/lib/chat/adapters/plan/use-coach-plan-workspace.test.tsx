@@ -21,6 +21,7 @@ const {
   capturedOnPostResponse,
   agentSessionState,
   agentEventsState,
+  agentDataState,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
@@ -60,6 +61,19 @@ const {
   agentEventsState: {
     current: [] as unknown[],
   },
+  agentDataState: {
+    current: {
+      messages: [] as { role: "user" | "assistant"; content: string }[],
+      currentArtifact: null as ReturnType<typeof createEmptyWorkoutPlan> | null,
+      planId: null as string | null,
+      artifactTitle: "",
+      runStatus: null as string | null,
+      streamingAssistantText: "",
+      errors: [] as { message: string }[],
+      phase: "idle" as const,
+      warnings: [] as string[],
+    },
+  },
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -95,16 +109,8 @@ vi.mock("eve/react", () => ({
   }) => {
     capturedEveAgentOptions.current = options;
     return {
-      data: {
-        messages: [],
-        currentArtifact: null,
-        planId: null,
-        artifactTitle: "",
-        runStatus: null,
-        streamingAssistantText: "",
-        errors: [],
-        phase: "idle",
-        warnings: [],
+      get data() {
+        return agentDataState.current;
       },
       status: "ready",
       error: null,
@@ -147,6 +153,17 @@ describe("useCoachPlanWorkspace", () => {
       streamIndex: 0,
     };
     agentEventsState.current = [];
+    agentDataState.current = {
+      messages: [],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      runStatus: null,
+      streamingAssistantText: "",
+      errors: [],
+      phase: "idle",
+      warnings: [],
+    };
     mockSend.mockResolvedValue(undefined);
     saveSessionSnapshot.mockResolvedValue({
       ok: true,
@@ -357,5 +374,34 @@ describe("useCoachPlanWorkspace", () => {
     });
 
     expect(mockStop).toHaveBeenCalledOnce();
+  });
+
+  it("clears generating state when stop is clicked after the stream ends", () => {
+    agentDataState.current = {
+      messages: [{ role: "user", content: "Build a plan" }],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      runStatus: "generating",
+      streamingAssistantText: "",
+      errors: [],
+      phase: "idle",
+      warnings: [],
+    };
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    expect(result.current.state.runStatus).toBe("generating");
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    expect(mockStop).toHaveBeenCalledOnce();
+    expect(result.current.state.runStatus).toBeNull();
+    expect(result.current.state.phase).toBe("idle");
+    expect(result.current.state.errors[0]?.message).toMatch(
+      /stopped before finishing/i,
+    );
   });
 });

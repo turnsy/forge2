@@ -32,6 +32,33 @@ describe("workspace selectors", () => {
     expect(canStopChat(state)).toBe(false);
   });
 
+  it("allows stop while generating even if phase is idle", () => {
+    const state = {
+      ...createInitialChatWorkspaceState(),
+      phase: "idle" as const,
+      runStatus: "generating" as const,
+    };
+    expect(canStopChat(state)).toBe(true);
+  });
+
+  it("allows stop during sandbox without streaming phase", () => {
+    const state = {
+      ...createInitialChatWorkspaceState(),
+      phase: "idle" as const,
+      runStatus: "sandbox" as const,
+    };
+    expect(canStopChat(state)).toBe(true);
+  });
+
+  it("does not allow stop while uploading", () => {
+    const state = {
+      ...createInitialChatWorkspaceState(),
+      phase: "uploading" as const,
+      runStatus: "generating" as const,
+    };
+    expect(canStopChat(state)).toBe(false);
+  });
+
   it("detects awaiting first artifact", () => {
     const state = {
       ...createInitialChatWorkspaceState(),

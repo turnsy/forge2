@@ -123,7 +123,7 @@ function initialSessionLoadPhase(
   return events.length > 0 ? "ready" : "idle";
 }
 
-function finalizeInterruptedDisplay(
+export function applyUserStoppedTurn(
   data: EveCoachReducerData,
 ): EveCoachReducerData {
   const hadActiveRun =
@@ -177,7 +177,7 @@ export function applyCoachEveLoadPhase(
     return data;
   }
 
-  return finalizeInterruptedDisplay(data);
+  return applyUserStoppedTurn(data);
 }
 
 export function isCoachEveAgentReady(loadPhase: CoachEveLoadPhase): boolean {

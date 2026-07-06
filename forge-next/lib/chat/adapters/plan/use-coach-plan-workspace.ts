@@ -10,6 +10,7 @@ import {
 } from "@/lib/chat/actions";
 import {
   applyCoachEveLoadPhase,
+  applyUserStoppedTurn,
   type CoachEveLoadPhase,
 } from "@/lib/chat/adapters/plan/coach-eve-session";
 import {
@@ -432,6 +433,7 @@ export function useCoachPlanWorkspace(options?: {
     () => loadPhase === "waiting",
   );
   const [resumeInterrupted, setResumeInterrupted] = useState(false);
+  const [userStopped, setUserStopped] = useState(false);
 
   useEffect(() => {
     if (!tailResumeKey) {
@@ -554,7 +556,11 @@ export function useCoachPlanWorkspace(options?: {
     effectiveLoadPhase === "waiting" && !resumeInterrupted;
 
   const projectionData = resumedProjection ?? agent.data;
-  const workspaceData = applyCoachEveLoadPhase(effectiveLoadPhase, projectionData);
+  const workspaceData = userStopped
+    ? applyUserStoppedTurn(
+        applyCoachEveLoadPhase(effectiveLoadPhase, projectionData),
+      )
+    : applyCoachEveLoadPhase(effectiveLoadPhase, projectionData);
 
   const isBusy =
     isResumingStream ||
@@ -727,12 +733,14 @@ export function useCoachPlanWorkspace(options?: {
         setIsInitializingThread(false);
       }
 
+      setUserStopped(false);
       await agent.send({ message: agentPrompt });
     },
     [agent, ensureSessionTitle, isBusy, isInitializingThread],
   );
 
   const restart = useCallback(() => {
+    setUserStopped(false);
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     sessionTitleRef.current = null;
@@ -767,6 +775,7 @@ export function useCoachPlanWorkspace(options?: {
     tailResumeAbortRef.current?.abort();
     tailResumeAbortRef.current = null;
     agent.stop();
+    setUserStopped(true);
   }, [agent]);
 
   return {

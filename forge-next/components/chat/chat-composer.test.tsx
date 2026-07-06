@@ -45,4 +45,29 @@ describe("ChatComposer", () => {
       screen.queryByRole("button", { name: "Stop response" }),
     ).not.toBeInTheDocument();
   });
+
+  it("shows a stop button while generating even if phase is idle", async () => {
+    const user = userEvent.setup();
+    const onStop = vi.fn();
+
+    render(
+      <ChatComposer
+        state={{
+          ...createInitialChatWorkspaceState(),
+          phase: "idle",
+          runStatus: "generating",
+        }}
+        composerKey="composer-1"
+        onAttach={vi.fn()}
+        onSend={vi.fn()}
+        onStop={onStop}
+      />,
+    );
+
+    const stopButton = screen.getByRole("button", { name: "Stop response" });
+    expect(stopButton).toBeEnabled();
+
+    await user.click(stopButton);
+    expect(onStop).toHaveBeenCalledOnce();
+  });
 });
