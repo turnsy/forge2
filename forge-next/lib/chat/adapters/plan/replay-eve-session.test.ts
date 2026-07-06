@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockStream, mockSession, mockClient } = vi.hoisted(() => {
+const { mockStream, mockClient } = vi.hoisted(() => {
   const mockStream = vi.fn();
   const mockSession = vi.fn(() => ({ stream: mockStream }));
   const mockClient = vi.fn(() => ({ session: mockSession }));
-  return { mockStream, mockSession, mockClient };
+  return { mockStream, mockClient };
 });
 
 vi.mock("eve/client", async (importOriginal) => {
@@ -18,7 +18,6 @@ vi.mock("eve/client", async (importOriginal) => {
 });
 
 import {
-  IN_FLIGHT_TAIL_TIMEOUT_MS,
   restoreEveSessionEvents,
 } from "@/lib/chat/adapters/plan/replay-eve-session";
 
@@ -32,36 +31,26 @@ describe("restoreEveSessionEvents", () => {
     vi.clearAllMocks();
   });
 
-  it("tails the stream when the replayed turn has not completed", async () => {
+  it("returns an in-flight replay without blocking for the turn to finish", async () => {
     const replayEvents = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "message.appended", data: { messageSoFar: "Working" } },
     ];
-    const tailEvents = [{ type: "session.waiting", data: {} }];
 
-    mockStream
-      .mockImplementationOnce(async function* () {
-        for (const event of replayEvents) {
-          yield event;
-        }
-      })
-      .mockImplementationOnce(async function* () {
-        for (const event of tailEvents) {
-          yield event;
-        }
-      });
+    mockStream.mockImplementationOnce(async function* () {
+      for (const event of replayEvents) {
+        yield event;
+      }
+    });
 
     await expect(
       restoreEveSessionEvents(evePointer, "forge-session-1"),
-    ).resolves.toEqual([...replayEvents, ...tailEvents]);
+    ).resolves.toEqual(replayEvents);
 
-    expect(mockStream).toHaveBeenNthCalledWith(1, {
+    expect(mockStream).toHaveBeenCalledOnce();
+    expect(mockStream).toHaveBeenCalledWith({
       startIndex: 0,
       signal: undefined,
-    });
-    expect(mockStream).toHaveBeenNthCalledWith(2, {
-      startIndex: 2,
-      signal: expect.any(AbortSignal),
     });
   });
 
@@ -143,16 +132,37 @@ describe("restoreEveSessionEvents", () => {
     });
   });
 
-  it("tails from a persisted checkpoint when the turn is still in flight", async () => {
+  it("returns a persisted in-flight checkpoint without blocking on Eve", async () => {
     const persistedPrefix = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "message.appended", data: { messageSoFar: "Working" } },
     ];
-    const tailEvents = [{ type: "session.waiting", data: {} }];
+
+    await expect(
+      restoreEveSessionEvents(evePointer, "forge-session-1", {
+        fromEvents: persistedPrefix,
+      }),
+    ).resolves.toEqual(persistedPrefix);
+
+    expect(mockStream).not.toHaveBeenCalled();
+  });
+
+  it("probes briefly when the next turn is already in flight", async () => {
+    vi.useFakeTimers();
+
+    const turnOne = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "message.completed", data: { message: "Hi there" } },
+      { type: "session.waiting", data: {} },
+    ];
+    const inFlightStart = [
+      { type: "message.received", data: { message: "Again" } },
+      { type: "turn.started", data: { turnId: "turn-2", sequence: 2 } },
+    ];
 
     mockStream
       .mockImplementationOnce(async function* () {
-        for (const event of tailEvents) {
+        for (const event of turnOne) {
           yield event;
         }
       })
@@ -161,6 +171,10 @@ describe("restoreEveSessionEvents", () => {
       }: {
         signal?: AbortSignal;
       } = {}) {
+        for (const event of inFlightStart) {
+          yield event;
+        }
+
         await new Promise<void>((resolve) => {
           if (!signal || signal.aborted) {
             resolve();
@@ -171,56 +185,10 @@ describe("restoreEveSessionEvents", () => {
         });
       });
 
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1", {
-        fromEvents: persistedPrefix,
-      }),
-    ).resolves.toEqual([...persistedPrefix, ...tailEvents]);
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1");
 
-    expect(mockStream).toHaveBeenNthCalledWith(1, {
-      startIndex: 2,
-      signal: expect.any(AbortSignal),
-    });
-    expect(mockStream).toHaveBeenNthCalledWith(2, {
-      startIndex: 3,
-      signal: expect.any(AbortSignal),
-    });
-  });
-
-  it("returns the persisted prefix when tailing an in-flight turn times out", async () => {
-    vi.useFakeTimers();
-
-    const persistedPrefix = [
-      { type: "message.received", data: { message: "Hello" } },
-      { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
-    ];
-
-    mockStream.mockImplementation(async function* ({
-      signal,
-    }: {
-      signal?: AbortSignal;
-    } = {}) {
-      await new Promise<void>((resolve) => {
-        if (!signal || signal.aborted) {
-          resolve();
-          return;
-        }
-
-        signal.addEventListener("abort", () => resolve(), { once: true });
-      });
-    });
-
-    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
-      fromEvents: persistedPrefix,
-    });
-
-    await vi.advanceTimersByTimeAsync(IN_FLIGHT_TAIL_TIMEOUT_MS + 1);
-    await expect(promise).resolves.toEqual(persistedPrefix);
-
-    expect(mockStream).toHaveBeenCalledWith({
-      startIndex: 2,
-      signal: expect.any(AbortSignal),
-    });
+    await vi.advanceTimersByTimeAsync(2_001);
+    await expect(promise).resolves.toEqual([...turnOne, ...inFlightStart]);
 
     vi.useRealTimers();
   });
