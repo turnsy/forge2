@@ -17,7 +17,7 @@ describe("ChatThread", () => {
     expect(screen.getByLabelText("Generating")).toBeInTheDocument();
   });
 
-  it("renders streaming text before the run status bubble", () => {
+  it("hides generating status once assistant text starts streaming", () => {
     const { container } = render(
       <ChatThread
         messages={[{ role: "user", content: "Hi" }]}
@@ -28,7 +28,8 @@ describe("ChatThread", () => {
       />,
     );
     const scrollPane = container.querySelector(".overflow-y-auto");
-    expect(scrollPane?.textContent).toMatch(/Hi[\s\S]*Partial reply[\s\S]*Generating/);
+    expect(scrollPane?.textContent).toContain("Partial reply");
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
   it("shows inline errors in the thread", () => {

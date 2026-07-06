@@ -41,10 +41,15 @@ export function ChatThread({
       messages[messages.length - 1]?.role !== "assistant" ||
       messages[messages.length - 1]?.content.trim() !== visibleStreamingText);
 
+  const suppressGeneratingSpinner =
+    runStatus === "generating" && visibleStreamingText.length > 0;
+
   const showRunStatus =
     phase === "uploading" ||
-    (runStatus !== null && isActiveRunStatus(runStatus)) ||
-    (phase === "streaming" && runStatus === null);
+    (runStatus !== null &&
+      isActiveRunStatus(runStatus) &&
+      !suppressGeneratingSpinner) ||
+    (phase === "streaming" && runStatus === null && visibleStreamingText.length === 0);
 
   const showErrors = errors.length > 0;
 
