@@ -1,8 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import workoutPlanSchema from "../../../schemas/workout-plan.schema.json";
 
 export type WorkoutPlanValidationError = {
   path: string;
@@ -14,8 +13,7 @@ export type WorkoutPlanLoadResult =
   | { ok: false; errors: WorkoutPlanValidationError[] };
 
 function getWorkoutPlanSchema(): object {
-  const schemaPath = join(process.cwd(), "..", "schemas", "workout-plan.schema.json");
-  return JSON.parse(readFileSync(schemaPath, "utf8")) as object;
+  return workoutPlanSchema;
 }
 
 let validateFn: ReturnType<Ajv2020["compile"]> | null = null;
