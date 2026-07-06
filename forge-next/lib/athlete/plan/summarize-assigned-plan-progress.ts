@@ -1,7 +1,10 @@
 import {
   areAllDaysComplete,
   computePlanCompletionPercent,
+  countFullySkippedDays,
   findCurrentDay,
+  isDayFullySkipped,
+  isDayResolved,
 } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import { formatDate } from "@/lib/format/date";
@@ -71,53 +74,17 @@ export function summarizeAssignedPlanProgress(
   return summarizeAssignedOverview(athleteName, assignment, plan);
 }
 
-export function countSkippedDays(plan: WorkoutPlan): number {
-  let count = 0;
-
-  for (const week of plan.weeks) {
-    for (const day of week.days ?? []) {
-      if (isDaySkipped(day)) {
-        count += 1;
-      }
-    }
-  }
-
-  return count;
-}
-
-function isDaySkipped(day: Day): boolean {
-  const exercises = flattenDayExercises(day);
-  if (exercises.length === 0) {
-    return false;
-  }
-
-  return exercises.every((exercise) =>
-    exercise.sets.every((set) => set.status === "skipped"),
-  );
-}
-
-function isDayCompleted(day: Day): boolean {
-  const exercises = flattenDayExercises(day);
-  if (exercises.length === 0) {
-    return false;
-  }
-
-  return exercises.every((exercise) =>
-    exercise.sets.every((set) => set.status === "completed"),
-  );
-}
-
 function getDayProgressStatus(
   plan: WorkoutPlan,
   weekPos: number,
   dayPos: number,
   day: Day,
 ): string {
-  if (isDaySkipped(day)) {
+  if (isDayFullySkipped(day)) {
     return "skipped";
   }
 
-  if (isDayCompleted(day)) {
+  if (isDayResolved(day)) {
     return "completed";
   }
 
@@ -159,7 +126,7 @@ function summarizeAssignedOverview(
     lines.push("Current: none");
   }
 
-  lines.push(`Skipped days: ${countSkippedDays(plan)}`);
+  lines.push(`Skipped days: ${countFullySkippedDays(plan)}`);
   lines.push(`Assigned: ${formatDate(assignment.assignedAt)}`);
 
   return lines.join("\n");

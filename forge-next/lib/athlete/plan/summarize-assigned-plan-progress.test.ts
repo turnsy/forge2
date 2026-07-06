@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  countSkippedDays,
   summarizeAssignedPlanProgress,
 } from "@/lib/athlete/plan/summarize-assigned-plan-progress";
+import { countFullySkippedDays } from "@/lib/athlete/plan/domain";
 import type { AssignedPlan } from "@/lib/athlete/plan/assigned-plan-data";
 import {
   makeBlock,
@@ -197,7 +197,7 @@ describe("summarizeAssignedPlanProgress", () => {
   });
 });
 
-describe("countSkippedDays", () => {
+describe("countFullySkippedDays", () => {
   it("counts days where every set is skipped", () => {
     const plan = makeWorkoutPlan({ name: "Skipped day plan", multiDay: true });
     plan.weeks[0].days[1] = makeDay({
@@ -216,6 +216,6 @@ describe("countSkippedDays", () => {
       ],
     });
 
-    expect(countSkippedDays(plan)).toBe(1);
+    expect(countFullySkippedDays(plan)).toBe(1);
   });
 });

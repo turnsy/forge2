@@ -12,8 +12,12 @@ import {
   buildActualFromInputs,
   completeDayInPlan,
   computePlanCompletionPercent,
+  countFullySkippedDays,
+  dayHasSkippedSets,
   dayHasUnfilledNonTargetSets,
   findCurrentDay,
+  isDayFullySkipped,
+  isDayResolved,
   isExerciseComplete,
   isSetActualComplete,
   parseTargetInput,
@@ -456,5 +460,103 @@ describe("computePlanCompletionPercent", () => {
     };
 
     expect(computePlanCompletionPercent(partialPlan)).toBe(50);
+  });
+
+  it("counts resolved days with skipped sets toward completion", () => {
+    const plan = makePlan();
+    const { plan: resolvedDay } = completeDayInPlan(plan, 0, 0);
+
+    expect(isDayResolved(resolvedDay.weeks[0].days[0])).toBe(true);
+    expect(computePlanCompletionPercent(resolvedDay)).toBe(50);
+  });
+
+  it("does not count days that still have planned sets", () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].blocks[0].exercises[0].sets[0].status = "skipped";
+
+    expect(isDayResolved(plan.weeks[0].days[0])).toBe(false);
+    expect(computePlanCompletionPercent(plan)).toBe(0);
+  });
+});
+
+describe("day resolution helpers", () => {
+  it("detects fully skipped days", () => {
+    const plan = makePlan();
+    const { plan: resolved } = completeDayInPlan(plan, 0, 0);
+    const day = resolved.weeks[0].days[0];
+
+    expect(dayHasSkippedSets(day)).toBe(true);
+    expect(isDayFullySkipped(day)).toBe(false);
+    expect(countFullySkippedDays(resolved)).toBe(0);
+  });
+
+  it("counts days where every set is skipped", () => {
+    const plan = makePlan();
+    for (const exercise of plan.weeks[0].days[0].blocks[0].exercises) {
+      exercise.sets = exercise.sets.map((set) => ({
+        ...set,
+        status: "skipped" as const,
+      }));
+    }
+
+    expect(isDayFullySkipped(plan.weeks[0].days[0])).toBe(true);
+    expect(isDayResolved(plan.weeks[0].days[0])).toBe(true);
+    expect(countFullySkippedDays(plan)).toBe(1);
+    expect(computePlanCompletionPercent(plan)).toBe(50);
+  });
+
+  it("treats findCurrentDay as the first day with planned sets after resolved days", () => {
+    const plan = makePlan();
+    const dayTwo = makeDay({
+      code: "w1d2",
+      blocks: [
+        makeBlock({
+          id: "w1d2-b1",
+          exercises: [
+            makeExercise({
+              id: "bench-press",
+              name: "Bench Press",
+              sets: [makeSet({ id: "w1d2-bp-1" })],
+            }),
+          ],
+        }),
+      ],
+    });
+    const dayThree = makeDay({
+      code: "w1d3",
+      blocks: [
+        makeBlock({
+          id: "w1d3-b1",
+          exercises: [
+            makeExercise({
+              id: "squat",
+              name: "Squat",
+              sets: [makeSet({ id: "w1d3-sq-1" })],
+            }),
+          ],
+        }),
+      ],
+    });
+    const threeDayPlan: WorkoutPlan = {
+      ...plan,
+      weeks: [{ days: [plan.weeks[0].days[0], dayTwo, dayThree] }],
+    };
+
+    const { plan: afterDayOne } = completeDayInPlan(threeDayPlan, 0, 0);
+    for (const exercise of afterDayOne.weeks[0].days[1].blocks[0].exercises) {
+      exercise.sets = exercise.sets.map((set) => ({
+        ...set,
+        status: "skipped" as const,
+      }));
+    }
+
+    const current = findCurrentDay(afterDayOne);
+    expect(current).toEqual(
+      expect.objectContaining({
+        weekPos: 0,
+        dayPos: 2,
+      }),
+    );
+    expect(computePlanCompletionPercent(afterDayOne)).toBe(67);
   });
 });
