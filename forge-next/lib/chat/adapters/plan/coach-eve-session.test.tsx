@@ -190,6 +190,10 @@ describe("applyCoachEveLoadPhase", () => {
       type: "turn.started",
       data: { turnId: "turn-1", sequence: 1 },
     });
+    state = {
+      ...state,
+      errors: [{ message: "The operation was aborted." }],
+    };
 
     const normalized = applyUserStoppedTurn(state);
 

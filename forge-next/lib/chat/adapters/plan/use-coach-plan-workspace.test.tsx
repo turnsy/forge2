@@ -22,6 +22,7 @@ const {
   agentSessionState,
   agentEventsState,
   agentDataState,
+  agentStatusState,
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
@@ -74,6 +75,9 @@ const {
       warnings: [] as string[],
     },
   },
+  agentStatusState: {
+    current: "ready" as "ready" | "submitted" | "streaming" | "error",
+  },
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -112,7 +116,9 @@ vi.mock("eve/react", () => ({
       get data() {
         return agentDataState.current;
       },
-      status: "ready",
+      get status() {
+        return agentStatusState.current;
+      },
       error: null,
       get events() {
         return agentEventsState.current;
@@ -164,6 +170,7 @@ describe("useCoachPlanWorkspace", () => {
       phase: "idle",
       warnings: [],
     };
+    agentStatusState.current = "ready";
     mockSend.mockResolvedValue(undefined);
     saveSessionSnapshot.mockResolvedValue({
       ok: true,
@@ -401,5 +408,35 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.runStatus).toBeNull();
     expect(result.current.state.phase).toBe("idle");
     expect(result.current.state.errors).toEqual([]);
+  });
+
+  it("returns to idle while the Eve client is still winding down after stop", () => {
+    agentDataState.current = {
+      messages: [{ role: "user", content: "Build a plan" }],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      runStatus: "generating",
+      streamingAssistantText: "Partial",
+      errors: [],
+      phase: "streaming",
+      warnings: [],
+    };
+    agentStatusState.current = "streaming";
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    expect(result.current.state.phase).toBe("streaming");
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    expect(result.current.state.phase).toBe("idle");
+    expect(result.current.state.runStatus).toBe("done");
+    expect(result.current.state.messages).toEqual([
+      { role: "user", content: "Build a plan" },
+      { role: "assistant", content: "Partial" },
+    ]);
   });
 });

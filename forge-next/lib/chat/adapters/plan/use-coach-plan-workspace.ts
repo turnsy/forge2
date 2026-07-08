@@ -567,6 +567,7 @@ export function useCoachPlanWorkspace(options?: {
     agent.status === "submitted" ||
     agent.status === "streaming" ||
     (isWaitingOnAgent && workspaceData.streamingAssistantText.trim().length === 0);
+  const effectiveIsBusy = isBusy && !userStopped;
 
   useEffect(() => {
     const agentPlan = agent.data.currentArtifact;
@@ -582,7 +583,7 @@ export function useCoachPlanWorkspace(options?: {
 
     lastSyncedAgentArtifactRef.current = agentJson;
 
-    if (!isBusy) {
+    if (!effectiveIsBusy) {
       return;
     }
 
@@ -595,7 +596,7 @@ export function useCoachPlanWorkspace(options?: {
     agent.data.artifactTitle,
     agent.data.currentArtifact,
     agent.data.planId,
-    isBusy,
+    effectiveIsBusy,
   ]);
 
   const effectiveArtifact = buildClientArtifactSnapshot(projectionData);
@@ -621,7 +622,7 @@ export function useCoachPlanWorkspace(options?: {
       ? "uploading"
       : agent.status === "error" || workspaceData.phase === "error"
         ? "error"
-        : isBusy
+        : effectiveIsBusy
           ? "streaming"
           : workspaceData.phase;
 
@@ -629,7 +630,7 @@ export function useCoachPlanWorkspace(options?: {
     sessionId: forgeSessionId,
     hasStarted:
       workspaceData.messages.length > 0 ||
-      isBusy ||
+      effectiveIsBusy ||
       agent.status === "error" ||
       workspaceData.phase === "error" ||
       workspaceData.errors.length > 0 ||
@@ -716,7 +717,7 @@ export function useCoachPlanWorkspace(options?: {
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
-      if (displayPrompt.length === 0 || isBusy || isInitializingThread) {
+      if (displayPrompt.length === 0 || effectiveIsBusy || isInitializingThread) {
         return;
       }
 
@@ -736,10 +737,13 @@ export function useCoachPlanWorkspace(options?: {
       setUserStopped(false);
       await agent.send({ message: agentPrompt });
     },
-    [agent, ensureSessionTitle, isBusy, isInitializingThread],
+    [agent, ensureSessionTitle, effectiveIsBusy, isInitializingThread],
   );
 
   const restart = useCallback(() => {
+    tailResumeAbortRef.current?.abort();
+    tailResumeAbortRef.current = null;
+    setResumeInterrupted(false);
     setUserStopped(false);
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
@@ -774,6 +778,7 @@ export function useCoachPlanWorkspace(options?: {
   const stopResponse = useCallback(() => {
     tailResumeAbortRef.current?.abort();
     tailResumeAbortRef.current = null;
+    setResumeInterrupted(false);
     agent.stop();
     setUserStopped(true);
   }, [agent]);

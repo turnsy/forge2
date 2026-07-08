@@ -155,7 +155,7 @@ export function applyUserStoppedTurn(
       };
 
   if (!options?.interrupted || !hadActiveRun) {
-    return next;
+    return options?.interrupted ? next : { ...next, errors: [] };
   }
 
   if (
