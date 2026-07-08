@@ -70,4 +70,35 @@ describe("ChatComposer", () => {
     await user.click(stopButton);
     expect(onStop).toHaveBeenCalledOnce();
   });
+
+  it("shows send instead of stop when the user has typed during background generation", async () => {
+    const user = userEvent.setup();
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        state={{
+          ...createInitialChatWorkspaceState(),
+          phase: "idle",
+          runStatus: "validating",
+        }}
+        composerKey="composer-1"
+        onAttach={vi.fn()}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    const editor = screen.getByRole("textbox");
+    await user.click(editor);
+    await user.type(editor, "Show me in a table");
+
+    expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Stop response" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(onSend).toHaveBeenCalledOnce();
+  });
 });

@@ -401,6 +401,29 @@ describe("CoachWorkspace layout", () => {
     expect(mockRestart).not.toHaveBeenCalled();
   });
 
+  it("hides the composer while mobile history is open", async () => {
+    const user = userEvent.setup();
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Conversation history" }));
+
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Attach" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
+  });
+
   it("navigates to plan detail on close when a saved plan is loaded", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(

@@ -22,6 +22,7 @@ import {
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
+  MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -88,7 +89,7 @@ function ChatWorkspaceShell({
           />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -541,31 +542,13 @@ function CoachWorkspaceInner({
   const mobileChatHeaderClass =
     "flex shrink-0 items-center justify-between pb-2";
 
-  const mobileComposer = (
-    <ChatComposer
-      compact={state.hasStarted}
-      state={state}
-      composerKey={`${state.sessionId}-${state.messages.length}`}
-      onAttach={attachFiles}
-      onSend={handleSendMessage}
-      onStop={stopResponse}
-      promptEnabled={promptEnabled}
-    />
-  );
-
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
   ) =>
     mobileHistoryOpen ? (
-      <>
+      <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
         {mobileHistoryPanel}
-        <div
-          className={`shrink-0 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
-        >
-          {composerHeader}
-          {mobileComposer}
-        </div>
-      </>
+      </div>
     ) : (
       <CoachConversationPanel
         state={state}
@@ -585,13 +568,15 @@ function CoachWorkspaceInner({
           <div className={`${mobileChatHeaderClass} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}>
             {mobileHistoryToggle}
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             {mobileHistoryOpen ? (
-              <SessionHistoryMobilePanel
-                onActiveSessionDeleted={handleActiveSessionDeleted}
-                onClose={closeMobileHistory}
-                className="px-3"
-              />
+              <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
+                <SessionHistoryMobilePanel
+                  onActiveSessionDeleted={handleActiveSessionDeleted}
+                  onClose={closeMobileHistory}
+                  className="px-3"
+                />
+              </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
                 <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
@@ -601,18 +586,20 @@ function CoachWorkspaceInner({
               </div>
             )}
           </div>
-          <div
-            className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
-          >
-            <ChatComposer
-              state={state}
-              composerKey={`${state.sessionId}-${state.messages.length}`}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              onStop={stopResponse}
-              promptEnabled={promptEnabled}
-            />
-          </div>
+          {!mobileHistoryOpen ? (
+            <div
+              className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
+            >
+              <ChatComposer
+                state={state}
+                composerKey={`${state.sessionId}-${state.messages.length}`}
+                onAttach={attachFiles}
+                onSend={handleSendMessage}
+                onStop={stopResponse}
+                promptEnabled={promptEnabled}
+              />
+            </div>
+          ) : null}
         </div>
       );
     }

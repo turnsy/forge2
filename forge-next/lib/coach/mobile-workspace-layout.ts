@@ -18,6 +18,10 @@ export const MOBILE_OVERLAY_CONTENT_CLASS = "max-md:pt-16";
 /** Horizontal page padding for the mobile coach workspace chat surface. */
 export const MOBILE_WORKSPACE_X_PADDING_CLASS = "px-4 md:px-0";
 
+/** Full-screen mobile history overlay; covers chat content below the header. */
+export const MOBILE_HISTORY_OVERLAY_CLASS =
+  "absolute inset-0 z-10 flex min-h-0 flex-col overflow-hidden bg-surface";
+
 /** Keeps the prompt composer above the floating bottom nav. */
 export const MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS =
   MOBILE_BOTTOM_NAV_OFFSET_CLASS;

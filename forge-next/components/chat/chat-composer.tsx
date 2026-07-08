@@ -41,8 +41,9 @@ export function ChatComposer({
 
   const isDragging = dragDepth > 0;
   const isInitializing = state.phase === "initializing";
-  const stopAllowed = canStopChat(state) && Boolean(onStop);
   const sendAllowed = canSendChat(state) && !documentEmpty;
+  const stopAllowed =
+    canStopChat(state) && Boolean(onStop) && !sendAllowed;
 
   function addFiles(files: File[]) {
     if (files.length === 0) {
