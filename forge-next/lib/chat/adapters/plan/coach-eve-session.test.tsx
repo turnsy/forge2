@@ -202,6 +202,33 @@ describe("applyCoachEveLoadPhase", () => {
     expect(normalized.errors).toEqual([]);
   });
 
+  it("clears late abort failures emitted after stop()", () => {
+    let state = reducer.initial();
+    state = reducer.reduce(state, {
+      type: "client.message.submitted",
+      data: {
+        createdAt: Date.now(),
+        message: "Build a plan",
+        submissionId: "sub-1",
+      },
+    });
+    state = reducer.reduce(state, {
+      type: "client.message.failed",
+      data: {
+        createdAt: Date.now(),
+        error: { message: "fetch is aborted" },
+        message: "Build a plan",
+        submissionId: "sub-1",
+      },
+    });
+
+    const normalized = applyUserStoppedTurn(state);
+
+    expect(normalized.runStatus).toBeNull();
+    expect(normalized.phase).toBe("idle");
+    expect(normalized.errors).toEqual([]);
+  });
+
   it("leaves in-flight projection untouched while waiting", () => {
     let state = reducer.initial();
     state = reducer.reduce(state, {

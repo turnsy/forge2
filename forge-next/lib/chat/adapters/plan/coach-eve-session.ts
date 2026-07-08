@@ -123,6 +123,24 @@ function initialSessionLoadPhase(
   return events.length > 0 ? "ready" : "idle";
 }
 
+export function isAbortErrorMessage(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized === "fetch is aborted" ||
+    normalized === "the operation was aborted." ||
+    normalized === "the user aborted a request."
+  );
+}
+
+function isAbortFailureState(data: EveCoachReducerData): boolean {
+  return (
+    data.phase === "error" &&
+    data.runStatus === "error" &&
+    data.errors.length > 0 &&
+    data.errors.every((error) => isAbortErrorMessage(error.message))
+  );
+}
+
 export function applyUserStoppedTurn(
   data: EveCoachReducerData,
   options?: { interrupted?: boolean },
@@ -130,9 +148,20 @@ export function applyUserStoppedTurn(
   const hadActiveRun =
     data.runStatus !== null && isActiveRunStatus(data.runStatus);
   const hadStreamingPhase = data.phase === "streaming";
+  const hadAbortFailure = !options?.interrupted && isAbortFailureState(data);
 
-  if (!hadActiveRun && !hadStreamingPhase) {
+  if (!hadActiveRun && !hadStreamingPhase && !hadAbortFailure) {
     return data;
+  }
+
+  if (!hadActiveRun && !hadStreamingPhase && hadAbortFailure) {
+    return {
+      ...data,
+      phase: "idle",
+      runStatus: null,
+      errors: [],
+      streamingAssistantText: "",
+    };
   }
 
   const assistantText = data.streamingAssistantText.trim();

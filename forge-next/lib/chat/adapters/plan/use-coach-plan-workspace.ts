@@ -620,7 +620,8 @@ export function useCoachPlanWorkspace(options?: {
     ? "initializing"
     : attachmentState.phase === "uploading"
       ? "uploading"
-      : agent.status === "error" || workspaceData.phase === "error"
+      : !userStopped &&
+          (agent.status === "error" || workspaceData.phase === "error")
         ? "error"
         : effectiveIsBusy
           ? "streaming"
@@ -648,9 +649,10 @@ export function useCoachPlanWorkspace(options?: {
       ? null
       : workspaceData.runStatus,
     warnings: workspaceData.warnings,
-    errors: agent.error
-      ? [{ message: agent.error.message }, ...workspaceData.errors]
-      : workspaceData.errors,
+    errors:
+      !userStopped && agent.error
+        ? [{ message: agent.error.message }, ...workspaceData.errors]
+        : workspaceData.errors,
     phase,
     streamingAssistantText: workspaceData.streamingAssistantText,
   };

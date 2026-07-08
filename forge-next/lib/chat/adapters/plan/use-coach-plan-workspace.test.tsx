@@ -439,4 +439,40 @@ describe("useCoachPlanWorkspace", () => {
       { role: "assistant", content: "Partial" },
     ]);
   });
+
+  it("hides late abort failures after stop", () => {
+    agentDataState.current = {
+      messages: [{ role: "user", content: "Build a plan" }],
+      currentArtifact: null,
+      planId: null,
+      artifactTitle: "",
+      runStatus: "generating",
+      streamingAssistantText: "",
+      errors: [],
+      phase: "streaming",
+      warnings: [],
+    };
+    agentStatusState.current = "submitted";
+
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    expect(result.current.state.errors).toEqual([]);
+
+    agentDataState.current = {
+      ...agentDataState.current,
+      runStatus: "error",
+      phase: "error",
+      errors: [{ message: "fetch is aborted" }],
+    };
+    agentStatusState.current = "ready";
+
+    rerender();
+
+    expect(result.current.state.errors).toEqual([]);
+    expect(result.current.state.phase).toBe("idle");
+  });
 });
