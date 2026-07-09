@@ -3,6 +3,7 @@ import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import {
   buildCoachWorkspaceSnapshot,
   toForgeEvePointer,
+  type CoachTurnMarker,
 } from "@/lib/chat/session-types";
 
 const MID_TURN_PERSIST_DEBOUNCE_MS = 2_000;
@@ -12,6 +13,7 @@ export type CoachEvePersistSnapshot = {
   title: string | null;
   session: SessionState;
   events: readonly HandleMessageStreamEvent[];
+  lastTurn?: CoachTurnMarker | null;
 };
 
 export type CoachEvePersister = {
@@ -23,6 +25,7 @@ export type CoachEvePersister = {
   flush: (
     session: SessionState,
     events: readonly HandleMessageStreamEvent[],
+    lastTurn?: CoachTurnMarker | null,
   ) => Promise<boolean>;
   dispose: () => void;
 };
@@ -59,6 +62,7 @@ export function createCoachEvePersister(options: {
   const flush = async (
     session: SessionState,
     events: readonly HandleMessageStreamEvent[],
+    lastTurn: CoachTurnMarker | null = null,
   ) => {
     clearDebounce();
     pendingPersist = null;
@@ -77,6 +81,7 @@ export function createCoachEvePersister(options: {
       title: options.getTitle(),
       session,
       events,
+      lastTurn,
     });
   };
 
@@ -144,5 +149,6 @@ export function buildPersistedCoachSnapshot(
     title: input.title,
     eve: pointer,
     eveEvents: input.events,
+    lastTurn: input.lastTurn ?? null,
   });
 }

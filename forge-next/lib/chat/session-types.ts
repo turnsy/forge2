@@ -11,12 +11,24 @@ export type ForgeEvePointer = SessionState & {
   sessionId: string;
 };
 
+/**
+ * Annotation for an event log that intentionally ends mid-turn. Eve's server
+ * log stays the source of truth: loads still reconcile against the server, and
+ * if the server has events past `eventCount` the marker is discarded.
+ */
+export type CoachTurnMarker = {
+  status: "stopped" | "interrupted";
+  eventCount: number;
+};
+
 export type CoachWorkspaceSnapshot = {
   title: string | null;
   forgeSessionId: string;
   eve: ForgeEvePointer | null;
   /** Persisted Eve stream events for reload — see eve SDK `initialEvents`. */
   eveEvents?: readonly HandleMessageStreamEvent[];
+  /** Set when the last turn terminated without a server boundary event. */
+  lastTurn?: CoachTurnMarker | null;
 };
 
 export type EveCoachReducerData = {
@@ -43,13 +55,30 @@ export function buildCoachWorkspaceSnapshot(input: {
   title: string | null;
   eve: CoachWorkspaceSnapshot["eve"];
   eveEvents?: CoachWorkspaceSnapshot["eveEvents"];
+  lastTurn?: CoachTurnMarker | null;
 }): CoachWorkspaceSnapshot {
   return {
     title: input.title,
     forgeSessionId: input.forgeSessionId,
     eve: input.eve,
     ...(input.eveEvents !== undefined ? { eveEvents: input.eveEvents } : {}),
+    ...(input.lastTurn !== undefined ? { lastTurn: input.lastTurn } : {}),
   };
+}
+
+/**
+ * A marker only applies while the log still ends at the same place it was
+ * written for. Once the server log advances past it, Eve wins.
+ */
+export function resolveActiveTurnMarker(
+  marker: CoachTurnMarker | null | undefined,
+  eventCount: number,
+): CoachTurnMarker | null {
+  if (!marker || marker.eventCount !== eventCount) {
+    return null;
+  }
+
+  return marker;
 }
 
 export function getPersistedEveEvents(

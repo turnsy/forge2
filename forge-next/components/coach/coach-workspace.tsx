@@ -32,10 +32,10 @@ import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import {
-  isCoachEveAgentReady,
   isCoachEveSessionLoading,
   useCoachEveCatchUp,
 } from "@/lib/chat/adapters/plan/coach-eve-session";
+import type { TurnFinalizeReason } from "@/lib/chat/adapters/plan/turn-lifecycle";
 import { saveSessionSnapshot } from "@/lib/chat/actions";
 import {
   buildPersistedCoachSnapshot,
@@ -59,7 +59,6 @@ import {
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass, pageShellClass } from "@/lib/theme";
-import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
 import type { HandleMessageStreamEvent } from "eve/client";
 
 function ChatWorkspaceShell({
@@ -179,7 +178,7 @@ export function CoachWorkspace(
   const catchUp = useCoachEveCatchUp(props.initialSession);
 
   useEffect(() => {
-    if (!props.initialSession || !isCoachEveAgentReady(catchUp.loadPhase)) {
+    if (!props.initialSession || catchUp.loadPhase !== "ready") {
       return;
     }
 
@@ -199,8 +198,11 @@ export function CoachWorkspace(
       (persisted.length > 0 &&
         !isTurnComplete(persisted) &&
         isTurnComplete(catchUp.events));
+    const needsMarker =
+      catchUp.finalizeReason === "stopped" ||
+      catchUp.finalizeReason === "interrupted";
 
-    if (!replayAdvanced) {
+    if (!replayAdvanced && !needsMarker) {
       return;
     }
 
@@ -211,9 +213,24 @@ export function CoachWorkspace(
         title: snapshot.title,
         session: toEveSessionState(eve, catchUp.events.length),
         events: catchUp.events,
+        lastTurn:
+          !isTurnComplete(catchUp.events) && catchUp.finalizeReason
+            ? {
+                status:
+                  catchUp.finalizeReason === "stopped"
+                    ? "stopped"
+                    : "interrupted",
+                eventCount: catchUp.events.length,
+              }
+            : null,
       }),
     );
-  }, [catchUp.events, catchUp.loadPhase, props.initialSession]);
+  }, [
+    catchUp.events,
+    catchUp.finalizeReason,
+    catchUp.loadPhase,
+    props.initialSession,
+  ]);
 
   if (isCoachEveSessionLoading(catchUp.loadPhase)) {
     return <CoachSessionLoadingView />;
@@ -231,13 +248,18 @@ export function CoachWorkspace(
   }
 
   const sessionKey = props.initialSession?.id ?? "coach-home";
+  const resuming = catchUp.loadPhase === "resuming";
 
   return (
     <CoachWorkspaceInner
-      key={sessionKey}
+      // Remount when the live tail settles so the Eve agent store is always
+      // created from a complete, consistent event log.
+      key={`${sessionKey}:${resuming ? "resuming" : "settled"}`}
       {...props}
       syncedEvents={catchUp.events}
-      loadPhase={catchUp.loadPhase}
+      resuming={resuming}
+      initialFinalizeReason={resuming ? null : catchUp.finalizeReason}
+      onStopResuming={catchUp.stopResuming}
     />
   );
 }
@@ -249,7 +271,9 @@ function CoachWorkspaceInner({
   initialPlan,
   initialSession,
   syncedEvents = [],
-  loadPhase = "idle",
+  resuming = false,
+  initialFinalizeReason = null,
+  onStopResuming,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -264,7 +288,9 @@ function CoachWorkspaceInner({
     updatedAt: string;
   };
   syncedEvents?: readonly HandleMessageStreamEvent[];
-  loadPhase?: CoachEveLoadPhase;
+  resuming?: boolean;
+  initialFinalizeReason?: TurnFinalizeReason | null;
+  onStopResuming?: () => void;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -364,7 +390,9 @@ function CoachWorkspaceInner({
               snapshot: initialSession.snapshot,
             },
             syncedEvents,
-            loadPhase,
+            resuming,
+            initialFinalizeReason,
+            onStopResuming,
             onArtifactCleared: handleArtifactCleared,
           }
         : {

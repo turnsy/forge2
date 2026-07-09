@@ -2,26 +2,23 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
-import { isCurrentTurnBoundaryEvent } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import {
-  applyCoachEveLoadPhase,
-  applyUserStoppedTurn,
-  type CoachEveLoadPhase,
-} from "@/lib/chat/adapters/plan/coach-eve-session";
-import {
   buildPersistedCoachSnapshot,
   createCoachEvePersister,
 } from "@/lib/chat/adapters/plan/coach-eve-persist";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import { isTurnComplete } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
-  IN_FLIGHT_TAIL_TIMEOUT_MS,
-  isTurnComplete,
-} from "@/lib/chat/adapters/plan/replay-eve-session";
+  canSendInPhase,
+  resolveTurnView,
+  type LocalTurnFinalization,
+  type TurnFinalizeReason,
+} from "@/lib/chat/adapters/plan/turn-lifecycle";
 import {
   bindForgeEveSessionSend,
   createForgeEveClient,
@@ -117,7 +114,11 @@ export function useCoachPlanWorkspace(options?: {
   planId?: string;
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
   syncedEvents?: readonly HandleMessageStreamEvent[];
-  loadPhase?: CoachEveLoadPhase;
+  /** True while the catch-up layer is still tailing a live turn. */
+  resuming?: boolean;
+  /** Set when the restored log's last turn was finalized locally. */
+  initialFinalizeReason?: TurnFinalizeReason | null;
+  onStopResuming?: () => void;
   onArtifactCleared?: () => void;
   onThreadInitialized?: (payload: {
     sessionId: string;
@@ -129,7 +130,9 @@ export function useCoachPlanWorkspace(options?: {
   const entryPlanId = options?.planId;
   const initialSession = options?.initialSession;
   const syncedEvents = options?.syncedEvents ?? EMPTY_SYNCED_EVENTS;
-  const loadPhase = options?.loadPhase ?? "idle";
+  const resuming = options?.resuming ?? false;
+  const initialFinalizeReason = options?.initialFinalizeReason ?? null;
+  const onStopResuming = options?.onStopResuming;
   const onArtifactCleared = options?.onArtifactCleared;
   const onThreadInitialized = options?.onThreadInitialized;
   const onSessionUrlNavigate = options?.onSessionUrlNavigate;
@@ -188,7 +191,6 @@ export function useCoachPlanWorkspace(options?: {
   );
   const latestAgentSessionRef = useRef<SessionState | null>(null);
   const latestAgentEventsRef = useRef<readonly HandleMessageStreamEvent[]>([]);
-  const tailResumeAbortRef = useRef<AbortController | null>(null);
   const lastSyncedAgentArtifactRef = useRef<string | null>(null);
 
   const buildClientArtifactSnapshot = useCallback(
@@ -343,6 +345,39 @@ export function useCoachPlanWorkspace(options?: {
 
   const initialEveEvents = syncedEvents;
 
+  // --- Turn lifecycle machine state ---
+  const [stopPending, setStopPending] = useState(false);
+  const stopPendingRef = useRef(false);
+  const [sendFailure, setSendFailure] = useState<string | null>(null);
+  const [finalization, setFinalization] =
+    useState<LocalTurnFinalization | null>(() =>
+      initialFinalizeReason
+        ? { reason: initialFinalizeReason, eventCount: syncedEvents.length }
+        : null,
+    );
+
+  /**
+   * Records that the current turn ended by user stop and persists the
+   * terminal marker so any later load settles instantly. Skips the marker
+   * when the log actually reached a boundary (stop raced turn completion).
+   */
+  const finalizeStoppedTurn = useCallback(() => {
+    const events = latestAgentEventsRef.current;
+    const session = latestAgentSessionRef.current;
+
+    setFinalization({ reason: "stopped", eventCount: events.length });
+
+    if (session?.sessionId) {
+      void persisterRef.current.flush(
+        session,
+        events,
+        isTurnComplete(events)
+          ? null
+          : { status: "stopped", eventCount: events.length },
+      );
+    }
+  }, []);
+
   const eveClient = useMemo(
     () => createForgeEveClient(forgeSessionId),
     [forgeSessionId],
@@ -392,13 +427,23 @@ export function useCoachPlanWorkspace(options?: {
       handleAgentStreamEventRef.current(event);
     },
     onFinish: async (snapshot) => {
+      latestAgentSessionRef.current = snapshot.session;
+      latestAgentEventsRef.current = snapshot.events;
+
+      // A user stop settles here: the Eve store fires onFinish once the
+      // aborted turn winds down.
+      if (stopPendingRef.current) {
+        stopPendingRef.current = false;
+        setStopPending(false);
+        finalizeStoppedTurn();
+        return;
+      }
+
       const pointer = toForgeEvePointer(snapshot.session);
       if (!pointer) {
         return;
       }
 
-      latestAgentSessionRef.current = snapshot.session;
-      latestAgentEventsRef.current = snapshot.events;
       const saved = await persisterRef.current.flush(
         snapshot.session,
         snapshot.events,
@@ -414,114 +459,6 @@ export function useCoachPlanWorkspace(options?: {
     latestAgentEventsRef.current = agent.events;
   }, [agent.events, agent.session]);
 
-  const evePointer = normalizedSnapshot?.eve;
-  const tailResumeKey =
-    loadPhase === "waiting" && evePointer?.sessionId
-      ? `${evePointer.sessionId}:${evePointer.continuationToken ?? ""}:${syncedEvents.length}`
-      : null;
-  const syncedEventsRef = useRef(syncedEvents);
-  const normalizedSnapshotRef = useRef(normalizedSnapshot);
-
-  useLayoutEffect(() => {
-    syncedEventsRef.current = syncedEvents;
-    normalizedSnapshotRef.current = normalizedSnapshot;
-  }, [normalizedSnapshot, syncedEvents]);
-
-  const [resumedEvents, setResumedEvents] =
-    useState<readonly HandleMessageStreamEvent[]>(syncedEvents);
-  const [isResumingStream, setIsResumingStream] = useState(
-    () => loadPhase === "waiting",
-  );
-  const [resumeInterrupted, setResumeInterrupted] = useState(false);
-  const [userStopped, setUserStopped] = useState(false);
-
-  useEffect(() => {
-    if (!tailResumeKey) {
-      return;
-    }
-
-    const snapshot = normalizedSnapshotRef.current;
-    const eve = snapshot?.eve;
-    if (!eve?.sessionId) {
-      return;
-    }
-
-    const abortController = new AbortController();
-    tailResumeAbortRef.current = abortController;
-    let cancelled = false;
-    let events = [...syncedEventsRef.current];
-
-    const resume = async () => {
-      setIsResumingStream(true);
-      setResumeInterrupted(false);
-
-      const session = resolveInitialEveSession(snapshot, events);
-      if (!session?.sessionId) {
-        setIsResumingStream(false);
-        return;
-      }
-
-      const timeout = setTimeout(
-        () => abortController.abort(),
-        IN_FLIGHT_TAIL_TIMEOUT_MS,
-      );
-
-      try {
-        const stream = eveClient.session(session).stream({
-          startIndex: events.length,
-          signal: abortController.signal,
-        });
-
-        for await (const event of stream) {
-          if (cancelled || abortController.signal.aborted) {
-            break;
-          }
-
-          events = [...events, event];
-          setResumedEvents(events);
-          latestAgentEventsRef.current = events;
-          handleAgentStreamEventRef.current(event);
-
-          if (isCurrentTurnBoundaryEvent(event)) {
-            break;
-          }
-        }
-      } catch (error) {
-        if (!cancelled && !abortController.signal.aborted) {
-          console.error("Failed to resume Eve session stream", error);
-        }
-      } finally {
-        clearTimeout(timeout);
-        if (cancelled) {
-          return;
-        }
-
-        setIsResumingStream(false);
-
-        if (!isTurnComplete(events)) {
-          setResumeInterrupted(true);
-          return;
-        }
-
-        void persisterRef.current.flush(
-          toEveSessionState(eve, events.length),
-          events,
-        );
-      }
-    };
-
-    setResumedEvents(syncedEventsRef.current);
-    void resume();
-
-    return () => {
-      cancelled = true;
-      abortController.abort();
-      if (tailResumeAbortRef.current === abortController) {
-        tailResumeAbortRef.current = null;
-      }
-    };
-  }, [eveClient, tailResumeKey]);
-
   useEffect(() => {
     return () => {
       persisterRef.current.dispose();
@@ -534,43 +471,42 @@ export function useCoachPlanWorkspace(options?: {
   );
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
-  const resumedProjection = useMemo(() => {
-    if (loadPhase !== "waiting" && resumedEvents.length <= syncedEvents.length) {
+  // While the catch-up layer tails a live turn, its growing event log (not
+  // the frozen agent store) is the projection source. The workspace remounts
+  // on a settled log, so the agent store is never mixed with tail events.
+  const resumingProjection = useMemo(() => {
+    if (!resuming) {
       return null;
     }
 
     let data = eveReducer.initial();
-    for (const event of resumedEvents) {
+    for (const event of syncedEvents) {
       data = eveReducer.reduce(data, event);
     }
     return data;
-  }, [eveReducer, loadPhase, resumedEvents, syncedEvents.length]);
+  }, [eveReducer, resuming, syncedEvents]);
 
-  const effectiveLoadPhase: CoachEveLoadPhase = resumeInterrupted
-    ? "interrupted"
-    : loadPhase === "waiting" && isTurnComplete(resumedEvents)
-      ? "ready"
-      : loadPhase;
+  const projectionData = resumingProjection ?? agent.data;
+  const projectionEventCount = resuming
+    ? syncedEvents.length
+    : agent.events.length;
 
-  const isWaitingOnAgent =
-    effectiveLoadPhase === "waiting" && !resumeInterrupted;
+  const turnView = resolveTurnView({
+    agentStatus: resuming ? "ready" : agent.status,
+    agentErrorMessage: resuming ? null : (agent.error?.message ?? null),
+    stopPending,
+    finalization,
+    eventCount: projectionEventCount,
+    data: projectionData,
+  });
 
-  const projectionData = resumedProjection ?? agent.data;
-  const workspaceData = userStopped
-    ? applyUserStoppedTurn(
-        applyCoachEveLoadPhase(effectiveLoadPhase, projectionData),
-      )
-    : applyCoachEveLoadPhase(effectiveLoadPhase, projectionData);
-
-  const isBusy =
-    isResumingStream ||
-    agent.status === "submitted" ||
-    agent.status === "streaming" ||
-    (isWaitingOnAgent && workspaceData.streamingAssistantText.trim().length === 0);
-  const effectiveIsBusy = isBusy && !userStopped;
+  const workspaceData = turnView.data;
+  const uiPhase = turnView.uiPhase;
+  const turnActive =
+    uiPhase === "sending" || uiPhase === "streaming" || uiPhase === "stopping";
 
   useEffect(() => {
-    const agentPlan = agent.data.currentArtifact;
+    const agentPlan = projectionData.currentArtifact;
     if (!agentPlan) {
       lastSyncedAgentArtifactRef.current = null;
       return;
@@ -583,20 +519,20 @@ export function useCoachPlanWorkspace(options?: {
 
     lastSyncedAgentArtifactRef.current = agentJson;
 
-    if (!effectiveIsBusy) {
+    if (!turnActive) {
       return;
     }
 
     startTransition(() => {
       setLocalArtifact(agentPlan);
-      setLocalPlanId(agent.data.planId);
-      setLocalArtifactTitle(agent.data.artifactTitle || agentPlan.name);
+      setLocalPlanId(projectionData.planId);
+      setLocalArtifactTitle(projectionData.artifactTitle || agentPlan.name);
     });
   }, [
-    agent.data.artifactTitle,
-    agent.data.currentArtifact,
-    agent.data.planId,
-    effectiveIsBusy,
+    projectionData.artifactTitle,
+    projectionData.currentArtifact,
+    projectionData.planId,
+    turnActive,
   ]);
 
   const effectiveArtifact = buildClientArtifactSnapshot(projectionData);
@@ -620,21 +556,23 @@ export function useCoachPlanWorkspace(options?: {
     ? "initializing"
     : attachmentState.phase === "uploading"
       ? "uploading"
-      : !userStopped &&
-          (agent.status === "error" || workspaceData.phase === "error")
+      : uiPhase === "error"
         ? "error"
-        : effectiveIsBusy
+        : turnActive
           ? "streaming"
           : workspaceData.phase;
+
+  const errors = sendFailure
+    ? [{ message: sendFailure }, ...workspaceData.errors]
+    : workspaceData.errors;
 
   const state: PlanWorkspaceState = {
     sessionId: forgeSessionId,
     hasStarted:
       workspaceData.messages.length > 0 ||
-      effectiveIsBusy ||
-      agent.status === "error" ||
-      workspaceData.phase === "error" ||
-      workspaceData.errors.length > 0 ||
+      turnActive ||
+      uiPhase === "error" ||
+      errors.length > 0 ||
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
@@ -645,14 +583,9 @@ export function useCoachPlanWorkspace(options?: {
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
-    runStatus: isWaitingOnAgent && workspaceData.runStatus === null
-      ? null
-      : workspaceData.runStatus,
+    runStatus: workspaceData.runStatus,
     warnings: workspaceData.warnings,
-    errors:
-      !userStopped && agent.error
-        ? [{ message: agent.error.message }, ...workspaceData.errors]
-        : workspaceData.errors,
+    errors,
     phase,
     streamingAssistantText: workspaceData.streamingAssistantText,
   };
@@ -715,11 +648,14 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
+  const canSendNow =
+    !resuming && !isInitializingThread && canSendInPhase(uiPhase);
+
   const sendMessage = useCallback(
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
-      if (displayPrompt.length === 0 || effectiveIsBusy || isInitializingThread) {
+      if (displayPrompt.length === 0 || !canSendNow) {
         return;
       }
 
@@ -736,17 +672,27 @@ export function useCoachPlanWorkspace(options?: {
         setIsInitializingThread(false);
       }
 
-      setUserStopped(false);
-      await agent.send({ message: agentPrompt });
+      stopPendingRef.current = false;
+      setStopPending(false);
+      setFinalization(null);
+      setSendFailure(null);
+
+      try {
+        await agent.send({ message: agentPrompt });
+      } catch (error) {
+        setSendFailure(
+          error instanceof Error ? error.message : "Couldn't send message.",
+        );
+      }
     },
-    [agent, ensureSessionTitle, effectiveIsBusy, isInitializingThread],
+    [agent, canSendNow, ensureSessionTitle],
   );
 
   const restart = useCallback(() => {
-    tailResumeAbortRef.current?.abort();
-    tailResumeAbortRef.current = null;
-    setResumeInterrupted(false);
-    setUserStopped(false);
+    stopPendingRef.current = false;
+    setStopPending(false);
+    setFinalization(null);
+    setSendFailure(null);
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     sessionTitleRef.current = null;
@@ -778,12 +724,26 @@ export function useCoachPlanWorkspace(options?: {
   }, []);
 
   const stopResponse = useCallback(() => {
-    tailResumeAbortRef.current?.abort();
-    tailResumeAbortRef.current = null;
-    setResumeInterrupted(false);
-    agent.stop();
-    setUserStopped(true);
-  }, [agent]);
+    if (resuming) {
+      onStopResuming?.();
+      return;
+    }
+
+    setSendFailure(null);
+
+    if (agent.status === "submitted" || agent.status === "streaming") {
+      // Abort the in-flight turn; onFinish settles the stop once the Eve
+      // store winds down.
+      stopPendingRef.current = true;
+      setStopPending(true);
+      agent.stop();
+      return;
+    }
+
+    // The client stream already ended but the turn is still open (server-side
+    // tools). Nothing to abort; finalize the local view immediately.
+    finalizeStoppedTurn();
+  }, [agent, finalizeStoppedTurn, onStopResuming, resuming]);
 
   return {
     state,

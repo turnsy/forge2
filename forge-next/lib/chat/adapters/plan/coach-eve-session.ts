@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { HandleMessageStreamEvent } from "eve/client";
 import {
   isTurnComplete,
   restoreEveSessionEvents,
+  tailEveSessionEvents,
 } from "@/lib/chat/adapters/plan/replay-eve-session";
-import type { EveCoachReducerData } from "@/lib/chat/session-types";
-import { isActiveRunStatus } from "@/lib/chat/run-status-copy";
-import { STREAM_INTERRUPTED_MESSAGE } from "@/lib/chat/stream-completion";
+import type { TurnFinalizeReason } from "@/lib/chat/adapters/plan/turn-lifecycle";
+import type { CoachTurnMarker } from "@/lib/chat/session-types";
 import {
   getPersistedEveEvents,
   hasPersistedEveEvents,
@@ -16,19 +16,29 @@ import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 
-/** How caught-up the workspace is with Eve on load. */
+/**
+ * How caught-up the workspace is with Eve on load.
+ * - "idle": fresh workspace, no session to restore.
+ * - "loading": reconciling the persisted cache against the Eve server log.
+ * - "resuming": a live turn is being tailed; events stream in as they arrive.
+ * - "ready": the log is settled; the interactive workspace can own the session.
+ * - "error": nothing could be restored.
+ */
 export type CoachEveLoadPhase =
   | "idle"
   | "loading"
+  | "resuming"
   | "ready"
-  | "waiting"
-  | "interrupted"
   | "error";
 
 export type CoachEveCatchUpState = {
   loadPhase: CoachEveLoadPhase;
-  events: HandleMessageStreamEvent[];
+  events: readonly HandleMessageStreamEvent[];
+  /** Set when the last turn was finalized locally instead of by a server boundary event. */
+  finalizeReason: TurnFinalizeReason | null;
   errorMessage?: string;
+  /** Aborts a live tail and settles the session as user-stopped. */
+  stopResuming: () => void;
 };
 
 type CatchUpRequest =
@@ -38,7 +48,18 @@ type CatchUpRequest =
       forgeSessionId: string;
       eve: NonNullable<CoachWorkspaceSnapshot["eve"]>;
       cachedEvents: readonly HandleMessageStreamEvent[];
+      lastTurn: CoachTurnMarker | null;
     };
+
+type CatchUpProgress =
+  | { stage: "loading" }
+  | { stage: "resuming"; events: readonly HandleMessageStreamEvent[] }
+  | {
+      stage: "ready";
+      events: readonly HandleMessageStreamEvent[];
+      finalizeReason: TurnFinalizeReason | null;
+    }
+  | { stage: "error"; errorMessage: string };
 
 function getCatchUpKey(initialSession?: {
   id: string;
@@ -89,133 +110,19 @@ function resolveCatchUpRequest(initialSession?: {
     cachedEvents: hasPersistedEveEvents(snapshot)
       ? getPersistedEveEvents(snapshot)
       : [],
+    lastTurn: snapshot.lastTurn ?? null,
   };
 }
 
-function resolveLoadPhase(
-  request: CatchUpRequest,
+function settledFinalizeReason(
   events: readonly HandleMessageStreamEvent[],
-  fetching: boolean,
-  fetchFailed: boolean,
-): CoachEveLoadPhase {
-  if (request.kind === "none") {
-    return initialSessionLoadPhase(events);
-  }
-
-  if (fetchFailed && events.length === 0) {
-    return "error";
-  }
-
-  if (fetching) {
-    return "loading";
-  }
-
-  if (!isTurnComplete(events)) {
-    return "waiting";
-  }
-
-  return "ready";
-}
-
-function initialSessionLoadPhase(
-  events: readonly HandleMessageStreamEvent[],
-): CoachEveLoadPhase {
-  return events.length > 0 ? "ready" : "idle";
-}
-
-export function isAbortErrorMessage(message: string): boolean {
-  const normalized = message.trim().toLowerCase();
-  return (
-    normalized === "fetch is aborted" ||
-    normalized === "the operation was aborted." ||
-    normalized === "the user aborted a request."
-  );
-}
-
-function isAbortFailureState(data: EveCoachReducerData): boolean {
-  return (
-    data.phase === "error" &&
-    data.runStatus === "error" &&
-    data.errors.length > 0 &&
-    data.errors.every((error) => isAbortErrorMessage(error.message))
-  );
-}
-
-export function applyUserStoppedTurn(
-  data: EveCoachReducerData,
-  options?: { interrupted?: boolean },
-): EveCoachReducerData {
-  const hadActiveRun =
-    data.runStatus !== null && isActiveRunStatus(data.runStatus);
-  const hadStreamingPhase = data.phase === "streaming";
-  const hadAbortFailure = !options?.interrupted && isAbortFailureState(data);
-
-  if (!hadActiveRun && !hadStreamingPhase && !hadAbortFailure) {
-    return data;
-  }
-
-  if (!hadActiveRun && !hadStreamingPhase && hadAbortFailure) {
-    return {
-      ...data,
-      phase: "idle",
-      runStatus: null,
-      errors: [],
-      streamingAssistantText: "",
-    };
-  }
-
-  const assistantText = data.streamingAssistantText.trim();
-  const next: EveCoachReducerData = assistantText
-    ? {
-        ...data,
-        messages: [
-          ...data.messages,
-          { role: "assistant" as const, content: assistantText },
-        ],
-        streamingAssistantText: "",
-        runStatus: "done",
-        phase: "idle",
-      }
-    : {
-        ...data,
-        runStatus: null,
-        phase: "idle",
-        streamingAssistantText: "",
-      };
-
-  if (!options?.interrupted || !hadActiveRun) {
-    return options?.interrupted ? next : { ...next, errors: [] };
-  }
-
-  if (
-    next.errors.some((error) => error.message === STREAM_INTERRUPTED_MESSAGE)
-  ) {
-    return next;
-  }
-
-  return {
-    ...next,
-    errors: [...next.errors, { message: STREAM_INTERRUPTED_MESSAGE }],
-  };
-}
-
-export function applyCoachEveLoadPhase(
-  loadPhase: CoachEveLoadPhase,
-  data: EveCoachReducerData,
-): EveCoachReducerData {
-  if (loadPhase !== "interrupted") {
-    return data;
-  }
-
-  return applyUserStoppedTurn(data, { interrupted: true });
+): TurnFinalizeReason | null {
+  return events.length > 0 && !isTurnComplete(events) ? "restored" : null;
 }
 
 export function isCoachEveAgentReady(loadPhase: CoachEveLoadPhase): boolean {
   return (
-    loadPhase === "idle" ||
-    loadPhase === "ready" ||
-    loadPhase === "waiting" ||
-    loadPhase === "interrupted"
+    loadPhase === "idle" || loadPhase === "ready" || loadPhase === "resuming"
   );
 }
 
@@ -223,6 +130,12 @@ export function isCoachEveSessionLoading(loadPhase: CoachEveLoadPhase): boolean 
   return loadPhase === "loading";
 }
 
+/**
+ * Restores a coach session with Eve as the source of truth: hydrates the
+ * persisted cache, reconciles it against the server log, tails a live turn
+ * when one may be running, and locally finalizes turns that will never
+ * complete. The interactive workspace mounts only on a settled log.
+ */
 export function useCoachEveCatchUp(initialSession?: {
   id: string;
   snapshot: CoachWorkspaceSnapshot;
@@ -233,15 +146,19 @@ export function useCoachEveCatchUp(initialSession?: {
     [initialSession],
   );
 
-  const [fetchState, setFetchState] = useState<{
+  const [progress, setProgress] = useState<{
     key: string;
-    events: HandleMessageStreamEvent[];
-    failed: boolean;
+    value: CatchUpProgress;
   } | null>(null);
+  const stopTailRef = useRef<(() => void) | null>(null);
   const shouldFetch = request.kind === "fetch" && Boolean(catchUpKey);
 
+  const stopResuming = useCallback(() => {
+    stopTailRef.current?.();
+  }, []);
+
   useEffect(() => {
-    if (!shouldFetch || !catchUpKey) {
+    if (!shouldFetch || !catchUpKey || request.kind !== "fetch") {
       return;
     }
 
@@ -249,71 +166,150 @@ export function useCoachEveCatchUp(initialSession?: {
     let cancelled = false;
     const activeKey = catchUpKey;
 
-    void restoreEveSessionEvents(request.eve, request.forgeSessionId, {
-      signal: abortController.signal,
-      fromEvents:
-        request.cachedEvents.length > 0 ? request.cachedEvents : undefined,
-    })
-      .then((events) => {
-        if (!cancelled) {
-          setFetchState({ key: activeKey, events, failed: false });
-        }
-      })
-      .catch((error: unknown) => {
+    const update = (value: CatchUpProgress) => {
+      if (!cancelled) {
+        setProgress({ key: activeKey, value });
+      }
+    };
+
+    const run = async () => {
+      const restored = await restoreEveSessionEvents(
+        request.eve,
+        request.forgeSessionId,
+        {
+          signal: abortController.signal,
+          fromEvents:
+            request.cachedEvents.length > 0 ? request.cachedEvents : undefined,
+          lastTurn: request.lastTurn,
+        },
+      );
+
+      if (cancelled || abortController.signal.aborted) {
+        return;
+      }
+
+      if (!restored.needsLiveTail) {
+        update({
+          stage: "ready",
+          events: restored.events,
+          finalizeReason: restored.markerApplies ? "restored" : null,
+        });
+        return;
+      }
+
+      let events: HandleMessageStreamEvent[] = [...restored.events];
+      update({ stage: "resuming", events });
+
+      const tailAbort = new AbortController();
+      const onParentAbort = () => tailAbort.abort();
+      abortController.signal.addEventListener("abort", onParentAbort);
+
+      let stoppedByUser = false;
+      stopTailRef.current = () => {
+        stoppedByUser = true;
+        tailAbort.abort();
+      };
+
+      try {
+        const tail = await tailEveSessionEvents(
+          request.eve,
+          request.forgeSessionId,
+          {
+            startIndex: events.length,
+            signal: tailAbort.signal,
+            onEvent: (event) => {
+              events = [...events, event];
+              update({ stage: "resuming", events });
+            },
+          },
+        );
+
         if (cancelled || abortController.signal.aborted) {
           return;
         }
 
-        console.error("Failed to restore Eve session", error);
-        setFetchState({
-          key: activeKey,
-          events: [...request.cachedEvents],
-          failed: true,
+        update({
+          stage: "ready",
+          events,
+          finalizeReason: tail.completed
+            ? null
+            : stoppedByUser
+              ? "stopped"
+              : "interrupted",
         });
-      });
+      } finally {
+        abortController.signal.removeEventListener("abort", onParentAbort);
+        stopTailRef.current = null;
+      }
+    };
+
+    void run().catch((error: unknown) => {
+      if (cancelled || abortController.signal.aborted) {
+        return;
+      }
+
+      console.error("Failed to restore Eve session", error);
+
+      if (request.cachedEvents.length > 0) {
+        update({
+          stage: "ready",
+          events: [...request.cachedEvents],
+          finalizeReason: settledFinalizeReason(request.cachedEvents),
+        });
+        return;
+      }
+
+      update({ stage: "error", errorMessage: "Couldn't load conversation." });
+    });
 
     return () => {
       cancelled = true;
       abortController.abort();
+      stopTailRef.current = null;
     };
   }, [catchUpKey, request, shouldFetch]);
 
   if (request.kind === "none") {
     return {
-      loadPhase: initialSessionLoadPhase(request.events),
+      loadPhase: request.events.length > 0 ? "ready" : "idle",
       events: [...request.events],
+      finalizeReason: settledFinalizeReason(request.events),
+      stopResuming,
     };
   }
 
-  const resolvedEvents =
-    fetchState?.key === catchUpKey ? fetchState.events : [];
-  const fetchFailed = fetchState?.key === catchUpKey && fetchState.failed;
-  const isPendingFetch = shouldFetch && fetchState?.key !== catchUpKey;
+  const current: CatchUpProgress =
+    progress?.key === catchUpKey ? progress.value : { stage: "loading" };
 
-  const loadPhase = resolveLoadPhase(
-    request,
-    resolvedEvents,
-    isPendingFetch,
-    fetchFailed,
-  );
-
-  if (loadPhase === "error") {
-    return {
-      loadPhase,
-      events: [],
-      errorMessage: "Couldn't load conversation.",
-    };
+  switch (current.stage) {
+    case "loading":
+      return {
+        loadPhase: "loading",
+        events: [],
+        finalizeReason: null,
+        stopResuming,
+      };
+    case "resuming":
+      return {
+        loadPhase: "resuming",
+        events: current.events,
+        finalizeReason: null,
+        stopResuming,
+      };
+    case "ready":
+      return {
+        loadPhase: "ready",
+        events: current.events,
+        finalizeReason: current.finalizeReason,
+        stopResuming,
+      };
+    case "error":
+      return {
+        loadPhase: "error",
+        events: [],
+        finalizeReason: null,
+        errorMessage: current.errorMessage,
+        stopResuming,
+      };
   }
-
-  if (fetchFailed && resolvedEvents.length > 0) {
-    return {
-      loadPhase: isTurnComplete(resolvedEvents) ? "ready" : "waiting",
-      events: resolvedEvents,
-    };
-  }
-
-  return {
-    loadPhase,
-    events: resolvedEvents,
-  };
 }

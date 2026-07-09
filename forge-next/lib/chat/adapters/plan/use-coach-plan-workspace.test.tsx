@@ -373,7 +373,15 @@ describe("useCoachPlanWorkspace", () => {
     );
   });
 
-  it("stops the in-flight agent response", () => {
+  it("aborts the Eve store when stopping an in-flight response", () => {
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      phase: "streaming",
+    };
+    agentStatusState.current = "streaming";
+
     const { result } = renderHook(() => useCoachPlanWorkspace());
 
     act(() => {
@@ -383,7 +391,7 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockStop).toHaveBeenCalledOnce();
   });
 
-  it("clears generating state when stop is clicked after the stream ends", () => {
+  it("finalizes immediately when stopping a background turn (stream already ended)", () => {
     agentDataState.current = {
       messages: [{ role: "user", content: "Build a plan" }],
       currentArtifact: null,
@@ -395,22 +403,59 @@ describe("useCoachPlanWorkspace", () => {
       phase: "idle",
       warnings: [],
     };
+    agentStatusState.current = "ready";
 
     const { result } = renderHook(() => useCoachPlanWorkspace());
 
     expect(result.current.state.runStatus).toBe("generating");
+    expect(result.current.state.phase).toBe("streaming");
 
     act(() => {
       result.current.stopResponse();
     });
 
-    expect(mockStop).toHaveBeenCalledOnce();
+    // No fetch to abort; the turn is finalized locally without touching Eve.
+    expect(mockStop).not.toHaveBeenCalled();
     expect(result.current.state.runStatus).toBeNull();
     expect(result.current.state.phase).toBe("idle");
     expect(result.current.state.errors).toEqual([]);
   });
 
-  it("returns to idle while the Eve client is still winding down after stop", () => {
+  it("persists a stopped marker when stopping a background turn", async () => {
+    agentSessionState.current = {
+      sessionId: "eve-session",
+      continuationToken: "token",
+      streamIndex: 2,
+    };
+    agentEventsState.current = [
+      { type: "message.received" },
+      { type: "turn.started" },
+    ];
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      phase: "idle",
+    };
+    agentStatusState.current = "ready";
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    await act(async () => {
+      result.current.stopResponse();
+    });
+
+    await waitFor(() => {
+      expect(saveSessionSnapshot).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          lastTurn: { status: "stopped", eventCount: 2 },
+        }),
+      );
+    });
+  });
+
+  it("shows stopping (finalized view) while the Eve store winds down, then settles idle", async () => {
     agentDataState.current = {
       messages: [{ role: "user", content: "Build a plan" }],
       currentArtifact: null,
@@ -424,7 +469,7 @@ describe("useCoachPlanWorkspace", () => {
     };
     agentStatusState.current = "streaming";
 
-    const { result } = renderHook(() => useCoachPlanWorkspace());
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
 
     expect(result.current.state.phase).toBe("streaming");
 
@@ -432,36 +477,16 @@ describe("useCoachPlanWorkspace", () => {
       result.current.stopResponse();
     });
 
-    expect(result.current.state.phase).toBe("idle");
-    expect(result.current.state.runStatus).toBe("done");
+    // Store still winding down: partial text is already materialized.
+    expect(mockStop).toHaveBeenCalledOnce();
     expect(result.current.state.messages).toEqual([
       { role: "user", content: "Build a plan" },
       { role: "assistant", content: "Partial" },
     ]);
-  });
+    expect(result.current.state.streamingAssistantText).toBe("");
 
-  it("hides late abort failures after stop", () => {
-    agentDataState.current = {
-      messages: [{ role: "user", content: "Build a plan" }],
-      currentArtifact: null,
-      planId: null,
-      artifactTitle: "",
-      runStatus: "generating",
-      streamingAssistantText: "",
-      errors: [],
-      phase: "streaming",
-      warnings: [],
-    };
-    agentStatusState.current = "submitted";
-
-    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
-
-    act(() => {
-      result.current.stopResponse();
-    });
-
-    expect(result.current.state.errors).toEqual([]);
-
+    // The abort settles: the store returns to ready with abort debris and
+    // fires onFinish.
     agentDataState.current = {
       ...agentDataState.current,
       runStatus: "error",
@@ -469,10 +494,191 @@ describe("useCoachPlanWorkspace", () => {
       errors: [{ message: "fetch is aborted" }],
     };
     agentStatusState.current = "ready";
-
+    await act(async () => {
+      await capturedEveAgentOptions.current?.onFinish?.({
+        session: agentSessionState.current,
+        events: agentEventsState.current,
+      });
+    });
     rerender();
 
+    await waitFor(() => {
+      expect(result.current.state.phase).toBe("idle");
+    });
     expect(result.current.state.errors).toEqual([]);
+    expect(result.current.state.messages).toEqual([
+      { role: "user", content: "Build a plan" },
+      { role: "assistant", content: "Partial" },
+    ]);
+  });
+
+  it("allows sending again immediately after a stop settles", async () => {
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      streamingAssistantText: "Partial",
+      phase: "streaming",
+    };
+    agentStatusState.current = "streaming";
+
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    agentStatusState.current = "ready";
+    agentDataState.current = {
+      ...agentDataState.current,
+      runStatus: null,
+      streamingAssistantText: "",
+      phase: "idle",
+    };
+    await act(async () => {
+      await capturedEveAgentOptions.current?.onFinish?.({
+        session: agentSessionState.current,
+        events: agentEventsState.current,
+      });
+    });
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.state.phase).toBe("idle");
+    });
+
+    await act(async () => {
+      await result.current.sendMessage([
+        { type: "text", value: "Actually, make it 3 days" },
+      ]);
+    });
+
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Actually, make it 3 days" }),
+    );
+  });
+
+  it("blocks sends while a stop is still settling", async () => {
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      phase: "streaming",
+    };
+    agentStatusState.current = "streaming";
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    // Still winding down (status has not settled): send must not throw into
+    // the busy Eve store.
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Too soon" }]);
+    });
+
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("surfaces send failures instead of leaving an unhandled rejection", async () => {
+    mockSend.mockRejectedValue(new Error("eve session is already processing a turn."));
+
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+    });
+
+    expect(result.current.state.errors).toEqual([
+      { message: "eve session is already processing a turn." },
+    ]);
+  });
+
+  it("restores a stopped thread as settled via initialFinalizeReason", () => {
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      streamingAssistantText: "Partial from before",
+      phase: "streaming",
+    };
+    agentStatusState.current = "ready";
+    agentEventsState.current = [
+      { type: "message.received" },
+      { type: "turn.started" },
+    ];
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: "session-1",
+          snapshot: {
+            title: "Old thread",
+            forgeSessionId: "session-1",
+            eve: {
+              sessionId: "eve-session",
+              continuationToken: "token",
+              streamIndex: 2,
+            },
+          },
+        },
+        syncedEvents: agentEventsState.current,
+        initialFinalizeReason: "restored",
+      }),
+    );
+
     expect(result.current.state.phase).toBe("idle");
+    expect(result.current.state.runStatus).toBe("done");
+    expect(result.current.state.messages).toEqual([
+      { role: "user", content: "Build a plan" },
+      { role: "assistant", content: "Partial from before" },
+    ]);
+    expect(result.current.state.errors).toEqual([]);
+  });
+
+  it("renders the catch-up projection and blocks sends while resuming", async () => {
+    const onStopResuming = vi.fn();
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: "session-live",
+          snapshot: {
+            title: "Live thread",
+            forgeSessionId: "session-live",
+            eve: {
+              sessionId: "eve-session",
+              continuationToken: "token",
+              streamIndex: 2,
+            },
+          },
+        },
+        syncedEvents: [
+          { type: "message.received", data: { message: "Build a plan" } },
+          { type: "turn.started", data: { turnId: "t1", sequence: 1 } },
+        ] as never[],
+        resuming: true,
+        onStopResuming,
+      }),
+    );
+
+    expect(result.current.state.phase).toBe("streaming");
+    expect(result.current.state.runStatus).toBe("generating");
+    expect(result.current.state.messages).toEqual([
+      { role: "user", content: "Build a plan" },
+    ]);
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.stopResponse();
+    });
+    expect(onStopResuming).toHaveBeenCalledOnce();
+    expect(mockStop).not.toHaveBeenCalled();
   });
 });

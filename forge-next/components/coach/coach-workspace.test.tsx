@@ -19,8 +19,12 @@ vi.mock("@/lib/chat/adapters/plan/use-coach-plan-workspace", () => ({
 }));
 
 vi.mock("@/lib/chat/adapters/plan/coach-eve-session", () => ({
-  useCoachEveCatchUp: () => ({ loadPhase: "idle", events: [] }),
-  isCoachEveAgentReady: () => true,
+  useCoachEveCatchUp: () => ({
+    loadPhase: "idle",
+    events: [],
+    finalizeReason: null,
+    stopResuming: vi.fn(),
+  }),
   isCoachEveSessionLoading: () => false,
 }));
 

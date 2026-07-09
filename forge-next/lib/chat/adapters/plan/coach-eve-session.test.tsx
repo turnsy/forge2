@@ -1,14 +1,12 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import type { HandleMessageStreamEvent } from "eve/client";
+import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { restoreEveSessionEvents } from "@/lib/chat/adapters/plan/replay-eve-session";
 import {
-  applyCoachEveLoadPhase,
-  applyUserStoppedTurn,
-  useCoachEveCatchUp,
-} from "@/lib/chat/adapters/plan/coach-eve-session";
-import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
-import { STREAM_INTERRUPTED_MESSAGE } from "@/lib/chat/stream-completion";
+  restoreEveSessionEvents,
+  tailEveSessionEvents,
+} from "@/lib/chat/adapters/plan/replay-eve-session";
+import { useCoachEveCatchUp } from "@/lib/chat/adapters/plan/coach-eve-session";
 import type { CoachWorkspaceSnapshot } from "@/lib/chat/session-types";
 
 vi.mock("@/lib/chat/adapters/plan/replay-eve-session", async (importOriginal) => {
@@ -18,14 +16,21 @@ vi.mock("@/lib/chat/adapters/plan/replay-eve-session", async (importOriginal) =>
   return {
     ...actual,
     restoreEveSessionEvents: vi.fn(),
+    tailEveSessionEvents: vi.fn(),
   };
 });
 
-const mockRestoreEveSessionEvents = vi.mocked(restoreEveSessionEvents);
+const mockRestore = vi.mocked(restoreEveSessionEvents);
+const mockTail = vi.mocked(tailEveSessionEvents);
 
 const persistedEvent = {
   type: "message.received",
   data: { message: "Hello" },
+} as HandleMessageStreamEvent;
+
+const midTurnEvent = {
+  type: "turn.started",
+  data: { turnId: "turn-1", sequence: 1 },
 } as HandleMessageStreamEvent;
 
 const turnBoundary = {
@@ -57,189 +62,241 @@ function createSession(
 describe("useCoachEveCatchUp", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRestoreEveSessionEvents.mockResolvedValue([
-      persistedEvent,
-      turnBoundary,
-    ]);
+    mockRestore.mockResolvedValue({
+      events: [persistedEvent, turnBoundary],
+      needsLiveTail: false,
+      markerApplies: false,
+    });
+    mockTail.mockResolvedValue({ events: [], completed: false });
   });
 
   it("returns idle when no session is provided", () => {
     const { result } = renderHook(() => useCoachEveCatchUp());
 
-    expect(result.current).toEqual({
-      loadPhase: "idle",
-      events: [],
-    });
-    expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
+    expect(result.current.loadPhase).toBe("idle");
+    expect(result.current.events).toEqual([]);
+    expect(result.current.finalizeReason).toBeNull();
+    expect(mockRestore).not.toHaveBeenCalled();
   });
 
   it("returns ready immediately for persisted-only snapshots", () => {
     const session = createSession("session-1", {
-      eveEvents: [persistedEvent],
+      eveEvents: [persistedEvent, turnBoundary],
     });
 
     const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(result.current).toEqual({
-      loadPhase: "ready",
-      events: [persistedEvent],
-    });
-    expect(mockRestoreEveSessionEvents).not.toHaveBeenCalled();
+    expect(result.current.loadPhase).toBe("ready");
+    expect(result.current.events).toEqual([persistedEvent, turnBoundary]);
+    expect(result.current.finalizeReason).toBeNull();
+    expect(mockRestore).not.toHaveBeenCalled();
   });
 
-  it("shows loading until Eve hydration completes", async () => {
-    const syncedEvents = [persistedEvent, turnBoundary];
-    mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
-
+  it("shows loading until Eve reconciliation completes", async () => {
     const session = createSession("session-2", {
-      eve: {
-        sessionId: "eve-session-2",
-        continuationToken: "token-2",
-        streamIndex: 0,
-      },
-    });
-
-    const { result } = renderHook(() => useCoachEveCatchUp(session));
-
-    expect(result.current).toEqual({
-      loadPhase: "loading",
-      events: [],
-    });
-
-    await waitFor(() => {
-      expect(result.current).toEqual({
-        loadPhase: "ready",
-        events: syncedEvents,
-      });
-    });
-  });
-
-  it("does not expose cached events while loading from Eve", async () => {
-    const syncedEvents = [persistedEvent, turnBoundary];
-    mockRestoreEveSessionEvents.mockResolvedValue(syncedEvents);
-
-    const session = createSession("session-1", {
       eve: evePointer,
-      eveEvents: [persistedEvent],
     });
 
     const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(result.current).toEqual({
-      loadPhase: "loading",
-      events: [],
-    });
+    expect(result.current.loadPhase).toBe("loading");
+    expect(result.current.events).toEqual([]);
 
     await waitFor(() => {
-      expect(result.current).toEqual({
-        loadPhase: "ready",
-        events: syncedEvents,
-      });
+      expect(result.current.loadPhase).toBe("ready");
     });
+    expect(result.current.events).toEqual([persistedEvent, turnBoundary]);
+    expect(result.current.finalizeReason).toBeNull();
   });
 
-  it("marks waiting when Eve tail finishes without a turn boundary", async () => {
-    const inFlightCheckpoint = [
+  it("settles a marker-annotated log as restored without waiting", async () => {
+    mockRestore.mockResolvedValue({
+      events: [persistedEvent, midTurnEvent],
+      needsLiveTail: false,
+      markerApplies: true,
+    });
+
+    const session = createSession("session-stopped", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, midTurnEvent],
+      lastTurn: { status: "stopped", eventCount: 2 },
+    });
+
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
+
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.finalizeReason).toBe("restored");
+    expect(mockTail).not.toHaveBeenCalled();
+  });
+
+  it("tails a live turn and settles ready when the boundary arrives", async () => {
+    mockRestore.mockResolvedValue({
+      events: [persistedEvent, midTurnEvent],
+      needsLiveTail: true,
+      markerApplies: false,
+    });
+
+    let emitEvent: ((event: HandleMessageStreamEvent) => void) | null = null;
+    let finishTail: ((result: { events: HandleMessageStreamEvent[]; completed: boolean }) => void) | null =
+      null;
+
+    mockTail.mockImplementation((_pointer, _forgeSessionId, options) => {
+      emitEvent = options.onEvent ?? null;
+      return new Promise((resolve) => {
+        finishTail = resolve;
+      });
+    });
+
+    const session = createSession("session-live", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, midTurnEvent],
+    });
+
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
+
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("resuming");
+    });
+    expect(result.current.events).toEqual([persistedEvent, midTurnEvent]);
+
+    await act(async () => {
+      emitEvent?.(turnBoundary);
+    });
+
+    expect(result.current.events).toEqual([
       persistedEvent,
-      {
-        type: "turn.started",
-        data: { turnId: "turn-1", sequence: 1 },
-      },
-    ] as HandleMessageStreamEvent[];
+      midTurnEvent,
+      turnBoundary,
+    ]);
 
-    mockRestoreEveSessionEvents.mockResolvedValue(inFlightCheckpoint);
+    await act(async () => {
+      finishTail?.({ events: [turnBoundary], completed: true });
+    });
 
-    const session = createSession("session-stale", {
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.finalizeReason).toBeNull();
+    expect(mockTail).toHaveBeenCalledWith(
+      evePointer,
+      "session-live",
+      expect.objectContaining({ startIndex: 2 }),
+    );
+  });
+
+  it("finalizes a dead turn as interrupted when the tail goes quiet", async () => {
+    mockRestore.mockResolvedValue({
+      events: [persistedEvent, midTurnEvent],
+      needsLiveTail: true,
+      markerApplies: false,
+    });
+    mockTail.mockResolvedValue({ events: [], completed: false });
+
+    const session = createSession("session-dead", {
       eve: evePointer,
-      eveEvents: inFlightCheckpoint,
+      eveEvents: [persistedEvent, midTurnEvent],
     });
 
     const { result } = renderHook(() => useCoachEveCatchUp(session));
 
     await waitFor(() => {
-      expect(result.current).toEqual({
-        loadPhase: "waiting",
-        events: inFlightCheckpoint,
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.finalizeReason).toBe("interrupted");
+    expect(result.current.events).toEqual([persistedEvent, midTurnEvent]);
+  });
+
+  it("finalizes as stopped when the user stops the live tail", async () => {
+    mockRestore.mockResolvedValue({
+      events: [persistedEvent, midTurnEvent],
+      needsLiveTail: true,
+      markerApplies: false,
+    });
+
+    let resolveTail:
+      | ((result: { events: HandleMessageStreamEvent[]; completed: boolean }) => void)
+      | null = null;
+    let tailSignal: AbortSignal | undefined;
+
+    mockTail.mockImplementation((_pointer, _forgeSessionId, options) => {
+      tailSignal = options.signal;
+      return new Promise((resolve) => {
+        resolveTail = resolve;
       });
     });
-  });
-});
 
-describe("applyCoachEveLoadPhase", () => {
-  const reducer = createEveCoachReducer();
-
-  it("clears stale generating state after an interrupted load", () => {
-    let state = reducer.initial();
-    state = reducer.reduce(state, {
-      type: "turn.started",
-      data: { turnId: "turn-1", sequence: 1 },
+    const session = createSession("session-stop", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, midTurnEvent],
     });
 
-    const normalized = applyCoachEveLoadPhase("interrupted", state);
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(normalized.runStatus).toBeNull();
-    expect(normalized.phase).toBe("idle");
-    expect(normalized.errors).toEqual([
-      { message: STREAM_INTERRUPTED_MESSAGE },
-    ]);
-  });
-
-  it("clears generating state without an error when the user stops", () => {
-    let state = reducer.initial();
-    state = reducer.reduce(state, {
-      type: "turn.started",
-      data: { turnId: "turn-1", sequence: 1 },
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("resuming");
     });
-    state = {
-      ...state,
-      errors: [{ message: "The operation was aborted." }],
-    };
 
-    const normalized = applyUserStoppedTurn(state);
+    await act(async () => {
+      result.current.stopResuming();
+      // The real tail resolves once its signal aborts.
+      expect(tailSignal?.aborted).toBe(true);
+      resolveTail?.({ events: [], completed: false });
+    });
 
-    expect(normalized.runStatus).toBeNull();
-    expect(normalized.phase).toBe("idle");
-    expect(normalized.errors).toEqual([]);
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.finalizeReason).toBe("stopped");
   });
 
-  it("clears late abort failures emitted after stop()", () => {
-    let state = reducer.initial();
-    state = reducer.reduce(state, {
-      type: "client.message.submitted",
-      data: {
-        createdAt: Date.now(),
-        message: "Build a plan",
-        submissionId: "sub-1",
-      },
-    });
-    state = reducer.reduce(state, {
-      type: "client.message.failed",
-      data: {
-        createdAt: Date.now(),
-        error: { message: "fetch is aborted" },
-        message: "Build a plan",
-        submissionId: "sub-1",
-      },
+  it("falls back to cached events when reconciliation fails", async () => {
+    mockRestore.mockRejectedValue(new Error("network down"));
+
+    const session = createSession("session-offline", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, turnBoundary],
     });
 
-    const normalized = applyUserStoppedTurn(state);
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(normalized.runStatus).toBeNull();
-    expect(normalized.phase).toBe("idle");
-    expect(normalized.errors).toEqual([]);
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.events).toEqual([persistedEvent, turnBoundary]);
+    expect(result.current.finalizeReason).toBeNull();
   });
 
-  it("leaves in-flight projection untouched while waiting", () => {
-    let state = reducer.initial();
-    state = reducer.reduce(state, {
-      type: "turn.started",
-      data: { turnId: "turn-1", sequence: 1 },
+  it("finalizes cached mid-turn events as restored when reconciliation fails", async () => {
+    mockRestore.mockRejectedValue(new Error("network down"));
+
+    const session = createSession("session-offline-mid", {
+      eve: evePointer,
+      eveEvents: [persistedEvent, midTurnEvent],
     });
 
-    const normalized = applyCoachEveLoadPhase("waiting", state);
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
 
-    expect(normalized.runStatus).toBe("generating");
-    expect(normalized.phase).toBe("streaming");
-    expect(normalized.errors).toEqual([]);
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("ready");
+    });
+    expect(result.current.events).toEqual([persistedEvent, midTurnEvent]);
+    expect(result.current.finalizeReason).toBe("restored");
+  });
+
+  it("errors when nothing can be restored", async () => {
+    mockRestore.mockRejectedValue(new Error("network down"));
+
+    const session = createSession("session-broken", {
+      eve: evePointer,
+    });
+
+    const { result } = renderHook(() => useCoachEveCatchUp(session));
+
+    await waitFor(() => {
+      expect(result.current.loadPhase).toBe("error");
+    });
+    expect(result.current.errorMessage).toBe("Couldn't load conversation.");
   });
 });
