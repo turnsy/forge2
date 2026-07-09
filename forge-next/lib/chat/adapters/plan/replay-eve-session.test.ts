@@ -27,162 +27,89 @@ const evePointer = {
   continuationToken: "token",
 };
 
-function streamThatWaitsForAbort(
-  prefixEvents: { type: string; data?: unknown }[] = [],
-) {
+const QUIET = 800;
+const CONNECT = 12_100;
+
+function sleepUntilAbort(signal?: AbortSignal) {
+  return new Promise<void>((resolve) => {
+    if (!signal || signal.aborted) {
+      resolve();
+      return;
+    }
+
+    signal.addEventListener("abort", () => resolve(), { once: true });
+  });
+}
+
+/** Yields the given events immediately, then stays open until aborted. */
+function streamOf(events: { type: string; data?: unknown }[]) {
   return async function* ({ signal }: { signal?: AbortSignal } = {}) {
-    for (const event of prefixEvents) {
+    for (const event of events) {
       yield event;
     }
 
-    await new Promise<void>((resolve) => {
-      if (!signal || signal.aborted) {
-        resolve();
-        return;
-      }
-
-      signal.addEventListener("abort", () => resolve(), { once: true });
-    });
+    await sleepUntilAbort(signal);
   };
 }
 
 describe("restoreEveSessionEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("returns an in-flight replay without blocking for the turn to finish", async () => {
-    const replayEvents = [
-      { type: "message.received", data: { message: "Hello" } },
-      { type: "message.appended", data: { messageSoFar: "Working" } },
-    ];
-
-    mockStream.mockImplementationOnce(async function* () {
-      for (const event of replayEvents) {
-        yield event;
-      }
-    });
-
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1"),
-    ).resolves.toEqual({
-      events: replayEvents,
-      needsLiveTail: true,
-      markerApplies: false,
-    });
-
-    expect(mockStream).toHaveBeenCalledOnce();
-  });
-
-  it("replays every completed turn in the session", async () => {
-    const turnOne = [
+  it("replays a full session log in one pass without cached events", async () => {
+    const log = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "message.completed", data: { message: "Hi there" } },
       { type: "session.waiting", data: {} },
-    ];
-    const turnTwo = [
       { type: "message.received", data: { message: "Again" } },
       { type: "message.completed", data: { message: "Sure" } },
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream
-      .mockImplementationOnce(async function* () {
-        for (const event of turnOne) {
-          yield event;
-        }
-      })
-      .mockImplementationOnce(async function* () {
-        for (const event of turnTwo) {
-          yield event;
-        }
-      })
-      .mockImplementationOnce(async function* () {});
+    mockStream.mockImplementationOnce(streamOf(log));
 
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1"),
-    ).resolves.toEqual({
-      events: [...turnOne, ...turnTwo],
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1");
+
+    await vi.advanceTimersByTimeAsync(QUIET);
+
+    await expect(promise).resolves.toEqual({
+      events: log,
       needsLiveTail: false,
       markerApplies: false,
     });
 
-    expect(mockStream).toHaveBeenNthCalledWith(2, {
-      startIndex: 3,
+    expect(mockStream).toHaveBeenCalledOnce();
+    expect(mockStream).toHaveBeenCalledWith({
+      startIndex: 0,
       signal: expect.any(AbortSignal),
     });
   });
 
-  it("stops after the final turn instead of waiting on a live stream", async () => {
-    const turnOne = [
+  it("confirms a caught-up cache via the echoed last event", async () => {
+    const persisted = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "message.completed", data: { message: "Hi there" } },
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream
-      .mockImplementationOnce(async function* () {
-        for (const event of turnOne) {
-          yield event;
-        }
-      })
-      .mockImplementationOnce(streamThatWaitsForAbort());
-
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1"),
-    ).resolves.toEqual({
-      events: turnOne,
-      needsLiveTail: false,
-      markerApplies: false,
-    });
-
-    expect(mockStream).toHaveBeenCalledTimes(2);
-  });
-
-  it("hands a mid-turn checkpoint without a marker to the live tail", async () => {
-    const persistedPrefix = [
-      { type: "message.received", data: { message: "Hello" } },
-      { type: "message.appended", data: { messageSoFar: "Working" } },
-    ];
-
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1", {
-        fromEvents: persistedPrefix,
-      }),
-    ).resolves.toEqual({
-      events: persistedPrefix,
-      needsLiveTail: true,
-      markerApplies: false,
-    });
-
-    expect(mockStream).not.toHaveBeenCalled();
-  });
-
-  it("keeps a marker-annotated mid-turn log settled when the server has nothing newer", async () => {
-    vi.useFakeTimers();
-
-    const persistedPrefix = [
-      { type: "message.received", data: { message: "Hello" } },
-      { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
-    ];
-
-    mockStream.mockImplementationOnce(streamThatWaitsForAbort());
+    mockStream.mockImplementationOnce(streamOf([persisted[2]]));
 
     const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
-      fromEvents: persistedPrefix,
-      lastTurn: { status: "stopped", eventCount: 2 },
+      fromEvents: persisted,
     });
 
-    await vi.advanceTimersByTimeAsync(2_001);
+    await vi.advanceTimersByTimeAsync(QUIET);
 
     await expect(promise).resolves.toEqual({
-      events: persistedPrefix,
+      events: persisted,
       needsLiveTail: false,
-      markerApplies: true,
+      markerApplies: false,
     });
 
     expect(mockStream).toHaveBeenCalledWith({
@@ -191,10 +118,118 @@ describe("restoreEveSessionEvents", () => {
     });
   });
 
-  it("discards the marker when the server log advanced past it", async () => {
-    vi.useFakeTimers();
+  it("recovers turns the cache missed, even when the server is slow to respond", async () => {
+    const persisted = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "session.waiting", data: {} },
+    ];
+    const missedTurn = [
+      { type: "message.received", data: { message: "You missed me" } },
+      { type: "message.completed", data: { message: "Recovered" } },
+      { type: "session.waiting", data: {} },
+    ];
 
-    const persistedPrefix = [
+    // First byte arrives after 5s (cold server) — well past any short probe
+    // window, but within the connect budget.
+    mockStream.mockImplementationOnce(async function* ({
+      signal,
+    }: {
+      signal?: AbortSignal;
+    } = {}) {
+      await new Promise((resolve) => setTimeout(resolve, 5_000));
+      yield persisted[1];
+      for (const event of missedTurn) {
+        yield event;
+      }
+
+      await sleepUntilAbort(signal);
+    });
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persisted,
+    });
+
+    await vi.advanceTimersByTimeAsync(5_000 + QUIET);
+
+    await expect(promise).resolves.toEqual({
+      events: [...persisted, ...missedTurn],
+      needsLiveTail: false,
+      markerApplies: false,
+    });
+  });
+
+  it("falls back to cached events when the server never responds", async () => {
+    const persisted = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "session.waiting", data: {} },
+    ];
+
+    mockStream.mockImplementationOnce(async function* ({
+      signal,
+    }: {
+      signal?: AbortSignal;
+    } = {}) {
+      await sleepUntilAbort(signal);
+    });
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persisted,
+    });
+
+    await vi.advanceTimersByTimeAsync(CONNECT);
+
+    await expect(promise).resolves.toEqual({
+      events: persisted,
+      needsLiveTail: false,
+      markerApplies: false,
+    });
+  });
+
+  it("hands a mid-turn log without a marker to the live tail", async () => {
+    const persisted = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
+    ];
+
+    mockStream.mockImplementationOnce(streamOf([persisted[1]]));
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persisted,
+    });
+
+    await vi.advanceTimersByTimeAsync(QUIET);
+
+    await expect(promise).resolves.toEqual({
+      events: persisted,
+      needsLiveTail: true,
+      markerApplies: false,
+    });
+  });
+
+  it("keeps a marker-annotated mid-turn log settled when the server has nothing newer", async () => {
+    const persisted = [
+      { type: "message.received", data: { message: "Hello" } },
+      { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
+    ];
+
+    mockStream.mockImplementationOnce(streamOf([persisted[1]]));
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persisted,
+      lastTurn: { status: "stopped", eventCount: 2 },
+    });
+
+    await vi.advanceTimersByTimeAsync(QUIET);
+
+    await expect(promise).resolves.toEqual({
+      events: persisted,
+      needsLiveTail: false,
+      markerApplies: true,
+    });
+  });
+
+  it("discards the marker when the server log advanced past it", async () => {
+    const persisted = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
     ];
@@ -203,183 +238,164 @@ describe("restoreEveSessionEvents", () => {
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream
-      .mockImplementationOnce(async function* () {
-        for (const event of serverTail) {
-          yield event;
-        }
-      })
-      .mockImplementationOnce(streamThatWaitsForAbort());
+    mockStream.mockImplementationOnce(streamOf([persisted[1], ...serverTail]));
 
     const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
-      fromEvents: persistedPrefix,
+      fromEvents: persisted,
       lastTurn: { status: "stopped", eventCount: 2 },
     });
 
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(QUIET);
 
     await expect(promise).resolves.toEqual({
-      events: [...persistedPrefix, ...serverTail],
+      events: [...persisted, ...serverTail],
       needsLiveTail: false,
       markerApplies: false,
     });
   });
 
   it("ignores a stale marker recorded for a different event count", async () => {
-    const persistedPrefix = [
+    const persisted = [
       { type: "message.received", data: { message: "Hello" } },
       { type: "turn.started", data: { turnId: "turn-1", sequence: 1 } },
     ];
 
-    await expect(
-      restoreEveSessionEvents(evePointer, "forge-session-1", {
-        fromEvents: persistedPrefix,
-        lastTurn: { status: "stopped", eventCount: 1 },
-      }),
-    ).resolves.toEqual({
-      events: persistedPrefix,
+    mockStream.mockImplementationOnce(streamOf([persisted[1]]));
+
+    const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
+      fromEvents: persisted,
+      lastTurn: { status: "stopped", eventCount: 1 },
+    });
+
+    await vi.advanceTimersByTimeAsync(QUIET);
+
+    await expect(promise).resolves.toEqual({
+      events: persisted,
       needsLiveTail: true,
       markerApplies: false,
     });
   });
 
-  it("returns persisted events when the checkpoint is already complete and no new turns exist", async () => {
-    vi.useFakeTimers();
-
-    const persistedPrefix = [
+  it("caps the reconcile window and defers a live turn to the tail", async () => {
+    const persisted = [
       { type: "message.received", data: { message: "Hello" } },
-      { type: "message.completed", data: { message: "Hi there" } },
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream.mockImplementationOnce(streamThatWaitsForAbort());
+    // A live turn streaming steadily with no quiet gaps.
+    mockStream.mockImplementationOnce(async function* ({
+      signal,
+    }: {
+      signal?: AbortSignal;
+    } = {}) {
+      yield persisted[1];
+      yield { type: "message.received", data: { message: "New turn" } };
+
+      for (let i = 0; i < 100 && !signal?.aborted; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        yield { type: "message.appended", data: { messageSoFar: `chunk ${i}` } };
+      }
+    });
 
     const promise = restoreEveSessionEvents(evePointer, "forge-session-1", {
-      fromEvents: persistedPrefix,
+      fromEvents: persisted,
     });
 
-    await vi.advanceTimersByTimeAsync(2_001);
+    await vi.advanceTimersByTimeAsync(10_000);
 
-    await expect(promise).resolves.toEqual({
-      events: persistedPrefix,
-      needsLiveTail: false,
-      markerApplies: false,
-    });
-
-    expect(mockStream).toHaveBeenCalledWith({
-      startIndex: 3,
-      signal: expect.any(AbortSignal),
-    });
+    const result = await promise;
+    expect(result.needsLiveTail).toBe(true);
+    expect(result.markerApplies).toBe(false);
+    expect(result.events.length).toBeGreaterThan(persisted.length);
+    // The window cap kept the load bounded instead of collecting all chunks.
+    expect(result.events.length).toBeLessThan(30);
   });
 });
 
 describe("tailEveSessionEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("streams live events until the turn boundary", async () => {
+  it("streams live events until the turn boundary, excluding the echo", async () => {
+    const echo = { type: "turn.started", data: { turnId: "t1", sequence: 1 } };
     const liveEvents = [
       { type: "message.appended", data: { messageSoFar: "More" } },
       { type: "message.completed", data: { message: "More detail" } },
       { type: "session.waiting", data: {} },
     ];
 
-    mockStream.mockImplementationOnce(async function* () {
-      for (const event of liveEvents) {
-        yield event;
-      }
-    });
+    mockStream.mockImplementationOnce(streamOf([echo, ...liveEvents]));
 
     const seen: unknown[] = [];
-    await expect(
-      tailEveSessionEvents(evePointer, "forge-session-1", {
-        startIndex: 2,
-        onEvent: (event) => seen.push(event),
-      }),
-    ).resolves.toEqual({ events: liveEvents, completed: true });
+    const promise = tailEveSessionEvents(evePointer, "forge-session-1", {
+      startIndex: 2,
+      onEvent: (event) => seen.push(event),
+    });
+
+    await vi.advanceTimersByTimeAsync(10);
+
+    await expect(promise).resolves.toEqual({
+      events: liveEvents,
+      completed: true,
+    });
 
     expect(seen).toEqual(liveEvents);
     expect(mockStream).toHaveBeenCalledWith({
-      startIndex: 2,
+      startIndex: 1,
       signal: expect.any(AbortSignal),
     });
   });
 
-  it("gives up when no first event arrives within the probe window", async () => {
-    vi.useFakeTimers();
+  it("declares the turn dead when the stream goes quiet after the echo", async () => {
+    const echo = { type: "turn.started", data: { turnId: "t1", sequence: 1 } };
 
-    mockStream.mockImplementationOnce(streamThatWaitsForAbort());
+    mockStream.mockImplementationOnce(streamOf([echo]));
 
     const promise = tailEveSessionEvents(evePointer, "forge-session-1", {
       startIndex: 2,
     });
 
-    await vi.advanceTimersByTimeAsync(4_001);
+    await vi.advanceTimersByTimeAsync(30_100);
 
     await expect(promise).resolves.toEqual({ events: [], completed: false });
   });
 
-  it("gives up when the live stream goes quiet mid-turn", async () => {
-    vi.useFakeTimers();
-
+  it("gives up when the server never responds", async () => {
     mockStream.mockImplementationOnce(async function* ({
       signal,
     }: {
       signal?: AbortSignal;
     } = {}) {
-      yield { type: "message.appended", data: { messageSoFar: "Some" } };
-
-      await new Promise<void>((resolve) => {
-        if (!signal || signal.aborted) {
-          resolve();
-          return;
-        }
-
-        signal.addEventListener("abort", () => resolve(), { once: true });
-      });
+      await sleepUntilAbort(signal);
     });
 
     const promise = tailEveSessionEvents(evePointer, "forge-session-1", {
       startIndex: 2,
     });
 
-    await vi.advanceTimersByTimeAsync(30_001);
+    await vi.advanceTimersByTimeAsync(CONNECT);
 
-    await expect(promise).resolves.toEqual({
-      events: [{ type: "message.appended", data: { messageSoFar: "Some" } }],
-      completed: false,
-    });
+    await expect(promise).resolves.toEqual({ events: [], completed: false });
   });
 
   it("stops streaming when aborted", async () => {
-    vi.useFakeTimers();
-
     const abortController = new AbortController();
+    const echo = { type: "turn.started", data: { turnId: "t1", sequence: 1 } };
+    const partial = {
+      type: "message.appended",
+      data: { messageSoFar: "Some" },
+    };
 
-    mockStream.mockImplementationOnce(async function* ({
-      signal,
-    }: {
-      signal?: AbortSignal;
-    } = {}) {
-      yield { type: "message.appended", data: { messageSoFar: "Some" } };
-
-      await new Promise<void>((resolve) => {
-        if (!signal || signal.aborted) {
-          resolve();
-          return;
-        }
-
-        signal.addEventListener("abort", () => resolve(), { once: true });
-      });
-    });
+    mockStream.mockImplementationOnce(streamOf([echo, partial]));
 
     const promise = tailEveSessionEvents(evePointer, "forge-session-1", {
-      startIndex: 0,
+      startIndex: 2,
       signal: abortController.signal,
     });
 
@@ -388,7 +404,7 @@ describe("tailEveSessionEvents", () => {
     await vi.advanceTimersByTimeAsync(10);
 
     await expect(promise).resolves.toEqual({
-      events: [{ type: "message.appended", data: { messageSoFar: "Some" } }],
+      events: [partial],
       completed: false,
     });
   });

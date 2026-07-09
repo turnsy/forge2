@@ -67,4 +67,96 @@ describe("createCoachEvePersister", () => {
 
     expect(saveSnapshot).toHaveBeenCalledTimes(1);
   });
+
+  it("serializes writes so a slow earlier save cannot overwrite a newer one", async () => {
+    const completionOrder: number[] = [];
+    let releaseFirst: (() => void) | undefined;
+
+    const saveSnapshot = vi.fn(
+      (snapshot: { events: readonly unknown[] }) =>
+        new Promise<boolean>((resolve) => {
+          if (snapshot.events.length === 1) {
+            // The first write hangs until released, simulating a slow
+            // server action.
+            releaseFirst = () => {
+              completionOrder.push(1);
+              resolve(true);
+            };
+            return;
+          }
+
+          completionOrder.push(snapshot.events.length);
+          resolve(true);
+        }),
+    );
+
+    const persister = createCoachEvePersister({
+      forgeSessionId: "forge-1",
+      getTitle: () => null,
+      saveSnapshot,
+    });
+
+    const session = { sessionId: "eve-1", streamIndex: 0 };
+    const first = [{ type: "message.received" }];
+    const second = [{ type: "message.received" }, { type: "session.waiting" }];
+
+    const firstWrite = persister.flush(session, first);
+    const secondWrite = persister.flush(session, second);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // The second write must wait for the first to land.
+    expect(saveSnapshot).toHaveBeenCalledTimes(1);
+
+    releaseFirst?.();
+    await firstWrite;
+    await secondWrite;
+
+    expect(completionOrder).toEqual([1, 2]);
+  });
+
+  it("drops writes with fewer events than one already issued", async () => {
+    const saveSnapshot = vi.fn().mockResolvedValue(true);
+    const persister = createCoachEvePersister({
+      forgeSessionId: "forge-1",
+      getTitle: () => null,
+      saveSnapshot,
+    });
+
+    const session = { sessionId: "eve-1", streamIndex: 0 };
+    const newer = [{ type: "message.received" }, { type: "session.waiting" }];
+    const stale = [{ type: "message.received" }];
+
+    await persister.flush(session, newer);
+    await persister.flush(session, stale);
+
+    expect(saveSnapshot).toHaveBeenCalledTimes(1);
+    expect(saveSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ events: newer }),
+    );
+  });
+
+  it("allows a same-length write so a stop marker can annotate the latest snapshot", async () => {
+    const saveSnapshot = vi.fn().mockResolvedValue(true);
+    const persister = createCoachEvePersister({
+      forgeSessionId: "forge-1",
+      getTitle: () => null,
+      saveSnapshot,
+    });
+
+    const session = { sessionId: "eve-1", streamIndex: 0 };
+    const events = [{ type: "message.received" }];
+
+    await persister.flush(session, events);
+    await persister.flush(session, events, {
+      status: "stopped",
+      eventCount: 1,
+    });
+
+    expect(saveSnapshot).toHaveBeenCalledTimes(2);
+    expect(saveSnapshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        lastTurn: { status: "stopped", eventCount: 1 },
+      }),
+    );
+  });
 });
