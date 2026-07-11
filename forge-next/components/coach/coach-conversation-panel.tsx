@@ -16,6 +16,7 @@ export function CoachConversationPanel({
   promptEnabled = true,
   composerHeader,
   composerClassName = "",
+  showAttachmentsAboveComposer = true,
 }: {
   state: PlanWorkspaceState;
   onAttach: (files: File[]) => void;
@@ -26,6 +27,7 @@ export function CoachConversationPanel({
   promptEnabled?: boolean;
   composerHeader?: ReactNode;
   composerClassName?: string;
+  showAttachmentsAboveComposer?: boolean;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -41,7 +43,7 @@ export function CoachConversationPanel({
         className={`shrink-0 py-3 md:py-0${composerClassName ? ` ${composerClassName}` : ""}`}
       >
         {composerHeader}
-        {state.hasStarted ? (
+        {showAttachmentsAboveComposer && state.hasStarted ? (
           <ChatAttachmentList
             attachments={state.attachments}
             onRemove={onRemoveAttachment}

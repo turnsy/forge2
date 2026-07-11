@@ -6,9 +6,11 @@ import type { ChatAttachment as ChatAttachmentModel } from "@/lib/chat/types";
 export function ChatAttachment({
   attachment,
   onRemove,
+  className = "",
 }: {
   attachment: ChatAttachmentModel;
   onRemove?: (localId: string) => void;
+  className?: string;
 }) {
   const tone = attachment.status === "failed" ? "error" : "default";
   const canRemove =
@@ -17,7 +19,7 @@ export function ChatAttachment({
     attachment.status !== "pending";
 
   return (
-    <span className={attachmentChipClass(tone)}>
+    <span className={`${attachmentChipClass(tone)}${className ? ` ${className}` : ""}`}>
       {attachment.status === "uploading" ? (
         <Spinner className="h-3.5 w-3.5 border" label="Uploading" />
       ) : (
@@ -45,22 +47,29 @@ export function ChatAttachmentList({
   attachments,
   onRemove,
   className = "",
+  chipClassName = "",
+  wrap = true,
 }: {
   attachments: ChatAttachmentModel[];
   onRemove?: (localId: string) => void;
   className?: string;
+  chipClassName?: string;
+  wrap?: boolean;
 }) {
   if (attachments.length === 0) {
     return null;
   }
 
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`.trim()}>
+    <div
+      className={`flex gap-2 ${wrap ? "flex-wrap" : "flex-nowrap"} ${className}`.trim()}
+    >
       {attachments.map((attachment) => (
         <ChatAttachment
           key={attachment.localId}
           attachment={attachment}
           onRemove={onRemove}
+          className={chipClassName}
         />
       ))}
     </div>

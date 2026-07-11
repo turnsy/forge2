@@ -7,6 +7,7 @@ import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
 import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
+import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -31,7 +32,6 @@ import {
   MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
-  MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { isChatRunning } from "@/lib/chat";
@@ -571,6 +571,7 @@ function CoachWorkspaceInner({
 
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
+    options?: { showAttachmentsAboveComposer?: boolean },
   ) =>
     mobileHistoryOpen ? (
       <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
@@ -587,6 +588,7 @@ function CoachWorkspaceInner({
         promptEnabled={promptEnabled}
         composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
         composerHeader={composerHeader}
+        showAttachmentsAboveComposer={options?.showAttachmentsAboveComposer}
       />
     );
 
@@ -705,19 +707,24 @@ function CoachWorkspaceInner({
             className={MOBILE_WORKSPACE_X_PADDING_CLASS}
           >
             {renderMobileChatBody(
-              <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  fullWidth={false}
-                  icon={<EyeIcon />}
-                  aria-label="View artifact"
-                  onClick={() => setShowArtifact(true)}
-                >
-                  View
-                </Button>
-              </div>,
+              <MobileComposerToolbar
+                attachments={state.attachments}
+                onRemoveAttachment={removeAttachment}
+                trailing={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    fullWidth={false}
+                    icon={<EyeIcon />}
+                    aria-label="View artifact"
+                    onClick={() => setShowArtifact(true)}
+                  >
+                    View
+                  </Button>
+                }
+              />,
+              { showAttachmentsAboveComposer: false },
             )}
           </ChatWorkspaceShell>
         )}
