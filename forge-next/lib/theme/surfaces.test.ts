@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BUTTON_MD_HEIGHT_CLASS,
   attachmentChipClass,
   buttonVariantClass,
   completionCheckmarkClass,
@@ -33,8 +34,12 @@ describe("surface theme helpers", () => {
   it("uses matching heights for text and icon buttons at each size", () => {
     expect(buttonVariantClass("ghost", false, "sm")).toContain("h-8");
     expect(iconButtonVariantClass("ghost", "sm")).toContain("h-8 w-8");
-    expect(buttonVariantClass("primary", false, "md")).toContain("h-11");
-    expect(iconButtonVariantClass("primary", "md")).toContain("h-11 w-11");
+    expect(buttonVariantClass("primary", false, "md")).toContain(
+      BUTTON_MD_HEIGHT_CLASS,
+    );
+    expect(iconButtonVariantClass("primary", "md")).toContain(
+      `${BUTTON_MD_HEIGHT_CLASS} w-11`,
+    );
   });
 
   it("uses grayscale glass card styling", () => {
@@ -95,6 +100,7 @@ describe("surface theme helpers", () => {
 
   it("returns attachment chip styling", () => {
     expect(attachmentChipClass()).toContain("rounded-full");
+    expect(attachmentChipClass()).toContain("h-11");
     expect(attachmentChipClass("error")).toContain("text-red-200");
   });
 

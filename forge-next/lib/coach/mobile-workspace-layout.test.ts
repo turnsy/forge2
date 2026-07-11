@@ -43,6 +43,6 @@ describe("mobile workspace layout classes", () => {
       MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
     );
     expect(MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS).toContain("overflow-x-auto");
-    expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain("h-8");
+    expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain("h-11");
   });
 });

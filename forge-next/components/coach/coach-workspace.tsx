@@ -713,8 +713,7 @@ function CoachWorkspaceInner({
                 trailing={
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
+                    variant="secondary"
                     fullWidth={false}
                     icon={<EyeIcon />}
                     aria-label="View artifact"
