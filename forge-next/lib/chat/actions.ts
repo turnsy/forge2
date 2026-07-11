@@ -50,7 +50,7 @@ export async function removeSessionAttachments(
   const user = await requireRole("coach");
 
   if (contextFileIds.length === 0) {
-    return { ok: true as const };
+    return { ok: true as const, attachments: [] };
   }
 
   const result = await deleteUploadContext(contextFileIds, user.id);
