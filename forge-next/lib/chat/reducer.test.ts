@@ -116,4 +116,50 @@ describe("chatWorkspaceReducer", () => {
     expect(state.hasStarted).toBe(false);
     expect(state.messages).toHaveLength(0);
   });
+
+  it("restores uploaded attachments from session storage", () => {
+    const state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "RESTORE_ATTACHMENTS",
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    });
+
+    expect(state.attachments).toHaveLength(1);
+    expect(state.contextFileIds).toEqual(["coach/session/my-plan.txt"]);
+  });
+
+  it("skips restore when attachment ids are already present", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState(),
+      contextFileIds: ["coach/session/my-plan.txt"],
+      attachments: [
+        {
+          localId: "existing-1",
+          status: "uploaded" as const,
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    };
+
+    const state = chatWorkspaceReducer(initial, {
+      type: "RESTORE_ATTACHMENTS",
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    });
+
+    expect(state).toBe(initial);
+  });
 });

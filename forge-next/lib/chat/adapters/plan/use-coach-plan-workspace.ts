@@ -5,6 +5,7 @@ import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
+  listSessionAttachments,
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import {
@@ -469,7 +470,28 @@ export function useCoachPlanWorkspace(options?: {
     attachmentReducer,
     createAttachmentState(),
   );
+  const restoredAttachmentsRef = useRef(false);
   const [isInitializingThread, setIsInitializingThread] = useState(false);
+
+  useEffect(() => {
+    if (!initialSession || restoredAttachmentsRef.current) {
+      return;
+    }
+
+    restoredAttachmentsRef.current = true;
+
+    void (async () => {
+      const result = await listSessionAttachments(forgeSessionId);
+      if (!result?.ok || result.attachments.length === 0) {
+        return;
+      }
+
+      dispatchAttachments({
+        type: "RESTORE_ATTACHMENTS",
+        attachments: result.attachments,
+      });
+    })();
+  }, [forgeSessionId, initialSession]);
 
   // While the catch-up layer tails a live turn, its growing event log (not
   // the frozen agent store) is the projection source. The workspace remounts
@@ -622,7 +644,7 @@ export function useCoachPlanWorkspace(options?: {
 
         const result = await uploadContextFile({
           sessionId: forgeSessionId,
-          file: attachment.file,
+          file: attachment.file!,
         });
 
         if (!result.ok) {
@@ -639,7 +661,7 @@ export function useCoachPlanWorkspace(options?: {
           localId: attachment.localId,
           contextFileIds: result.contextFileIds,
           displayLabel: formatAttachmentDisplayLabel(
-            attachment.file.name,
+            attachment.file!.name,
             result.contextFileIds.length,
           ),
         });

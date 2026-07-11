@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
 const {
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
+  listSessionAttachments,
   mockSend,
   mockReset,
   mockStop,
@@ -26,6 +27,7 @@ const {
 } = vi.hoisted(() => ({
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
+  listSessionAttachments: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
   mockStop: vi.fn(),
@@ -83,6 +85,7 @@ const {
 vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
+  listSessionAttachments,
 }));
 
 vi.mock("@/lib/chat/adapters/plan/forge-eve-client", async (importOriginal) => {
@@ -177,6 +180,7 @@ describe("useCoachPlanWorkspace", () => {
       title: "Strength block",
     });
     generateSessionTitleFromPrompt.mockResolvedValue("Strength block");
+    listSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
   });
 
   it("initializes with a draft plan when initialPlan is provided without planId", () => {
@@ -680,5 +684,51 @@ describe("useCoachPlanWorkspace", () => {
     });
     expect(onStopResuming).toHaveBeenCalledOnce();
     expect(mockStop).not.toHaveBeenCalled();
+  });
+
+  it("restores session attachments when loading a historical conversation", async () => {
+    listSessionAttachments.mockResolvedValue({
+      ok: true,
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach-1/session-1/my-plan.txt"],
+        },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: "session-1",
+          snapshot: {
+            title: "Bench block",
+            forgeSessionId: "session-1",
+            eve: null,
+          },
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(listSessionAttachments).toHaveBeenCalledWith("session-1");
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.attachments).toEqual([
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach-1/session-1/my-plan.txt"],
+        },
+      ]);
+    });
+
+    expect(result.current.state.contextFileIds).toEqual([
+      "coach-1/session-1/my-plan.txt",
+    ]);
   });
 });
