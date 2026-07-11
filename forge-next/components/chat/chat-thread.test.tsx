@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { TURN_ACTIVITY_LABEL } from "@/lib/chat/turn-activity";
 
 describe("ChatThread", () => {
-  it("shows run status below messages as an assistant bubble with a spinner", () => {
+  it("shows the turn activity indicator while a turn is in progress", () => {
     render(
       <ChatThread
         threadKey="thread-1"
@@ -14,11 +15,12 @@ describe("ChatThread", () => {
         phase="streaming"
       />,
     );
-    expect(screen.getByText("Generating")).toBeInTheDocument();
-    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
-  it("keeps a generating indicator visible while assistant text is streaming", () => {
+  it("keeps the turn activity indicator visible while assistant text is streaming", () => {
     render(
       <ChatThread
         threadKey="thread-1"
@@ -31,11 +33,11 @@ describe("ChatThread", () => {
     );
 
     expect(screen.getByText("Partial reply")).toBeInTheDocument();
-    expect(screen.getByText("Generating")).toBeInTheDocument();
-    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
-  it("shows builder status under an intermediate assistant message", () => {
+  it("shows the turn activity indicator during sandbox work", () => {
     render(
       <ChatThread
         threadKey="thread-1"
@@ -50,7 +52,8 @@ describe("ChatThread", () => {
     expect(
       screen.getByText("I'll read your spreadsheet first."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Running builder")).toBeInTheDocument();
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+    expect(screen.queryByText("Running builder")).not.toBeInTheDocument();
   });
 
   it("shows inline errors in the thread", () => {
@@ -85,7 +88,7 @@ describe("ChatThread", () => {
     );
 
     expect(screen.getByText(/stopped before finishing/i)).toBeInTheDocument();
-    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(TURN_ACTIVITY_LABEL)).not.toBeInTheDocument();
   });
 
   it("does not render whitespace-only assistant messages", () => {
@@ -107,8 +110,8 @@ describe("ChatThread", () => {
     expect(container.querySelectorAll(".justify-start .rounded-card")).toHaveLength(0);
   });
 
-  it("does not render a streaming bubble for whitespace-only text", () => {
-    const { container } = render(
+  it("shows the turn activity indicator for whitespace-only streaming text", () => {
+    render(
       <ChatThread
         threadKey="thread-1"
         messages={[{ role: "user", content: "Hi" }]}
@@ -119,9 +122,25 @@ describe("ChatThread", () => {
       />,
     );
 
-    const scrollPane = container.querySelector(".overflow-y-auto");
-    expect(scrollPane?.textContent).toMatch(/Hi[\s\S]*Generating/);
-    expect(scrollPane?.textContent).not.toMatch(/\s{3,}/);
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+  });
+
+  it("hides the turn activity indicator when the turn is terminal", () => {
+    render(
+      <ChatThread
+        threadKey="thread-1"
+        messages={[
+          { role: "user", content: "Hello" },
+          { role: "assistant", content: "Hi there" },
+        ]}
+        streamingAssistantText=""
+        runStatus={null}
+        errors={[]}
+        phase="idle"
+      />,
+    );
+
+    expect(screen.queryByLabelText(TURN_ACTIVITY_LABEL)).not.toBeInTheDocument();
   });
 
   it("scrolls to the bottom when a thread is loaded", () => {

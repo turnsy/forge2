@@ -151,6 +151,7 @@ function ArtifactPanel({
           <ArtifactPreview
             artifact={toArtifactPreviewModel(state.currentArtifact)}
             runStatus={state.runStatus}
+            phase={state.phase}
             isAwaitingArtifact={false}
             disabled={disabled}
             onPlanChange={onPlanChange}

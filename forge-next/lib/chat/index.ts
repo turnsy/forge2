@@ -10,8 +10,12 @@ export {
 export {
   getRunStatusLabel,
   isActiveRunStatus,
-  shouldShowPreviewSpinner,
 } from "@/lib/chat/run-status-copy";
+export {
+  isTurnInProgress,
+  shouldShowPreviewSpinner,
+  TURN_ACTIVITY_LABEL,
+} from "@/lib/chat/turn-activity";
 export {
   canSendChat,
   canStopChat,

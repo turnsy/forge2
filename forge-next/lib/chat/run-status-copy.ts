@@ -16,7 +16,3 @@ export function getRunStatusLabel(status: ChatStatus): string {
 export function isActiveRunStatus(status: ChatStatus): boolean {
   return status !== "done" && status !== "error";
 }
-
-export function shouldShowPreviewSpinner(status: ChatStatus | null): boolean {
-  return status === "sandbox" || status === "validating";
-}

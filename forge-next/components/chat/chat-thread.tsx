@@ -1,14 +1,11 @@
 "use client";
 
 import { ChatMessageBody } from "@/components/chat/chat-message-body";
+import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator";
 import { ChatBubble } from "@/components/ui/chat-bubble";
 import { MarkdownContent } from "@/components/ui/markdown-content";
-import { Spinner } from "@/components/ui";
-import {
-  getRunStatusLabel,
-  isActiveRunStatus,
-} from "@/lib/chat/run-status-copy";
 import { hasVisibleChatContent } from "@/lib/chat/message-content";
+import { isTurnInProgress } from "@/lib/chat/turn-activity";
 import { useChatThreadAutoScroll } from "@/lib/chat/use-chat-thread-scroll";
 import type {
   ChatDisplayError,
@@ -23,25 +20,6 @@ function isRenderableMessage(message: ChatMessage): boolean {
   }
 
   return hasVisibleChatContent(message.content);
-}
-
-function resolveStatusLabel(
-  phase: ChatWorkspacePhase,
-  runStatus: ChatStatus | null,
-): string | null {
-  if (phase === "uploading") {
-    return "Uploading files…";
-  }
-
-  if (runStatus && isActiveRunStatus(runStatus)) {
-    return getRunStatusLabel(runStatus);
-  }
-
-  if (phase === "streaming") {
-    return "Thinking…";
-  }
-
-  return null;
 }
 
 export function ChatThread({
@@ -75,24 +53,8 @@ export function ChatThread({
       messages[messages.length - 1]?.role !== "assistant" ||
       messages[messages.length - 1]?.content.trim() !== visibleStreamingText);
 
-  const turnInProgress =
-    phase === "uploading" ||
-    phase === "streaming" ||
-    (runStatus !== null && isActiveRunStatus(runStatus));
-
-  const statusLabel = turnInProgress
-    ? resolveStatusLabel(phase, runStatus)
-    : null;
-
-  const showStandaloneStatus =
-    turnInProgress && visibleStreamingText.length === 0 && Boolean(statusLabel);
-
-  const showStreamingStatus =
-    turnInProgress &&
-    visibleStreamingText.length > 0 &&
-    showStreaming &&
-    Boolean(statusLabel);
-
+  const turnInProgress = isTurnInProgress(phase, runStatus);
+  const showTurnActivity = turnInProgress;
   const showErrors = errors.length > 0;
 
   return (
@@ -111,26 +73,10 @@ export function ChatThread({
             <ChatBubble role="assistant" isStreaming={turnInProgress}>
               <MarkdownContent content={visibleStreamingText} />
             </ChatBubble>
-            {showStreamingStatus && statusLabel ? (
-              <div className="flex justify-start">
-                <div className="flex items-center gap-2 px-1 text-sm text-surface-muted">
-                  <Spinner
-                    className="h-3.5 w-3.5 shrink-0 border"
-                    label={statusLabel}
-                  />
-                  <span>{statusLabel}</span>
-                </div>
-              </div>
-            ) : null}
+            {showTurnActivity ? <TurnActivityIndicator /> : null}
           </div>
-        ) : null}
-        {showStandaloneStatus && statusLabel ? (
-          <ChatBubble role="assistant">
-            <div className="flex items-center gap-2.5 text-surface-muted">
-              <Spinner className="h-4 w-4 shrink-0 border" label={statusLabel} />
-              <span>{statusLabel}</span>
-            </div>
-          </ChatBubble>
+        ) : showTurnActivity ? (
+          <TurnActivityIndicator />
         ) : null}
         {showErrors ? (
           <ChatBubble role="assistant">

@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WorkoutPlanArtifactPreview } from "@/components/artifact/workout-plan-artifact-preview";
+import { TURN_ACTIVITY_LABEL } from "@/lib/chat/turn-activity";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
@@ -47,6 +48,20 @@ describe("WorkoutPlanArtifactPreview", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Working…")).toBeInTheDocument();
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+  });
+
+  it("shows spinner overlay while generating", () => {
+    render(
+      <WorkoutPlanArtifactPreview
+        plan={minimalWorkoutPlan}
+        runStatus="generating"
+        phase="streaming"
+        disabled={false}
+        onPlanChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
   });
 });

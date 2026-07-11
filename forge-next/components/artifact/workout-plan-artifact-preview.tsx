@@ -1,22 +1,24 @@
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
-import { Spinner } from "@/components/ui";
+import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator";
 import { MOBILE_BOTTOM_NAV_SCROLL_END_CLASS } from "@/lib/coach/mobile-workspace-layout";
-import { shouldShowPreviewSpinner } from "@/lib/chat/run-status-copy";
-import type { ChatStatus } from "@/lib/chat/types";
+import { isTurnInProgress } from "@/lib/chat/turn-activity";
+import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function WorkoutPlanArtifactPreview({
   plan,
   runStatus,
+  phase = "idle",
   disabled,
   onPlanChange,
 }: {
   plan: WorkoutPlan;
   runStatus: ChatStatus | null;
+  phase?: ChatWorkspacePhase;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
 }) {
-  const showOverlaySpinner = shouldShowPreviewSpinner(runStatus);
+  const showOverlaySpinner = isTurnInProgress(phase, runStatus);
 
   return (
     <div
@@ -24,7 +26,7 @@ export function WorkoutPlanArtifactPreview({
     >
       {showOverlaySpinner ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
-          <Spinner label="Working…" />
+          <TurnActivityIndicator align="center" className="h-5 w-5 border" />
         </div>
       ) : null}
       <PlanDayNavigator

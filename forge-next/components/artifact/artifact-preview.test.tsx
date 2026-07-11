@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
+import { TURN_ACTIVITY_LABEL } from "@/lib/chat/turn-activity";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
@@ -17,17 +18,19 @@ const samplePlan: WorkoutPlan = {
 const noopPlanChange = vi.fn();
 
 describe("ArtifactPreview", () => {
-  it("shows a loading state while awaiting the first artifact", () => {
+  it("shows the turn activity indicator while awaiting the first artifact", () => {
     render(
       <ArtifactPreview
         artifact={null}
         runStatus="generating"
+        phase="streaming"
         isAwaitingArtifact
         disabled={false}
         onPlanChange={noopPlanChange}
       />,
     );
-    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
   it("shows a generic placeholder when idle without an artifact", () => {
@@ -62,11 +65,26 @@ describe("ArtifactPreview", () => {
       <ArtifactPreview
         artifact={{ type: "workout-plan", plan: samplePlan }}
         runStatus="sandbox"
+        phase="streaming"
         isAwaitingArtifact={false}
         disabled={false}
         onPlanChange={noopPlanChange}
       />,
     );
-    expect(screen.getByLabelText("Working…")).toBeInTheDocument();
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+  });
+
+  it("shows a spinner overlay while generating even before sandbox", () => {
+    render(
+      <ArtifactPreview
+        artifact={{ type: "workout-plan", plan: samplePlan }}
+        runStatus="generating"
+        phase="streaming"
+        isAwaitingArtifact={false}
+        disabled={false}
+        onPlanChange={noopPlanChange}
+      />,
+    );
+    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
   });
 });
