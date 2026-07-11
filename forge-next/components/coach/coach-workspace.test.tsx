@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
-import { DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
+import { DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS, DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
@@ -496,5 +496,6 @@ describe("CoachWorkspace layout", () => {
       screen.queryByRole("button", { name: "Collapse chat" }),
     ).not.toBeInTheDocument();
     expect(container.innerHTML).toContain(DESKTOP_CHAT_COLLAPSED_RAIL_CLASS);
+    expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS);
   });
 });

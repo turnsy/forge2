@@ -20,3 +20,14 @@ export const DESKTOP_CHAT_AREA_CLASS = "p-4";
 
 /** Desktop chat header row for the reset control. */
 export const DESKTOP_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
+
+/** Expanded split grid: artifact ~67%, chat up to 33%. */
+export const DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED =
+  "minmax(320px, 1fr) minmax(280px, 33%)";
+
+/** Artifact width when chat is collapsed — matches the ~2:1 expanded split. */
+export const DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS = "w-2/3";
+
+/** Smooth width change when the chat rail collapses or expands. */
+export const DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS =
+  "transition-[width] duration-200 ease-out motion-reduce:transition-none";

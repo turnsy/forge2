@@ -14,12 +14,15 @@ import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
+  DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
+  DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS,
   DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
   DESKTOP_CHAT_COLLAPSED_WIDTH,
   DESKTOP_CHAT_GRID_TRANSITION_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_CHAT_HEADER_CLASS,
+  DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
 import {
@@ -739,7 +742,7 @@ function CoachWorkspaceInner({
           gridTemplateColumns: showSplitPane
             ? chatCollapsed
               ? `1fr ${DESKTOP_CHAT_COLLAPSED_WIDTH}`
-              : "minmax(320px, 1fr) minmax(280px, 33%)"
+              : DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED
             : "1fr",
         }}
       >
@@ -751,19 +754,31 @@ function CoachWorkspaceInner({
           }
         >
           {showSplitPane ? (
-            <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
-              <ArtifactPanel
-                state={state}
-                artifactFadeKey={artifactFadeKey}
-                resolvedBackHref={resolvedBackHref}
-                saveStatus={saveStatus}
-                saveError={saveError}
-                onBackClick={handleBackClick}
-                onTitleChange={handleTitleChange}
-                onSave={handleSave}
-                disabled={isChatRunning(state)}
-                onPlanChange={handlePlanChange}
-              />
+            <div
+              className={`flex h-full min-h-0 w-full ${
+                chatCollapsed ? "justify-center" : ""
+              }`}
+            >
+              <div
+                className={`flex h-full min-h-0 flex-col overflow-hidden ${
+                  chatCollapsed
+                    ? `${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS}`
+                    : `w-full ${DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS}`
+                }`}
+              >
+                <ArtifactPanel
+                  state={state}
+                  artifactFadeKey={artifactFadeKey}
+                  resolvedBackHref={resolvedBackHref}
+                  saveStatus={saveStatus}
+                  saveError={saveError}
+                  onBackClick={handleBackClick}
+                  onTitleChange={handleTitleChange}
+                  onSave={handleSave}
+                  disabled={isChatRunning(state)}
+                  onPlanChange={handlePlanChange}
+                />
+              </div>
             </div>
           ) : null}
         </div>
