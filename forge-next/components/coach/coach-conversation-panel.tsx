@@ -8,6 +8,7 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 export function CoachConversationPanel({
   state,
   onAttach,
+  onRemoveAttachment,
   onSend,
   onStop,
   onReset,
@@ -17,6 +18,7 @@ export function CoachConversationPanel({
 }: {
   state: PlanWorkspaceState;
   onAttach: (files: File[]) => void;
+  onRemoveAttachment?: (localId: string) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
   onStop?: () => void;
   onReset?: () => void;
@@ -43,6 +45,7 @@ export function CoachConversationPanel({
           state={state}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={onAttach}
+          onRemoveAttachment={onRemoveAttachment}
           onSend={onSend}
           onStop={onStop}
           onReset={onReset}

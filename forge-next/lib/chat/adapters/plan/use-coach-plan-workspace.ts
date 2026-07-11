@@ -6,6 +6,7 @@ import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
   listSessionAttachments,
+  removeSessionAttachments,
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
 import {
@@ -470,8 +471,13 @@ export function useCoachPlanWorkspace(options?: {
     attachmentReducer,
     createAttachmentState(),
   );
+  const attachmentStateRef = useRef(attachmentState);
   const restoredAttachmentsRef = useRef(false);
   const [isInitializingThread, setIsInitializingThread] = useState(false);
+
+  useEffect(() => {
+    attachmentStateRef.current = attachmentState;
+  }, [attachmentState]);
 
   useEffect(() => {
     if (!initialSession || restoredAttachmentsRef.current) {
@@ -482,12 +488,12 @@ export function useCoachPlanWorkspace(options?: {
 
     void (async () => {
       const result = await listSessionAttachments(forgeSessionId);
-      if (!result?.ok || result.attachments.length === 0) {
+      if (!result?.ok) {
         return;
       }
 
       dispatchAttachments({
-        type: "RESTORE_ATTACHMENTS",
+        type: "SYNC_ATTACHMENTS",
         attachments: result.attachments,
       });
     })();
@@ -670,6 +676,42 @@ export function useCoachPlanWorkspace(options?: {
     [forgeSessionId],
   );
 
+  const removeAttachment = useCallback(
+    async (localId: string) => {
+      const attachment = attachmentStateRef.current.attachments.find(
+        (item) => item.localId === localId,
+      );
+      if (!attachment) {
+        return;
+      }
+
+      const contextFileIds = attachment.contextFileIds ?? [];
+      if (contextFileIds.length === 0) {
+        dispatchAttachments({ type: "REMOVE_ATTACHMENT", localId });
+        return;
+      }
+
+      const result = await removeSessionAttachments(
+        forgeSessionId,
+        contextFileIds,
+      );
+      if (!result.ok) {
+        dispatchAttachments({
+          type: "ATTACH_UPLOAD_FAILURE",
+          localId,
+          errorMessage: result.message,
+        });
+        return;
+      }
+
+      dispatchAttachments({
+        type: "SYNC_ATTACHMENTS",
+        attachments: result.attachments,
+      });
+    },
+    [forgeSessionId],
+  );
+
   const canSendNow =
     !resuming && !isInitializingThread && canSendInPhase(uiPhase);
 
@@ -770,6 +812,7 @@ export function useCoachPlanWorkspace(options?: {
   return {
     state,
     attachFiles,
+    removeAttachment,
     sendMessage,
     stopResponse,
     restart,

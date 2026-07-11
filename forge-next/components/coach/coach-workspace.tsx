@@ -370,6 +370,7 @@ function CoachWorkspaceInner({
   const {
     state,
     attachFiles,
+    removeAttachment,
     sendMessage,
     stopResponse,
     setArtifactTitle,
@@ -578,6 +579,7 @@ function CoachWorkspaceInner({
       <CoachConversationPanel
         state={state}
         onAttach={attachFiles}
+        onRemoveAttachment={removeAttachment}
         onSend={handleSendMessage}
         onStop={stopResponse}
         onReset={handleReset}
@@ -620,6 +622,7 @@ function CoachWorkspaceInner({
                 state={state}
                 composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
+                onRemoveAttachment={removeAttachment}
                 onSend={handleSendMessage}
                 onStop={stopResponse}
                 promptEnabled={promptEnabled}
@@ -643,6 +646,7 @@ function CoachWorkspaceInner({
           state={state}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
+          onRemoveAttachment={removeAttachment}
           onSend={handleSendMessage}
           onStop={stopResponse}
           promptEnabled={promptEnabled}
@@ -798,6 +802,7 @@ function CoachWorkspaceInner({
                 <CoachConversationPanel
                   state={state}
                   onAttach={attachFiles}
+                onRemoveAttachment={removeAttachment}
                   onSend={handleSendMessage}
                   onStop={stopResponse}
                   onReset={handleReset}

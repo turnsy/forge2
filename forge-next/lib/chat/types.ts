@@ -121,6 +121,8 @@ export type ChatWorkspaceAction<TArtifact = unknown> =
     }
   | { type: "ATTACH_UPLOAD_FAILURE"; localId: string; errorMessage: string }
   | { type: "RESTORE_ATTACHMENTS"; attachments: ChatAttachment[] }
+  | { type: "SYNC_ATTACHMENTS"; attachments: ChatAttachment[] }
+  | { type: "REMOVE_ATTACHMENT"; localId: string }
   | { type: "SEND_START"; userMessage: string; userSegments?: PromptSegment[] }
   | { type: "APPLY_EVENT"; event: ChatEvent<TArtifact> }
   | { type: "STREAM_END" }

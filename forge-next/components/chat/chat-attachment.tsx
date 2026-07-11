@@ -5,10 +5,16 @@ import type { ChatAttachment as ChatAttachmentModel } from "@/lib/chat/types";
 
 export function ChatAttachment({
   attachment,
+  onRemove,
 }: {
   attachment: ChatAttachmentModel;
+  onRemove?: (localId: string) => void;
 }) {
   const tone = attachment.status === "failed" ? "error" : "default";
+  const canRemove =
+    Boolean(onRemove) &&
+    attachment.status !== "uploading" &&
+    attachment.status !== "pending";
 
   return (
     <span className={attachmentChipClass(tone)}>
@@ -21,13 +27,42 @@ export function ChatAttachment({
       {attachment.status === "failed" && attachment.errorMessage ? (
         <span className="text-xs text-red-300/90">— {attachment.errorMessage}</span>
       ) : null}
-      <button
-        type="button"
-        className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-surface-muted transition hover:bg-glass-focus hover:text-surface-foreground"
-        aria-label={`Remove ${attachment.displayLabel}`}
-      >
-        ×
-      </button>
+      {canRemove ? (
+        <button
+          type="button"
+          className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-surface-muted transition hover:bg-glass-focus hover:text-surface-foreground"
+          aria-label={`Remove ${attachment.displayLabel}`}
+          onClick={() => onRemove?.(attachment.localId)}
+        >
+          ×
+        </button>
+      ) : null}
     </span>
+  );
+}
+
+export function ChatAttachmentList({
+  attachments,
+  onRemove,
+  className = "",
+}: {
+  attachments: ChatAttachmentModel[];
+  onRemove?: (localId: string) => void;
+  className?: string;
+}) {
+  if (attachments.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`.trim()}>
+      {attachments.map((attachment) => (
+        <ChatAttachment
+          key={attachment.localId}
+          attachment={attachment}
+          onRemove={onRemove}
+        />
+      ))}
+    </div>
   );
 }

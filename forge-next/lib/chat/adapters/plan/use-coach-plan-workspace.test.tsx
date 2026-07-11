@@ -15,6 +15,7 @@ const {
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
   listSessionAttachments,
+  removeSessionAttachments,
   mockSend,
   mockReset,
   mockStop,
@@ -28,6 +29,7 @@ const {
   saveSessionSnapshot: vi.fn(),
   generateSessionTitleFromPrompt: vi.fn(),
   listSessionAttachments: vi.fn(),
+  removeSessionAttachments: vi.fn(),
   mockSend: vi.fn(),
   mockReset: vi.fn(),
   mockStop: vi.fn(),
@@ -86,6 +88,7 @@ vi.mock("@/lib/chat/actions", () => ({
   saveSessionSnapshot,
   generateSessionTitleFromPrompt,
   listSessionAttachments,
+  removeSessionAttachments,
 }));
 
 vi.mock("@/lib/chat/adapters/plan/forge-eve-client", async (importOriginal) => {
@@ -181,6 +184,7 @@ describe("useCoachPlanWorkspace", () => {
     });
     generateSessionTitleFromPrompt.mockResolvedValue("Strength block");
     listSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
+    removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
   });
 
   it("initializes with a draft plan when initialPlan is provided without planId", () => {
@@ -730,5 +734,50 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.contextFileIds).toEqual([
       "coach-1/session-1/my-plan.txt",
     ]);
+  });
+
+  it("removes a restored attachment via storage and syncs the composer", async () => {
+    listSessionAttachments.mockResolvedValue({
+      ok: true,
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach-1/session-1/my-plan.txt"],
+        },
+      ],
+    });
+    removeSessionAttachments.mockResolvedValue({
+      ok: true,
+      attachments: [],
+    });
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        initialSession: {
+          id: "session-1",
+          snapshot: {
+            title: "Bench block",
+            forgeSessionId: "session-1",
+            eve: null,
+          },
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.attachments).toHaveLength(1);
+    });
+
+    await act(async () => {
+      await result.current.removeAttachment("restored-1");
+    });
+
+    expect(removeSessionAttachments).toHaveBeenCalledWith("session-1", [
+      "coach-1/session-1/my-plan.txt",
+    ]);
+    expect(result.current.state.attachments).toEqual([]);
+    expect(result.current.state.contextFileIds).toEqual([]);
   });
 });

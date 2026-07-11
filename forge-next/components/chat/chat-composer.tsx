@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChatAttachment } from "@/components/chat/chat-attachment";
+import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { RotateIcon } from "@/components/icons/rotate-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
@@ -16,6 +16,7 @@ export function ChatComposer({
   state,
   composerKey,
   onAttach,
+  onRemoveAttachment,
   onSend,
   onStop,
   onReset,
@@ -26,6 +27,7 @@ export function ChatComposer({
   state: ChatWorkspaceState;
   composerKey: string;
   onAttach: (files: File[]) => void;
+  onRemoveAttachment?: (localId: string) => void;
   onSend: (segments: PromptSegment[]) => void;
   onStop?: () => void;
   onReset?: () => void;
@@ -47,6 +49,7 @@ export function ChatComposer({
   const sendAllowed = canSendChat(state) && !documentEmpty;
   const stopAllowed =
     canStopChat(state) && Boolean(onStop) && !sendAllowed;
+  const showAttachmentsAbovePrompt = state.hasStarted;
 
   function addFiles(files: File[]) {
     if (files.length === 0) {
@@ -100,6 +103,13 @@ export function ChatComposer({
               event.target.value = "";
             }}
           />
+          {showAttachmentsAbovePrompt ? (
+            <ChatAttachmentList
+              attachments={state.attachments}
+              onRemove={onRemoveAttachment}
+              className={compact ? "mb-2" : "mb-3"}
+            />
+          ) : null}
           <PromptComposer
             key={composerKey}
             compact={compact}
@@ -167,12 +177,12 @@ export function ChatComposer({
           </div>
         </div>
       </div>
-      {state.attachments.length > 0 ? (
-        <div className={`flex flex-wrap gap-2 ${compact ? "mt-2" : "mt-3"}`}>
-          {state.attachments.map((attachment) => (
-            <ChatAttachment key={attachment.localId} attachment={attachment} />
-          ))}
-        </div>
+      {!showAttachmentsAbovePrompt && state.attachments.length > 0 ? (
+        <ChatAttachmentList
+          attachments={state.attachments}
+          onRemove={onRemoveAttachment}
+          className={compact ? "mt-2" : "mt-3"}
+        />
       ) : null}
     </FadeIn>
   );
