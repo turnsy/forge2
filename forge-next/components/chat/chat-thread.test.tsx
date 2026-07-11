@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { TURN_ACTIVITY_LABEL } from "@/lib/chat/turn-activity";
 
 describe("ChatThread", () => {
   it("shows the turn activity indicator while a turn is in progress", () => {
@@ -16,8 +15,8 @@ describe("ChatThread", () => {
       />,
     );
 
-    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
-    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+    expect(screen.getByText("Generating")).toBeInTheDocument();
   });
 
   it("keeps the turn activity indicator visible while assistant text is streaming", () => {
@@ -33,11 +32,10 @@ describe("ChatThread", () => {
     );
 
     expect(screen.getByText("Partial reply")).toBeInTheDocument();
-    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
-    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
+    expect(screen.getByText("Generating")).toBeInTheDocument();
   });
 
-  it("shows the turn activity indicator during sandbox work", () => {
+  it("shows builder status during sandbox work", () => {
     render(
       <ChatThread
         threadKey="thread-1"
@@ -52,8 +50,7 @@ describe("ChatThread", () => {
     expect(
       screen.getByText("I'll read your spreadsheet first."),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
-    expect(screen.queryByText("Running builder")).not.toBeInTheDocument();
+    expect(screen.getByText("Running builder")).toBeInTheDocument();
   });
 
   it("shows inline errors in the thread", () => {
@@ -88,7 +85,7 @@ describe("ChatThread", () => {
     );
 
     expect(screen.getByText(/stopped before finishing/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(TURN_ACTIVITY_LABEL)).not.toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
   it("does not render whitespace-only assistant messages", () => {
@@ -122,7 +119,7 @@ describe("ChatThread", () => {
       />,
     );
 
-    expect(screen.getByLabelText(TURN_ACTIVITY_LABEL)).toBeInTheDocument();
+    expect(screen.getByText("Generating")).toBeInTheDocument();
   });
 
   it("hides the turn activity indicator when the turn is terminal", () => {
@@ -140,7 +137,7 @@ describe("ChatThread", () => {
       />,
     );
 
-    expect(screen.queryByLabelText(TURN_ACTIVITY_LABEL)).not.toBeInTheDocument();
+    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
   it("scrolls to the bottom when a thread is loaded", () => {

@@ -1,12 +1,15 @@
 import { Spinner } from "@/components/ui";
-import { TURN_ACTIVITY_LABEL } from "@/lib/chat/turn-activity";
 
 export function TurnActivityIndicator({
+  label,
   className = "h-3.5 w-3.5 shrink-0 border",
   align = "start",
+  textClassName = "text-sm text-surface-muted",
 }: {
+  label: string;
   className?: string;
   align?: "start" | "center";
+  textClassName?: string;
 }) {
   return (
     <div
@@ -16,8 +19,11 @@ export function TurnActivityIndicator({
           : "flex justify-start"
       }
     >
-      <div className={align === "center" ? undefined : "px-1"}>
-        <Spinner className={className} label={TURN_ACTIVITY_LABEL} />
+      <div
+        className={`flex items-center gap-2 ${align === "center" ? "" : "px-1"}`}
+      >
+        <Spinner className={className} label={label} />
+        <span className={textClassName}>{label}</span>
       </div>
     </div>
   );

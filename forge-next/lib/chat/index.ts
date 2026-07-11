@@ -12,6 +12,7 @@ export {
   isActiveRunStatus,
 } from "@/lib/chat/run-status-copy";
 export {
+  getTurnActivityLabel,
   isTurnInProgress,
   shouldShowPreviewSpinner,
   TURN_ACTIVITY_LABEL,

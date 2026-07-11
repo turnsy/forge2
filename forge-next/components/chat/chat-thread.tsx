@@ -5,7 +5,7 @@ import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator
 import { ChatBubble } from "@/components/ui/chat-bubble";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { hasVisibleChatContent } from "@/lib/chat/message-content";
-import { isTurnInProgress } from "@/lib/chat/turn-activity";
+import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import { useChatThreadAutoScroll } from "@/lib/chat/use-chat-thread-scroll";
 import type {
   ChatDisplayError,
@@ -54,7 +54,10 @@ export function ChatThread({
       messages[messages.length - 1]?.content.trim() !== visibleStreamingText);
 
   const turnInProgress = isTurnInProgress(phase, runStatus);
-  const showTurnActivity = turnInProgress;
+  const activityLabel = turnInProgress
+    ? getTurnActivityLabel(phase, runStatus)
+    : null;
+  const showTurnActivity = Boolean(activityLabel);
   const showErrors = errors.length > 0;
 
   return (
@@ -73,10 +76,12 @@ export function ChatThread({
             <ChatBubble role="assistant" isStreaming={turnInProgress}>
               <MarkdownContent content={visibleStreamingText} />
             </ChatBubble>
-            {showTurnActivity ? <TurnActivityIndicator /> : null}
+            {showTurnActivity && activityLabel ? (
+              <TurnActivityIndicator label={activityLabel} />
+            ) : null}
           </div>
-        ) : showTurnActivity ? (
-          <TurnActivityIndicator />
+        ) : showTurnActivity && activityLabel ? (
+          <TurnActivityIndicator label={activityLabel} />
         ) : null}
         {showErrors ? (
           <ChatBubble role="assistant">

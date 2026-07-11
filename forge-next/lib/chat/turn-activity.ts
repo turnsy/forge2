@@ -1,7 +1,29 @@
 import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
-import { isActiveRunStatus } from "@/lib/chat/run-status-copy";
+import {
+  getRunStatusLabel,
+  isActiveRunStatus,
+} from "@/lib/chat/run-status-copy";
 
 export const TURN_ACTIVITY_LABEL = "Working";
+
+export function getTurnActivityLabel(
+  phase: ChatWorkspacePhase,
+  runStatus: ChatStatus | null,
+): string {
+  if (phase === "uploading") {
+    return "Uploading files…";
+  }
+
+  if (runStatus && isActiveRunStatus(runStatus)) {
+    return getRunStatusLabel(runStatus);
+  }
+
+  if (phase === "streaming" || phase === "initializing") {
+    return "Thinking…";
+  }
+
+  return TURN_ACTIVITY_LABEL;
+}
 
 /** True while the coach workspace turn has not reached a terminal state. */
 export function isTurnInProgress(

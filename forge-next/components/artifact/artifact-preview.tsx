@@ -1,7 +1,7 @@
 import { WorkoutPlanArtifactPreview } from "@/components/artifact/workout-plan-artifact-preview";
 import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator";
 import type { ArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
-import { isTurnInProgress } from "@/lib/chat/turn-activity";
+import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -21,12 +21,15 @@ export function ArtifactPreview({
   onPlanChange: (plan: WorkoutPlan) => void;
 }) {
   const turnInProgress = isTurnInProgress(phase, runStatus);
+  const activityLabel = turnInProgress
+    ? getTurnActivityLabel(phase, runStatus)
+    : null;
 
   if (!artifact) {
-    if (isAwaitingArtifact && turnInProgress) {
+    if (isAwaitingArtifact && activityLabel) {
       return (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6">
-          <TurnActivityIndicator align="center" />
+          <TurnActivityIndicator align="center" label={activityLabel} />
         </div>
       );
     }

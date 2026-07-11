@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isTurnInProgress, shouldShowPreviewSpinner } from "@/lib/chat/turn-activity";
+import {
+  getTurnActivityLabel,
+  isTurnInProgress,
+  shouldShowPreviewSpinner,
+} from "@/lib/chat/turn-activity";
 
 describe("turn activity", () => {
   it("treats active workspace phases as in progress", () => {
@@ -24,5 +28,12 @@ describe("turn activity", () => {
     expect(shouldShowPreviewSpinner("sandbox")).toBe(true);
     expect(shouldShowPreviewSpinner("done")).toBe(false);
     expect(shouldShowPreviewSpinner(null)).toBe(false);
+  });
+
+  it("maps phase and run status to visible labels", () => {
+    expect(getTurnActivityLabel("streaming", "generating")).toBe("Generating");
+    expect(getTurnActivityLabel("streaming", "sandbox")).toBe("Running builder");
+    expect(getTurnActivityLabel("streaming", null)).toBe("Thinking…");
+    expect(getTurnActivityLabel("uploading", null)).toBe("Uploading files…");
   });
 });
