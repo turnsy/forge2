@@ -25,6 +25,25 @@ function isRenderableMessage(message: ChatMessage): boolean {
   return hasVisibleChatContent(message.content);
 }
 
+function resolveStatusLabel(
+  phase: ChatWorkspacePhase,
+  runStatus: ChatStatus | null,
+): string | null {
+  if (phase === "uploading") {
+    return "Uploading files…";
+  }
+
+  if (runStatus && isActiveRunStatus(runStatus)) {
+    return getRunStatusLabel(runStatus);
+  }
+
+  if (phase === "streaming") {
+    return "Thinking…";
+  }
+
+  return null;
+}
+
 export function ChatThread({
   threadKey,
   messages,
@@ -56,25 +75,25 @@ export function ChatThread({
       messages[messages.length - 1]?.role !== "assistant" ||
       messages[messages.length - 1]?.content.trim() !== visibleStreamingText);
 
-  const suppressGeneratingSpinner =
-    runStatus === "generating" && visibleStreamingText.length > 0;
-
-  const showRunStatus =
+  const turnInProgress =
     phase === "uploading" ||
-    (runStatus !== null &&
-      isActiveRunStatus(runStatus) &&
-      !suppressGeneratingSpinner) ||
-    (phase === "streaming" && runStatus === null && visibleStreamingText.length === 0);
+    phase === "streaming" ||
+    (runStatus !== null && isActiveRunStatus(runStatus));
+
+  const statusLabel = turnInProgress
+    ? resolveStatusLabel(phase, runStatus)
+    : null;
+
+  const showStandaloneStatus =
+    turnInProgress && visibleStreamingText.length === 0 && Boolean(statusLabel);
+
+  const showStreamingStatus =
+    turnInProgress &&
+    visibleStreamingText.length > 0 &&
+    showStreaming &&
+    Boolean(statusLabel);
 
   const showErrors = errors.length > 0;
-
-  const uploadLabel = phase === "uploading" ? "Uploading files…" : null;
-  const statusLabel =
-    runStatus && isActiveRunStatus(runStatus)
-      ? getRunStatusLabel(runStatus)
-      : phase === "streaming" && !runStatus
-        ? "Thinking…"
-        : uploadLabel;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -88,11 +107,24 @@ export function ChatThread({
           </ChatBubble>
         ))}
         {showStreaming ? (
-          <ChatBubble role="assistant" isStreaming>
-            <MarkdownContent content={visibleStreamingText} />
-          </ChatBubble>
+          <div className="flex flex-col gap-2">
+            <ChatBubble role="assistant" isStreaming={turnInProgress}>
+              <MarkdownContent content={visibleStreamingText} />
+            </ChatBubble>
+            {showStreamingStatus && statusLabel ? (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 px-1 text-sm text-surface-muted">
+                  <Spinner
+                    className="h-3.5 w-3.5 shrink-0 border"
+                    label={statusLabel}
+                  />
+                  <span>{statusLabel}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
-        {showRunStatus && statusLabel ? (
+        {showStandaloneStatus && statusLabel ? (
           <ChatBubble role="assistant">
             <div className="flex items-center gap-2.5 text-surface-muted">
               <Spinner className="h-4 w-4 shrink-0 border" label={statusLabel} />

@@ -18,8 +18,8 @@ describe("ChatThread", () => {
     expect(screen.getByLabelText("Generating")).toBeInTheDocument();
   });
 
-  it("hides generating status once assistant text starts streaming", () => {
-    const { container } = render(
+  it("keeps a generating indicator visible while assistant text is streaming", () => {
+    render(
       <ChatThread
         threadKey="thread-1"
         messages={[{ role: "user", content: "Hi" }]}
@@ -29,9 +29,28 @@ describe("ChatThread", () => {
         phase="streaming"
       />,
     );
-    const scrollPane = container.querySelector(".overflow-y-auto");
-    expect(scrollPane?.textContent).toContain("Partial reply");
-    expect(screen.queryByText("Generating")).not.toBeInTheDocument();
+
+    expect(screen.getByText("Partial reply")).toBeInTheDocument();
+    expect(screen.getByText("Generating")).toBeInTheDocument();
+    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+  });
+
+  it("shows builder status under an intermediate assistant message", () => {
+    render(
+      <ChatThread
+        threadKey="thread-1"
+        messages={[{ role: "user", content: "Build from this" }]}
+        streamingAssistantText="I'll read your spreadsheet first."
+        runStatus="sandbox"
+        errors={[]}
+        phase="streaming"
+      />,
+    );
+
+    expect(
+      screen.getByText("I'll read your spreadsheet first."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Running builder")).toBeInTheDocument();
   });
 
   it("shows inline errors in the thread", () => {
