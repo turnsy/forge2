@@ -26,7 +26,7 @@ export function MobileComposerToolbar({
             attachments={attachments}
             onRemove={onRemoveAttachment}
             wrap={false}
-            className={`min-w-min items-center pr-[7rem]`}
+            className={`min-w-min items-center pr-[5.75rem]`}
           />
         </div>
       ) : null}

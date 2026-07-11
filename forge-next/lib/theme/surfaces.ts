@@ -7,8 +7,11 @@ export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
 export type PillTone = "default" | "danger";
 
-/** Default control height shared by md buttons, attachment chips, and related actions. */
+/** Default md button height. */
 export const BUTTON_MD_HEIGHT_CLASS = "h-11";
+
+/** Default sm button height; shared with attachment chips and compact actions. */
+export const BUTTON_SM_HEIGHT_CLASS = "h-8";
 
 const plainIconControlClasses =
   "text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
@@ -55,8 +58,8 @@ const buttonSizeClasses: Record<
   { text: string; icon: string }
 > = {
   sm: {
-    text: `${radius.card} h-8 px-3 text-sm`,
-    icon: "h-8 w-8",
+    text: `${radius.card} ${BUTTON_SM_HEIGHT_CLASS} px-3 text-sm`,
+    icon: `${BUTTON_SM_HEIGHT_CLASS} w-8`,
   },
   md: {
     text: `${radius.control} ${BUTTON_MD_HEIGHT_CLASS} px-5 text-base`,
@@ -235,7 +238,7 @@ export function pillButtonClass(selected = false): string {
 }
 
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
-  const base = `inline-flex ${BUTTON_MD_HEIGHT_CLASS} items-center gap-1.5 rounded-full border text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]`;
+  const base = `inline-flex ${BUTTON_SM_HEIGHT_CLASS} items-center gap-1.5 rounded-full border text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]`;
 
   if (tone === "error") {
     return `${base} border-red-500/40 bg-red-500/10 pl-3 pr-1.5 text-red-200`;

@@ -2,10 +2,10 @@ import {
   MOBILE_BOTTOM_NAV_OFFSET_CLASS,
   MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS,
 } from "@/lib/navigation/mobile-bottom-nav-layout";
-import { BUTTON_MD_HEIGHT_CLASS } from "@/lib/theme/surfaces";
+import { BUTTON_SM_HEIGHT_CLASS } from "@/lib/theme/surfaces";
 
 /** Width reserved for the pinned view button slot in the mobile composer toolbar. */
-export const MOBILE_COMPOSER_VIEW_SLOT_CLASS = "w-[7rem]";
+export const MOBILE_COMPOSER_VIEW_SLOT_CLASS = "w-[5.75rem]";
 
 /** Positions the bordered overlay close control; inset matches mobile page padding. */
 export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-4 top-1 z-20";
@@ -17,7 +17,7 @@ export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "pb-2.5";
 
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
-export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_MD_HEIGHT_CLASS} ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`;
+export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS} ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`;
 
 /** Scroll lane for attachment chips; chips can pass under the view control. */
 export const MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS =

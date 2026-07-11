@@ -714,6 +714,7 @@ function CoachWorkspaceInner({
                   <Button
                     type="button"
                     variant="secondary"
+                    size="sm"
                     fullWidth={false}
                     icon={<EyeIcon />}
                     aria-label="View artifact"
