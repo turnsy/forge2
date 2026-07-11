@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ChatAttachment } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
+import { RotateIcon } from "@/components/icons/rotate-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
@@ -17,6 +18,7 @@ export function ChatComposer({
   onAttach,
   onSend,
   onStop,
+  onReset,
   promptEnabled = true,
   className = "",
   compact = false,
@@ -26,6 +28,7 @@ export function ChatComposer({
   onAttach: (files: File[]) => void;
   onSend: (segments: PromptSegment[]) => void;
   onStop?: () => void;
+  onReset?: () => void;
   promptEnabled?: boolean;
   className?: string;
   compact?: boolean;
@@ -115,16 +118,27 @@ export function ChatComposer({
           <div
             className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
           >
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              fullWidth={false}
-              icon={<PaperclipIcon />}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Attach
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                icon={<PaperclipIcon />}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Attach
+              </Button>
+              {onReset ? (
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  icon={<RotateIcon />}
+                  aria-label="Reset conversation"
+                  onClick={onReset}
+                />
+              ) : null}
+            </div>
             <IconButton
               variant="primary"
               size="sm"

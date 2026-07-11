@@ -160,6 +160,28 @@ describe("CoachWorkspace layout", () => {
     expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
   });
 
+  it("does not show chat collapse control on mobile when an artifact is present", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(
+      screen.queryByRole("button", { name: "Collapse chat" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Expand chat" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows split layout when artifact is present", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -176,7 +198,6 @@ describe("CoachWorkspace layout", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
-    expect(container.innerHTML).toContain("md:p-8");
     expect(container.innerHTML).toContain("!max-w-none");
   });
 
@@ -375,35 +396,6 @@ describe("CoachWorkspace layout", () => {
     expect(
       screen.queryByRole("button", { name: "Close artifact" }),
     ).not.toBeInTheDocument();
-  });
-
-  it("closes mobile history when reset is pressed while history is open", async () => {
-    const user = userEvent.setup();
-    mockUseIsMobile.mockReturnValue(true);
-    mockUseCoachPlanWorkspace.mockReturnValue(
-      mockWorkspaceReturn(
-        mockWorkspaceState({
-          hasStarted: true,
-          messages: [{ role: "user", content: "Hello" }],
-        }),
-      ),
-    );
-
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
-
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
-    expect(screen.getByRole("button", { name: "Conversation history" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
-
-    expect(screen.getByRole("button", { name: "Conversation history" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-    expect(mockRestart).not.toHaveBeenCalled();
   });
 
   it("hides the composer while mobile history is open", async () => {

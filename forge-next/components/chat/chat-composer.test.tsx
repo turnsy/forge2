@@ -101,4 +101,25 @@ describe("ChatComposer", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     expect(onSend).toHaveBeenCalledOnce();
   });
+
+  it("renders reset beside attach when onReset is provided", async () => {
+    const user = userEvent.setup();
+    const onReset = vi.fn();
+
+    render(
+      <ChatComposer
+        state={createInitialChatWorkspaceState()}
+        composerKey="composer-1"
+        onAttach={vi.fn()}
+        onSend={vi.fn()}
+        onReset={onReset}
+      />,
+    );
+
+    const resetButton = screen.getByRole("button", { name: "Reset conversation" });
+    expect(resetButton).toBeInTheDocument();
+
+    await user.click(resetButton);
+    expect(onReset).toHaveBeenCalledOnce();
+  });
 });

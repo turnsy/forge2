@@ -64,32 +64,28 @@ import { roleLinkClass, pageShellClass } from "@/lib/theme";
 import type { HandleMessageStreamEvent } from "eve/client";
 
 function ChatWorkspaceShell({
-  onReset,
   children,
   headerClassName,
   className = "",
   headerStart,
   headerActions,
 }: {
-  onReset: () => void;
   children: ReactNode;
-  headerClassName: string;
+  headerClassName?: string;
   className?: string;
   headerStart?: ReactNode;
   headerActions?: ReactNode;
 }) {
+  const showHeader = Boolean(headerStart || headerActions);
+
   return (
     <div className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}>
-      <div className={headerClassName}>
-        {headerStart ?? <span />}
-        <div className="flex items-center gap-1">
-          {headerActions}
-          <WorkspaceCloseButton
-            variant="reset"
-            onClick={onReset}
-          />
+      {showHeader ? (
+        <div className={headerClassName}>
+          {headerStart ?? <span />}
+          <div className="flex items-center gap-1">{headerActions}</div>
         </div>
-      </div>
+      ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
@@ -546,14 +542,9 @@ function CoachWorkspaceInner({
     setMobileHistoryOpen(false);
   }, []);
 
-  const handleMobileReset = useCallback(() => {
-    if (mobileHistoryOpen) {
-      setMobileHistoryOpen(false);
-      return;
-    }
-
+  const handleReset = useCallback(() => {
     handleClose();
-  }, [handleClose, mobileHistoryOpen]);
+  }, [handleClose]);
 
   const mobileHistoryToggle = isMobile ? (
     <SessionHistoryMobileToggle
@@ -585,6 +576,7 @@ function CoachWorkspaceInner({
         onAttach={attachFiles}
         onSend={handleSendMessage}
         onStop={stopResponse}
+        onReset={handleReset}
         promptEnabled={promptEnabled}
         composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
         composerHeader={composerHeader}
@@ -661,7 +653,6 @@ function CoachWorkspaceInner({
     if (!showSplitPane) {
       return (
         <ChatWorkspaceShell
-          onReset={handleMobileReset}
           headerClassName={mobileChatHeaderClass}
           headerStart={mobileHistoryToggle}
           className={MOBILE_WORKSPACE_X_PADDING_CLASS}
@@ -700,7 +691,6 @@ function CoachWorkspaceInner({
           </div>
         ) : (
           <ChatWorkspaceShell
-            onReset={handleMobileReset}
             headerClassName={mobileChatHeaderClass}
             headerStart={mobileHistoryToggle}
             className={MOBILE_WORKSPACE_X_PADDING_CLASS}
@@ -794,8 +784,9 @@ function CoachWorkspaceInner({
               className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
             >
               <ChatWorkspaceShell
-                onReset={handleMobileReset}
-                headerClassName={DESKTOP_CHAT_HEADER_CLASS}
+                headerClassName={
+                  desktopChatToggle ? DESKTOP_CHAT_HEADER_CLASS : undefined
+                }
                 headerActions={desktopChatToggle}
               >
                 <CoachConversationPanel
@@ -803,6 +794,7 @@ function CoachWorkspaceInner({
                   onAttach={attachFiles}
                   onSend={handleSendMessage}
                   onStop={stopResponse}
+                  onReset={handleReset}
                   promptEnabled={promptEnabled}
                 />
               </ChatWorkspaceShell>

@@ -10,6 +10,7 @@ export function CoachConversationPanel({
   onAttach,
   onSend,
   onStop,
+  onReset,
   promptEnabled = true,
   composerHeader,
   composerClassName = "",
@@ -18,6 +19,7 @@ export function CoachConversationPanel({
   onAttach: (files: File[]) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
   onStop?: () => void;
+  onReset?: () => void;
   promptEnabled?: boolean;
   composerHeader?: ReactNode;
   composerClassName?: string;
@@ -43,6 +45,7 @@ export function CoachConversationPanel({
           onAttach={onAttach}
           onSend={onSend}
           onStop={onStop}
+          onReset={onReset}
           promptEnabled={promptEnabled}
         />
       </div>
