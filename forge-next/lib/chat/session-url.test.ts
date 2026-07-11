@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   hasCoachSessionInUrl,
   hasCoachWorkspaceQueryParams,
@@ -7,10 +7,39 @@ import {
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
 
+function stubWindow(overrides: {
+  location: {
+    href: string;
+    pathname?: string;
+    search?: string;
+    hash?: string;
+  };
+  history?: {
+    state: unknown;
+    replaceState: ReturnType<typeof vi.fn>;
+  };
+  dispatchEvent?: ReturnType<typeof vi.fn>;
+}) {
+  vi.stubGlobal("window", {
+    location: {
+      pathname: "",
+      search: "",
+      hash: "",
+      ...overrides.location,
+    },
+    history: overrides.history,
+    dispatchEvent: overrides.dispatchEvent ?? vi.fn(),
+  });
+}
+
 describe("syncCoachWorkspaceUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("adds sessionId and planId without navigating", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42",
         pathname: "/coach",
@@ -34,7 +63,7 @@ describe("syncCoachWorkspaceUrl", () => {
 
   it("clears planId while keeping sessionId", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42&planId=plan-9",
         pathname: "/coach",
@@ -58,9 +87,13 @@ describe("syncCoachWorkspaceUrl", () => {
 });
 
 describe("syncCoachSessionUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("adds sessionId to the current URL without navigating", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach",
         pathname: "/coach",
@@ -84,7 +117,7 @@ describe("syncCoachSessionUrl", () => {
 
   it("removes sessionId from the current URL", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42",
         pathname: "/coach",
@@ -104,7 +137,7 @@ describe("syncCoachSessionUrl", () => {
 
   it("does nothing when the URL is already in sync", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42",
         pathname: "/coach",
@@ -121,11 +154,39 @@ describe("syncCoachSessionUrl", () => {
 
     expect(replaceState).not.toHaveBeenCalled();
   });
+
+  it("dispatches a URL change event when the URL is updated", () => {
+    const replaceState = vi.fn();
+    const dispatchEvent = vi.fn();
+    stubWindow({
+      location: {
+        href: "https://example.com/coach",
+        pathname: "/coach",
+        search: "",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
+      },
+      dispatchEvent,
+    });
+
+    syncCoachSessionUrl("session-42");
+
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "coach-workspace-url-change" }),
+    );
+  });
 });
 
 describe("hasCoachSessionInUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("returns false when sessionId is absent", () => {
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach",
       },
@@ -135,7 +196,7 @@ describe("hasCoachSessionInUrl", () => {
   });
 
   it("returns true when sessionId is present", () => {
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42",
       },
@@ -162,12 +223,16 @@ describe("hasCoachWorkspaceQueryParams", () => {
 });
 
 describe("navigateToCoachHome", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("clears workspace query params and refreshes the coach home route", () => {
     const replaceState = vi.fn();
     const replace = vi.fn();
     const refresh = vi.fn();
 
-    vi.stubGlobal("window", {
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42&planId=plan-9&new=1",
         pathname: "/coach",

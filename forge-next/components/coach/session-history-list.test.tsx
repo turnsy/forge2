@@ -1,47 +1,58 @@
-import { render, screen } from "@testing-library/react";
+import { useEffect } from "react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionHistoryList } from "@/components/coach/session-history-list";
+import {
+  SessionNavigationProvider,
+  useSessionNavigation,
+} from "@/lib/chat/session-navigation-context";
+import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
 
 const mockListTaskSessions = vi.fn();
+const mockDeleteTaskSession = vi.fn();
 const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-const mockStartSessionNavigation = vi.fn();
+const mockSearchParams = vi.fn(() => new URLSearchParams());
 
 vi.mock("@/lib/chat/actions", () => ({
   listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
+  deleteTaskSession: (...args: unknown[]) => mockDeleteTaskSession(...args),
 }));
-
-vi.mock("@/lib/chat/session-navigation-context", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/lib/chat/session-navigation-context")
-  >("@/lib/chat/session-navigation-context");
-
-  return {
-    ...actual,
-    useOptionalSessionNavigation: () => ({
-      pendingSessionId: null,
-      insertedSessions: [
-        {
-          id: "session-new",
-          title: "Just created",
-          updatedAt: "2026-06-28T00:00:00.000Z",
-        },
-      ],
-      startSessionNavigation: mockStartSessionNavigation,
-      registerNewSession: vi.fn(),
-    }),
-  };
-});
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
-  useSearchParams: () => new URLSearchParams("sessionId=session-new"),
+  useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams(),
+  usePathname: () => "/coach",
 }));
+
+function RegisterSessionOnMount() {
+  const { registerNewSession } = useSessionNavigation();
+
+  useEffect(() => {
+    registerNewSession({
+      id: "session-new",
+      title: "Just created",
+      updatedAt: "2026-06-28T00:00:00.000Z",
+    });
+  }, [registerNewSession]);
+
+  return null;
+}
+
+function renderList(children?: React.ReactNode) {
+  return render(
+    <SessionNavigationProvider>
+      {children}
+      <SessionHistoryList />
+    </SessionNavigationProvider>,
+  );
+}
 
 describe("SessionHistoryList integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParams.mockReturnValue(new URLSearchParams());
+    mockDeleteTaskSession.mockResolvedValue({ ok: true });
     mockListTaskSessions.mockResolvedValue({
       ok: true,
       sessions: [
@@ -62,19 +73,20 @@ describe("SessionHistoryList integration", () => {
   it("loads sessions and navigates on row click", async () => {
     const user = userEvent.setup();
 
-    render(<SessionHistoryList />);
+    renderList();
 
     expect(await screen.findByText("Build a plan")).toBeInTheDocument();
     expect(mockListTaskSessions).toHaveBeenCalled();
 
     await user.click(screen.getByText("Build a plan"));
 
-    expect(mockStartSessionNavigation).toHaveBeenCalledWith("session-1");
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
   });
 
   it("prepends inserted sessions ahead of fetched history", async () => {
-    render(<SessionHistoryList />);
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
+
+    renderList(<RegisterSessionOnMount />);
 
     const inserted = await screen.findByText("Just created");
     const fetched = await screen.findByText("Build a plan");
@@ -84,6 +96,40 @@ describe("SessionHistoryList integration", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(inserted.closest("[aria-current='true']")).toBeTruthy();
+  });
+
+  it("highlights the active session after replaceState URL sync", async () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams());
+
+    renderList();
+
+    expect(await screen.findByText("Build a plan")).toBeInTheDocument();
+
+    window.history.replaceState(null, "", "/coach?sessionId=session-1");
+    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Build a plan").closest("[aria-current='true']"),
+      ).toBeTruthy();
+    });
+  });
+
+  it("removes a deleted session from the list", async () => {
+    const user = userEvent.setup();
+
+    renderList();
+
+    const row = await screen.findByText("Build a plan");
+    expect(row).toBeInTheDocument();
+
+    await user.click(screen.getAllByLabelText("Conversation actions")[0]);
+    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
+    });
+    expect(mockDeleteTaskSession).toHaveBeenCalledWith("session-1");
   });
 
   it("preserves server-provided updatedAt order", async () => {
@@ -103,7 +149,7 @@ describe("SessionHistoryList integration", () => {
       ],
     });
 
-    render(<SessionHistoryList />);
+    renderList();
 
     const titles = await screen.findAllByText(/conversation$/i);
     expect(titles.map((node) => node.textContent)).toEqual([

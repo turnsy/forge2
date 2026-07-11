@@ -11,13 +11,13 @@ export function SessionHistorySidebar({
   expanded: boolean;
   onExpand: () => void;
 }) {
-  if (collapsed) {
-    return null;
-  }
-
   return (
     <section
-      className="mt-8 flex flex-col gap-1"
+      className={[
+        "mt-8 flex flex-col gap-1",
+        collapsed ? "hidden" : "",
+      ].join(" ")}
+      aria-hidden={collapsed}
       aria-label="Conversation history"
     >
       <div className="flex items-center gap-3 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-surface-muted">

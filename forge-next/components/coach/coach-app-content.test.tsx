@@ -1,11 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachAppContent } from "@/components/coach/coach-app-content";
 import {
   SessionNavigationProvider,
   useSessionNavigation,
 } from "@/lib/chat/session-navigation-context";
+
+const mockListTaskSessions = vi.fn();
+
+vi.mock("@/lib/chat/actions", () => ({
+  listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
+}));
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
@@ -23,6 +29,10 @@ function StartNavigationButton() {
 }
 
 describe("CoachAppContent", () => {
+  beforeEach(() => {
+    mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
+  });
+
   it("shows the conversation loading view while a session is opening", async () => {
     const user = userEvent.setup();
 

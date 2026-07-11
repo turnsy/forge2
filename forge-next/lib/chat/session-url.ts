@@ -4,7 +4,19 @@ export type CoachWorkspaceUrlUpdate = {
   newPlan?: boolean | null;
 };
 
+export const COACH_WORKSPACE_URL_CHANGE_EVENT = "coach-workspace-url-change";
+
 const COACH_HOME_PATH = "/coach";
+
+function dispatchCoachWorkspaceUrlChange(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (typeof window.dispatchEvent === "function") {
+    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
+  }
+}
 
 export function hasCoachWorkspaceQueryParams(
   searchParams: URLSearchParams,
@@ -52,6 +64,7 @@ export function syncCoachWorkspaceUrl(update: CoachWorkspaceUrlUpdate = {}): voi
 
   if (next !== current) {
     window.history.replaceState(window.history.state, "", next);
+    dispatchCoachWorkspaceUrlChange();
   }
 }
 
