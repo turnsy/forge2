@@ -738,7 +738,6 @@ export function useCoachPlanWorkspace(options?: {
 
       stopPendingRef.current = false;
       setStopPending(false);
-      setFinalization(null);
       setSendFailure(null);
 
       try {

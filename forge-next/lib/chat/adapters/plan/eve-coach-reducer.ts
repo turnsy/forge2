@@ -11,6 +11,7 @@ import {
   isToolErrorsOutput,
   toForgeToolDisplayErrors,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
+import { isUserAbortError } from "@/lib/chat/stream-completion";
 
 type ForgeToolResult = Extract<
   ActionResultStreamEvent["data"]["result"],
@@ -106,6 +107,29 @@ function applyToolFailureErrors(
   };
 }
 
+function appendUserMessage(
+  data: EveCoachReducerData,
+  text: string,
+): EveCoachReducerData {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return data;
+  }
+
+  const lastMessage = data.messages.at(-1);
+  if (
+    lastMessage?.role === "user" &&
+    lastMessage.content.trim() === trimmed
+  ) {
+    return data;
+  }
+
+  return {
+    ...data,
+    messages: [...data.messages, { role: "user" as const, content: trimmed }],
+  };
+}
+
 function finalizeAssistantTurn(
   data: EveCoachReducerData,
 ): EveCoachReducerData {
@@ -159,8 +183,15 @@ export function createEveCoachReducer(
         }
 
         case "client.message.failed": {
+          const next = appendUserMessage(data, event.data.message);
+          const aborted = isUserAbortError(event.data.error.message);
+
+          if (aborted) {
+            return next;
+          }
+
           return {
-            ...data,
+            ...next,
             phase: "error",
             runStatus: "error",
             errors: [{ message: event.data.error.message }],
@@ -232,18 +263,7 @@ export function createEveCoachReducer(
             return data;
           }
 
-          const lastMessage = data.messages.at(-1);
-          if (
-            lastMessage?.role === "user" &&
-            lastMessage.content.trim() === text
-          ) {
-            return data;
-          }
-
-          return {
-            ...data,
-            messages: [...data.messages, { role: "user", content: text }],
-          };
+          return appendUserMessage(data, text);
         }
 
         default:

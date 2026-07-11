@@ -566,6 +566,68 @@ describe("useCoachPlanWorkspace", () => {
     );
   });
 
+  it("keeps the stopped user message when sending again after an abort", async () => {
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: "generating",
+      phase: "streaming",
+    };
+    agentStatusState.current = "streaming";
+
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
+
+    act(() => {
+      result.current.stopResponse();
+    });
+
+    // Eve replays client.message.failed after abort; the reducer keeps the text.
+    agentStatusState.current = "ready";
+    agentDataState.current = {
+      ...agentDataState.current,
+      messages: [{ role: "user", content: "Build a plan" }],
+      runStatus: null,
+      streamingAssistantText: "",
+      phase: "streaming",
+      errors: [],
+    };
+    await act(async () => {
+      await capturedEveAgentOptions.current?.onFinish?.({
+        session: agentSessionState.current,
+        events: agentEventsState.current,
+      });
+    });
+    rerender();
+
+    mockSend.mockImplementation(async (input: { message: string }) => {
+      agentDataState.current = {
+        ...agentDataState.current,
+        messages: [
+          ...agentDataState.current.messages,
+          { role: "user", content: input.message },
+        ],
+        phase: "streaming",
+      };
+      agentStatusState.current = "streaming";
+      agentEventsState.current = [
+        ...agentEventsState.current,
+        { type: "message.received" },
+      ];
+    });
+
+    await act(async () => {
+      await result.current.sendMessage([
+        { type: "text", value: "Actually, make it 3 days" },
+      ]);
+    });
+    rerender();
+
+    expect(result.current.state.messages).toEqual([
+      { role: "user", content: "Build a plan" },
+      { role: "user", content: "Actually, make it 3 days" },
+    ]);
+  });
+
   it("blocks sends while a stop is still settling", async () => {
     agentDataState.current = {
       ...agentDataState.current,

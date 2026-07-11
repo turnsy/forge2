@@ -20,6 +20,24 @@ describe("createEveCoachReducer", () => {
     expect(next.phase).toBe("streaming");
   });
 
+  it("keeps the optimistic user message when Eve replays client.message.failed after abort", () => {
+    const next = reducer.reduce(reducer.initial(), {
+      type: "client.message.failed",
+      data: {
+        submissionId: "sub-1",
+        message: "Build a bench plan",
+        createdAt: Date.now(),
+        error: { message: "fetch is aborted" },
+      },
+    });
+
+    expect(next.messages).toEqual([
+      { role: "user", content: "Build a bench plan" },
+    ]);
+    expect(next.phase).not.toBe("error");
+    expect(next.errors).toEqual([]);
+  });
+
   it("streams assistant text from message.appended messageSoFar", () => {
     let state = reducer.initial();
     state = reducer.reduce(state, {
