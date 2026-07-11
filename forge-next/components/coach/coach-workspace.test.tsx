@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
-import { DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS, DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
+import { DESKTOP_ARTIFACT_COLUMN_CLASS, DESKTOP_ARTIFACT_INNER_PADDING_CLASS, DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS, DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
@@ -198,7 +198,9 @@ describe("CoachWorkspace layout", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
-    expect(container.innerHTML).toContain("!max-w-none");
+    expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_COLUMN_CLASS);
+    expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_INNER_PADDING_CLASS);
+    expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS);
   });
 
   it("navigates to coach home on reset", async () => {

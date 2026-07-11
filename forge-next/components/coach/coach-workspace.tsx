@@ -14,6 +14,8 @@ import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
+  DESKTOP_ARTIFACT_COLUMN_CLASS,
+  DESKTOP_ARTIFACT_INNER_PADDING_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
   DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
@@ -62,7 +64,7 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass, pageShellClass } from "@/lib/theme";
+import { roleLinkClass } from "@/lib/theme";
 import type { HandleMessageStreamEvent } from "eve/client";
 
 function ChatWorkspaceShell({
@@ -748,19 +750,14 @@ function CoachWorkspaceInner({
         <div
           className={
             showSplitPane
-              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none`
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${DESKTOP_ARTIFACT_COLUMN_CLASS}`
               : "hidden"
           }
         >
           {showSplitPane ? (
             <div
-              className={`flex h-full min-h-0 w-full ${
-                chatCollapsed ? "justify-center" : ""
-              }`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_INNER_PADDING_CLASS}`}
             >
-              <div
-                className={`flex h-full min-h-0 flex-col overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS}`}
-              >
                 <ArtifactPanel
                   state={state}
                   artifactFadeKey={artifactFadeKey}
@@ -773,7 +770,6 @@ function CoachWorkspaceInner({
                   disabled={isChatRunning(state)}
                   onPlanChange={handlePlanChange}
                 />
-              </div>
             </div>
           ) : null}
         </div>

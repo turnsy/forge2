@@ -25,9 +25,16 @@ export const DESKTOP_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 export const DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED =
   "minmax(320px, 1fr) minmax(280px, 33%)";
 
+/** Artifact grid cell — vertical inset only; pane width is set via cqi on the inner wrapper. */
+export const DESKTOP_ARTIFACT_COLUMN_CLASS = "py-4 md:py-8";
+
+/** Horizontal inset inside the fixed cqi-width artifact pane. */
+export const DESKTOP_ARTIFACT_INNER_PADDING_CLASS = "px-4 md:px-8";
+
 /**
  * Artifact width as a fraction of the split grid — stable across collapse/expand.
  * Uses container query inline units (`@container` on the grid) so the pane does not
  * morph when the artifact column grows while the chat rail collapses.
  */
-export const DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS = "w-[67cqi] max-w-full";
+export const DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS =
+  "mx-auto w-[67cqi] shrink-0";

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  DESKTOP_ARTIFACT_COLUMN_CLASS,
+  DESKTOP_ARTIFACT_INNER_PADDING_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
   DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
@@ -36,5 +38,8 @@ describe("desktop workspace layout classes", () => {
     expect(DESKTOP_CHAT_COLLAPSED_RAIL_CLASS).toContain("w-14");
     expect(DESKTOP_CHAT_GRID_TRANSITION_CLASS).toContain("duration-200");
     expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toContain("67cqi");
+    expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toContain("mx-auto");
+    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).toContain("py-4");
+    expect(DESKTOP_ARTIFACT_INNER_PADDING_CLASS).toContain("px-4");
   });
 });
