@@ -47,25 +47,36 @@ export function selectClass(size: "sm" | "md" = "md"): string {
   return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer appearance-none ${sizeClass}`;
 }
 
+const buttonSizeClasses: Record<
+  ButtonSize,
+  { text: string; icon: string }
+> = {
+  sm: {
+    text: `${radius.card} h-9 px-3 text-sm`,
+    icon: "h-9 w-9",
+  },
+  md: {
+    text: `${radius.control} h-11 px-5 text-base`,
+    icon: "h-11 w-11",
+  },
+};
+
 export function buttonVariantClass(
   variant: ButtonVariant,
   fullWidth = true,
   size: ButtonSize = "md",
 ): string {
   const widthClass = fullWidth ? "w-full" : "";
-  const sizeClass =
-    size === "sm"
-      ? `${radius.card} px-3 py-1.5 text-sm`
-      : `${radius.control} px-5 py-3.5 text-base`;
+  const sizeClass = buttonSizeClasses[size].text;
 
-  return `inline-flex ${widthClass} items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+  return `inline-flex ${widthClass} shrink-0 items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
 
 export function iconButtonVariantClass(
   variant: ButtonVariant,
   size: ButtonSize = "md",
 ): string {
-  const sizeClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
+  const sizeClass = buttonSizeClasses[size].icon;
 
   return `inline-flex shrink-0 items-center justify-center rounded-full ${sizeClass} transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }

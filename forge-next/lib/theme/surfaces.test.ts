@@ -30,6 +30,13 @@ describe("surface theme helpers", () => {
     expect(buttonVariantClass("ghost", false)).not.toContain("w-full");
   });
 
+  it("uses matching heights for text and icon buttons at each size", () => {
+    expect(buttonVariantClass("ghost", false, "sm")).toContain("h-9");
+    expect(iconButtonVariantClass("ghost", "sm")).toContain("h-9 w-9");
+    expect(buttonVariantClass("primary", false, "md")).toContain("h-11");
+    expect(iconButtonVariantClass("primary", "md")).toContain("h-11 w-11");
+  });
+
   it("uses grayscale glass card styling", () => {
     expect(cardClass()).toContain("border-glass-border");
     expect(cardClass()).toContain("bg-glass");
