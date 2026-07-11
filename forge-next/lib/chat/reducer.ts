@@ -104,6 +104,25 @@ export function chatWorkspaceReducer<TArtifact>(
           : "idle",
       };
     }
+    case "RESTORE_ATTACHMENTS": {
+      const existingIds = new Set(state.contextFileIds);
+      const restored = action.attachments.filter((attachment) =>
+        (attachment.contextFileIds ?? []).some((id) => !existingIds.has(id)),
+      );
+      if (restored.length === 0) {
+        return state;
+      }
+
+      const restoredIds = restored.flatMap(
+        (attachment) => attachment.contextFileIds ?? [],
+      );
+
+      return {
+        ...state,
+        attachments: [...state.attachments, ...restored],
+        contextFileIds: mergeContextFileIds(state.contextFileIds, restoredIds),
+      };
+    }
     case "SEND_START":
       return {
         ...state,
