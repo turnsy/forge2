@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
+import { DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
 
 const mockUseCoachPlanWorkspace = vi.fn();
 const mockPush = vi.fn();
@@ -483,7 +484,7 @@ describe("CoachWorkspace layout", () => {
     expect(screen.getByRole("button", { name: "Collapse chat" })).toBeVisible();
   });
 
-  it("centers the artifact and shows expand chat after collapse", async () => {
+  it("shows a collapsed chat rail with expand control after collapse", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -502,6 +503,6 @@ describe("CoachWorkspace layout", () => {
     expect(
       screen.queryByRole("button", { name: "Collapse chat" }),
     ).not.toBeInTheDocument();
-    expect(container.innerHTML).toContain("max-w-5xl");
+    expect(container.innerHTML).toContain(DESKTOP_CHAT_COLLAPSED_RAIL_CLASS);
   });
 });

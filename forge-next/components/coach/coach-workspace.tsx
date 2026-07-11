@@ -9,13 +9,15 @@ import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mo
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
-import { ChevronLeftIcon } from "@/components/icons/chevron-left-icon";
-import { ChevronRightIcon } from "@/components/icons/chevron-right-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
+import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_CHAT_AREA_CLASS,
+  DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
+  DESKTOP_CHAT_COLLAPSED_WIDTH,
+  DESKTOP_CHAT_GRID_TRANSITION_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_CHAT_HEADER_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
@@ -724,30 +726,29 @@ function CoachWorkspaceInner({
     );
   }
 
-  const desktopChatCollapseControl =
-    showSplitPane && !chatCollapsed ? (
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={<ChevronRightIcon />}
-        aria-label="Collapse chat"
-        aria-expanded
-        onClick={toggleChatCollapsed}
-      />
-    ) : null;
+  const desktopChatToggle = showSplitPane ? (
+    <IconButton
+      variant="plain"
+      size="sm"
+      icon={<SidebarToggleIcon />}
+      aria-label={chatCollapsed ? "Expand chat" : "Collapse chat"}
+      aria-expanded={!chatCollapsed}
+      onClick={toggleChatCollapsed}
+    />
+  ) : null;
 
   return (
     <div
       className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
     >
       <div
-        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
+        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden ${DESKTOP_CHAT_GRID_TRANSITION_CLASS}${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
           gridTemplateColumns: showSplitPane
             ? chatCollapsed
-              ? "1fr"
+              ? `1fr ${DESKTOP_CHAT_COLLAPSED_WIDTH}`
               : "minmax(320px, 1fr) minmax(280px, 33%)"
             : "1fr",
         }}
@@ -755,18 +756,12 @@ function CoachWorkspaceInner({
         <div
           className={
             showSplitPane
-              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
-                  chatCollapsed ? "items-center justify-center" : ""
-                } ${pageShellClass()} !mx-0 !max-w-none`
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none`
               : "hidden"
           }
         >
           {showSplitPane ? (
-            <div
-              className={`flex h-full min-h-0 w-full flex-col overflow-hidden${
-                chatCollapsed ? " max-w-5xl" : ""
-              }`}
-            >
+            <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
@@ -785,44 +780,36 @@ function CoachWorkspaceInner({
 
         <div
           className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
-            showSplitPane && !chatCollapsed
-              ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
-              : showSplitPane
-                ? "hidden"
-                : "w-full"
+            showSplitPane
+              ? chatCollapsed
+                ? DESKTOP_CHAT_COLLAPSED_RAIL_CLASS
+                : DESKTOP_CHAT_COLUMN_CLASS
+              : "w-full"
           }`}
         >
-          <div
-            className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
-          >
-            <ChatWorkspaceShell
-              onReset={handleMobileReset}
-              headerClassName={DESKTOP_CHAT_HEADER_CLASS}
-              headerActions={desktopChatCollapseControl}
+          {chatCollapsed ? (
+            desktopChatToggle
+          ) : (
+            <div
+              className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
             >
-              <CoachConversationPanel
-                state={state}
-                onAttach={attachFiles}
-                onSend={handleSendMessage}
-                onStop={stopResponse}
-                promptEnabled={promptEnabled}
-              />
-            </ChatWorkspaceShell>
-          </div>
+              <ChatWorkspaceShell
+                onReset={handleMobileReset}
+                headerClassName={DESKTOP_CHAT_HEADER_CLASS}
+                headerActions={desktopChatToggle}
+              >
+                <CoachConversationPanel
+                  state={state}
+                  onAttach={attachFiles}
+                  onSend={handleSendMessage}
+                  onStop={stopResponse}
+                  promptEnabled={promptEnabled}
+                />
+              </ChatWorkspaceShell>
+            </div>
+          )}
         </div>
       </div>
-
-      {chatCollapsed ? (
-        <IconButton
-          variant="ghost"
-          size="sm"
-          className="absolute right-4 top-4 z-10 border border-glass-border bg-glass backdrop-blur-md"
-          icon={<ChevronLeftIcon />}
-          aria-label="Expand chat"
-          aria-expanded={false}
-          onClick={toggleChatCollapsed}
-        />
-      ) : null}
     </div>
   );
 }

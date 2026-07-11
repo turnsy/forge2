@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   DESKTOP_CHAT_AREA_CLASS,
+  DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
+  DESKTOP_CHAT_COLLAPSED_WIDTH,
+  DESKTOP_CHAT_GRID_TRANSITION_CLASS,
   DESKTOP_CHAT_HEADER_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
@@ -25,5 +28,11 @@ describe("desktop workspace layout classes", () => {
   it("defines a header row for the chat reset control", () => {
     expect(DESKTOP_CHAT_HEADER_CLASS).toContain("shrink-0");
     expect(DESKTOP_CHAT_HEADER_CLASS).toContain("justify-end");
+  });
+
+  it("defines a collapsed chat rail that matches the main sidebar width", () => {
+    expect(DESKTOP_CHAT_COLLAPSED_WIDTH).toBe("3.5rem");
+    expect(DESKTOP_CHAT_COLLAPSED_RAIL_CLASS).toContain("w-14");
+    expect(DESKTOP_CHAT_GRID_TRANSITION_CLASS).toContain("duration-200");
   });
 });
