@@ -15,7 +15,6 @@ import { CoachSessionLoadingView } from "@/components/coach/coach-session-loadin
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
-  DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS,
   DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
   DESKTOP_CHAT_COLLAPSED_WIDTH,
@@ -735,7 +734,7 @@ function CoachWorkspaceInner({
       className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
     >
       <div
-        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden ${DESKTOP_CHAT_GRID_TRANSITION_CLASS}${
+        className={`@container grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden ${DESKTOP_CHAT_GRID_TRANSITION_CLASS}${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
@@ -760,11 +759,7 @@ function CoachWorkspaceInner({
               }`}
             >
               <div
-                className={`flex h-full min-h-0 flex-col overflow-hidden ${
-                  chatCollapsed
-                    ? `${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS}`
-                    : `w-full ${DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS}`
-                }`}
+                className={`flex h-full min-h-0 flex-col overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS}`}
               >
                 <ArtifactPanel
                   state={state}

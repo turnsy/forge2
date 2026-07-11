@@ -25,9 +25,9 @@ export const DESKTOP_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 export const DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED =
   "minmax(320px, 1fr) minmax(280px, 33%)";
 
-/** Artifact width when chat is collapsed — matches the ~2:1 expanded split. */
-export const DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS = "w-2/3";
-
-/** Smooth width change when the chat rail collapses or expands. */
-export const DESKTOP_ARTIFACT_WIDTH_TRANSITION_CLASS =
-  "transition-[width] duration-200 ease-out motion-reduce:transition-none";
+/**
+ * Artifact width as a fraction of the split grid — stable across collapse/expand.
+ * Uses container query inline units (`@container` on the grid) so the pane does not
+ * morph when the artifact column grows while the chat rail collapses.
+ */
+export const DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS = "w-[67cqi] max-w-full";

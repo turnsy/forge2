@@ -35,6 +35,6 @@ describe("desktop workspace layout classes", () => {
     expect(DESKTOP_CHAT_COLLAPSED_WIDTH).toBe("3.5rem");
     expect(DESKTOP_CHAT_COLLAPSED_RAIL_CLASS).toContain("w-14");
     expect(DESKTOP_CHAT_GRID_TRANSITION_CLASS).toContain("duration-200");
-    expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toBe("w-2/3");
+    expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toContain("67cqi");
   });
 });
