@@ -5,7 +5,7 @@ import { readForgeSessionUpload } from "../lib/uploads";
 
 export default defineTool({
   description:
-    "Read normalized upload text for one path from list_session_files.",
+    "Read normalized text for one attached file path from list_session_files. Call before submit_plan_code when building or updating a plan from an upload.",
   inputSchema: z.object({
     path: z.string().min(1).describe("Storage object path."),
   }),
