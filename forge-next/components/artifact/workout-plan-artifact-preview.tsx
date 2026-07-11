@@ -23,9 +23,11 @@ export function WorkoutPlanArtifactPreview({
     ? getTurnActivityLabel(phase, runStatus)
     : null;
 
+  const scrollClass = showOverlaySpinner ? "overflow-hidden" : "overflow-y-auto";
+
   return (
     <div
-      className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
+      className={`relative flex min-h-0 flex-1 flex-col ${scrollClass} ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`}
     >
       {activityLabel ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">

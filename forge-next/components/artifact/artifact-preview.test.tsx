@@ -69,7 +69,7 @@ describe("ArtifactPreview", () => {
         onPlanChange={noopPlanChange}
       />,
     );
-    expect(screen.getByText("Running builder")).toBeInTheDocument();
+    expect(screen.getByText("Building")).toBeInTheDocument();
   });
 
   it("shows a spinner overlay while generating even before sandbox", () => {

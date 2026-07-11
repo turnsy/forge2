@@ -32,7 +32,7 @@ describe("turn activity", () => {
 
   it("maps phase and run status to visible labels", () => {
     expect(getTurnActivityLabel("streaming", "generating")).toBe("Generating");
-    expect(getTurnActivityLabel("streaming", "sandbox")).toBe("Running builder");
+    expect(getTurnActivityLabel("streaming", "sandbox")).toBe("Building");
     expect(getTurnActivityLabel("streaming", null)).toBe("Thinking…");
     expect(getTurnActivityLabel("uploading", null)).toBe("Uploading files…");
   });

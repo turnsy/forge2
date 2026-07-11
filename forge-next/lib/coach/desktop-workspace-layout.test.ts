@@ -39,7 +39,8 @@ describe("desktop workspace layout classes", () => {
     expect(DESKTOP_CHAT_GRID_TRANSITION_CLASS).toContain("duration-200");
     expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toContain("67cqi");
     expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).toContain("mx-auto");
-    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).toContain("py-4");
+    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).toContain("pt-4");
+    expect(DESKTOP_ARTIFACT_COLUMN_CLASS).not.toContain("pb-");
     expect(DESKTOP_ARTIFACT_INNER_PADDING_CLASS).toContain("px-4");
   });
 });

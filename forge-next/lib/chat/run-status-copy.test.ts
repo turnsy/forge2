@@ -3,7 +3,7 @@ import { getRunStatusLabel } from "@/lib/chat/run-status-copy";
 
 describe("run status copy", () => {
   it("maps run statuses to labels", () => {
-    expect(getRunStatusLabel("sandbox")).toBe("Running builder");
+    expect(getRunStatusLabel("sandbox")).toBe("Building");
     expect(getRunStatusLabel("validating")).toBe("Validating");
   });
 });

@@ -37,8 +37,8 @@ describe("WorkoutPlanArtifactPreview", () => {
     expect(scrollContainer?.className).toContain("max-md:pb-[calc(4.5rem");
   });
 
-  it("shows spinner overlay during sandbox runs", () => {
-    render(
+  it("locks artifact scroll while a turn is in progress", () => {
+    const { container } = render(
       <WorkoutPlanArtifactPreview
         plan={minimalWorkoutPlan}
         runStatus="sandbox"
@@ -47,7 +47,10 @@ describe("WorkoutPlanArtifactPreview", () => {
       />,
     );
 
-    expect(screen.getByText("Running builder")).toBeInTheDocument();
+    const scrollContainer = container.firstElementChild;
+    expect(scrollContainer?.className).toContain("overflow-hidden");
+    expect(scrollContainer?.className).not.toContain("overflow-y-auto");
+    expect(screen.getByText("Building")).toBeInTheDocument();
   });
 
   it("shows spinner overlay while generating", () => {

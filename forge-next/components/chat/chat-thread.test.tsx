@@ -50,7 +50,7 @@ describe("ChatThread", () => {
     expect(
       screen.getByText("I'll read your spreadsheet first."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Running builder")).toBeInTheDocument();
+    expect(screen.getByText("Building")).toBeInTheDocument();
   });
 
   it("shows inline errors in the thread", () => {

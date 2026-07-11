@@ -761,7 +761,7 @@ function CoachWorkspaceInner({
         >
           {showSplitPane ? (
             <div
-              className={`flex h-full min-h-0 flex-col overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_INNER_PADDING_CLASS}`}
+              className={`overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_INNER_PADDING_CLASS}`}
             >
                 <ArtifactPanel
                   state={state}
