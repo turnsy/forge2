@@ -10,10 +10,6 @@ export function getTurnActivityLabel(
   phase: ChatWorkspacePhase,
   runStatus: ChatStatus | null,
 ): string {
-  if (phase === "uploading") {
-    return "Uploading files…";
-  }
-
   if (runStatus && isActiveRunStatus(runStatus)) {
     return getRunStatusLabel(runStatus);
   }
@@ -36,7 +32,6 @@ export function isTurnInProgress(
 
   if (
     phase === "initializing" ||
-    phase === "uploading" ||
     phase === "streaming"
   ) {
     return true;
