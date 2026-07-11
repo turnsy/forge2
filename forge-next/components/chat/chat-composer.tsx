@@ -49,7 +49,6 @@ export function ChatComposer({
   const sendAllowed = canSendChat(state) && !documentEmpty;
   const stopAllowed =
     canStopChat(state) && Boolean(onStop) && !sendAllowed;
-  const showAttachmentsAbovePrompt = state.hasStarted;
 
   function addFiles(files: File[]) {
     if (files.length === 0) {
@@ -103,13 +102,6 @@ export function ChatComposer({
               event.target.value = "";
             }}
           />
-          {showAttachmentsAbovePrompt ? (
-            <ChatAttachmentList
-              attachments={state.attachments}
-              onRemove={onRemoveAttachment}
-              className={compact ? "mb-2" : "mb-3"}
-            />
-          ) : null}
           <PromptComposer
             key={composerKey}
             compact={compact}
@@ -177,7 +169,7 @@ export function ChatComposer({
           </div>
         </div>
       </div>
-      {!showAttachmentsAbovePrompt && state.attachments.length > 0 ? (
+      {!state.hasStarted && state.attachments.length > 0 ? (
         <ChatAttachmentList
           attachments={state.attachments}
           onRemove={onRemoveAttachment}

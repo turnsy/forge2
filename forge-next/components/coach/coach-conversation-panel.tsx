@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -40,6 +41,13 @@ export function CoachConversationPanel({
         className={`shrink-0 py-3 md:py-0${composerClassName ? ` ${composerClassName}` : ""}`}
       >
         {composerHeader}
+        {state.hasStarted ? (
+          <ChatAttachmentList
+            attachments={state.attachments}
+            onRemove={onRemoveAttachment}
+            className="mb-2"
+          />
+        ) : null}
         <ChatComposer
           compact
           state={state}

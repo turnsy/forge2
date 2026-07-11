@@ -123,34 +123,6 @@ describe("ChatComposer", () => {
     expect(onReset).toHaveBeenCalledOnce();
   });
 
-  it("renders attachments above the prompt after the thread starts", () => {
-    const { container } = render(
-      <ChatComposer
-        state={{
-          ...createInitialChatWorkspaceState(),
-          hasStarted: true,
-          attachments: [
-            {
-              localId: "attach-1",
-              status: "uploaded",
-              displayLabel: "my plan.csv",
-            },
-          ],
-        }}
-        composerKey="composer-1"
-        onAttach={vi.fn()}
-        onSend={vi.fn()}
-      />,
-    );
-
-    const prompt = screen.getByRole("textbox");
-    const chip = screen.getByText("my plan.csv");
-    expect(
-      chip.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
-  });
-
   it("renders attachments below the composer before the thread starts", () => {
     const { container } = render(
       <ChatComposer
@@ -177,5 +149,28 @@ describe("ChatComposer", () => {
       prompt.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
+  });
+
+  it("does not render attachments in the composer after the thread starts", () => {
+    render(
+      <ChatComposer
+        state={{
+          ...createInitialChatWorkspaceState(),
+          hasStarted: true,
+          attachments: [
+            {
+              localId: "attach-1",
+              status: "uploaded",
+              displayLabel: "my plan.csv",
+            },
+          ],
+        }}
+        composerKey="composer-1"
+        onAttach={vi.fn()}
+        onSend={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("my plan.csv")).not.toBeInTheDocument();
   });
 });
