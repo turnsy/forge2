@@ -52,8 +52,8 @@ const buttonSizeClasses: Record<
   { text: string; icon: string }
 > = {
   sm: {
-    text: `${radius.card} h-9 px-3 text-sm`,
-    icon: "h-9 w-9",
+    text: `${radius.card} h-8 px-3 text-sm`,
+    icon: "h-8 w-8",
   },
   md: {
     text: `${radius.control} h-11 px-5 text-base`,

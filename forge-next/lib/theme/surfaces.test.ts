@@ -31,8 +31,8 @@ describe("surface theme helpers", () => {
   });
 
   it("uses matching heights for text and icon buttons at each size", () => {
-    expect(buttonVariantClass("ghost", false, "sm")).toContain("h-9");
-    expect(iconButtonVariantClass("ghost", "sm")).toContain("h-9 w-9");
+    expect(buttonVariantClass("ghost", false, "sm")).toContain("h-8");
+    expect(iconButtonVariantClass("ghost", "sm")).toContain("h-8 w-8");
     expect(buttonVariantClass("primary", false, "md")).toContain("h-11");
     expect(iconButtonVariantClass("primary", "md")).toContain("h-11 w-11");
   });
