@@ -9,6 +9,8 @@ vi.mock("@/lib/auth/session", () => ({
 const mockListRecentChatSessions = vi.fn();
 const mockRenameChatSession = vi.fn();
 const mockDeleteChatSession = vi.fn();
+const mockListSessionUploads = vi.fn();
+const mockDeleteUploadContext = vi.fn();
 
 vi.mock("@/lib/chat/session-storage", () => ({
   listRecentChatSessions: (...args: unknown[]) =>
@@ -18,9 +20,19 @@ vi.mock("@/lib/chat/session-storage", () => ({
   saveSessionSnapshot: vi.fn(),
 }));
 
+vi.mock("@/lib/uploads/list-session-uploads", () => ({
+  listSessionUploads: (...args: unknown[]) => mockListSessionUploads(...args),
+}));
+
+vi.mock("@/lib/uploads/context-storage", () => ({
+  deleteUploadContext: (...args: unknown[]) => mockDeleteUploadContext(...args),
+}));
+
 import {
   deleteTaskSession,
+  listSessionAttachments,
   listTaskSessions,
+  removeSessionAttachments,
   renameTaskSession,
 } from "@/lib/chat/actions";
 
@@ -28,6 +40,7 @@ describe("chat actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireRole.mockResolvedValue({ id: "coach-1", role: "coach" });
+    mockDeleteUploadContext.mockResolvedValue({ ok: true });
   });
 
   it("lists task sessions for the coach", async () => {
@@ -88,5 +101,47 @@ describe("chat actions", () => {
 
     expect(mockDeleteChatSession).toHaveBeenCalledWith("coach-1", "session-1");
     expect(result).toEqual({ ok: true });
+  });
+
+  it("lists session attachments from storage", async () => {
+    mockListSessionUploads.mockResolvedValue([
+      {
+        path: "coach-1/session-1/my-plan.txt",
+        name: "my-plan.txt",
+        sizeBytes: 12,
+      },
+    ]);
+
+    const result = await listSessionAttachments("session-1");
+
+    expect(mockListSessionUploads).toHaveBeenCalledWith("coach-1", "session-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.attachments).toHaveLength(1);
+      expect(result.attachments[0]).toMatchObject({
+        status: "uploaded",
+        displayLabel: "my plan",
+        contextFileIds: ["coach-1/session-1/my-plan.txt"],
+      });
+    }
+  });
+
+  it("removes session attachments and returns the updated storage view", async () => {
+    mockDeleteUploadContext.mockResolvedValue({ ok: true });
+    mockListSessionUploads.mockResolvedValue([]);
+
+    const result = await removeSessionAttachments("session-1", [
+      "coach-1/session-1/my-plan.txt",
+    ]);
+
+    expect(mockDeleteUploadContext).toHaveBeenCalledWith(
+      ["coach-1/session-1/my-plan.txt"],
+      "coach-1",
+    );
+    expect(mockListSessionUploads).toHaveBeenCalledWith("coach-1", "session-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.attachments).toEqual([]);
+    }
   });
 });

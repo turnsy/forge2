@@ -10,8 +10,9 @@ export default function CoachAppError({
   reset: () => void;
 }) {
   return (
-    <PageContent>
-      <PageHeader title="Something went wrong" />
+    <PageContent
+      header={<PageHeader title="Something went wrong" />}
+    >
       <div className="rounded-card border border-danger-border bg-danger-muted p-4 text-sm text-danger">
         {error.message || "An unexpected error occurred."}
       </div>

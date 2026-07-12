@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PlanVersionHistory } from "@/components/plan/plan-version-history";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanDetailActions } from "@/components/plan-detail-actions";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, ScrollPage } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 import type { CoachPlanVersionListItem } from "@/lib/plans/repository";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -23,18 +23,22 @@ export function CoachPlanDetailView({
   const [showHistory, setShowHistory] = useState(false);
 
   return (
-    <>
-      <PageHeader
-        title={plan.name}
-        description={plan.description}
-        actions={
-          <PlanDetailActions
-            planId={planId}
-            planTitle={plan.name}
-            onToggleHistory={() => setShowHistory((current) => !current)}
-          />
-        }
-      />
+    <ScrollPage
+      header={
+        <PageHeader
+          title={plan.name}
+          description={plan.description}
+          actions={
+            <PlanDetailActions
+              planId={planId}
+              planTitle={plan.name}
+              onToggleHistory={() => setShowHistory((current) => !current)}
+            />
+          }
+        />
+      }
+      scrollClassName="flex flex-col gap-6"
+    >
       {showHistory ? (
         <PlanVersionHistory versions={versions} />
       ) : (
@@ -45,6 +49,6 @@ export function CoachPlanDetailView({
           <PlanDayNavigator plan={plan} view="coach" readOnly />
         </>
       )}
-    </>
+    </ScrollPage>
   );
 }

@@ -1,25 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 
 describe("PageShell", () => {
-  it("renders back navigation outside the main content column", () => {
+  it("renders back navigation in scroll chrome above page content", () => {
     render(
-      <PageShell back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}>
+      <PageShell
+        back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}
+        header={<PageHeader title="Pending invites" />}
+      >
         <p>Pending invites</p>
       </PageShell>,
     );
 
     const main = screen.getByRole("main");
-    const desktopBackLink = screen
-      .getAllByRole("link", { name: "Back to athletes" })
-      .find((link) => link.parentElement?.className.includes("md:flex"));
+    const backLink = screen.getByRole("link", { name: "Back to athletes" });
 
-    expect(desktopBackLink).toHaveAttribute("href", "/coach/athletes");
+    expect(backLink).toHaveAttribute("href", "/coach/athletes");
     expect(main).toHaveTextContent("Pending invites");
-    expect(main.contains(desktopBackLink ?? null)).toBe(false);
-    expect(
-      screen.getAllByRole("link", { name: "Back to athletes" }),
-    ).toHaveLength(2);
+    expect(main.contains(backLink)).toBe(true);
   });
 });

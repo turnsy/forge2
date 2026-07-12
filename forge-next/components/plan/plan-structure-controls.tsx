@@ -225,14 +225,13 @@ export function PlanStructureControls({
     setPendingDelete(null);
   }
 
+  const mobileControlRowClass =
+    layout === "desktop"
+      ? "flex min-w-0 flex-1 items-center gap-2"
+      : "flex min-w-0 flex-wrap items-center gap-2";
+
   const weekControls = (
-    <div
-      className={
-        layout === "desktop"
-          ? "flex min-w-0 flex-1 items-center gap-2"
-          : "flex items-center gap-2"
-      }
-    >
+    <div className={mobileControlRowClass}>
       <IconButton
         variant="ghost"
         size="sm"
@@ -257,7 +256,7 @@ export function PlanStructureControls({
         type="button"
         variant="ghost"
         size="sm"
-        fullWidth={layout === "mobile"}
+        fullWidth={false}
         icon={<PlusIcon />}
         aria-label="Add week"
         disabled={disabled}
@@ -269,7 +268,7 @@ export function PlanStructureControls({
         type="button"
         variant="danger"
         size="sm"
-        fullWidth={layout === "mobile"}
+        fullWidth={false}
         icon={<XIcon />}
         disabled={disabled || !canDeleteSelectedWeek(plan, selectedWeekPos, canEditDay)}
         onClick={requestRemoveWeek}
@@ -280,13 +279,7 @@ export function PlanStructureControls({
   );
 
   const dayControls = (
-    <div
-      className={
-        layout === "desktop"
-          ? "flex min-w-0 flex-1 items-center gap-2"
-          : "flex items-center gap-2"
-      }
-    >
+    <div className={mobileControlRowClass}>
       <IconButton
         variant="ghost"
         size="sm"
@@ -313,7 +306,7 @@ export function PlanStructureControls({
         type="button"
         variant="ghost"
         size="sm"
-        fullWidth={layout === "mobile"}
+        fullWidth={false}
         icon={<PlusIcon />}
         aria-label="Add day"
         disabled={disabled}
@@ -325,7 +318,7 @@ export function PlanStructureControls({
         type="button"
         variant="danger"
         size="sm"
-        fullWidth={layout === "mobile"}
+        fullWidth={false}
         icon={<XIcon />}
         disabled={
           disabled ||

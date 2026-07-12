@@ -12,13 +12,12 @@ describe("PageBackGutter", () => {
     );
 
     const content = screen.getByTestId("content");
-    const shell = content.parentElement;
     const desktopBackSlot = screen
       .getAllByRole("link", { name: "Back to plans" })
       .find((link) => link.parentElement?.className.includes("md:flex"))?.parentElement;
 
-    expect(shell).toHaveClass("relative");
-    expect(desktopBackSlot).toHaveClass("absolute", "right-full", "hidden", "md:flex");
+    expect(content.parentElement).toHaveClass("relative");
+    expect(desktopBackSlot).toHaveClass("absolute", "right-full", "z-30", "hidden", "md:flex");
     expect(content.contains(screen.getAllByRole("link", { name: "Back to plans" })[0])).toBe(
       false,
     );
@@ -36,11 +35,11 @@ describe("PageBackGutter", () => {
       .getAllByRole("link", { name: "Back to plans" })
       .find((link) => link.parentElement?.className.includes("md:hidden"))?.parentElement;
     const shell = screen.getByRole("heading", { name: "1-Week Bench Press Plan" })
-      .closest("[data-page-header]")?.parentElement;
+      .closest(".relative");
     const header = document.querySelector("[data-page-header]");
     const body = screen.getByTestId("body");
 
-    expect(mobileBackSlot).toHaveClass("absolute", "left-0", "top-0", "md:hidden");
+    expect(mobileBackSlot).toHaveClass("absolute", "left-0", "top-0", "z-30", "md:hidden");
     expect(shell?.className).toContain("[&_[data-page-header]]:max-md:pl-12");
     expect(header).toBeTruthy();
     expect(body.className).not.toContain("pl-12");
@@ -61,8 +60,8 @@ describe("PageBackGutter", () => {
       screen.getAllByRole("link", { name: "Back to home" }),
     ).toHaveLength(1);
     expect(
-      screen.getByRole("heading", { name: "History" }).closest("[data-page-header]")
-        ?.parentElement?.className ?? "",
+      screen.getByRole("heading", { name: "History" }).closest(".relative")
+        ?.className ?? "",
     ).not.toContain("[&_[data-page-header]]:max-md:pl-12");
   });
 });

@@ -66,7 +66,7 @@ export function Modal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          className={`flex max-h-[calc(100dvh-2rem)] w-full ${sizeClass[size]} flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900`}
+          className={`flex max-h-[calc(100dvh-2rem)] w-full min-h-[min(16rem,70dvh)] ${sizeClass[size]} flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900`}
         >
           <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
             <h2 id="modal-title" className="text-lg font-semibold">
@@ -94,9 +94,7 @@ export function Modal({
             </button>
           </div>
 
-          <div
-            className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`.trim()}
-          >
+          <div className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`.trim()}>
             {children}
           </div>
 

@@ -7,6 +7,12 @@ export type ButtonSize = "sm" | "md";
 export type MessageTone = "error" | "success" | "info";
 export type PillTone = "default" | "danger";
 
+/** Default md button height. */
+export const BUTTON_MD_HEIGHT_CLASS = "h-11";
+
+/** Default sm button height; shared with attachment chips and compact actions. */
+export const BUTTON_SM_HEIGHT_CLASS = "h-8";
+
 const plainIconControlClasses =
   "text-surface-muted transition hover:bg-glass hover:text-surface-foreground outline-none focus:outline-none focus-visible:outline-none";
 
@@ -47,25 +53,36 @@ export function selectClass(size: "sm" | "md" = "md"): string {
   return `w-full ${radius.control} font-normal text-surface-foreground outline-none transition glass-surface glass-surface-focus cursor-pointer appearance-none ${sizeClass}`;
 }
 
+const buttonSizeClasses: Record<
+  ButtonSize,
+  { text: string; icon: string }
+> = {
+  sm: {
+    text: `${radius.card} ${BUTTON_SM_HEIGHT_CLASS} px-3 text-sm`,
+    icon: `${BUTTON_SM_HEIGHT_CLASS} w-8`,
+  },
+  md: {
+    text: `${radius.control} ${BUTTON_MD_HEIGHT_CLASS} px-5 text-base`,
+    icon: `${BUTTON_MD_HEIGHT_CLASS} w-11`,
+  },
+};
+
 export function buttonVariantClass(
   variant: ButtonVariant,
   fullWidth = true,
   size: ButtonSize = "md",
 ): string {
   const widthClass = fullWidth ? "w-full" : "";
-  const sizeClass =
-    size === "sm"
-      ? `${radius.card} px-3 py-1.5 text-sm`
-      : `${radius.control} px-5 py-3.5 text-base`;
+  const sizeClass = buttonSizeClasses[size].text;
 
-  return `inline-flex ${widthClass} items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
+  return `inline-flex ${widthClass} shrink-0 items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
 
 export function iconButtonVariantClass(
   variant: ButtonVariant,
   size: ButtonSize = "md",
 ): string {
-  const sizeClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
+  const sizeClass = buttonSizeClasses[size].icon;
 
   return `inline-flex shrink-0 items-center justify-center rounded-full ${sizeClass} transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariantClasses[variant]}`;
 }
@@ -87,11 +104,11 @@ export function dividerLineClass(): string {
 }
 
 export function pageContentClass(): string {
-  return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 p-4 md:p-8";
+  return "mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6";
 }
 
 export function pageShellClass(): string {
-  return "mx-auto w-full max-w-5xl p-4 md:p-8";
+  return "mx-auto w-full max-w-5xl";
 }
 
 export function pageBackLinkClass(): string {
@@ -103,7 +120,7 @@ export function pageBackGutterOffsetClass(): string {
 }
 
 export function pageBackGutterAlignClass(): string {
-  return "top-0 h-8 items-center";
+  return "top-4 md:top-8 h-8 items-center";
 }
 
 /** Left padding that reserves space for the overlay back control (40px button + 8px gap). */
@@ -221,12 +238,11 @@ export function pillButtonClass(selected = false): string {
 }
 
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
-  const base =
-    "inline-flex items-center gap-1.5 rounded-full border py-1.5 text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+  const base = `inline-flex ${BUTTON_SM_HEIGHT_CLASS} items-center gap-1.5 rounded-full border pl-3 pr-1.5 text-sm transition`;
 
   if (tone === "error") {
-    return `${base} border-red-500/40 bg-red-500/10 pl-3 pr-1.5 text-red-200`;
+    return `${base} border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md`;
   }
 
-  return `${base} border-glass-border bg-glass pl-3 pr-1.5 text-surface-foreground`;
+  return `${base} border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }

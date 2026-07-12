@@ -1,0 +1,76 @@
+import { describe, expect, it } from "vitest";
+import {
+  isChatThreadNearBottom,
+  shouldAutoScrollChatThread,
+} from "@/lib/chat/chat-thread-scroll";
+
+describe("chat thread scroll", () => {
+  it("detects when the viewport is near the bottom", () => {
+    expect(
+      isChatThreadNearBottom({
+        scrollHeight: 1000,
+        scrollTop: 900,
+        clientHeight: 80,
+      }),
+    ).toBe(true);
+
+    expect(
+      isChatThreadNearBottom({
+        scrollHeight: 1000,
+        scrollTop: 100,
+        clientHeight: 80,
+      }),
+    ).toBe(false);
+  });
+
+  it("scrolls on initial thread load", () => {
+    expect(
+      shouldAutoScrollChatThread({
+        previousMessageCount: 0,
+        messageCount: 4,
+        isNearBottom: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("scrolls when the user sends a message", () => {
+    expect(
+      shouldAutoScrollChatThread({
+        previousMessageCount: 2,
+        messageCount: 3,
+        lastMessageRole: "user",
+        isNearBottom: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("only scrolls for assistant updates when already near the bottom", () => {
+    expect(
+      shouldAutoScrollChatThread({
+        previousMessageCount: 2,
+        messageCount: 3,
+        lastMessageRole: "assistant",
+        isNearBottom: true,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldAutoScrollChatThread({
+        previousMessageCount: 2,
+        messageCount: 3,
+        lastMessageRole: "assistant",
+        isNearBottom: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("keeps following streaming updates when near the bottom", () => {
+    expect(
+      shouldAutoScrollChatThread({
+        previousMessageCount: 3,
+        messageCount: 3,
+        isNearBottom: true,
+      }),
+    ).toBe(true);
+  });
+});

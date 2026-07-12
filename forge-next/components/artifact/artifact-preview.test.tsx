@@ -17,17 +17,18 @@ const samplePlan: WorkoutPlan = {
 const noopPlanChange = vi.fn();
 
 describe("ArtifactPreview", () => {
-  it("shows a loading state while awaiting the first artifact", () => {
+  it("shows the turn activity indicator while awaiting the first artifact", () => {
     render(
       <ArtifactPreview
         artifact={null}
         runStatus="generating"
+        phase="streaming"
         isAwaitingArtifact
         disabled={false}
         onPlanChange={noopPlanChange}
       />,
     );
-    expect(screen.getByLabelText("Generating")).toBeInTheDocument();
+    expect(screen.getByText("Generating")).toBeInTheDocument();
   });
 
   it("shows a generic placeholder when idle without an artifact", () => {
@@ -62,11 +63,26 @@ describe("ArtifactPreview", () => {
       <ArtifactPreview
         artifact={{ type: "workout-plan", plan: samplePlan }}
         runStatus="sandbox"
+        phase="streaming"
         isAwaitingArtifact={false}
         disabled={false}
         onPlanChange={noopPlanChange}
       />,
     );
-    expect(screen.getByLabelText("Working…")).toBeInTheDocument();
+    expect(screen.getByText("Building")).toBeInTheDocument();
+  });
+
+  it("shows a spinner overlay while generating even before sandbox", () => {
+    render(
+      <ArtifactPreview
+        artifact={{ type: "workout-plan", plan: samplePlan }}
+        runStatus="generating"
+        phase="streaming"
+        isAwaitingArtifact={false}
+        disabled={false}
+        onPlanChange={noopPlanChange}
+      />,
+    );
+    expect(screen.getByText("Generating")).toBeInTheDocument();
   });
 });

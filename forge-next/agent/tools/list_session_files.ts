@@ -5,7 +5,7 @@ import { listForgeSessionUploadPaths } from "../lib/uploads";
 
 export default defineTool({
   description:
-    "List storage paths for normalized upload files in this session (one .txt per CSV/PDF or per XLSX sheet).",
+    "List storage paths for coach-attached upload files in this conversation (CSV, PDF, or per-sheet XLSX). Call when the coach asks to build a plan from an attachment or refers to uploaded files.",
   inputSchema: z.object({}),
   async execute(_input, ctx) {
     const coachId = getCoachId(ctx);

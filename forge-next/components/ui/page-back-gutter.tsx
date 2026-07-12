@@ -28,12 +28,19 @@ export function PageBackGutter({
   offsetClassName?: string;
   showMobileBack?: boolean;
 }) {
+  const content = contentClassName ? (
+    <div className={contentClassName}>{children}</div>
+  ) : (
+    children
+  );
+
   return (
     <div
       className={`relative${showMobileBack ? " [&_[data-page-header]]:max-md:pl-12" : ""}${className ? ` ${className}` : ""}`}
     >
+      {content}
       <div
-        className={`absolute right-full hidden md:flex ${backAlignClassName} ${offsetClassName}`}
+        className={`pointer-events-auto absolute right-full z-30 hidden md:flex ${backAlignClassName} ${offsetClassName}`}
       >
         <PageBackLink
           href={back.href}
@@ -42,7 +49,7 @@ export function PageBackGutter({
         />
       </div>
       {showMobileBack ? (
-        <div className="absolute left-0 top-0 z-10 md:hidden">
+        <div className="pointer-events-auto absolute left-0 top-0 z-30 md:hidden">
           <PageBackLink
             href={back.href}
             ariaLabel={back.ariaLabel}
@@ -50,11 +57,6 @@ export function PageBackGutter({
           />
         </div>
       ) : null}
-      {contentClassName ? (
-        <div className={contentClassName}>{children}</div>
-      ) : (
-        children
-      )}
     </div>
   );
 }

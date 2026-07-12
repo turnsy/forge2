@@ -1,6 +1,7 @@
 export { Button } from "./button";
 export { PageBackLink, PageBackButton } from "./page-back-link";
 export { PageBackGutter, type PageBackConfig } from "./page-back-gutter";
+export { PageBackProvider, usePageBack } from "./page-back-context";
 export { ButtonLink } from "./button-link";
 export { IconButton } from "./icon-button";
 export { SubmitButton } from "./submit-button";
@@ -30,5 +31,8 @@ export { List, ListRow } from "./list";
 export { Tabs, TabList, Tab, TabPanel } from "./tabs";
 export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
+export { OverlayScrollChrome } from "./overlay-scroll-chrome";
+export { ScrollPage } from "./scroll-page";
 export { Dropdown, DropdownItem } from "./dropdown";
 export { ChatBubble } from "./chat-bubble";
+export { MarkdownContent } from "./markdown-content";

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
+import { ScrollPage } from "@/components/ui";
 import {
   type CurrentDayLocation,
   findCurrentDay,
@@ -12,7 +13,6 @@ import {
   planCompletedMilestone,
   type AthletePlanMilestone,
 } from "@/lib/athlete/plan/milestones";
-import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 import type { DaySelection } from "@/lib/plans/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
@@ -68,7 +68,7 @@ export function AthletePlanEntryView({
   }
 
   return (
-    <div className={MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS}>
+    <ScrollPage scrollClassName="flex flex-col gap-6">
       <PlanDayNavigator
         key={
           navigateToDay
@@ -82,6 +82,6 @@ export function AthletePlanEntryView({
         initialDay={navigateToDay}
         onDayCompleted={handleDayCompleted}
       />
-    </div>
+    </ScrollPage>
   );
 }

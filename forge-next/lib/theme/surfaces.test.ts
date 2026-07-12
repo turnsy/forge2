@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BUTTON_MD_HEIGHT_CLASS,
+  BUTTON_SM_HEIGHT_CLASS,
   attachmentChipClass,
   buttonVariantClass,
   completionCheckmarkClass,
@@ -28,6 +30,21 @@ describe("surface theme helpers", () => {
   it("omits w-full when fullWidth is false", () => {
     expect(buttonVariantClass("primary", false)).not.toContain("w-full");
     expect(buttonVariantClass("ghost", false)).not.toContain("w-full");
+  });
+
+  it("uses matching heights for text and icon buttons at each size", () => {
+    expect(buttonVariantClass("ghost", false, "sm")).toContain(
+      BUTTON_SM_HEIGHT_CLASS,
+    );
+    expect(iconButtonVariantClass("ghost", "sm")).toContain(
+      `${BUTTON_SM_HEIGHT_CLASS} w-8`,
+    );
+    expect(buttonVariantClass("primary", false, "md")).toContain(
+      BUTTON_MD_HEIGHT_CLASS,
+    );
+    expect(iconButtonVariantClass("primary", "md")).toContain(
+      `${BUTTON_MD_HEIGHT_CLASS} w-11`,
+    );
   });
 
   it("uses grayscale glass card styling", () => {
@@ -88,7 +105,11 @@ describe("surface theme helpers", () => {
 
   it("returns attachment chip styling", () => {
     expect(attachmentChipClass()).toContain("rounded-full");
-    expect(attachmentChipClass("error")).toContain("text-red-200");
+    expect(attachmentChipClass()).toContain(BUTTON_SM_HEIGHT_CLASS);
+    expect(attachmentChipClass()).toContain("backdrop-blur-md");
+    expect(attachmentChipClass()).toContain("bg-glass");
+    expect(attachmentChipClass("error")).toContain("bg-danger-muted");
+    expect(attachmentChipClass("error")).toContain("backdrop-blur-md");
   });
 
   it("returns pill styling", () => {
@@ -101,9 +122,9 @@ describe("surface theme helpers", () => {
     expect(pillButtonClass(true)).toContain("glass-button-primary");
   });
 
-  it("uses tighter page padding on small screens", () => {
-    expect(pageContentClass()).toContain("p-4");
-    expect(pageContentClass()).toContain("md:p-8");
+  it("uses page content width without outer shell padding", () => {
+    expect(pageContentClass()).toContain("max-w-5xl");
+    expect(pageContentClass()).not.toContain("p-4");
   });
 
   it("returns default and success glass surface styling", () => {

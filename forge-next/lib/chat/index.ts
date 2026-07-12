@@ -10,10 +10,16 @@ export {
 export {
   getRunStatusLabel,
   isActiveRunStatus,
-  shouldShowPreviewSpinner,
 } from "@/lib/chat/run-status-copy";
 export {
+  getTurnActivityLabel,
+  isTurnInProgress,
+  shouldShowPreviewSpinner,
+  TURN_ACTIVITY_LABEL,
+} from "@/lib/chat/turn-activity";
+export {
   canSendChat,
+  canStopChat,
   hasUploadingAttachments,
   isAwaitingFirstArtifact,
   isChatRunning,

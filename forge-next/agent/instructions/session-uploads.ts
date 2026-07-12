@@ -1,4 +1,8 @@
 import { defineDynamic, defineInstructions } from "eve/instructions";
+import {
+  buildNoSessionUploadsInstructions,
+  buildSessionUploadsPresentInstructions,
+} from "../lib/session-upload-instructions";
 import { withForgeDbContextAsync } from "../lib/with-forge-db";
 import { listForgeSessionUploadPaths } from "../lib/uploads";
 
@@ -16,8 +20,7 @@ export default defineDynamic({
 
           if (!coachId || !forgeSessionId) {
             return defineInstructions({
-              markdown:
-                "No session uploads are registered for this conversation. You may still call submit_plan_code for prompt-only plans.",
+              markdown: buildNoSessionUploadsInstructions(),
             });
           }
 
@@ -26,12 +29,13 @@ export default defineDynamic({
             forgeSessionId,
           );
           if (paths.length > 0) {
-            return null;
+            return defineInstructions({
+              markdown: buildSessionUploadsPresentInstructions(paths),
+            });
           }
 
           return defineInstructions({
-            markdown:
-              "No session uploads are registered for this conversation. You may still call submit_plan_code for prompt-only plans.",
+            markdown: buildNoSessionUploadsInstructions(),
           });
         } catch {
           return null;

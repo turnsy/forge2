@@ -303,7 +303,9 @@ export function PromptComposer({
           suppressContentEditableWarning
           data-placeholder={placeholder}
           className={`prompt-composer w-full bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
-            compact ? "min-h-[2.75rem] text-sm" : "min-h-[4.5rem] text-base"
+            compact
+              ? "min-h-[2.75rem] text-base md:text-sm"
+              : "min-h-[4.5rem] text-base"
           }`}
           onInput={handleInput}
           onKeyDown={handleKeyDown}

@@ -3,6 +3,7 @@ import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import {
   buildCoachWorkspaceSnapshot,
   toForgeEvePointer,
+  type CoachTurnMarker,
 } from "@/lib/chat/session-types";
 
 const MID_TURN_PERSIST_DEBOUNCE_MS = 2_000;
@@ -12,6 +13,7 @@ export type CoachEvePersistSnapshot = {
   title: string | null;
   session: SessionState;
   events: readonly HandleMessageStreamEvent[];
+  lastTurn?: CoachTurnMarker | null;
 };
 
 export type CoachEvePersister = {
@@ -23,6 +25,7 @@ export type CoachEvePersister = {
   flush: (
     session: SessionState,
     events: readonly HandleMessageStreamEvent[],
+    lastTurn?: CoachTurnMarker | null,
   ) => Promise<boolean>;
   dispose: () => void;
 };
@@ -49,6 +52,12 @@ export function createCoachEvePersister(options: {
     events: readonly HandleMessageStreamEvent[];
   } | null = null;
 
+  // Saves are async server actions; issued concurrently they can land out of
+  // order and let a stale snapshot (fewer events) overwrite a newer one.
+  // Serialize all writes and drop any write older than one already issued.
+  let writeQueue: Promise<boolean> = Promise.resolve(false);
+  let highWaterEventCount = 0;
+
   const clearDebounce = () => {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
@@ -56,10 +65,11 @@ export function createCoachEvePersister(options: {
     }
   };
 
-  const flush = async (
+  const flush = (
     session: SessionState,
     events: readonly HandleMessageStreamEvent[],
-  ) => {
+    lastTurn: CoachTurnMarker | null = null,
+  ): Promise<boolean> => {
     clearDebounce();
     pendingPersist = null;
 
@@ -69,15 +79,29 @@ export function createCoachEvePersister(options: {
     });
 
     if (!pointer) {
-      return false;
+      return Promise.resolve(false);
     }
 
-    return options.saveSnapshot({
-      forgeSessionId: options.forgeSessionId,
-      title: options.getTitle(),
-      session,
-      events,
-    });
+    if (events.length < highWaterEventCount) {
+      return Promise.resolve(false);
+    }
+
+    highWaterEventCount = events.length;
+
+    const result = writeQueue.then(
+      () =>
+        options.saveSnapshot({
+          forgeSessionId: options.forgeSessionId,
+          title: options.getTitle(),
+          session,
+          events,
+          lastTurn,
+        }),
+      () => false,
+    );
+
+    writeQueue = result.catch(() => false);
+    return result;
   };
 
   const scheduleDebouncedFlush = (
@@ -144,5 +168,6 @@ export function buildPersistedCoachSnapshot(
     title: input.title,
     eve: pointer,
     eveEvents: input.events,
+    lastTurn: input.lastTurn ?? null,
   });
 }

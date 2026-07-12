@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Input } from "@/components/ui";
+import { XIcon } from "@/components/icons/x-icon";
+import { Button, IconButton, Input } from "@/components/ui";
 import type { SaveArtifactStatus } from "@/lib/chat/use-save-artifact";
 
 function getSaveButtonLabel(saveStatus: SaveArtifactStatus): string {
@@ -20,12 +21,16 @@ export function ArtifactToolbar({
   saveStatus = "idle",
   onTitleChange,
   onSave,
+  onClose,
+  closeAriaLabel = "Close artifact",
 }: {
   title: string;
   saveDisabled: boolean;
   saveStatus?: SaveArtifactStatus;
   onTitleChange: (value: string) => void;
   onSave?: () => void;
+  onClose?: () => void;
+  closeAriaLabel?: string;
 }) {
   const saveButtonDisabled =
     saveDisabled || saveStatus === "saving" || saveStatus === "saved";
@@ -52,6 +57,16 @@ export function ArtifactToolbar({
           >
             {getSaveButtonLabel(saveStatus)}
           </Button>
+          {onClose ? (
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              icon={<XIcon />}
+              aria-label={closeAriaLabel}
+              onClick={onClose}
+            />
+          ) : null}
         </div>
       </div>
     </header>

@@ -7,32 +7,45 @@ import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
 import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
 import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
-import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
+import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
+import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
+import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
-import { Button, FadeIn, PageBackLink } from "@/components/ui";
+import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
-  DESKTOP_CHAT_AREA_CLASS,
+  DESKTOP_ARTIFACT_COLUMN_CLASS,
+  DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
+  DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
+  DESKTOP_CHAT_COLLAPSED_WIDTH,
+  DESKTOP_CHAT_GRID_TRANSITION_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
-  DESKTOP_CHAT_HEADER_CLASS,
+  DESKTOP_CHAT_TOGGLE_ROW_CLASS,
+  DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_OVERLAY_CLOSE_CLASS,
-  MOBILE_OVERLAY_CONTENT_CLASS,
-  MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
+  MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
+import { artifactStructureKey } from "@/lib/coach/artifact-scroll";
+import { useScrollTopOnKey } from "@/lib/hooks/use-scroll-top-on-key";
+import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
+import {
+  hasOverlayScrollLane,
+  OVERLAY_SCROLL_LANE_CLASS,
+  overlayScrollLaneStyle,
+} from "@/lib/layout/overlay-scroll-lane";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import {
-  isCoachEveAgentReady,
   isCoachEveSessionLoading,
   useCoachEveCatchUp,
 } from "@/lib/chat/adapters/plan/coach-eve-session";
+import type { TurnFinalizeReason } from "@/lib/chat/adapters/plan/turn-lifecycle";
 import { saveSessionSnapshot } from "@/lib/chat/actions";
 import {
   buildPersistedCoachSnapshot,
@@ -55,37 +68,65 @@ import {
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { roleLinkClass, pageShellClass } from "@/lib/theme";
-import type { CoachEveLoadPhase } from "@/lib/chat/adapters/plan/coach-eve-session";
+import { roleLinkClass } from "@/lib/theme";
 import type { HandleMessageStreamEvent } from "eve/client";
-import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
 function ChatWorkspaceShell({
-  state,
-  onReset,
   children,
   headerClassName,
   className = "",
   headerStart,
+  headerActions,
 }: {
-  state: PlanWorkspaceState;
-  onReset: () => void;
   children: ReactNode;
-  headerClassName: string;
+  headerClassName?: string;
   className?: string;
   headerStart?: ReactNode;
+  headerActions?: ReactNode;
 }) {
+  const showHeader = Boolean(headerStart || headerActions);
+
   return (
     <div className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}>
-      <div className={headerClassName}>
-        {headerStart ?? <span />}
-        <WorkspaceCloseButton
-          variant="reset"
-          disabled={isChatRunning(state)}
-          onClick={onReset}
-        />
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      {showHeader ? (
+        <div className={headerClassName}>
+          {headerStart ?? <span />}
+          <div className="flex items-center gap-1">{headerActions}</div>
+        </div>
+      ) : null}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
+function ArtifactPanelScrollLane({
+  scrollResetKey,
+  scrollPaddingTop,
+  scrollPaddingBottom,
+  contentInsetClassName,
+  children,
+}: {
+  scrollResetKey: string;
+  scrollPaddingTop?: number;
+  scrollPaddingBottom?: number;
+  contentInsetClassName: string;
+  children: ReactNode;
+}) {
+  const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
+  const lanePositioned = hasOverlayScrollLane(lanePadding);
+  const chromeReady = !lanePositioned || scrollPaddingTop !== undefined;
+  const scrollRef = useScrollTopOnKey(
+    `${scrollResetKey}:${scrollPaddingTop ?? 0}:${scrollPaddingBottom ?? 0}`,
+    chromeReady,
+  );
+
+  return (
+    <div
+      ref={scrollRef}
+      className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-x-hidden overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+      style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
+    >
+      {children}
     </div>
   );
 }
@@ -93,6 +134,7 @@ function ChatWorkspaceShell({
 function ArtifactPanel({
   state,
   artifactFadeKey,
+  artifactScrollResetKey,
   resolvedBackHref,
   saveStatus,
   saveError,
@@ -101,9 +143,12 @@ function ArtifactPanel({
   onSave,
   disabled,
   onPlanChange,
+  mobileOverlay = false,
+  onClose,
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
+  artifactScrollResetKey: string;
   resolvedBackHref: string | undefined;
   saveStatus: ReturnType<typeof useSavePlan>["saveStatus"];
   saveError: string | null;
@@ -112,46 +157,75 @@ function ArtifactPanel({
   onSave: () => void;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
+  mobileOverlay?: boolean;
+  onClose?: () => void;
 }) {
-  return (
-    <FadeIn
-      key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden max-md:gap-4"
-    >
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-md:gap-4">
-        <div className="flex shrink-0 items-center gap-2">
-          {resolvedBackHref ? (
-            <PageBackLink
-              href={resolvedBackHref}
-              ariaLabel="Back to plan"
-              onClick={onBackClick}
-            />
-          ) : null}
-          <div className="min-w-0 flex-1">
-            <ArtifactToolbar
-              title={state.artifactTitle}
-              saveDisabled={isChatRunning(state) || !state.currentArtifact}
-              saveStatus={saveStatus}
-              onTitleChange={onTitleChange}
-              onSave={onSave}
-            />
-          </div>
-        </div>
-        {saveError ? (
-          <p className="text-sm text-red-400" role="alert">
-            {saveError}
-          </p>
+  const toolbar = (
+    <div className="flex flex-col gap-2">
+      <div className="flex shrink-0 items-center gap-2">
+        {resolvedBackHref ? (
+          <PageBackLink
+            href={resolvedBackHref}
+            ariaLabel="Back to plan"
+            onClick={onBackClick}
+          />
         ) : null}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ArtifactPreview
-            artifact={toArtifactPreviewModel(state.currentArtifact)}
-            runStatus={state.runStatus}
-            isAwaitingArtifact={false}
-            disabled={disabled}
-            onPlanChange={onPlanChange}
+        <div className="min-w-0 flex-1">
+          <ArtifactToolbar
+            title={state.artifactTitle}
+            saveDisabled={isChatRunning(state) || !state.currentArtifact}
+            saveStatus={saveStatus}
+            onTitleChange={onTitleChange}
+            onSave={onSave}
+            onClose={mobileOverlay ? onClose : undefined}
           />
         </div>
       </div>
+      {saveError ? (
+        <p className="text-sm text-red-400" role="alert">
+          {saveError}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const preview = (
+    <ArtifactPreview
+      artifact={toArtifactPreviewModel(state.currentArtifact)}
+      runStatus={state.runStatus}
+      phase={state.phase}
+      isAwaitingArtifact={false}
+      disabled={disabled}
+      onPlanChange={onPlanChange}
+      embeddedScroll
+    />
+  );
+
+  const contentInsetClassName = PAGE_CONTENT_INSET_X_CLASS;
+
+  return (
+    <FadeIn
+      key={artifactFadeKey}
+      className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+    >
+      <OverlayScrollChrome
+        topChrome={toolbar}
+        footerInsetClassName={
+          mobileOverlay ? MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS : undefined
+        }
+        contentInsetClassName={contentInsetClassName}
+      >
+        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+          <ArtifactPanelScrollLane
+            scrollResetKey={artifactScrollResetKey}
+            scrollPaddingTop={scrollPaddingTop}
+            scrollPaddingBottom={scrollPaddingBottom}
+            contentInsetClassName={contentInsetClassName}
+          >
+            {preview}
+          </ArtifactPanelScrollLane>
+        )}
+      </OverlayScrollChrome>
     </FadeIn>
   );
 }
@@ -175,7 +249,7 @@ export function CoachWorkspace(
   const catchUp = useCoachEveCatchUp(props.initialSession);
 
   useEffect(() => {
-    if (!props.initialSession || !isCoachEveAgentReady(catchUp.loadPhase)) {
+    if (!props.initialSession || catchUp.loadPhase !== "ready") {
       return;
     }
 
@@ -195,8 +269,11 @@ export function CoachWorkspace(
       (persisted.length > 0 &&
         !isTurnComplete(persisted) &&
         isTurnComplete(catchUp.events));
+    const needsMarker =
+      catchUp.finalizeReason === "stopped" ||
+      catchUp.finalizeReason === "interrupted";
 
-    if (!replayAdvanced) {
+    if (!replayAdvanced && !needsMarker) {
       return;
     }
 
@@ -207,9 +284,24 @@ export function CoachWorkspace(
         title: snapshot.title,
         session: toEveSessionState(eve, catchUp.events.length),
         events: catchUp.events,
+        lastTurn:
+          !isTurnComplete(catchUp.events) && catchUp.finalizeReason
+            ? {
+                status:
+                  catchUp.finalizeReason === "stopped"
+                    ? "stopped"
+                    : "interrupted",
+                eventCount: catchUp.events.length,
+              }
+            : null,
       }),
     );
-  }, [catchUp.events, catchUp.loadPhase, props.initialSession]);
+  }, [
+    catchUp.events,
+    catchUp.finalizeReason,
+    catchUp.loadPhase,
+    props.initialSession,
+  ]);
 
   if (isCoachEveSessionLoading(catchUp.loadPhase)) {
     return <CoachSessionLoadingView />;
@@ -227,13 +319,18 @@ export function CoachWorkspace(
   }
 
   const sessionKey = props.initialSession?.id ?? "coach-home";
+  const resuming = catchUp.loadPhase === "resuming";
 
   return (
     <CoachWorkspaceInner
-      key={sessionKey}
+      // Remount when the live tail settles so the Eve agent store is always
+      // created from a complete, consistent event log.
+      key={`${sessionKey}:${resuming ? "resuming" : "settled"}`}
       {...props}
       syncedEvents={catchUp.events}
-      loadPhase={catchUp.loadPhase}
+      resuming={resuming}
+      initialFinalizeReason={resuming ? null : catchUp.finalizeReason}
+      onStopResuming={catchUp.stopResuming}
     />
   );
 }
@@ -245,7 +342,9 @@ function CoachWorkspaceInner({
   initialPlan,
   initialSession,
   syncedEvents = [],
-  loadPhase = "idle",
+  resuming = false,
+  initialFinalizeReason = null,
+  onStopResuming,
   stripPlanIdOnClear = false,
   promptEnabled = true,
 }: {
@@ -260,7 +359,9 @@ function CoachWorkspaceInner({
     updatedAt: string;
   };
   syncedEvents?: readonly HandleMessageStreamEvent[];
-  loadPhase?: CoachEveLoadPhase;
+  resuming?: boolean;
+  initialFinalizeReason?: TurnFinalizeReason | null;
+  onStopResuming?: () => void;
   stripPlanIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
@@ -268,6 +369,7 @@ function CoachWorkspaceInner({
   const isMobile = useIsMobile();
   const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
@@ -324,6 +426,7 @@ function CoachWorkspaceInner({
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
+    setIsChatCollapsed(false);
     setBacklinkPlanId(null);
     if (stripPlanIdOnClear) {
       syncCoachWorkspaceUrl({
@@ -336,7 +439,9 @@ function CoachWorkspaceInner({
   const {
     state,
     attachFiles,
+    removeAttachment,
     sendMessage,
+    stopResponse,
     setArtifactTitle,
     setPlanId,
     setArtifact,
@@ -357,7 +462,9 @@ function CoachWorkspaceInner({
               snapshot: initialSession.snapshot,
             },
             syncedEvents,
-            loadPhase,
+            resuming,
+            initialFinalizeReason,
+            onStopResuming,
             onArtifactCleared: handleArtifactCleared,
           }
         : {
@@ -392,6 +499,15 @@ function CoachWorkspaceInner({
     });
 
   const showSplitPane = Boolean(state.currentArtifact);
+  const chatCollapsed = showSplitPane && isChatCollapsed;
+  const artifactFadeKey = activePlanId ?? state.sessionId;
+  const artifactScrollResetKey = state.currentArtifact
+    ? `${artifactFadeKey}:${artifactStructureKey(state.currentArtifact)}`
+    : "0";
+
+  const toggleChatCollapsed = useCallback(() => {
+    setIsChatCollapsed((current) => !current);
+  }, []);
 
   const handleSendMessage = useCallback(
     async (...args: Parameters<typeof sendMessage>) => {
@@ -469,10 +585,6 @@ function CoachWorkspaceInner({
   );
 
   const handleClose = useCallback(() => {
-    if (isChatRunning(state)) {
-      return;
-    }
-
     if (
       savedSnapshotRef.current &&
       hasUnsavedPlanChanges(
@@ -508,14 +620,9 @@ function CoachWorkspaceInner({
     setMobileHistoryOpen(false);
   }, []);
 
-  const handleMobileReset = useCallback(() => {
-    if (mobileHistoryOpen) {
-      setMobileHistoryOpen(false);
-      return;
-    }
-
+  const handleReset = useCallback(() => {
     handleClose();
-  }, [handleClose, mobileHistoryOpen]);
+  }, [handleClose]);
 
   const mobileHistoryToggle = isMobile ? (
     <SessionHistoryMobileToggle
@@ -534,38 +641,27 @@ function CoachWorkspaceInner({
   const mobileChatHeaderClass =
     "flex shrink-0 items-center justify-between pb-2";
 
-  const mobileComposer = (
-    <ChatComposer
-      compact={state.hasStarted}
-      state={state}
-      composerKey={`${state.sessionId}-${state.messages.length}`}
-      onAttach={attachFiles}
-      onSend={handleSendMessage}
-      promptEnabled={promptEnabled}
-    />
-  );
-
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
+    options?: { showAttachmentsAboveComposer?: boolean },
   ) =>
     mobileHistoryOpen ? (
-      <>
+      <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
         {mobileHistoryPanel}
-        <div
-          className={`shrink-0 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
-        >
-          {composerHeader}
-          {mobileComposer}
-        </div>
-      </>
+      </div>
     ) : (
       <CoachConversationPanel
+        topChrome={mobileHistoryToggle}
         state={state}
         onAttach={attachFiles}
+        onRemoveAttachment={removeAttachment}
         onSend={handleSendMessage}
+        onStop={stopResponse}
+        onReset={handleReset}
         promptEnabled={promptEnabled}
         composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
         composerHeader={composerHeader}
+        showAttachmentsAboveComposer={options?.showAttachmentsAboveComposer}
       />
     );
 
@@ -576,13 +672,15 @@ function CoachWorkspaceInner({
           <div className={`${mobileChatHeaderClass} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}>
             {mobileHistoryToggle}
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             {mobileHistoryOpen ? (
-              <SessionHistoryMobilePanel
-                onActiveSessionDeleted={handleActiveSessionDeleted}
-                onClose={closeMobileHistory}
-                className="px-3"
-              />
+              <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
+                <SessionHistoryMobilePanel
+                  onActiveSessionDeleted={handleActiveSessionDeleted}
+                  onClose={closeMobileHistory}
+                  className="px-3"
+                />
+              </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
                 <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
@@ -592,17 +690,23 @@ function CoachWorkspaceInner({
               </div>
             )}
           </div>
-          <div
-            className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
-          >
-            <ChatComposer
-              state={state}
-              composerKey={`${state.sessionId}-${state.messages.length}`}
-              onAttach={attachFiles}
-              onSend={handleSendMessage}
-              promptEnabled={promptEnabled}
-            />
-          </div>
+          {!mobileHistoryOpen ? (
+            <div
+              className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
+            >
+              <ChatComposer
+                overlayChrome
+                compact
+                state={state}
+                composerKey={`${state.sessionId}-${state.messages.length}`}
+                onAttach={attachFiles}
+                onRemoveAttachment={removeAttachment}
+                onSend={handleSendMessage}
+                onStop={stopResponse}
+                promptEnabled={promptEnabled}
+              />
+            </div>
+          ) : null}
         </div>
       );
     }
@@ -617,49 +721,35 @@ function CoachWorkspaceInner({
         </div>
 
         <ChatComposer
+          overlayChrome
+          compact
           state={state}
           composerKey={`${state.sessionId}-${state.messages.length}`}
           onAttach={attachFiles}
+          onRemoveAttachment={removeAttachment}
           onSend={handleSendMessage}
+          onStop={stopResponse}
           promptEnabled={promptEnabled}
         />
       </div>
     );
   }
 
-  const artifactFadeKey = activePlanId ?? state.sessionId;
-
   if (isMobile) {
     if (!showSplitPane) {
       return (
-        <ChatWorkspaceShell
-          state={state}
-          onReset={handleMobileReset}
-          headerClassName={mobileChatHeaderClass}
-          headerStart={mobileHistoryToggle}
-          className={MOBILE_WORKSPACE_X_PADDING_CLASS}
-        >
-          {renderMobileChatBody()}
-        </ChatWorkspaceShell>
+        <ChatWorkspaceShell>{renderMobileChatBody()}</ChatWorkspaceShell>
       );
     }
 
     return (
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            <WorkspaceCloseButton
-              className={MOBILE_OVERLAY_CLOSE_CLASS}
-              variant="close"
-              ariaLabel="Close artifact"
-              onClick={() => setShowArtifact(false)}
-            />
-            <div
-              className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
-            >
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
+                artifactScrollResetKey={artifactScrollResetKey}
                 resolvedBackHref={resolvedBackHref}
                 saveStatus={saveStatus}
                 saveError={saveError}
@@ -668,31 +758,31 @@ function CoachWorkspaceInner({
                 onSave={handleSave}
                 disabled={isChatRunning(state)}
                 onPlanChange={handlePlanChange}
+                mobileOverlay
+                onClose={() => setShowArtifact(false)}
               />
             </div>
-          </div>
         ) : (
-          <ChatWorkspaceShell
-            state={state}
-            onReset={handleMobileReset}
-            headerClassName={mobileChatHeaderClass}
-            headerStart={mobileHistoryToggle}
-            className={MOBILE_WORKSPACE_X_PADDING_CLASS}
-          >
+          <ChatWorkspaceShell>
             {renderMobileChatBody(
-              <div className={`flex justify-end ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  fullWidth={false}
-                  icon={<EyeIcon />}
-                  aria-label="View artifact"
-                  onClick={() => setShowArtifact(true)}
-                >
-                  View
-                </Button>
-              </div>,
+              <MobileComposerToolbar
+                attachments={state.attachments}
+                onRemoveAttachment={removeAttachment}
+                trailing={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    fullWidth={false}
+                    icon={<EyeIcon />}
+                    aria-label="View artifact"
+                    onClick={() => setShowArtifact(true)}
+                  >
+                    View
+                  </Button>
+                }
+              />,
+              { showAttachmentsAboveComposer: false },
             )}
           </ChatWorkspaceShell>
         )}
@@ -700,66 +790,88 @@ function CoachWorkspaceInner({
     );
   }
 
+  const desktopChatToggle = showSplitPane ? (
+    <IconButton
+      variant="plain"
+      size="sm"
+      icon={<SidebarToggleIcon />}
+      aria-label={chatCollapsed ? "Expand chat" : "Collapse chat"}
+      aria-expanded={!chatCollapsed}
+      onClick={toggleChatCollapsed}
+    />
+  ) : null;
+
   return (
     <div
-      className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
+      className={`relative flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden max-md:mx-4`}
     >
       <div
-        className={`grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none${
+        className={`@container grid ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 grid-rows-1 overflow-hidden ${DESKTOP_CHAT_GRID_TRANSITION_CLASS}${
           showSplitPane ? "" : " mx-auto w-full max-w-3xl"
         }`}
         style={{
           gridTemplateColumns: showSplitPane
-            ? "minmax(320px, 1fr) minmax(280px, 33%)"
+            ? chatCollapsed
+              ? `1fr ${DESKTOP_CHAT_COLLAPSED_WIDTH}`
+              : DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED
             : "1fr",
         }}
       >
         <div
           className={
             showSplitPane
-              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${pageShellClass()} !mx-0 !max-w-none`
+              ? `flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${DESKTOP_ARTIFACT_COLUMN_CLASS}`
               : "hidden"
           }
         >
           {showSplitPane ? (
-            <ArtifactPanel
-              state={state}
-              artifactFadeKey={artifactFadeKey}
-              resolvedBackHref={resolvedBackHref}
-              saveStatus={saveStatus}
-              saveError={saveError}
-              onBackClick={handleBackClick}
-              onTitleChange={handleTitleChange}
-              onSave={handleSave}
-              disabled={isChatRunning(state)}
-              onPlanChange={handlePlanChange}
-            />
+            <div className={`overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS}`}>
+                <ArtifactPanel
+                  state={state}
+                  artifactFadeKey={artifactFadeKey}
+                  artifactScrollResetKey={artifactScrollResetKey}
+                  resolvedBackHref={resolvedBackHref}
+                  saveStatus={saveStatus}
+                  saveError={saveError}
+                  onBackClick={handleBackClick}
+                  onTitleChange={handleTitleChange}
+                  onSave={handleSave}
+                  disabled={isChatRunning(state)}
+                  onPlanChange={handlePlanChange}
+                />
+            </div>
           ) : null}
         </div>
 
         <div
           className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-w-0 flex-col overflow-hidden max-md:pb-4 ${
             showSplitPane
-              ? `${DESKTOP_CHAT_COLUMN_CLASS} animate-chat-panel-slide`
+              ? chatCollapsed
+                ? DESKTOP_CHAT_COLLAPSED_RAIL_CLASS
+                : DESKTOP_CHAT_COLUMN_CLASS
               : "w-full"
           }`}
         >
-          <div
-            className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
-          >
-            <ChatWorkspaceShell
-              state={state}
-              onReset={handleMobileReset}
-              headerClassName={DESKTOP_CHAT_HEADER_CLASS}
-            >
-              <CoachConversationPanel
-                state={state}
-                onAttach={attachFiles}
-                onSend={handleSendMessage}
-                promptEnabled={promptEnabled}
-              />
-            </ChatWorkspaceShell>
-          </div>
+          {chatCollapsed ? (
+            desktopChatToggle
+          ) : (
+            <>
+              {desktopChatToggle ? (
+                <div className={DESKTOP_CHAT_TOGGLE_ROW_CLASS}>{desktopChatToggle}</div>
+              ) : null}
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <CoachConversationPanel
+                  state={state}
+                  onAttach={attachFiles}
+                  onRemoveAttachment={removeAttachment}
+                  onSend={handleSendMessage}
+                  onStop={stopResponse}
+                  onReset={handleReset}
+                  promptEnabled={promptEnabled}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

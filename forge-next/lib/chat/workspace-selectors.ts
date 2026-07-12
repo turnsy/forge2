@@ -34,6 +34,17 @@ export function isChatRunning<TArtifact>(state: ChatWorkspaceState<TArtifact>): 
   );
 }
 
+export function canStopChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
+  if (state.phase === "initializing" || state.phase === "uploading") {
+    return false;
+  }
+
+  return (
+    state.phase === "streaming" ||
+    (state.runStatus !== null && isActiveRunStatus(state.runStatus))
+  );
+}
+
 export function isAwaitingFirstArtifact<TArtifact>(
   state: ChatWorkspaceState<TArtifact>,
 ): boolean {

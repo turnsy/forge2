@@ -116,4 +116,126 @@ describe("chatWorkspaceReducer", () => {
     expect(state.hasStarted).toBe(false);
     expect(state.messages).toHaveLength(0);
   });
+
+  it("restores uploaded attachments from session storage", () => {
+    const state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "RESTORE_ATTACHMENTS",
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    });
+
+    expect(state.attachments).toHaveLength(1);
+    expect(state.contextFileIds).toEqual(["coach/session/my-plan.txt"]);
+  });
+
+  it("skips restore when attachment ids are already present", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState(),
+      contextFileIds: ["coach/session/my-plan.txt"],
+      attachments: [
+        {
+          localId: "existing-1",
+          status: "uploaded" as const,
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    };
+
+    const state = chatWorkspaceReducer(initial, {
+      type: "RESTORE_ATTACHMENTS",
+      attachments: [
+        {
+          localId: "restored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    });
+
+    expect(state).toBe(initial);
+  });
+
+  it("removes an attachment and its context file ids", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState(),
+      contextFileIds: [
+        "coach/session/my-plan.txt",
+        "coach/session/notes.txt",
+      ],
+      attachments: [
+        {
+          localId: "attach-1",
+          status: "uploaded" as const,
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+        {
+          localId: "attach-2",
+          status: "uploaded" as const,
+          displayLabel: "notes",
+          contextFileIds: ["coach/session/notes.txt"],
+        },
+      ],
+    };
+
+    const state = chatWorkspaceReducer(initial, {
+      type: "REMOVE_ATTACHMENT",
+      localId: "attach-1",
+    });
+
+    expect(state.attachments).toHaveLength(1);
+    expect(state.attachments[0]?.localId).toBe("attach-2");
+    expect(state.contextFileIds).toEqual(["coach/session/notes.txt"]);
+  });
+
+  it("syncs attachments from storage while keeping in-flight uploads", () => {
+    const initial = {
+      ...createInitialChatWorkspaceState(),
+      contextFileIds: ["coach/session/uploading.txt"],
+      attachments: [
+        {
+          localId: "in-flight",
+          status: "uploading" as const,
+          displayLabel: "draft.csv",
+        },
+      ],
+    };
+
+    const state = chatWorkspaceReducer(initial, {
+      type: "SYNC_ATTACHMENTS",
+      attachments: [
+        {
+          localId: "stored-1",
+          status: "uploaded",
+          displayLabel: "my plan",
+          contextFileIds: ["coach/session/my-plan.txt"],
+        },
+      ],
+    });
+
+    expect(state.attachments).toHaveLength(2);
+    expect(state.attachments[0]?.localId).toBe("in-flight");
+    expect(state.attachments[1]?.localId).toBe("stored-1");
+    expect(state.contextFileIds).toEqual(["coach/session/my-plan.txt"]);
+  });
+
+  it("ignores upload success for attachments removed while uploading", () => {
+    const state = chatWorkspaceReducer(createInitialChatWorkspaceState(), {
+      type: "ATTACH_UPLOAD_SUCCESS",
+      localId: "removed",
+      contextFileIds: ["coach/session/orphan.txt"],
+      displayLabel: "draft.csv",
+    });
+
+    expect(state.attachments).toHaveLength(0);
+    expect(state.contextFileIds).toHaveLength(0);
+  });
 });

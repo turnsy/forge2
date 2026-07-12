@@ -12,7 +12,7 @@ export default async function AthleteAppLayout({
 
   return (
     <AppShell role="athlete" fullName={user.fullName} email={user.email}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden">
         {children}
       </div>
     </AppShell>

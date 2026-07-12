@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChatAttachment } from "@/components/chat/chat-attachment";
+import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
+import { RotateIcon } from "@/components/icons/rotate-icon";
+import { StopIcon } from "@/components/icons/stop-icon";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
-import { canSendChat } from "@/lib/chat/workspace-selectors";
+import { canSendChat, canStopChat } from "@/lib/chat/workspace-selectors";
+import { MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS } from "@/lib/coach/mobile-workspace-layout";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
@@ -14,18 +17,26 @@ export function ChatComposer({
   state,
   composerKey,
   onAttach,
+  onRemoveAttachment,
   onSend,
+  onStop,
+  onReset,
   promptEnabled = true,
   className = "",
   compact = false,
+  overlayChrome = false,
 }: {
   state: ChatWorkspaceState;
   composerKey: string;
   onAttach: (files: File[]) => void;
+  onRemoveAttachment?: (localId: string) => void;
   onSend: (segments: PromptSegment[]) => void;
+  onStop?: () => void;
+  onReset?: () => void;
   promptEnabled?: boolean;
   className?: string;
   compact?: boolean;
+  overlayChrome?: boolean;
 }) {
   const [documentEmpty, setDocumentEmpty] = useState(true);
   const [dragDepth, setDragDepth] = useState(0);
@@ -39,6 +50,8 @@ export function ChatComposer({
   const isDragging = dragDepth > 0;
   const isInitializing = state.phase === "initializing";
   const sendAllowed = canSendChat(state) && !documentEmpty;
+  const stopAllowed =
+    canStopChat(state) && Boolean(onStop) && !sendAllowed;
 
   function addFiles(files: File[]) {
     if (files.length === 0) {
@@ -55,16 +68,95 @@ export function ChatComposer({
     setDocumentEmpty(true);
   }
 
+  const promptComposer = (
+    <PromptComposer
+      key={composerKey}
+      compact={compact}
+      placeholder="Ask Forge to build or update a plan..."
+      onDocumentChange={(segments, isEmpty) => {
+        latestSegmentsRef.current = segments;
+        setDocumentEmpty(isEmpty);
+      }}
+      onSend={(segments) => {
+        if (sendAllowed) {
+          onSend(segments);
+          setDocumentEmpty(true);
+        }
+      }}
+    />
+  );
+
+  const actionRow = (
+    <div
+      className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
+    >
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          icon={<PaperclipIcon />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Attach
+        </Button>
+        {onReset ? (
+          <IconButton
+            variant="ghost"
+            size="sm"
+            icon={<RotateIcon />}
+            aria-label="Reset conversation"
+            onClick={onReset}
+          />
+        ) : null}
+      </div>
+      <IconButton
+        variant="primary"
+        size="sm"
+        icon={
+          stopAllowed ? (
+            <StopIcon className="h-3 w-3" />
+          ) : isInitializing ? (
+            <span
+              aria-hidden
+              className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
+            />
+          ) : (
+            <ArrowRightIcon />
+          )
+        }
+        aria-label={
+          stopAllowed
+            ? "Stop response"
+            : isInitializing
+              ? "Starting conversation"
+              : "Send"
+        }
+        disabled={!stopAllowed && !sendAllowed && !isInitializing}
+        onClick={stopAllowed ? onStop : handleSend}
+      />
+    </div>
+  );
+
   return (
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
-          className={`flex flex-col rounded-card border bg-glass backdrop-blur-md transition ${
-            compact ? "min-h-0 p-2" : "min-h-40 p-3"
+          className={`flex flex-col transition ${
+            overlayChrome
+              ? "min-h-0"
+              : compact
+                ? "min-h-0 rounded-card border p-2"
+                : "min-h-40 rounded-card border p-3"
           } ${
-            isDragging
-              ? "border-coach-muted bg-glass-focus"
-              : "border-glass-border"
+            overlayChrome
+              ? "border-0 bg-transparent p-0"
+              : `bg-glass backdrop-blur-md ${
+                  isDragging
+                    ? "border-coach-muted bg-glass-focus"
+                    : "border-glass-border"
+                }`
           }`}
           onDragEnter={(event) => {
             event.preventDefault();
@@ -92,60 +184,29 @@ export function ChatComposer({
               event.target.value = "";
             }}
           />
-          <PromptComposer
-            key={composerKey}
-            compact={compact}
-            placeholder="Ask Forge to build or update a plan..."
-            onDocumentChange={(segments, isEmpty) => {
-              latestSegmentsRef.current = segments;
-              setDocumentEmpty(isEmpty);
-            }}
-            onSend={(segments) => {
-              if (sendAllowed) {
-                onSend(segments);
-                setDocumentEmpty(true);
-              }
-            }}
-          />
-          <div
-            className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              fullWidth={false}
-              icon={<PaperclipIcon />}
-              onClick={() => fileInputRef.current?.click()}
+          {overlayChrome ? (
+            <div
+              className={`${MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS} flex flex-col p-2${
+                isDragging ? " border-coach-muted" : ""
+              }`}
             >
-              Attach
-            </Button>
-            <IconButton
-              variant="primary"
-              size="sm"
-              icon={
-                isInitializing ? (
-                  <span
-                    aria-hidden
-                    className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
-                  />
-                ) : (
-                  <ArrowRightIcon />
-                )
-              }
-              aria-label={isInitializing ? "Starting conversation" : "Send"}
-              disabled={!sendAllowed && !isInitializing}
-              onClick={handleSend}
-            />
-          </div>
+              {promptComposer}
+              {actionRow}
+            </div>
+          ) : (
+            <>
+              {promptComposer}
+              {actionRow}
+            </>
+          )}
         </div>
       </div>
-      {state.attachments.length > 0 ? (
-        <div className={`flex flex-wrap gap-2 ${compact ? "mt-2" : "mt-3"}`}>
-          {state.attachments.map((attachment) => (
-            <ChatAttachment key={attachment.localId} attachment={attachment} />
-          ))}
-        </div>
+      {!state.hasStarted && state.attachments.length > 0 ? (
+        <ChatAttachmentList
+          attachments={state.attachments}
+          onRemove={onRemoveAttachment}
+          className={compact ? "mt-2" : "mt-3"}
+        />
       ) : null}
     </FadeIn>
   );

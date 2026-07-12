@@ -66,6 +66,18 @@ export function chatWorkspaceReducer<TArtifact>(
         ),
       };
     case "ATTACH_UPLOAD_SUCCESS": {
+      const target = state.attachments.find(
+        (attachment) => attachment.localId === action.localId,
+      );
+      if (!target) {
+        return {
+          ...state,
+          phase: state.attachments.some((a) => a.status === "uploading")
+            ? "uploading"
+            : "idle",
+        };
+      }
+
       const attachments = state.attachments.map((attachment) =>
         attachment.localId === action.localId
           ? {
@@ -100,6 +112,68 @@ export function chatWorkspaceReducer<TArtifact>(
         ...state,
         attachments,
         phase: attachments.some((a) => a.status === "uploading")
+          ? "uploading"
+          : "idle",
+      };
+    }
+    case "RESTORE_ATTACHMENTS": {
+      const existingIds = new Set(state.contextFileIds);
+      const restored = action.attachments.filter((attachment) =>
+        (attachment.contextFileIds ?? []).some((id) => !existingIds.has(id)),
+      );
+      if (restored.length === 0) {
+        return state;
+      }
+
+      const restoredIds = restored.flatMap(
+        (attachment) => attachment.contextFileIds ?? [],
+      );
+
+      return {
+        ...state,
+        attachments: [...state.attachments, ...restored],
+        contextFileIds: mergeContextFileIds(state.contextFileIds, restoredIds),
+      };
+    }
+    case "SYNC_ATTACHMENTS": {
+      const syncedIds = action.attachments.flatMap(
+        (attachment) => attachment.contextFileIds ?? [],
+      );
+      const inFlight = state.attachments.filter(
+        (attachment) =>
+          attachment.status === "pending" || attachment.status === "uploading",
+      );
+      const inFlightIds = inFlight.flatMap(
+        (attachment) => attachment.contextFileIds ?? [],
+      );
+
+      return {
+        ...state,
+        attachments: [...inFlight, ...action.attachments],
+        contextFileIds: mergeContextFileIds(syncedIds, inFlightIds),
+        phase: inFlight.some((item) => item.status === "uploading")
+          ? "uploading"
+          : "idle",
+      };
+    }
+    case "REMOVE_ATTACHMENT": {
+      const attachment = state.attachments.find(
+        (item) => item.localId === action.localId,
+      );
+      if (!attachment) {
+        return state;
+      }
+
+      const removedIds = new Set(attachment.contextFileIds ?? []);
+      const attachments = state.attachments.filter(
+        (item) => item.localId !== action.localId,
+      );
+
+      return {
+        ...state,
+        attachments,
+        contextFileIds: state.contextFileIds.filter((id) => !removedIds.has(id)),
+        phase: attachments.some((item) => item.status === "uploading")
           ? "uploading"
           : "idle",
       };

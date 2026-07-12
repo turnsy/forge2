@@ -28,6 +28,7 @@ describe("SessionHistoryMobileToggle", () => {
 
     const button = screen.getByRole("button", { name: "Conversation history" });
     expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button.className).toContain("self-start");
 
     await user.click(button);
     expect(onToggle).toHaveBeenCalled();

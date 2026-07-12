@@ -84,14 +84,22 @@ export async function deleteUploadContext(
   contextFileIds: ContextFileId[],
   coachId: string,
   client?: StorageSupabaseClient,
-): Promise<void> {
+): Promise<{ ok: true } | { ok: false; message: string }> {
   const paths = contextFileIds.filter((id) =>
     assertCoachOwnsContextPath(coachId, id),
   );
   if (paths.length === 0) {
-    return;
+    return { ok: true };
   }
 
   const supabase = client ?? (await createClient());
-  await supabase.storage.from(SESSION_UPLOADS_BUCKET).remove(paths);
+  const { error } = await supabase.storage
+    .from(SESSION_UPLOADS_BUCKET)
+    .remove(paths);
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  return { ok: true };
 }
