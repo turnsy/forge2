@@ -1,10 +1,37 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  getChatThreadMaxScrollTop,
   isChatThreadNearBottom,
+  scrollChatThreadToBottom,
   shouldAutoScrollChatThread,
 } from "@/lib/chat/chat-thread-scroll";
 
 describe("chat thread scroll", () => {
+  it("computes the maximum scroll offset", () => {
+    expect(
+      getChatThreadMaxScrollTop({
+        scrollHeight: 1000,
+        clientHeight: 80,
+      }),
+    ).toBe(920);
+  });
+
+  it("scrolls the container to the true bottom including padding", () => {
+    const container = {
+      scrollHeight: 1000,
+      clientHeight: 80,
+      scrollTop: 0,
+      scrollTo: vi.fn(),
+    } as unknown as HTMLElement;
+
+    scrollChatThreadToBottom(container, "smooth");
+
+    expect(container.scrollTo).toHaveBeenCalledWith({
+      top: 920,
+      behavior: "smooth",
+    });
+  });
+
   it("detects when the viewport is near the bottom", () => {
     expect(
       isChatThreadNearBottom({

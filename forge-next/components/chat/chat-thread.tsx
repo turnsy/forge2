@@ -52,7 +52,7 @@ export function ChatThread({
   scrollPaddingBottom?: number;
   scrollChromeReady?: boolean;
 }) {
-  const { scrollRef, bottomRef } = useChatThreadAutoScroll({
+  const { scrollRef } = useChatThreadAutoScroll({
     threadKey,
     messages,
     streamingAssistantText,
@@ -139,7 +139,6 @@ export function ChatThread({
             </ul>
           </ChatBubble>
         ) : null}
-        <div ref={bottomRef} aria-hidden className="h-px shrink-0" />
       </div>
     </div>
   );

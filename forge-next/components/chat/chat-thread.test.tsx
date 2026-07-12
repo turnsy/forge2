@@ -162,10 +162,10 @@ describe("ChatThread", () => {
   });
 
   it("scrolls to the bottom when a thread is loaded", () => {
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
       configurable: true,
-      value: scrollIntoView,
+      value: scrollTo,
     });
 
     render(
@@ -182,9 +182,9 @@ describe("ChatThread", () => {
       />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollTo).toHaveBeenCalledWith({
       behavior: "instant",
-      block: "end",
+      top: expect.any(Number),
     });
   });
 });
