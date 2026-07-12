@@ -19,17 +19,23 @@ export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
 
-/** Gradient behind the top history control; conversation scrolls underneath. */
+/** Soft light fades for mobile scroll-under chrome on dark surfaces. */
+export const MOBILE_CHAT_SCROLL_FADE_FROM_CLASS = "from-white/12";
+export const MOBILE_CHAT_SCROLL_FADE_VIA_CLASS = "via-white/6";
+
+/** Container for the top history control. */
 export const MOBILE_CHAT_TOP_OVERLAY_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-surface from-35% via-surface/90 to-transparent pb-5 pt-1";
+  "pointer-events-none absolute inset-x-0 top-0 z-20 pt-1";
+
+/** Light fade behind the history control; conversation scrolls underneath. */
+export const MOBILE_CHAT_TOP_FADE_CLASS = `pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b ${MOBILE_CHAT_SCROLL_FADE_FROM_CLASS} ${MOBILE_CHAT_SCROLL_FADE_VIA_CLASS} to-transparent`;
 
 /** Pinned footer for the composer toolbar and prompt on mobile overlay chat. */
 export const MOBILE_CHAT_FOOTER_CLASS =
   "absolute inset-x-0 bottom-0 z-20 flex flex-col";
 
-/** Upward fade above the attachment/view toolbar. */
-export const MOBILE_CHAT_TOOLBAR_FADE_CLASS =
-  "pointer-events-none absolute inset-x-0 bottom-full h-10 bg-gradient-to-t from-surface via-surface/85 to-transparent";
+/** Light fade between the attachment/view toolbar and the prompt. */
+export const MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS = `pointer-events-none h-8 shrink-0 bg-gradient-to-b from-transparent ${MOBILE_CHAT_SCROLL_FADE_VIA_CLASS} to-white/12`;
 
 /** Scroll inset so the first message clears the top overlay. */
 export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-14";
@@ -48,9 +54,9 @@ export const MOBILE_CHAT_COMPOSER_SURFACE_CLASS = "bg-surface pt-3";
 export const MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS =
   "absolute inset-y-0 left-0 right-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
 
-/** Fade + surface mask so attachments disappear behind the pinned view control. */
+/** Fade + light mask so attachments disappear behind the pinned view control. */
 export const MOBILE_COMPOSER_VIEW_OVERLAY_CLASS =
-  `pointer-events-none absolute inset-y-0 right-0 z-10 flex ${MOBILE_COMPOSER_VIEW_SLOT_CLASS} items-center justify-end bg-gradient-to-l from-surface from-55% via-surface/95 to-transparent pl-4`;
+  `pointer-events-none absolute inset-y-0 right-0 z-10 flex ${MOBILE_COMPOSER_VIEW_SLOT_CLASS} items-center justify-end bg-gradient-to-l ${MOBILE_CHAT_SCROLL_FADE_FROM_CLASS} ${MOBILE_CHAT_SCROLL_FADE_VIA_CLASS} to-transparent pl-4`;
 
 /** Reserves vertical space for the overlay close control on mobile only. */
 export const MOBILE_OVERLAY_CONTENT_CLASS = "max-md:pt-16";

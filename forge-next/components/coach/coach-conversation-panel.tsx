@@ -10,7 +10,8 @@ import {
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOOLBAR_FADE_CLASS,
+  MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS,
+  MOBILE_CHAT_TOP_FADE_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -75,18 +76,18 @@ export function CoachConversationPanel({
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
-            <div className="pointer-events-auto">{topChrome}</div>
+            <div aria-hidden className={MOBILE_CHAT_TOP_FADE_CLASS} />
+            <div className="relative z-10 pointer-events-auto pb-4">
+              {topChrome}
+            </div>
           </div>
         ) : null}
         <div
           className={`${MOBILE_CHAT_FOOTER_CLASS}${composerClassName ? ` ${composerClassName}` : ""}`}
         >
           {composerHeader ? (
-            <div className="relative">
-              <div aria-hidden className={MOBILE_CHAT_TOOLBAR_FADE_CLASS} />
-              <div className="relative z-10 pointer-events-auto">
-                {composerHeader}
-              </div>
+            <div className="relative z-10 pointer-events-auto">
+              {composerHeader}
             </div>
           ) : showAttachmentsAboveComposer && state.hasStarted ? (
             <div className={`relative ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS}`}>
@@ -96,6 +97,9 @@ export function CoachConversationPanel({
                 className="mb-2"
               />
             </div>
+          ) : null}
+          {composerHeader ? (
+            <div aria-hidden className={MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS} />
           ) : null}
           <div className={`relative z-10 shrink-0 ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS}`}>
             {composer}

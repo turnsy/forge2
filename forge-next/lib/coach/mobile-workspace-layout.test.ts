@@ -4,7 +4,8 @@ import {
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOOLBAR_FADE_CLASS,
+  MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS,
+  MOBILE_CHAT_TOP_FADE_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
   MOBILE_CHAT_HEADER_CLASS,
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
@@ -48,8 +49,10 @@ describe("mobile workspace layout classes", () => {
   });
 
   it("defines mobile overlay chat chrome for scroll-under gradients", () => {
-    expect(MOBILE_CHAT_TOP_OVERLAY_CLASS).toContain("bg-gradient-to-b");
-    expect(MOBILE_CHAT_TOOLBAR_FADE_CLASS).toContain("bg-gradient-to-t");
+    expect(MOBILE_CHAT_TOP_FADE_CLASS).toContain("from-white/12");
+    expect(MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS).toContain(
+      "bg-gradient-to-b",
+    );
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-14");
   });

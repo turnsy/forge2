@@ -49,8 +49,7 @@ describe("CoachConversationPanel", () => {
       />,
     );
 
-    expect(container.querySelector(".bg-gradient-to-b")).not.toBeNull();
-    expect(container.querySelector(".bg-gradient-to-t")).not.toBeNull();
+    expect(container.querySelector(".from-white\\/12")).not.toBeNull();
     expect(container.innerHTML).toContain(MOBILE_CHAT_FOOTER_CLASS);
     expect(container.querySelector(".absolute.inset-0")).not.toBeNull();
   });
