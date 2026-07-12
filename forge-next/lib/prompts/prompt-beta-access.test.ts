@@ -6,6 +6,8 @@ describe("isPromptBetaEnabled", () => {
     expect(isPromptBetaEnabled("jayturnsek@gmail.com")).toBe(true);
     expect(isPromptBetaEnabled("JayTurnsek@Gmail.com")).toBe(true);
     expect(isPromptBetaEnabled("masonmcgriskin19@gmail.com")).toBe(true);
+    expect(isPromptBetaEnabled("jordan.socholotiuk@gmail.com")).toBe(true);
+    expect(isPromptBetaEnabled("Jordan.Socholotiuk@Gmail.com")).toBe(true);
   });
 
   it("denies unlisted or missing emails", () => {

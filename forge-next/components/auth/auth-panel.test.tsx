@@ -21,8 +21,27 @@ import { setSignupRoleCookieAction } from "@/lib/auth/form-actions";
 import { AuthPanel } from "@/components/auth/auth-panel";
 
 describe("AuthPanel", () => {
-  it("shows sign in title without role switcher by default", () => {
+  it("shows sign up title with role switcher by default", () => {
     render(<AuthPanel initialRole="coach" />);
+
+    expect(
+      screen.getByRole("button", { name: /Current role: Coach/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("seeds signup role from initialRole", () => {
+    render(<AuthPanel initialRole="athlete" />);
+
+    expect(
+      screen.getByRole("button", { name: /Current role: Athlete/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("switches to sign in without role switcher", async () => {
+    const user = userEvent.setup();
+    render(<AuthPanel initialRole="coach" />);
+
+    await user.click(screen.getByRole("button", { name: /Sign in/i }));
 
     expect(screen.getByRole("heading", { level: 2, name: "Sign in" })).toBeInTheDocument();
     expect(
@@ -30,33 +49,10 @@ describe("AuthPanel", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("switches to signup with role switcher", async () => {
-    const user = userEvent.setup();
-    render(<AuthPanel initialRole="athlete" />);
-
-    await user.click(screen.getByRole("button", { name: /Create Account/i }));
-
-    expect(
-      screen.getByRole("button", { name: /Current role: Athlete/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("seeds signup role from initialRole", async () => {
-    const user = userEvent.setup();
-    render(<AuthPanel initialRole="athlete" />);
-
-    await user.click(screen.getByRole("button", { name: /Create Account/i }));
-
-    expect(
-      screen.getByRole("button", { name: /Current role: Athlete/i }),
-    ).toBeInTheDocument();
-  });
-
   it("updates role via switcher callback", async () => {
     const user = userEvent.setup();
     render(<AuthPanel initialRole="coach" />);
 
-    await user.click(screen.getByRole("button", { name: /Create Account/i }));
     await user.click(screen.getByRole("button", { name: /Current role: Coach/i }));
     await user.click(screen.getByRole("menuitem", { name: /Switch to Athlete/i }));
 
@@ -73,14 +69,14 @@ describe("AuthPanel", () => {
     expect(container.querySelector(".animate-auth-panel-back")).not.toBeInTheDocument();
   });
 
-  it("animates forward when switching to signup and back when returning to sign in", async () => {
+  it("animates back when switching to sign in and forward when returning to signup", async () => {
     const user = userEvent.setup();
     const { container } = render(<AuthPanel initialRole="coach" />);
 
-    await user.click(screen.getByRole("button", { name: /Create Account/i }));
-    expect(container.querySelector(".animate-auth-panel-forward")).toBeInTheDocument();
-
     await user.click(screen.getByRole("button", { name: /Sign in/i }));
     expect(container.querySelector(".animate-auth-panel-back")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Create Account/i }));
+    expect(container.querySelector(".animate-auth-panel-forward")).toBeInTheDocument();
   });
 });

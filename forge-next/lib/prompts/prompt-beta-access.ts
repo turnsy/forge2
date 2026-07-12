@@ -2,6 +2,7 @@
 const PROMPT_BETA_ALLOWLIST = new Set([
   "jayturnsek@gmail.com",
   "masonmcgriskin19@gmail.com",
+  "jordan.socholotiuk@gmail.com",
 ]);
 
 export function isPromptBetaEnabled(email: string | undefined): boolean {
