@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
 import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
@@ -20,20 +21,32 @@ describe("useCoachWorkspaceSessionId", () => {
     window.history.replaceState(null, "", "/coach");
   });
 
-  it("prefers the router session id over a stale window value", () => {
-    window.history.replaceState(null, "", "/coach?sessionId=session-a");
-    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-b"));
-
-    render(<SessionIdProbe />);
-
-    expect(screen.getByTestId("session-id")).toHaveTextContent("session-b");
-  });
-
-  it("falls back to the window session id after replaceState", () => {
+  it("reads the session id from the current window URL", () => {
     window.history.replaceState(null, "", "/coach?sessionId=session-a");
 
     render(<SessionIdProbe />);
 
     expect(screen.getByTestId("session-id")).toHaveTextContent("session-a");
+  });
+
+  it("re-renders when replaceState updates the URL", async () => {
+    render(<SessionIdProbe />);
+    expect(screen.getByTestId("session-id")).toHaveTextContent("none");
+
+    window.history.replaceState(null, "", "/coach?sessionId=session-a");
+    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("session-id")).toHaveTextContent("session-a");
+    });
+  });
+
+  it("tracks router navigations after window history updates", () => {
+    window.history.replaceState(null, "", "/coach?sessionId=session-b");
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-b"));
+
+    render(<SessionIdProbe />);
+
+    expect(screen.getByTestId("session-id")).toHaveTextContent("session-b");
   });
 });

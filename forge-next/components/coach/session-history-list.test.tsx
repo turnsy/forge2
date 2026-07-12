@@ -12,6 +12,7 @@ import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
 const mockListTaskSessions = vi.fn();
 const mockDeleteTaskSession = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 const mockRefresh = vi.fn();
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 
@@ -21,7 +22,7 @@ vi.mock("@/lib/chat/actions", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, refresh: mockRefresh }),
   useSearchParams: () => mockSearchParams(),
   usePathname: () => "/coach",
 }));
@@ -87,6 +88,7 @@ describe("SessionHistoryList integration", () => {
 
   it("prepends inserted sessions ahead of fetched history", async () => {
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
+    window.history.replaceState(null, "", "/coach?sessionId=session-new");
 
     renderList(<RegisterSessionOnMount />);
 
@@ -97,7 +99,9 @@ describe("SessionHistoryList integration", () => {
       inserted.compareDocumentPosition(fetched) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(inserted.closest("[aria-current='true']")).toBeTruthy();
+    await waitFor(() => {
+      expect(inserted.closest("[aria-current='true']")).toBeTruthy();
+    });
   });
 
   it("highlights the active session after replaceState URL sync", async () => {
@@ -132,6 +136,47 @@ describe("SessionHistoryList integration", () => {
       expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
     });
     expect(mockDeleteTaskSession).toHaveBeenCalledWith("session-1");
+  });
+
+  it("redirects home when deleting the active session", async () => {
+    const user = userEvent.setup();
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
+    window.history.replaceState(null, "", "/coach?sessionId=session-1");
+
+    renderList();
+
+    await screen.findByText("Build a plan");
+
+    await user.click(screen.getAllByLabelText("Conversation actions")[0]);
+    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
+    });
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("redirects home when deleting active session synced via replaceState", async () => {
+    const user = userEvent.setup();
+    mockSearchParams.mockReturnValue(new URLSearchParams());
+
+    renderList();
+
+    await screen.findByText("Build a plan");
+
+    window.history.replaceState(null, "", "/coach?sessionId=session-1");
+    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
+
+    await user.click(screen.getAllByLabelText("Conversation actions")[0]);
+    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
+    });
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalled();
   });
 
   it("preserves server-provided updatedAt order", async () => {
