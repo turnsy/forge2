@@ -19,22 +19,24 @@ export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
 
-/** Shared backdrop blur for mobile scroll-under chrome (no tint). */
-export const MOBILE_CHAT_CHROME_BLUR_CLASS = "backdrop-blur-md";
-
-/** Positions blur behind overlay chrome content without covering it. */
-export const MOBILE_CHAT_CHROME_BACKDROP_CLASS = `pointer-events-none absolute inset-0 ${MOBILE_CHAT_CHROME_BLUR_CLASS}`;
-
 /** Container for the top history control. */
 export const MOBILE_CHAT_TOP_OVERLAY_CLASS =
   "pointer-events-none absolute inset-x-0 top-0 z-20 pt-1";
 
-/** Blur behind the history control; conversation scrolls underneath. */
-export const MOBILE_CHAT_TOP_BLUR_CLASS = `pointer-events-none absolute inset-x-0 top-0 h-14 ${MOBILE_CHAT_CHROME_BLUR_CLASS}`;
+/** Height of the progressive blur behind the history control. */
+export const MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS =
+  "pointer-events-none absolute inset-x-0 top-0 h-16";
 
 /** Pinned footer for the composer toolbar and prompt on mobile overlay chat. */
 export const MOBILE_CHAT_FOOTER_CLASS =
   "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col";
+
+/** Zone below the prompt where progressive blur extends through the bottom nav. */
+export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = "relative";
+
+/** More opaque glass surface for the overlay prompt input only. */
+export const MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS =
+  "rounded-[calc(var(--radius-card)-0.25rem)] border border-glass-border bg-glass-nested backdrop-blur-md shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
 
 /** Reserved height for the floating bottom nav + inset + safe area. */
 const MOBILE_BOTTOM_NAV_CLEARANCE =
@@ -47,7 +49,7 @@ const MOBILE_COMPOSER_BLOCK_HEIGHT = "5.75rem";
 const MOBILE_TOOLBAR_BLOCK_HEIGHT = "2rem";
 
 /** Scroll inset so the first message clears the top overlay. */
-export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-14";
+export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-16";
 
 /** Scroll end inset so the last message rests above the prompt and nav. */
 export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS = `max-md:pb-[calc(${MOBILE_COMPOSER_BLOCK_HEIGHT}+${MOBILE_BOTTOM_NAV_CLEARANCE})]`;

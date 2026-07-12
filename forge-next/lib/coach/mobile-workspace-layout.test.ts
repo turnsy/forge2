@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
-  MOBILE_CHAT_CHROME_BLUR_CLASS,
-  MOBILE_CHAT_CHROME_BACKDROP_CLASS,
+  MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS,
+  MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOP_BLUR_CLASS,
+  MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
   MOBILE_CHAT_HEADER_CLASS,
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
@@ -55,15 +55,13 @@ describe("mobile workspace layout classes", () => {
     expect(MOBILE_COMPOSER_VIEW_CONTROL_CLASS).not.toContain("bg-gradient-to-l");
   });
 
-  it("defines mobile overlay chat chrome for scroll-under blur", () => {
-    expect(MOBILE_CHAT_CHROME_BLUR_CLASS).toBe("backdrop-blur-md");
-    expect(MOBILE_CHAT_CHROME_BACKDROP_CLASS).toContain("absolute");
-    expect(MOBILE_CHAT_CHROME_BACKDROP_CLASS).toContain("backdrop-blur-md");
-    expect(MOBILE_CHAT_TOP_BLUR_CLASS).toContain("backdrop-blur-md");
-    expect(MOBILE_CHAT_TOP_BLUR_CLASS).not.toContain("bg-surface");
+  it("defines mobile overlay chat chrome for progressive blur", () => {
+    expect(MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS).toContain("h-16");
+    expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-glass-nested");
+    expect(MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
-    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-14");
+    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-16");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("5.75rem");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS).toContain(
       "2rem",

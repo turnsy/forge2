@@ -9,6 +9,7 @@ import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { PromptComposer } from "@/components/prompt/prompt-composer";
 import { Button, FadeIn, IconButton } from "@/components/ui";
 import { canSendChat, canStopChat } from "@/lib/chat/workspace-selectors";
+import { MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS } from "@/lib/coach/mobile-workspace-layout";
 import type { ChatWorkspaceState } from "@/lib/chat/types";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
 
@@ -71,14 +72,12 @@ export function ChatComposer({
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
-          className={`flex flex-col rounded-card border transition ${
-            compact ? "min-h-0 p-2" : "min-h-40 p-3"
+          className={`flex flex-col transition ${
+            compact ? "min-h-0 p-2" : "min-h-40 rounded-card border p-3"
           } ${
             overlayChrome
-              ? isDragging
-                ? "border-coach-muted bg-transparent"
-                : "border-glass-border bg-transparent"
-              : `bg-glass backdrop-blur-md ${
+              ? "border-0 bg-transparent"
+              : `rounded-card border bg-glass backdrop-blur-md ${
                   isDragging
                     ? "border-coach-muted bg-glass-focus"
                     : "border-glass-border"
@@ -110,21 +109,45 @@ export function ChatComposer({
               event.target.value = "";
             }}
           />
-          <PromptComposer
-            key={composerKey}
-            compact={compact}
-            placeholder="Ask Forge to build or update a plan..."
-            onDocumentChange={(segments, isEmpty) => {
-              latestSegmentsRef.current = segments;
-              setDocumentEmpty(isEmpty);
-            }}
-            onSend={(segments) => {
-              if (sendAllowed) {
-                onSend(segments);
-                setDocumentEmpty(true);
-              }
-            }}
-          />
+          {overlayChrome ? (
+            <div
+              className={`${MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS} p-2${
+                isDragging ? " border-coach-muted" : ""
+              }`}
+            >
+              <PromptComposer
+                key={composerKey}
+                compact={compact}
+                placeholder="Ask Forge to build or update a plan..."
+                onDocumentChange={(segments, isEmpty) => {
+                  latestSegmentsRef.current = segments;
+                  setDocumentEmpty(isEmpty);
+                }}
+                onSend={(segments) => {
+                  if (sendAllowed) {
+                    onSend(segments);
+                    setDocumentEmpty(true);
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <PromptComposer
+              key={composerKey}
+              compact={compact}
+              placeholder="Ask Forge to build or update a plan..."
+              onDocumentChange={(segments, isEmpty) => {
+                latestSegmentsRef.current = segments;
+                setDocumentEmpty(isEmpty);
+              }}
+              onSend={(segments) => {
+                if (sendAllowed) {
+                  onSend(segments);
+                  setDocumentEmpty(true);
+                }
+              }}
+            />
+          )}
           <div
             className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
           >

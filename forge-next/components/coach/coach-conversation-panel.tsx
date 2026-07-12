@@ -4,15 +4,16 @@ import type { ReactNode } from "react";
 import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import {
-  MOBILE_CHAT_CHROME_BACKDROP_CLASS,
+  MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOP_BLUR_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
+  MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
@@ -77,7 +78,10 @@ export function CoachConversationPanel({
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
-            <div aria-hidden className={MOBILE_CHAT_TOP_BLUR_CLASS} />
+            <ProgressiveBlur
+              direction="top"
+              className={MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS}
+            />
             <div
               className={`relative z-10 pointer-events-auto pb-2 ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
@@ -85,35 +89,36 @@ export function CoachConversationPanel({
             </div>
           </div>
         ) : null}
-        <div
-          className={`${MOBILE_CHAT_FOOTER_CLASS}${composerClassName ? ` ${composerClassName}` : ""}`}
-        >
+        <div className={MOBILE_CHAT_FOOTER_CLASS}>
           {composerHeader ? (
             <div
-              className={`relative pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
-              <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
-              <div className="relative z-10">{composerHeader}</div>
+              {composerHeader}
             </div>
           ) : showAttachmentsAboveComposer && state.hasStarted ? (
             <div
-              className={`relative pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
-              <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
-              <div className="relative z-10">
-                <ChatAttachmentList
-                  attachments={state.attachments}
-                  onRemove={onRemoveAttachment}
-                  className="mb-2"
-                />
-              </div>
+              <ChatAttachmentList
+                attachments={state.attachments}
+                onRemove={onRemoveAttachment}
+                className="mb-2"
+              />
             </div>
           ) : null}
           <div
-            className={`relative z-10 shrink-0 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            className={`${MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS}${composerClassName ? ` ${composerClassName}` : ""}`}
           >
-            <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
-            <div className="relative z-10">{composer}</div>
+            <ProgressiveBlur
+              direction="bottom"
+              className="pointer-events-none absolute inset-0 z-0"
+            />
+            <div
+              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            >
+              {composer}
+            </div>
           </div>
         </div>
       </div>

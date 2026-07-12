@@ -33,12 +33,13 @@ describe("CoachConversationPanel", () => {
     expect(chip.closest(".rounded-card")).toBeNull();
   });
 
-  it("uses overlay blur on mobile so the thread scrolls under chrome", () => {
+  it("uses progressive blur on mobile so the thread scrolls under chrome", () => {
     const { container } = render(
       <CoachConversationPanel
         layout="mobileOverlay"
         topChrome={<button type="button">History</button>}
         composerHeader={<button type="button">View</button>}
+        composerClassName="pb-[calc(4.5rem+0.75rem+env(safe-area-inset-bottom,0px))]"
         state={{
           ...createInitialChatWorkspaceState(),
           hasStarted: true,
@@ -49,7 +50,7 @@ describe("CoachConversationPanel", () => {
       />,
     );
 
-    expect(container.querySelector(".backdrop-blur-md")).not.toBeNull();
+    expect(container.querySelector("[style*='linear-gradient']")).not.toBeNull();
     expect(container.innerHTML).toContain(MOBILE_CHAT_FOOTER_CLASS);
     expect(container.querySelector(".absolute.inset-0")).not.toBeNull();
     expect(container.querySelector(".bg-gradient-to-b")).toBeNull();

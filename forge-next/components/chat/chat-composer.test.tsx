@@ -151,7 +151,7 @@ describe("ChatComposer", () => {
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
   });
 
-  it("uses a transparent surface in overlay chrome mode", () => {
+  it("uses a transparent container and opaque input surface in overlay chrome mode", () => {
     const { container } = render(
       <ChatComposer
         overlayChrome
@@ -163,9 +163,10 @@ describe("ChatComposer", () => {
       />,
     );
 
-    const surface = container.querySelector(".rounded-card");
-    expect(surface?.className).toContain("bg-transparent");
-    expect(surface?.className).not.toContain("bg-glass");
+    const outer = container.querySelector(".flex.flex-col");
+    expect(outer?.className).toContain("bg-transparent");
+    expect(outer?.className).toContain("border-0");
+    expect(container.querySelector(".bg-glass-nested")).not.toBeNull();
   });
 
   it("does not render attachments in the composer after the thread starts", () => {
