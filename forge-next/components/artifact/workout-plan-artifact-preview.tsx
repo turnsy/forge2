@@ -33,7 +33,7 @@ export function WorkoutPlanArtifactPreview({
 
   return (
     <div
-      className={`relative flex min-h-0 flex-col ${scrollClass}${
+      className={`relative flex min-h-0 min-w-0 flex-col ${scrollClass}${
         embeddedScroll ? "" : ` ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`
       }`}
     >

@@ -19,7 +19,7 @@ export function SessionHistoryMobileToggle({
       icon={<HistoryIcon />}
       aria-label="Conversation history"
       aria-pressed={open}
-      className={open ? undefined : "text-surface-muted"}
+      className={`self-start${open ? "" : " text-surface-muted"}`}
       onClick={onToggle}
     >
       History
