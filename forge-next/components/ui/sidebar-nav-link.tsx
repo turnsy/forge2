@@ -23,6 +23,7 @@ export function SidebarNavLink({
   trailingIcon,
   exact = false,
   collapsed = false,
+  active,
   onClick,
 }: {
   href: string;
@@ -31,11 +32,13 @@ export function SidebarNavLink({
   trailingIcon?: ReactNode;
   exact?: boolean;
   collapsed?: boolean;
+  active?: boolean;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const active = isNavItemActive(pathname, href, exact, searchParams);
+  const isActive =
+    active ?? isNavItemActive(pathname, href, exact, searchParams);
   const label =
     typeof children === "string" || typeof children === "number"
       ? String(children)
@@ -49,7 +52,7 @@ export function SidebarNavLink({
       onClick={onClick}
       className={[
         baseClass,
-        active ? activeClass : inactiveClass,
+        isActive ? activeClass : inactiveClass,
         collapsed ? "justify-center px-2" : "",
       ].join(" ")}
     >

@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
+import { COACH_WORKSPACE_URL_CHANGE_EVENT, hasCoachWorkspaceQueryParams } from "@/lib/chat/session-url";
 
-export function readCoachWorkspaceSessionId(): string | null {
+export function readCoachWorkspaceSearchParams(): URLSearchParams {
   if (typeof window === "undefined") {
-    return null;
+    return new URLSearchParams();
   }
 
-  return new URL(window.location.href).searchParams.get("sessionId");
+  return new URL(window.location.href).searchParams;
 }
 
-export function useCoachWorkspaceSessionId(): string | null {
-  const searchParams = useSearchParams();
-  const routerSessionId = searchParams.get("sessionId");
+export function readCoachWorkspaceSessionId(): string | null {
+  return readCoachWorkspaceSearchParams().get("sessionId");
+}
+
+export function useCoachWorkspaceSearchParams(): URLSearchParams {
+  const routerParams = useSearchParams();
   const [replaceStateRevision, setReplaceStateRevision] = useState(0);
 
   useEffect(() => {
@@ -33,14 +36,27 @@ export function useCoachWorkspaceSessionId(): string | null {
     };
   }, []);
 
-  if (routerSessionId !== null) {
-    return routerSessionId;
-  }
-
-  if (typeof window !== "undefined") {
+  return useMemo(() => {
     void replaceStateRevision;
-    return readCoachWorkspaceSessionId();
-  }
 
-  return null;
+    if (typeof window === "undefined") {
+      return routerParams;
+    }
+
+    const windowParams = readCoachWorkspaceSearchParams();
+
+    if (hasCoachWorkspaceQueryParams(routerParams)) {
+      return routerParams;
+    }
+
+    if (hasCoachWorkspaceQueryParams(windowParams)) {
+      return windowParams;
+    }
+
+    return routerParams;
+  }, [replaceStateRevision, routerParams]);
+}
+
+export function useCoachWorkspaceSessionId(): string | null {
+  return useCoachWorkspaceSearchParams().get("sessionId");
 }
