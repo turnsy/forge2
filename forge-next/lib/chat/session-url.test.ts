@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
   hasCoachWorkspaceQueryParams,
   navigateToCoachHome,
   navigateToCoachSession,
@@ -12,6 +13,7 @@ import {
 function stubWindow({
   location,
   history,
+  dispatchEvent = vi.fn(),
 }: {
   location: {
     href: string;
@@ -23,11 +25,12 @@ function stubWindow({
     state: unknown;
     replaceState: ReturnType<typeof vi.fn>;
   };
+  dispatchEvent?: ReturnType<typeof vi.fn>;
 }) {
   vi.stubGlobal("window", {
     location,
     history,
-    dispatchEvent: vi.fn(),
+    dispatchEvent,
   });
 }
 
@@ -116,10 +119,11 @@ describe("navigateToCoachHome", () => {
     vi.unstubAllGlobals();
   });
 
-  it("clears workspace query params, pushes the route, and refreshes", () => {
+  it("clears workspace query params, pushes the route, refreshes, and notifies listeners", () => {
     const replaceState = vi.fn();
     const push = vi.fn();
     const refresh = vi.fn();
+    const dispatchEvent = vi.fn();
 
     stubWindow({
       location: {
@@ -132,11 +136,15 @@ describe("navigateToCoachHome", () => {
         state: null,
         replaceState,
       },
+      dispatchEvent,
     });
 
     navigateToCoachHome({ push, refresh });
 
     expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: COACH_WORKSPACE_HOME_NAVIGATE_EVENT }),
+    );
     expect(push).toHaveBeenCalledWith("/coach");
     expect(refresh).toHaveBeenCalled();
   });

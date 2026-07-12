@@ -62,6 +62,23 @@ describe("CoachHomeNavLink", () => {
     expect(mockRefresh).toHaveBeenCalled();
   });
 
+  it("forces coach home navigation on bare /coach to reset the workspace", async () => {
+    const user = userEvent.setup();
+    mockSearchParams.mockReturnValue(new URLSearchParams());
+    window.history.replaceState(null, "", "/coach");
+
+    render(
+      <SessionNavigationProvider>
+        <CoachHomeNavLink>Home</CoachHomeNavLink>
+      </SessionNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("link", { name: "Home" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalled();
+  });
+
   it("is not active when a session id is in the URL", () => {
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
     window.history.replaceState(null, "", "/coach?sessionId=session-new");

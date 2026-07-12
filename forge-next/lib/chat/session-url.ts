@@ -1,6 +1,7 @@
 const COACH_HOME_PATH = "/coach";
 
 export const COACH_WORKSPACE_URL_CHANGE_EVENT = "coach-workspace-url-change";
+export const COACH_WORKSPACE_HOME_NAVIGATE_EVENT = "coach-workspace-home-navigate";
 
 export type CoachWorkspaceUrlUpdate = {
   sessionId?: string | null;
@@ -79,6 +80,9 @@ export function navigateToCoachHome(router: {
     planId: null,
     newPlan: null,
   });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(COACH_WORKSPACE_HOME_NAVIGATE_EVENT));
+  }
   router.push(COACH_HOME_PATH);
   router.refresh();
 }

@@ -58,6 +58,7 @@ import {
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
 import {
+  COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
   navigateToCoachHome,
   syncCoachSessionUrl,
   syncCoachWorkspaceUrl,
@@ -324,12 +325,34 @@ export function CoachWorkspace(
 
   const sessionKey = props.initialSession?.id ?? "coach-home";
   const resuming = catchUp.loadPhase === "resuming";
+  const [homeWorkspaceEpoch, setHomeWorkspaceEpoch] = useState(0);
+
+  useEffect(() => {
+    if (props.initialSession) {
+      return;
+    }
+
+    function handleHomeNavigate() {
+      setHomeWorkspaceEpoch((epoch) => epoch + 1);
+    }
+
+    window.addEventListener(
+      COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+      handleHomeNavigate,
+    );
+    return () => {
+      window.removeEventListener(
+        COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+        handleHomeNavigate,
+      );
+    };
+  }, [props.initialSession]);
 
   return (
     <CoachWorkspaceInner
       // Remount when the live tail settles so the Eve agent store is always
       // created from a complete, consistent event log.
-      key={`${sessionKey}:${resuming ? "resuming" : "settled"}`}
+      key={`${sessionKey}:${homeWorkspaceEpoch}:${resuming ? "resuming" : "settled"}`}
       {...props}
       syncedEvents={catchUp.events}
       resuming={resuming}

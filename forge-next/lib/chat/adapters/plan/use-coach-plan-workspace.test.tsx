@@ -842,4 +842,56 @@ describe("useCoachPlanWorkspace", () => {
     expect(result.current.state.attachments).toEqual([]);
     expect(result.current.state.contextFileIds).toEqual([]);
   });
+
+  it("persists and redirects again after restart on the home workspace", async () => {
+    const onThreadInitialized = vi.fn();
+    const onSessionUrlNavigate = vi.fn();
+
+    const { result } = renderHook(() =>
+      useCoachPlanWorkspace({
+        onThreadInitialized,
+        onSessionUrlNavigate,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "First thread" }]);
+    });
+
+    await act(async () => {
+      await capturedEveAgentOptions.current?.onFinish?.({
+        session: {
+          sessionId: "eve-session",
+          continuationToken: "token",
+          streamIndex: 2,
+        },
+        events: [
+          { type: "message.received" },
+          { type: "session.waiting" },
+        ],
+      });
+    });
+
+    expect(onSessionUrlNavigate).toHaveBeenCalledTimes(1);
+    onThreadInitialized.mockClear();
+    onSessionUrlNavigate.mockClear();
+    saveSessionSnapshot.mockClear();
+
+    act(() => {
+      result.current.restart();
+    });
+
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Second thread" }]);
+    });
+
+    await waitFor(() => {
+      expect(saveSessionSnapshot).toHaveBeenCalled();
+      expect(onThreadInitialized).toHaveBeenCalledWith({
+        sessionId: expect.any(String),
+        title: "Strength block",
+      });
+      expect(onSessionUrlNavigate).toHaveBeenCalledWith(expect.any(String));
+    });
+  });
 });
