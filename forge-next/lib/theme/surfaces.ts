@@ -238,11 +238,11 @@ export function pillButtonClass(selected = false): string {
 }
 
 export function attachmentChipClass(tone: AttachmentChipTone = "default"): string {
-  const base = `inline-flex ${BUTTON_SM_HEIGHT_CLASS} items-center gap-1.5 rounded-full border text-sm shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]`;
+  const base = `inline-flex ${BUTTON_SM_HEIGHT_CLASS} items-center gap-1.5 rounded-full border pl-3 pr-1.5 text-sm transition`;
 
   if (tone === "error") {
-    return `${base} border-red-500/40 bg-red-500/10 pl-3 pr-1.5 text-red-200`;
+    return `${base} border-danger-border bg-danger-muted text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] backdrop-blur-md`;
   }
 
-  return `${base} border-glass-border bg-glass pl-3 pr-1.5 text-surface-foreground`;
+  return `${base} border-glass-border bg-glass text-surface-foreground shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md`;
 }

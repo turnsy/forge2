@@ -106,7 +106,10 @@ describe("surface theme helpers", () => {
   it("returns attachment chip styling", () => {
     expect(attachmentChipClass()).toContain("rounded-full");
     expect(attachmentChipClass()).toContain(BUTTON_SM_HEIGHT_CLASS);
-    expect(attachmentChipClass("error")).toContain("text-red-200");
+    expect(attachmentChipClass()).toContain("backdrop-blur-md");
+    expect(attachmentChipClass()).toContain("bg-glass");
+    expect(attachmentChipClass("error")).toContain("bg-danger-muted");
+    expect(attachmentChipClass("error")).toContain("backdrop-blur-md");
   });
 
   it("returns pill styling", () => {
