@@ -3,6 +3,7 @@ import {
   hasCoachSessionInUrl,
   hasCoachWorkspaceQueryParams,
   navigateToCoachHome,
+  navigateToCoachSession,
   syncCoachSessionUrl,
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
@@ -249,6 +250,18 @@ describe("navigateToCoachHome", () => {
 
     expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
     expect(replace).toHaveBeenCalledWith("/coach");
+    expect(refresh).toHaveBeenCalled();
+  });
+});
+
+describe("navigateToCoachSession", () => {
+  it("pushes the session route and refreshes server content", () => {
+    const push = vi.fn();
+    const refresh = vi.fn();
+
+    navigateToCoachSession({ push, refresh }, "session-42");
+
+    expect(push).toHaveBeenCalledWith("/coach?sessionId=session-42");
     expect(refresh).toHaveBeenCalled();
   });
 });

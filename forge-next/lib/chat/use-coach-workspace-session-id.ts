@@ -33,10 +33,14 @@ export function useCoachWorkspaceSessionId(): string | null {
     };
   }, []);
 
-  if (typeof window !== "undefined") {
-    void replaceStateRevision;
-    return readCoachWorkspaceSessionId() ?? routerSessionId;
+  if (routerSessionId !== null) {
+    return routerSessionId;
   }
 
-  return routerSessionId;
+  if (typeof window !== "undefined") {
+    void replaceStateRevision;
+    return readCoachWorkspaceSessionId();
+  }
+
+  return null;
 }

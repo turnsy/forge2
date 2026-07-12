@@ -12,6 +12,7 @@ import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
 const mockListTaskSessions = vi.fn();
 const mockDeleteTaskSession = vi.fn();
 const mockPush = vi.fn();
+const mockRefresh = vi.fn();
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -20,7 +21,7 @@ vi.mock("@/lib/chat/actions", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
   useSearchParams: () => mockSearchParams(),
   usePathname: () => "/coach",
 }));
@@ -81,6 +82,7 @@ describe("SessionHistoryList integration", () => {
     await user.click(screen.getByText("Build a plan"));
 
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalled();
   });
 
   it("prepends inserted sessions ahead of fetched history", async () => {

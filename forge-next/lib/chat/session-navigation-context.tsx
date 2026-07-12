@@ -11,11 +11,10 @@ import {
   startTransition,
   type ReactNode,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import { listTaskSessions } from "@/lib/chat/actions";
 import { mergeSessionLists } from "@/lib/chat/session-history-merge";
-import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-session-id";
 
 type SessionNavigationContextValue = {
   pendingSessionId: string | null;
@@ -50,7 +49,8 @@ function updateSessionInList(
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const currentSessionId = useCoachWorkspaceSessionId();
+  const searchParams = useSearchParams();
+  const routerSessionId = searchParams.get("sessionId");
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
   const [fetchedSessions, setFetchedSessions] = useState<SessionListItemData[]>(
     [],
@@ -70,7 +70,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const pendingSessionId =
     pathname === COACH_WORKSPACE_PATH &&
     targetSessionId !== null &&
-    targetSessionId !== currentSessionId
+    targetSessionId !== routerSessionId
       ? targetSessionId
       : null;
 
@@ -79,7 +79,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       return;
     }
 
-    if (currentSessionId === targetSessionId) {
+    if (routerSessionId === targetSessionId) {
       startTransition(() => {
         setTargetSessionId(null);
       });
@@ -91,7 +91,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
         setTargetSessionId(null);
       });
     }
-  }, [currentSessionId, pathname, targetSessionId]);
+  }, [pathname, routerSessionId, targetSessionId]);
 
   const loadSessions = useCallback(async (showLoading: boolean) => {
     const generation = ++fetchGenerationRef.current;
@@ -167,11 +167,14 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
   const registerNewSession = useCallback((session: SessionListItemData) => {
     setInsertedSessions((current) => {
-      if (current.some((entry) => entry.id === session.id)) {
-        return current;
+      const existingIndex = current.findIndex((entry) => entry.id === session.id);
+      if (existingIndex === -1) {
+        return [session, ...current];
       }
 
-      return [session, ...current];
+      const next = [...current];
+      next[existingIndex] = { ...current[existingIndex], ...session };
+      return next;
     });
   }, []);
 

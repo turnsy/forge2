@@ -6,6 +6,10 @@ import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import {
+  navigateToCoachHome,
+  navigateToCoachSession,
+} from "@/lib/chat/session-url";
 import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-session-id";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
@@ -49,7 +53,7 @@ export function SessionHistoryList({
   function handleOpen(sessionId: string) {
     if (sessionId !== activeSessionId) {
       sessionNavigation?.startSessionNavigation(sessionId);
-      router.push(`/coach?sessionId=${sessionId}`);
+      navigateToCoachSession(router, sessionId);
     }
 
     onSessionOpen?.(sessionId);
@@ -64,7 +68,7 @@ export function SessionHistoryList({
 
     if (sessionId === activeSessionId) {
       onActiveSessionDeleted?.();
-      router.push("/coach");
+      navigateToCoachHome(router);
     }
   }
 

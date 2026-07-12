@@ -187,6 +187,7 @@ describe("SessionNavigationProvider", () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
 
     expect(screen.getByTestId("session-count")).toHaveTextContent("2");
+    expect(screen.getByTestId("first-title")).toHaveTextContent("Fresh thread");
   });
 
   it("removes a session from both fetched and inserted lists", async () => {

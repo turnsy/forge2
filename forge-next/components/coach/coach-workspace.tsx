@@ -57,7 +57,6 @@ import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
-import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
@@ -381,7 +380,6 @@ function CoachWorkspaceInner({
       : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
-  const registeredSidebarSessionRef = useRef<string | null>(null);
 
   const handleThreadBound = useCallback(
     ({
@@ -399,23 +397,6 @@ function CoachWorkspaceInner({
     },
     [sessionNavigation],
   );
-
-  useEffect(() => {
-    if (!initialSession || !snapshotHasConversation(initialSession.snapshot)) {
-      return;
-    }
-
-    if (registeredSidebarSessionRef.current === initialSession.id) {
-      return;
-    }
-
-    registeredSidebarSessionRef.current = initialSession.id;
-    sessionNavigation?.registerNewSession({
-      id: initialSession.id,
-      title: initialSession.snapshot.title?.trim() || "New conversation",
-      updatedAt: initialSession.updatedAt,
-    });
-  }, [initialSession, sessionNavigation?.registerNewSession]);
 
   const handleSessionUrlNavigate = useCallback((sessionId: string) => {
     // Keep the live Eve stream on the current workspace instance. A hard

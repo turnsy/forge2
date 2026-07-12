@@ -85,6 +85,17 @@ export function navigateToCoachHome(router: {
   router.refresh();
 }
 
+export function navigateToCoachSession(
+  router: {
+    push: (href: string) => void;
+    refresh: () => void;
+  },
+  sessionId: string,
+): void {
+  router.push(`${COACH_HOME_PATH}?sessionId=${sessionId}`);
+  router.refresh();
+}
+
 export function shouldForceCoachHomeNavigation(
   pathname: string,
   searchParams: URLSearchParams,

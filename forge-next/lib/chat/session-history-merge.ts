@@ -1,5 +1,14 @@
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 
+function compareSessionsByUpdatedAt(
+  left: SessionListItemData,
+  right: SessionListItemData,
+): number {
+  return (
+    new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+  );
+}
+
 export function mergeSessionLists(
   fetched: SessionListItemData[],
   inserted: readonly SessionListItemData[],
@@ -9,8 +18,10 @@ export function mergeSessionLists(
   }
 
   const insertedIds = new Set(inserted.map((session) => session.id));
-  return [
+  const merged = [
     ...inserted,
     ...fetched.filter((session) => !insertedIds.has(session.id)),
   ];
+
+  return [...merged].sort(compareSessionsByUpdatedAt);
 }

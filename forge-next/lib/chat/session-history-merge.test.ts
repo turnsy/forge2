@@ -10,7 +10,7 @@ describe("mergeSessionLists", () => {
     expect(mergeSessionLists(fetched, [])).toEqual(fetched);
   });
 
-  it("prepends inserted sessions and dedupes fetched entries", () => {
+  it("merges inserted sessions, dedupes fetched entries, and sorts by updatedAt", () => {
     const fetched = [
       { id: "a", title: "A", updatedAt: "2026-01-01T00:00:00.000Z" },
       { id: "b", title: "B", updatedAt: "2026-01-02T00:00:00.000Z" },
@@ -21,8 +21,8 @@ describe("mergeSessionLists", () => {
     ];
 
     expect(mergeSessionLists(fetched, inserted)).toEqual([
-      { id: "c", title: "C", updatedAt: "2026-01-03T00:00:00.000Z" },
       { id: "a", title: "A newer", updatedAt: "2026-01-04T00:00:00.000Z" },
+      { id: "c", title: "C", updatedAt: "2026-01-03T00:00:00.000Z" },
       { id: "b", title: "B", updatedAt: "2026-01-02T00:00:00.000Z" },
     ]);
   });
