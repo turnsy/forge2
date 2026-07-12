@@ -15,24 +15,28 @@ export function readCoachWorkspaceSessionId(): string | null {
 export function useCoachWorkspaceSessionId(): string | null {
   const searchParams = useSearchParams();
   const routerSessionId = searchParams.get("sessionId");
-  const [sessionId, setSessionId] = useState<string | null>(routerSessionId);
+  const [replaceStateRevision, setReplaceStateRevision] = useState(0);
 
   useEffect(() => {
-    setSessionId(routerSessionId);
-  }, [routerSessionId]);
-
-  useEffect(() => {
-    function sync() {
-      setSessionId(readCoachWorkspaceSessionId());
+    function handleUrlChange() {
+      setReplaceStateRevision((revision) => revision + 1);
     }
 
-    window.addEventListener(COACH_WORKSPACE_URL_CHANGE_EVENT, sync);
-    window.addEventListener("popstate", sync);
+    window.addEventListener(COACH_WORKSPACE_URL_CHANGE_EVENT, handleUrlChange);
+    window.addEventListener("popstate", handleUrlChange);
     return () => {
-      window.removeEventListener(COACH_WORKSPACE_URL_CHANGE_EVENT, sync);
-      window.removeEventListener("popstate", sync);
+      window.removeEventListener(
+        COACH_WORKSPACE_URL_CHANGE_EVENT,
+        handleUrlChange,
+      );
+      window.removeEventListener("popstate", handleUrlChange);
     };
   }, []);
 
-  return sessionId;
+  if (typeof window !== "undefined") {
+    void replaceStateRevision;
+    return readCoachWorkspaceSessionId() ?? routerSessionId;
+  }
+
+  return routerSessionId;
 }

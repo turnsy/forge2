@@ -123,8 +123,37 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   }, []);
 
   useEffect(() => {
-    void loadSessions(true);
-  }, [loadSessions]);
+    let cancelled = false;
+    const generation = ++fetchGenerationRef.current;
+
+    async function loadInitialSessions() {
+      const result = await listTaskSessions(SESSION_LIST_LIMIT);
+
+      if (cancelled || generation !== fetchGenerationRef.current) {
+        return;
+      }
+
+      if (!result.ok) {
+        setSessionsError(result.message);
+        setFetchedSessions([]);
+        setSessionsLoading(false);
+        return;
+      }
+
+      const fetchedIds = new Set(result.sessions.map((session) => session.id));
+      setFetchedSessions(result.sessions);
+      setInsertedSessions((current) =>
+        current.filter((session) => !fetchedIds.has(session.id)),
+      );
+      setSessionsLoading(false);
+    }
+
+    void loadInitialSessions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refreshSessions = useCallback(async () => {
     const hasCachedSessions =
