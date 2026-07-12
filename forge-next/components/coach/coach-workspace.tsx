@@ -106,7 +106,7 @@ function ArtifactPanelScrollLane({
   contentInsetClassName,
   children,
 }: {
-  scrollResetKey: number;
+  scrollResetKey: string;
   scrollPaddingTop?: number;
   scrollPaddingBottom?: number;
   contentInsetClassName: string;
@@ -134,7 +134,7 @@ function ArtifactPanelScrollLane({
 function ArtifactPanel({
   state,
   artifactFadeKey,
-  artifactScrollKey,
+  artifactScrollResetKey,
   resolvedBackHref,
   saveStatus,
   saveError,
@@ -148,7 +148,7 @@ function ArtifactPanel({
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
-  artifactScrollKey: number;
+  artifactScrollResetKey: string;
   resolvedBackHref: string | undefined;
   saveStatus: ReturnType<typeof useSavePlan>["saveStatus"];
   saveError: string | null;
@@ -217,7 +217,7 @@ function ArtifactPanel({
       >
         {({ scrollPaddingTop, scrollPaddingBottom }) => (
           <ArtifactPanelScrollLane
-            scrollResetKey={artifactScrollKey}
+            scrollResetKey={artifactScrollResetKey}
             scrollPaddingTop={scrollPaddingTop}
             scrollPaddingBottom={scrollPaddingBottom}
             contentInsetClassName={contentInsetClassName}
@@ -370,7 +370,6 @@ function CoachWorkspaceInner({
   const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-  const [artifactScrollKey, setArtifactScrollKey] = useState(0);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
@@ -502,46 +501,9 @@ function CoachWorkspaceInner({
   const showSplitPane = Boolean(state.currentArtifact);
   const chatCollapsed = showSplitPane && isChatCollapsed;
   const artifactFadeKey = activePlanId ?? state.sessionId;
-  const previousArtifactRef = useRef(state.currentArtifact);
-  const hadSplitPaneRef = useRef(showSplitPane);
-
-  useEffect(() => {
-    const previous = previousArtifactRef.current;
-    const next = state.currentArtifact;
-    previousArtifactRef.current = next;
-
-    if (!next) {
-      return;
-    }
-
-    if (!previous) {
-      setArtifactScrollKey((key) => key + 1);
-      return;
-    }
-
-    if (
-      previous !== next &&
-      artifactStructureKey(previous) !== artifactStructureKey(next)
-    ) {
-      setArtifactScrollKey((key) => key + 1);
-    }
-  }, [state.currentArtifact]);
-
-  useEffect(() => {
-    if (showSplitPane && !hadSplitPaneRef.current) {
-      setArtifactScrollKey((key) => key + 1);
-    }
-
-    hadSplitPaneRef.current = showSplitPane;
-  }, [showSplitPane]);
-
-  useEffect(() => {
-    if (!state.currentArtifact) {
-      return;
-    }
-
-    setArtifactScrollKey((key) => key + 1);
-  }, [artifactFadeKey]);
+  const artifactScrollResetKey = state.currentArtifact
+    ? `${artifactFadeKey}:${artifactStructureKey(state.currentArtifact)}`
+    : "0";
 
   const toggleChatCollapsed = useCallback(() => {
     setIsChatCollapsed((current) => !current);
@@ -787,7 +749,7 @@ function CoachWorkspaceInner({
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
-                artifactScrollKey={artifactScrollKey}
+                artifactScrollResetKey={artifactScrollResetKey}
                 resolvedBackHref={resolvedBackHref}
                 saveStatus={saveStatus}
                 saveError={saveError}
@@ -867,7 +829,7 @@ function CoachWorkspaceInner({
                 <ArtifactPanel
                   state={state}
                   artifactFadeKey={artifactFadeKey}
-                  artifactScrollKey={artifactScrollKey}
+                  artifactScrollResetKey={artifactScrollResetKey}
                   resolvedBackHref={resolvedBackHref}
                   saveStatus={saveStatus}
                   saveError={saveError}

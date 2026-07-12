@@ -10,8 +10,6 @@ export function useScrollTopOnKey(
   alignWhenReady = true,
 ) {
   const ref = useRef<HTMLDivElement>(null);
-  const resetKeyRef = useRef(resetKey);
-  resetKeyRef.current = resetKey;
 
   const scrollToTop = useCallback(() => {
     const node = ref.current;
@@ -45,9 +43,7 @@ export function useScrollTopOnKey(
     const observer =
       content && typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(() => {
-            if (resetKeyRef.current === resetKey) {
-              scrollToTop();
-            }
+            scrollToTop();
           })
         : null;
 
