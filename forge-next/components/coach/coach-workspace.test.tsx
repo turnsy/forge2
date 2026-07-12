@@ -125,6 +125,16 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses overlay prompt styling on the mobile welcome composer", () => {
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState()));
+
+    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+
+    expect(container.querySelector(".bg-surface\\/80")).not.toBeNull();
+    expect(container.querySelector(".border-0.bg-transparent")).not.toBeNull();
+  });
+
   it("uses modest padding around the desktop chat area", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(

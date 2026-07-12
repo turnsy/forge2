@@ -668,6 +668,8 @@ function CoachWorkspaceInner({
               className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
             >
               <ChatComposer
+                overlayChrome
+                compact
                 state={state}
                 composerKey={`${state.sessionId}-${state.messages.length}`}
                 onAttach={attachFiles}
