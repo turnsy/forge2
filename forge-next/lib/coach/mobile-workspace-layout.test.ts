@@ -3,6 +3,7 @@ import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
+  MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
   MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS,
   MOBILE_CHAT_TOP_FADE_CLASS,
@@ -40,6 +41,7 @@ describe("mobile workspace layout classes", () => {
   it("defines horizontal padding for the mobile chat surface", () => {
     expect(MOBILE_WORKSPACE_X_PADDING_CLASS).toContain("px-4");
     expect(MOBILE_WORKSPACE_X_PADDING_CLASS).toContain("md:px-0");
+    expect(MOBILE_CHAT_CONTENT_INSET_X_CLASS).toContain("max-md:px-4");
   });
 
   it("defines spacing between the view control and composer", () => {

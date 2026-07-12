@@ -6,6 +6,7 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import {
   MOBILE_CHAT_COMPOSER_SURFACE_CLASS,
+  MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
@@ -72,12 +73,14 @@ export function CoachConversationPanel({
           errors={state.errors}
           phase={state.phase}
           className="absolute inset-0 z-0"
-          scrollClassName={`${MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS} ${scrollBottomClass}`}
+          scrollClassName={`${MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS} ${scrollBottomClass} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
             <div aria-hidden className={MOBILE_CHAT_TOP_FADE_CLASS} />
-            <div className="relative z-10 pointer-events-auto pb-4">
+            <div
+              className={`relative z-10 pointer-events-auto pb-2 ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            >
               {topChrome}
             </div>
           </div>
@@ -86,11 +89,15 @@ export function CoachConversationPanel({
           className={`${MOBILE_CHAT_FOOTER_CLASS}${composerClassName ? ` ${composerClassName}` : ""}`}
         >
           {composerHeader ? (
-            <div className="relative z-10 pointer-events-auto">
+            <div
+              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            >
               {composerHeader}
             </div>
           ) : showAttachmentsAboveComposer && state.hasStarted ? (
-            <div className={`relative ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS}`}>
+            <div
+              className={`relative ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            >
               <ChatAttachmentList
                 attachments={state.attachments}
                 onRemove={onRemoveAttachment}
@@ -101,7 +108,9 @@ export function CoachConversationPanel({
           {composerHeader ? (
             <div aria-hidden className={MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS} />
           ) : null}
-          <div className={`relative z-10 shrink-0 ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS}`}>
+          <div
+            className={`relative z-10 shrink-0 ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+          >
             {composer}
           </div>
         </div>

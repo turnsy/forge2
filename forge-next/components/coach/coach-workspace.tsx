@@ -665,9 +665,7 @@ function CoachWorkspaceInner({
   if (isMobile) {
     if (!showSplitPane) {
       return (
-        <ChatWorkspaceShell className={MOBILE_WORKSPACE_X_PADDING_CLASS}>
-          {renderMobileChatBody()}
-        </ChatWorkspaceShell>
+        <ChatWorkspaceShell>{renderMobileChatBody()}</ChatWorkspaceShell>
       );
     }
 
@@ -699,7 +697,7 @@ function CoachWorkspaceInner({
             </div>
           </div>
         ) : (
-          <ChatWorkspaceShell className={MOBILE_WORKSPACE_X_PADDING_CLASS}>
+          <ChatWorkspaceShell>
             {renderMobileChatBody(
               <MobileComposerToolbar
                 attachments={state.attachments}

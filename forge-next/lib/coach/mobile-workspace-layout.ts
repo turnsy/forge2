@@ -35,7 +35,7 @@ export const MOBILE_CHAT_FOOTER_CLASS =
   "absolute inset-x-0 bottom-0 z-20 flex flex-col";
 
 /** Light fade between the attachment/view toolbar and the prompt. */
-export const MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS = `pointer-events-none h-8 shrink-0 bg-gradient-to-b from-transparent ${MOBILE_CHAT_SCROLL_FADE_VIA_CLASS} to-white/12`;
+export const MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS = `pointer-events-none h-3 shrink-0 bg-gradient-to-b from-transparent ${MOBILE_CHAT_SCROLL_FADE_VIA_CLASS} to-white/12`;
 
 /** Scroll inset so the first message clears the top overlay. */
 export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-14";
@@ -45,10 +45,13 @@ export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS = "max-md:pb-36";
 
 /** Extra scroll inset when the attachment/view toolbar is shown. */
 export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS =
-  "max-md:pb-44";
+  "max-md:pb-40";
 
-/** Padding around the prompt inside the mobile overlay footer. */
-export const MOBILE_CHAT_COMPOSER_SURFACE_CLASS = "bg-surface pt-3";
+/** Horizontal inset for mobile overlay chat content and chrome. */
+export const MOBILE_CHAT_CONTENT_INSET_X_CLASS = "max-md:px-4";
+
+/** Background for the prompt inside the mobile overlay footer. */
+export const MOBILE_CHAT_COMPOSER_SURFACE_CLASS = "bg-surface";
 
 /** Scroll lane for attachment chips; chips can pass under the view control. */
 export const MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS =
