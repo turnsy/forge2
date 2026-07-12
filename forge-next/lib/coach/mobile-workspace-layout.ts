@@ -7,9 +7,6 @@ import { BUTTON_SM_HEIGHT_CLASS } from "@/lib/theme/surfaces";
 /** Width reserved for the pinned view button slot in the mobile composer toolbar. */
 export const MOBILE_COMPOSER_VIEW_SLOT_CLASS = "w-[5.75rem]";
 
-/** Positions the bordered overlay close control; inset matches mobile page padding. */
-export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-4 top-1 z-20";
-
 /** Mobile chat header row for the reset control. */
 export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 
@@ -75,9 +72,6 @@ export const MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS =
 
 /** Pins the view control on the right edge of the toolbar row. */
 export const MOBILE_COMPOSER_VIEW_CONTROL_CLASS = `pointer-events-auto absolute inset-y-0 right-0 z-10 flex ${MOBILE_COMPOSER_VIEW_SLOT_CLASS} items-center justify-end`;
-
-/** Reserves vertical space for the overlay close control on mobile only. */
-export const MOBILE_OVERLAY_CONTENT_CLASS = "max-md:pt-16";
 
 /** Horizontal page padding for the mobile coach workspace chat surface. */
 export const MOBILE_WORKSPACE_X_PADDING_CLASS = "px-4 md:px-0";

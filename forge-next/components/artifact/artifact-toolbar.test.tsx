@@ -76,4 +76,20 @@ describe("ArtifactToolbar", () => {
     await user.type(screen.getByLabelText("Artifact title"), "A");
     expect(onTitleChange).toHaveBeenCalled();
   });
+
+  it("renders a close control beside save when onClose is provided", () => {
+    const onClose = vi.fn();
+    render(
+      <ArtifactToolbar
+        title="Plan"
+        saveDisabled={false}
+        onTitleChange={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    const closeButton = screen.getByRole("button", { name: "Close artifact" });
+    expect(saveButton.parentElement).toBe(closeButton.parentElement);
+  });
 });

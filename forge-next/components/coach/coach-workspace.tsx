@@ -9,7 +9,6 @@ import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mo
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
 import { MobileOverlayScrollChrome } from "@/components/coach/mobile-overlay-scroll-chrome";
-import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
@@ -32,8 +31,6 @@ import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_HISTORY_OVERLAY_CLASS,
-  MOBILE_OVERLAY_CLOSE_CLASS,
-  MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { isChatRunning } from "@/lib/chat";
@@ -109,6 +106,7 @@ function ArtifactPanel({
   disabled,
   onPlanChange,
   mobileOverlay = false,
+  onClose,
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
@@ -121,6 +119,7 @@ function ArtifactPanel({
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
   mobileOverlay?: boolean;
+  onClose?: () => void;
 }) {
   const toolbar = (
     <div className="flex flex-col gap-2">
@@ -139,6 +138,7 @@ function ArtifactPanel({
             saveStatus={saveStatus}
             onTitleChange={onTitleChange}
             onSave={onSave}
+            onClose={mobileOverlay ? onClose : undefined}
           />
         </div>
       </div>
@@ -169,7 +169,6 @@ function ArtifactPanel({
         className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
       >
         <MobileOverlayScrollChrome
-          topContainerClassName={MOBILE_OVERLAY_CONTENT_CLASS}
           topChrome={toolbar}
           footerInsetClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
         >
@@ -719,12 +718,6 @@ function CoachWorkspaceInner({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-              <WorkspaceCloseButton
-                className={MOBILE_OVERLAY_CLOSE_CLASS}
-                variant="close"
-                ariaLabel="Close artifact"
-                onClick={() => setShowArtifact(false)}
-              />
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
@@ -737,6 +730,7 @@ function CoachWorkspaceInner({
                 disabled={isChatRunning(state)}
                 onPlanChange={handlePlanChange}
                 mobileOverlay
+                onClose={() => setShowArtifact(false)}
               />
             </div>
         ) : (

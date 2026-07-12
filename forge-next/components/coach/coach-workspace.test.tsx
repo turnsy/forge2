@@ -386,6 +386,28 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("places the mobile artifact close control beside save", async () => {
+    const user = userEvent.setup();
+    mockUseIsMobile.mockReturnValue(true);
+    mockUseCoachPlanWorkspace.mockReturnValue(
+      mockWorkspaceReturn(
+        mockWorkspaceState({
+          hasStarted: true,
+          currentArtifact: samplePlan,
+          artifactTitle: "Test Plan",
+          messages: [{ role: "user", content: "Hello" }],
+        }),
+      ),
+    );
+
+    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    await user.click(screen.getByRole("button", { name: "View artifact" }));
+
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    const closeButton = screen.getByRole("button", { name: "Close artifact" });
+    expect(saveButton.parentElement).toBe(closeButton.parentElement);
+  });
+
   it("returns to chat when the mobile artifact close button is pressed", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);

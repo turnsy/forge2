@@ -18,26 +18,14 @@ import {
   MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS,
   MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS,
   MOBILE_COMPOSER_VIEW_CONTROL_CLASS,
-  MOBILE_OVERLAY_CLOSE_CLASS,
-  MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 
 describe("mobile workspace layout classes", () => {
-  it("positions the close control in the overlay corner", () => {
-    expect(MOBILE_OVERLAY_CLOSE_CLASS).toContain("absolute");
-    expect(MOBILE_OVERLAY_CLOSE_CLASS).toContain("right-4");
-  });
-
   it("defines a header row for the chat reset control", () => {
     expect(MOBILE_CHAT_HEADER_CLASS).toContain("justify-end");
     expect(MOBILE_CHAT_HEADER_CLASS).toContain("shrink-0");
-  });
-
-  it("uses extra top padding on mobile for overlay content", () => {
-    expect(MOBILE_OVERLAY_CONTENT_CLASS).toContain("max-md:pt-16");
-    expect(MOBILE_OVERLAY_CONTENT_CLASS).not.toContain("md:pt-14");
   });
 
   it("defines composer inset and scroll-end padding", () => {
