@@ -51,14 +51,19 @@ export default async function CoachAthletesPage({
   });
 
   return (
-    <PageContent>
-      <AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />
-      <div className="mb-4">
-        <ListSearchField
-          pathname="/coach/athletes"
-          defaultValue={params.q ?? ""}
-        />
-      </div>
+    <PageContent
+      header={
+        <>
+          <AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />
+          <div className="mb-4">
+            <ListSearchField
+              pathname="/coach/athletes"
+              defaultValue={params.q ?? ""}
+            />
+          </div>
+        </>
+      }
+    >
       <Suspense
         key={`${query.q ?? ""}-${query.page}`}
         fallback={<ListSectionSpinner />}

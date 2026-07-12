@@ -30,6 +30,8 @@ export { List, ListRow } from "./list";
 export { Tabs, TabList, Tab, TabPanel } from "./tabs";
 export { Spinner } from "./spinner";
 export { FadeIn } from "./fade-in";
+export { OverlayScrollChrome } from "./overlay-scroll-chrome";
+export { ScrollPage } from "./scroll-page";
 export { Dropdown, DropdownItem } from "./dropdown";
 export { ChatBubble } from "./chat-bubble";
 export { MarkdownContent } from "./markdown-content";

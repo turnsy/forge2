@@ -2,6 +2,15 @@ import {
   MOBILE_BOTTOM_NAV_OFFSET_CLASS,
   MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS,
 } from "@/lib/navigation/mobile-bottom-nav-layout";
+import {
+  OVERLAY_BOTTOM_BLUR_ZONE_CLASS,
+  OVERLAY_FOOTER_CLASS,
+  OVERLAY_PRE_FOOTER_CLASS,
+  OVERLAY_PRE_FOOTER_SPACING_CLASS,
+  OVERLAY_SCROLL_END_GAP_PX,
+  OVERLAY_TOP_CHROME_CLASS,
+  OVERLAY_TOP_CONTAINER_CLASS,
+} from "@/lib/layout/overlay-scroll-chrome-layout";
 import { BUTTON_SM_HEIGHT_CLASS } from "@/lib/theme/surfaces";
 
 /** Width reserved for the pinned view button slot in the mobile composer toolbar. */
@@ -14,35 +23,32 @@ export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 
 /** Tighter separation between the toolbar and prompt in overlay chat. */
-export const MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS = "mb-2";
+export const MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS = OVERLAY_PRE_FOOTER_SPACING_CLASS;
 
 /** Toolbar row wrapper in overlay chat; keeps spacing above the prompt. */
-export const MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS = `relative z-10 pointer-events-auto ${MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS}`;
+export const MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS = OVERLAY_PRE_FOOTER_CLASS;
 
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
 
 /** Container for the top history control. */
-export const MOBILE_CHAT_TOP_OVERLAY_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 z-20";
+export const MOBILE_CHAT_TOP_OVERLAY_CLASS = OVERLAY_TOP_CONTAINER_CLASS;
 
 /** Wraps the history control; progressive blur is sized to this row only. */
-export const MOBILE_CHAT_TOP_CHROME_CLASS =
-  "relative pointer-events-auto pt-1 pb-2";
+export const MOBILE_CHAT_TOP_CHROME_CLASS = OVERLAY_TOP_CHROME_CLASS;
 
 /** Pinned footer for the composer toolbar and prompt on mobile overlay chat. */
-export const MOBILE_CHAT_FOOTER_CLASS =
-  "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col";
+export const MOBILE_CHAT_FOOTER_CLASS = OVERLAY_FOOTER_CLASS;
 
 /** Zone where progressive blur extends from the toolbar or prompt through the bottom nav. */
-export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = "relative";
+export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = OVERLAY_BOTTOM_BLUR_ZONE_CLASS;
 
 /** Darker glass surface for the overlay prompt card (input + actions). */
 export const MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS =
   "rounded-card border border-glass-border bg-surface/80 backdrop-blur-md shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
 
 /** Extra space between the last message and overlay chrome when scrolled to the end. */
-export const MOBILE_CHAT_SCROLL_END_GAP_PX = 8;
+export const MOBILE_CHAT_SCROLL_END_GAP_PX = OVERLAY_SCROLL_END_GAP_PX;
 
 /** Reserved height for the floating bottom nav + inset + safe area. */
 const MOBILE_BOTTOM_NAV_CLEARANCE =

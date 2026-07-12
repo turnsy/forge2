@@ -53,14 +53,19 @@ export default async function CoachPlansPage({
   });
 
   return (
-    <PageContent>
-      <PlansPageHeader />
-      <div className="mb-4">
-        <ListSearchField
-          pathname="/coach/plans"
-          defaultValue={params.q ?? ""}
-        />
-      </div>
+    <PageContent
+      header={
+        <>
+          <PlansPageHeader />
+          <div className="mb-4">
+            <ListSearchField
+              pathname="/coach/plans"
+              defaultValue={params.q ?? ""}
+            />
+          </div>
+        </>
+      }
+    >
       <Suspense
         key={`${query.q ?? ""}-${query.page}`}
         fallback={<ListSectionSpinner />}

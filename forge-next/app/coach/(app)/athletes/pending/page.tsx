@@ -8,8 +8,10 @@ export default async function CoachPendingInvitesPage() {
   const invites = await listCoachPendingInvites();
 
   return (
-    <PageShell back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}>
-      <PageHeader title="Pending invites" />
+    <PageShell
+      back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}
+      header={<PageHeader title="Pending invites" />}
+    >
       <PendingInviteList invites={invites} />
     </PageShell>
   );

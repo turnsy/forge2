@@ -17,6 +17,7 @@ import {
   MetaItem,
   PageBackButton,
   PageHeader,
+  ScrollPage,
   Tab,
   TabList,
   TabPanel,
@@ -257,8 +258,10 @@ export function CoachAthleteDetailView({
   previousPlans: AssignedPlan[];
 }) {
   return (
-    <>
-      <PageHeader title={relationship.athleteName} />
+    <ScrollPage
+      header={<PageHeader title={relationship.athleteName} />}
+      scrollClassName="flex flex-col gap-6"
+    >
       <Tabs defaultTab="current-plan">
         <TabList>
           <Tab id="current-plan">Current plan</Tab>
@@ -297,6 +300,6 @@ export function CoachAthleteDetailView({
           </div>
         </TabPanel>
       </Tabs>
-    </>
+    </ScrollPage>
   );
 }

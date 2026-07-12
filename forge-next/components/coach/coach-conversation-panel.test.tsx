@@ -36,7 +36,6 @@ describe("CoachConversationPanel", () => {
   it("uses progressive blur on mobile so the thread scrolls under chrome", () => {
     const { container } = render(
       <CoachConversationPanel
-        layout="mobileOverlay"
         topChrome={<button type="button">History</button>}
         composerHeader={<button type="button">View</button>}
         composerClassName="pb-[calc(4.5rem+0.75rem+env(safe-area-inset-bottom,0px))]"

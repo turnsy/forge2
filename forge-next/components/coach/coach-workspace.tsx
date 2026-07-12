@@ -8,7 +8,7 @@ import { SessionHistoryMobileToggle } from "@/components/coach/session-history-m
 import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
-import { MobileOverlayScrollChrome } from "@/components/coach/mobile-overlay-scroll-chrome";
+import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
@@ -158,49 +158,40 @@ function ArtifactPanel({
       isAwaitingArtifact={false}
       disabled={disabled}
       onPlanChange={onPlanChange}
-      embeddedScroll={mobileOverlay}
+      embeddedScroll
     />
   );
 
-  if (mobileOverlay) {
-    return (
-      <FadeIn
-        key={artifactFadeKey}
-        className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
-      >
-        <MobileOverlayScrollChrome
-          topChrome={toolbar}
-          footerInsetClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-        >
-          {({ scrollPaddingTop, scrollPaddingBottom }) => (
-            <div
-              className={`absolute inset-0 z-0 overflow-y-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-              style={{
-                ...(scrollPaddingTop !== undefined
-                  ? { paddingTop: scrollPaddingTop }
-                  : {}),
-                ...(scrollPaddingBottom !== undefined
-                  ? { paddingBottom: scrollPaddingBottom }
-                  : {}),
-              }}
-            >
-              {preview}
-            </div>
-          )}
-        </MobileOverlayScrollChrome>
-      </FadeIn>
-    );
-  }
+  const contentInsetClassName = mobileOverlay ? MOBILE_CHAT_CONTENT_INSET_X_CLASS : "";
 
   return (
     <FadeIn
       key={artifactFadeKey}
-      className="flex h-full min-h-0 flex-col gap-5 overflow-hidden max-md:gap-4"
+      className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-md:gap-4">
-        {toolbar}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{preview}</div>
-      </div>
+      <OverlayScrollChrome
+        topChrome={toolbar}
+        footerInsetClassName={
+          mobileOverlay ? MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS : undefined
+        }
+        contentInsetClassName={contentInsetClassName}
+      >
+        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+          <div
+            className={`absolute inset-0 z-0 overflow-y-auto${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+            style={{
+              ...(scrollPaddingTop !== undefined
+                ? { paddingTop: scrollPaddingTop }
+                : {}),
+              ...(scrollPaddingBottom !== undefined
+                ? { paddingBottom: scrollPaddingBottom }
+                : {}),
+            }}
+          >
+            {preview}
+          </div>
+        )}
+      </OverlayScrollChrome>
     </FadeIn>
   );
 }
@@ -622,7 +613,6 @@ function CoachWorkspaceInner({
       </div>
     ) : (
       <CoachConversationPanel
-        layout="mobileOverlay"
         topChrome={mobileHistoryToggle}
         state={state}
         onAttach={attachFiles}
@@ -830,22 +820,20 @@ function CoachWorkspaceInner({
             <div
               className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
             >
-              <ChatWorkspaceShell
-                headerClassName={
-                  desktopChatToggle ? DESKTOP_CHAT_HEADER_CLASS : undefined
-                }
-                headerActions={desktopChatToggle}
-              >
-                <CoachConversationPanel
-                  state={state}
-                  onAttach={attachFiles}
+              <CoachConversationPanel
+                state={state}
+                onAttach={attachFiles}
                 onRemoveAttachment={removeAttachment}
-                  onSend={handleSendMessage}
-                  onStop={stopResponse}
-                  onReset={handleReset}
-                  promptEnabled={promptEnabled}
-                />
-              </ChatWorkspaceShell>
+                onSend={handleSendMessage}
+                onStop={stopResponse}
+                onReset={handleReset}
+                promptEnabled={promptEnabled}
+                topChrome={
+                  desktopChatToggle ? (
+                    <div className={DESKTOP_CHAT_HEADER_CLASS}>{desktopChatToggle}</div>
+                  ) : undefined
+                }
+              />
             </div>
           )}
         </div>
