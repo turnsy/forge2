@@ -88,7 +88,7 @@ export function PageShell({
 
   return (
     <div
-      className={`${pageShellClass()} flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
+      className={`${pageShellClass()} flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden${className ? ` ${className}` : ""}`}
     >
       <PageBackGutter
         back={back}

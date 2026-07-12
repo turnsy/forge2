@@ -10,6 +10,7 @@ import {
   OVERLAY_PRE_FOOTER_CLASS,
   OVERLAY_SCROLL_END_GAP_PX,
   OVERLAY_TOP_CHROME_CLASS,
+  OVERLAY_TOP_CHROME_CONTENT_CLASS,
   OVERLAY_TOP_CONTAINER_CLASS,
 } from "@/lib/layout/overlay-scroll-chrome-layout";
 
@@ -62,7 +63,9 @@ export function OverlayScrollChrome({
               direction="top"
               className="pointer-events-none absolute inset-0 z-0"
             />
-            <div className={`relative z-10${insetContentClassName(contentInsetClassName)}`}>
+            <div
+              className={`relative z-10 ${OVERLAY_TOP_CHROME_CONTENT_CLASS}${insetContentClassName(contentInsetClassName)}`}
+            >
               {topChrome}
             </div>
           </div>

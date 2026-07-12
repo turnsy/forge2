@@ -55,12 +55,10 @@ export default async function CoachAthletesPage({
       header={
         <>
           <AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />
-          <div className="mb-4">
-            <ListSearchField
-              pathname="/coach/athletes"
-              defaultValue={params.q ?? ""}
-            />
-          </div>
+          <ListSearchField
+            pathname="/coach/athletes"
+            defaultValue={params.q ?? ""}
+          />
         </>
       }
     >

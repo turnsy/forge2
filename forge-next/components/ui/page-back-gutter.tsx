@@ -42,7 +42,7 @@ export function PageBackGutter({
         />
       </div>
       {showMobileBack ? (
-        <div className="absolute left-0 top-0 z-10 md:hidden">
+        <div className="absolute left-0 top-0 z-30 md:hidden">
           <PageBackLink
             href={back.href}
             ariaLabel={back.ariaLabel}

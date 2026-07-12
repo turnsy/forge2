@@ -120,7 +120,7 @@ export function pageBackGutterOffsetClass(): string {
 }
 
 export function pageBackGutterAlignClass(): string {
-  return "top-0 h-8 items-center";
+  return "top-4 md:top-8 h-8 items-center";
 }
 
 /** Left padding that reserves space for the overlay back control (40px button + 8px gap). */

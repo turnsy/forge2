@@ -51,8 +51,7 @@ describe("CoachConversationPanel", () => {
 
     expect(container.querySelector("[style*='linear-gradient']")).not.toBeNull();
     expect(container.innerHTML).toContain(MOBILE_CHAT_FOOTER_CLASS);
-    expect(container.querySelector(".absolute.inset-0")).not.toBeNull();
-    expect(container.querySelector(".bg-gradient-to-b")).toBeNull();
+    expect(container.innerHTML).toContain("from-surface/75");
     expect(container.querySelector(".h-16")).toBeNull();
   });
 });

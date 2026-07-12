@@ -57,12 +57,10 @@ export default async function CoachPlansPage({
       header={
         <>
           <PlansPageHeader />
-          <div className="mb-4">
-            <ListSearchField
-              pathname="/coach/plans"
-              defaultValue={params.q ?? ""}
-            />
-          </div>
+          <ListSearchField
+            pathname="/coach/plans"
+            defaultValue={params.q ?? ""}
+          />
         </>
       }
     >

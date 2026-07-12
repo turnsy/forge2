@@ -14,6 +14,11 @@ const PROGRESSIVE_BLUR_LAYERS: Array<{
   { blurClass: "backdrop-blur-[64px]", from: "75%", to: "100%" },
 ];
 
+const PROGRESSIVE_SCRIM_CLASS: Record<ProgressiveBlurDirection, string> = {
+  top: "bg-gradient-to-b from-surface/75 via-surface/35 to-transparent",
+  bottom: "bg-gradient-to-t from-surface/75 via-surface/35 to-transparent",
+};
+
 function progressiveBlurMask(
   direction: ProgressiveBlurDirection,
   from: string,
@@ -45,6 +50,7 @@ export function ProgressiveBlur({
           }}
         />
       ))}
+      <div className={`absolute inset-0 ${PROGRESSIVE_SCRIM_CLASS[direction]}`} />
     </div>
   );
 }
