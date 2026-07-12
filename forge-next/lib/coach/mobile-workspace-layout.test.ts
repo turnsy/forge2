@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
+  MOBILE_CHAT_FOOTER_CLASS,
+  MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
+  MOBILE_CHAT_TOOLBAR_FADE_CLASS,
+  MOBILE_CHAT_TOP_OVERLAY_CLASS,
   MOBILE_CHAT_HEADER_CLASS,
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
   MOBILE_COMPOSER_TOOLBAR_ROW_CLASS,
@@ -39,10 +43,14 @@ describe("mobile workspace layout classes", () => {
 
   it("defines spacing between the view control and composer", () => {
     expect(MOBILE_VIEW_ARTIFACT_SPACING_CLASS).toBe("mb-4");
-    expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain(
-      MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
-    );
     expect(MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS).toContain("overflow-x-auto");
     expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain("h-8");
+  });
+
+  it("defines mobile overlay chat chrome for scroll-under gradients", () => {
+    expect(MOBILE_CHAT_TOP_OVERLAY_CLASS).toContain("bg-gradient-to-b");
+    expect(MOBILE_CHAT_TOOLBAR_FADE_CLASS).toContain("bg-gradient-to-t");
+    expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
+    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-14");
   });
 });

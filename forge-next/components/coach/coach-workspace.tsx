@@ -579,6 +579,8 @@ function CoachWorkspaceInner({
       </div>
     ) : (
       <CoachConversationPanel
+        layout="mobileOverlay"
+        topChrome={mobileHistoryToggle}
         state={state}
         onAttach={attachFiles}
         onRemoveAttachment={removeAttachment}
@@ -663,11 +665,7 @@ function CoachWorkspaceInner({
   if (isMobile) {
     if (!showSplitPane) {
       return (
-        <ChatWorkspaceShell
-          headerClassName={mobileChatHeaderClass}
-          headerStart={mobileHistoryToggle}
-          className={MOBILE_WORKSPACE_X_PADDING_CLASS}
-        >
+        <ChatWorkspaceShell className={MOBILE_WORKSPACE_X_PADDING_CLASS}>
           {renderMobileChatBody()}
         </ChatWorkspaceShell>
       );
@@ -701,11 +699,7 @@ function CoachWorkspaceInner({
             </div>
           </div>
         ) : (
-          <ChatWorkspaceShell
-            headerClassName={mobileChatHeaderClass}
-            headerStart={mobileHistoryToggle}
-            className={MOBILE_WORKSPACE_X_PADDING_CLASS}
-          >
+          <ChatWorkspaceShell className={MOBILE_WORKSPACE_X_PADDING_CLASS}>
             {renderMobileChatBody(
               <MobileComposerToolbar
                 attachments={state.attachments}

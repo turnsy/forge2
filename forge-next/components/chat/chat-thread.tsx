@@ -29,6 +29,8 @@ export function ChatThread({
   runStatus,
   errors,
   phase,
+  className = "",
+  scrollClassName = "",
 }: {
   threadKey: string;
   messages: ChatMessage[];
@@ -36,6 +38,8 @@ export function ChatThread({
   runStatus: ChatStatus | null;
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
+  className?: string;
+  scrollClassName?: string;
 }) {
   const { scrollRef, bottomRef } = useChatThreadAutoScroll({
     threadKey,
@@ -61,10 +65,12 @@ export function ChatThread({
   const showErrors = errors.length > 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
+    >
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0"
+        className={`flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`}
       >
         {messages.filter(isRenderableMessage).map((message, index) => (
           <ChatBubble key={`${message.role}-${index}`} role={message.role}>
