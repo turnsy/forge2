@@ -123,7 +123,7 @@ function ArtifactPanelScrollLane({
   return (
     <div
       ref={scrollRef}
-      className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+      className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-x-hidden overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
       style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
     >
       {children}

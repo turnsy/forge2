@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   hasOverlayScrollLane,
+  OVERLAY_SCROLL_LANE_CLASS,
   overlayScrollLaneStyle,
 } from "@/lib/layout/overlay-scroll-lane";
 
@@ -21,5 +22,9 @@ describe("overlay scroll lane helpers", () => {
   it("detects when lane padding should be used", () => {
     expect(hasOverlayScrollLane({})).toBe(false);
     expect(hasOverlayScrollLane({ scrollPaddingTop: 40 })).toBe(true);
+  });
+
+  it("clips horizontal overflow in the scroll lane", () => {
+    expect(OVERLAY_SCROLL_LANE_CLASS).toContain("overflow-x-hidden");
   });
 });
