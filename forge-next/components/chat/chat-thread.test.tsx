@@ -149,12 +149,16 @@ describe("ChatThread", () => {
         runStatus={null}
         errors={[]}
         phase="idle"
+        scrollPaddingTop={52}
         scrollPaddingBottom={180}
       />,
     );
 
     const scrollContainer = container.querySelector(".overflow-y-auto");
-    expect(scrollContainer).toHaveStyle({ paddingBottom: "180px" });
+    expect(scrollContainer).toHaveStyle({
+      paddingTop: "52px",
+      paddingBottom: "180px",
+    });
   });
 
   it("scrolls to the bottom when a thread is loaded", () => {

@@ -21,11 +21,11 @@ export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CL
 
 /** Container for the top history control. */
 export const MOBILE_CHAT_TOP_OVERLAY_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 z-20 pt-1";
+  "pointer-events-none absolute inset-x-0 top-0 z-20";
 
-/** Height of the progressive blur behind the history control. */
-export const MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 h-16";
+/** Wraps the history control; progressive blur is sized to this row only. */
+export const MOBILE_CHAT_TOP_CHROME_CLASS =
+  "relative pointer-events-auto pt-1 pb-2";
 
 /** Pinned footer for the composer toolbar and prompt on mobile overlay chat. */
 export const MOBILE_CHAT_FOOTER_CLASS =
@@ -51,8 +51,8 @@ const MOBILE_COMPOSER_BLOCK_HEIGHT = "7.5rem";
 /** Toolbar row height; matches BUTTON_SM_HEIGHT_CLASS. */
 const MOBILE_TOOLBAR_BLOCK_HEIGHT = "2rem";
 
-/** Scroll inset so the first message clears the top overlay. */
-export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-16";
+/** Scroll inset so the first message clears the top overlay (fallback). */
+export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-12";
 
 /** Scroll end inset so the last message rests above the prompt and nav. */
 export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS = `max-md:pb-[calc(${MOBILE_COMPOSER_BLOCK_HEIGHT}+${MOBILE_BOTTOM_NAV_CLEARANCE})]`;

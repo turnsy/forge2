@@ -10,7 +10,7 @@ import {
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS,
+  MOBILE_CHAT_TOP_CHROME_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
   MOBILE_CHAT_HEADER_CLASS,
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
@@ -57,13 +57,14 @@ describe("mobile workspace layout classes", () => {
   });
 
   it("defines mobile overlay chat chrome for progressive blur", () => {
-    expect(MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS).toContain("h-16");
+    expect(MOBILE_CHAT_TOP_CHROME_CLASS).toContain("relative");
+    expect(MOBILE_CHAT_TOP_OVERLAY_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-surface/80");
     expect(MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
     expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(8);
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
-    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-16");
+    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-12");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("7.5rem");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS).toContain(
       "2rem",

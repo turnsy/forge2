@@ -14,8 +14,8 @@ import {
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
+  MOBILE_CHAT_TOP_CHROME_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
-  MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
@@ -62,10 +62,16 @@ export function CoachConversationPanel({
   );
 
   const { ref: footerRef, height: footerHeight } = useMeasuredHeight<HTMLDivElement>();
+  const { ref: topChromeRef, height: topChromeHeight } =
+    useMeasuredHeight<HTMLDivElement>();
 
   if (layout === "mobileOverlay") {
     const measuredScrollPaddingBottom =
       footerHeight > 0 ? footerHeight + MOBILE_CHAT_SCROLL_END_GAP_PX : undefined;
+    const measuredScrollPaddingTop =
+      topChrome && topChromeHeight > 0
+        ? topChromeHeight + MOBILE_CHAT_SCROLL_END_GAP_PX
+        : undefined;
     const fallbackScrollBottomClass = composerHeader
       ? MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS
       : MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS;
@@ -80,23 +86,29 @@ export function CoachConversationPanel({
           errors={state.errors}
           phase={state.phase}
           className="absolute inset-0 z-0"
-          scrollClassName={`${MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS} ${
+          scrollClassName={`${
+            measuredScrollPaddingTop === undefined
+              ? MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS
+              : ""
+          } ${
             measuredScrollPaddingBottom === undefined
               ? fallbackScrollBottomClass
               : ""
           } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+          scrollPaddingTop={measuredScrollPaddingTop}
           scrollPaddingBottom={measuredScrollPaddingBottom}
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
-            <ProgressiveBlur
-              direction="top"
-              className={MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS}
-            />
             <div
-              className={`relative z-10 pointer-events-auto pb-2 ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              ref={topChromeRef}
+              className={`${MOBILE_CHAT_TOP_CHROME_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
-              {topChrome}
+              <ProgressiveBlur
+                direction="top"
+                className="pointer-events-none absolute inset-0 z-0"
+              />
+              <div className="relative z-10">{topChrome}</div>
             </div>
           </div>
         ) : null}

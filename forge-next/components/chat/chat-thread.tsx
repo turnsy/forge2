@@ -31,6 +31,7 @@ export function ChatThread({
   phase,
   className = "",
   scrollClassName = "",
+  scrollPaddingTop,
   scrollPaddingBottom,
 }: {
   threadKey: string;
@@ -41,6 +42,7 @@ export function ChatThread({
   phase: ChatWorkspacePhase;
   className?: string;
   scrollClassName?: string;
+  scrollPaddingTop?: number;
   scrollPaddingBottom?: number;
 }) {
   const { scrollRef, bottomRef } = useChatThreadAutoScroll({
@@ -75,8 +77,15 @@ export function ChatThread({
         ref={scrollRef}
         className={`flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`}
         style={
-          scrollPaddingBottom !== undefined
-            ? { paddingBottom: scrollPaddingBottom }
+          scrollPaddingTop !== undefined || scrollPaddingBottom !== undefined
+            ? {
+                ...(scrollPaddingTop !== undefined
+                  ? { paddingTop: scrollPaddingTop }
+                  : {}),
+                ...(scrollPaddingBottom !== undefined
+                  ? { paddingBottom: scrollPaddingBottom }
+                  : {}),
+              }
             : undefined
         }
       >
