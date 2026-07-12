@@ -43,6 +43,6 @@ describe("OverlayScrollChrome", () => {
     expect(blurZone?.textContent).toContain("Prompt");
 
     const scrollLayer = container.querySelector('[data-testid="scroll-layer"]');
-    expect(scrollLayer).toHaveStyle({ top: "136px", bottom: "136px" });
+    expect(scrollLayer).toHaveStyle({ paddingTop: "136px", paddingBottom: "136px" });
   });
 });

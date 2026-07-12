@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import type { OverlayScrollPadding } from "@/components/ui/overlay-scroll-chrome";
 
-/** Positions a scroll lane between measured overlay chrome (keeps scrollbars out of blur). */
-export const OVERLAY_SCROLL_LANE_CLASS = "absolute inset-x-0 z-0 overflow-y-auto";
+/** Full-bleed scroll lane; content uses padding to pass under overlay chrome. */
+export const OVERLAY_SCROLL_LANE_CLASS = "absolute inset-0 z-0 overflow-y-auto";
 
 export function hasOverlayScrollLane({
   scrollPaddingTop,
@@ -18,7 +18,9 @@ export function overlayScrollLaneStyle({
   scrollPaddingBottom,
 }: OverlayScrollPadding): CSSProperties {
   return {
-    top: scrollPaddingTop ?? 0,
-    bottom: scrollPaddingBottom ?? 0,
+    ...(scrollPaddingTop !== undefined ? { paddingTop: scrollPaddingTop } : {}),
+    ...(scrollPaddingBottom !== undefined
+      ? { paddingBottom: scrollPaddingBottom }
+      : {}),
   };
 }

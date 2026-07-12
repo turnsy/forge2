@@ -5,21 +5,20 @@ import {
 } from "@/lib/layout/overlay-scroll-lane";
 
 describe("overlay scroll lane helpers", () => {
-  it("positions the scroll lane between chrome instead of using padding", () => {
+  it("pads scroll content so it can pass under overlay chrome", () => {
     expect(overlayScrollLaneStyle({ scrollPaddingTop: 52, scrollPaddingBottom: 180 })).toEqual({
-      top: 52,
-      bottom: 180,
+      paddingTop: 52,
+      paddingBottom: 180,
     });
   });
 
-  it("defaults missing chrome offsets to zero", () => {
+  it("omits unset chrome offsets", () => {
     expect(overlayScrollLaneStyle({ scrollPaddingBottom: 120 })).toEqual({
-      top: 0,
-      bottom: 120,
+      paddingBottom: 120,
     });
   });
 
-  it("detects when lane positioning should be used", () => {
+  it("detects when lane padding should be used", () => {
     expect(hasOverlayScrollLane({})).toBe(false);
     expect(hasOverlayScrollLane({ scrollPaddingTop: 40 })).toBe(true);
   });

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { PageBackGutter, type PageBackConfig } from "@/components/ui/page-back-gutter";
+import { PageBackProvider } from "@/components/ui/page-back-context";
+import type { PageBackConfig } from "@/components/ui/page-back-gutter";
+import { PageBackLink } from "@/components/ui/page-back-link";
 import { ScrollPage } from "@/components/ui/scroll-page";
 import { pageContentClass, pageShellClass } from "@/lib/theme";
 
@@ -67,40 +69,37 @@ export function PageShell({
 
     return (
       <div className={`${mainClassName}${className ? ` ${className}` : ""}`}>
-        <PageBackGutter back={back} showMobileBack={showMobileBack}>
+        <div className="relative">
+          <div className={showMobileBack ? "mb-4 md:mb-0" : "mb-4 hidden md:mb-0 md:block"}>
+            <PageBackLink
+              href={back.href}
+              ariaLabel={back.ariaLabel}
+              onClick={back.onClick}
+            />
+          </div>
           {content}
-        </PageBackGutter>
+        </div>
       </div>
     );
   }
 
+  const body = (
+    <main
+      className={`mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
+    >
+      <ShellScrollBody header={header} preFooter={preFooter} footer={footer}>
+        {children}
+      </ShellScrollBody>
+    </main>
+  );
+
   if (!back) {
-    return (
-      <main
-        className={`mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
-      >
-        <ShellScrollBody header={header} preFooter={preFooter} footer={footer}>
-          {children}
-        </ShellScrollBody>
-      </main>
-    );
+    return body;
   }
 
   return (
-    <div
-      className={`${pageShellClass()} flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden${className ? ` ${className}` : ""}`}
-    >
-      <PageBackGutter
-        back={back}
-        showMobileBack={showMobileBack}
-        className="flex min-h-0 flex-1 flex-col"
-      >
-        <main className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ShellScrollBody header={header} preFooter={preFooter} footer={footer}>
-            {children}
-          </ShellScrollBody>
-        </main>
-      </PageBackGutter>
-    </div>
+    <PageBackProvider back={back} showMobileBack={showMobileBack}>
+      {body}
+    </PageBackProvider>
   );
 }
