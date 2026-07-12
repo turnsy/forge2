@@ -5,10 +5,12 @@ import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
+import { useMeasuredHeight } from "@/lib/hooks/use-measured-height";
 import {
   MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
+  MOBILE_CHAT_SCROLL_END_GAP_PX,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
@@ -59,8 +61,12 @@ export function CoachConversationPanel({
     />
   );
 
+  const { ref: footerRef, height: footerHeight } = useMeasuredHeight<HTMLDivElement>();
+
   if (layout === "mobileOverlay") {
-    const scrollBottomClass = composerHeader
+    const measuredScrollPaddingBottom =
+      footerHeight > 0 ? footerHeight + MOBILE_CHAT_SCROLL_END_GAP_PX : undefined;
+    const fallbackScrollBottomClass = composerHeader
       ? MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS
       : MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS;
 
@@ -74,7 +80,12 @@ export function CoachConversationPanel({
           errors={state.errors}
           phase={state.phase}
           className="absolute inset-0 z-0"
-          scrollClassName={`${MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS} ${scrollBottomClass} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+          scrollClassName={`${MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS} ${
+            measuredScrollPaddingBottom === undefined
+              ? fallbackScrollBottomClass
+              : ""
+          } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+          scrollPaddingBottom={measuredScrollPaddingBottom}
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
@@ -89,7 +100,7 @@ export function CoachConversationPanel({
             </div>
           </div>
         ) : null}
-        <div className={MOBILE_CHAT_FOOTER_CLASS}>
+        <div ref={footerRef} className={MOBILE_CHAT_FOOTER_CLASS}>
           {composerHeader ? (
             <div
               className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}

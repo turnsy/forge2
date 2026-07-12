@@ -140,6 +140,23 @@ describe("ChatThread", () => {
     expect(screen.queryByText("Generating")).not.toBeInTheDocument();
   });
 
+  it("applies measured scroll padding when provided", () => {
+    const { container } = render(
+      <ChatThread
+        threadKey="thread-1"
+        messages={[{ role: "user", content: "Hello" }]}
+        streamingAssistantText=""
+        runStatus={null}
+        errors={[]}
+        phase="idle"
+        scrollPaddingBottom={180}
+      />,
+    );
+
+    const scrollContainer = container.querySelector(".overflow-y-auto");
+    expect(scrollContainer).toHaveStyle({ paddingBottom: "180px" });
+  });
+
   it("scrolls to the bottom when a thread is loaded", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {

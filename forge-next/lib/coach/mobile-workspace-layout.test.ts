@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
+  MOBILE_CHAT_SCROLL_END_GAP_PX,
   MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS,
   MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
@@ -59,10 +60,11 @@ describe("mobile workspace layout classes", () => {
     expect(MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS).toContain("h-16");
     expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-glass-nested");
     expect(MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
+    expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(8);
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
     expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-16");
-    expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("5.75rem");
+    expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("7.5rem");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS).toContain(
       "2rem",
     );

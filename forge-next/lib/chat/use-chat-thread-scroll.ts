@@ -19,6 +19,7 @@ export function useChatThreadAutoScroll({
   runStatus,
   errors,
   phase,
+  scrollPaddingBottom,
 }: {
   threadKey: string;
   messages: ChatMessage[];
@@ -26,6 +27,7 @@ export function useChatThreadAutoScroll({
   runStatus: ChatStatus | null;
   errors: ChatDisplayError[];
   phase: ChatWorkspacePhase;
+  scrollPaddingBottom?: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,12 @@ export function useChatThreadAutoScroll({
       const isInitialLoad =
         previousMessageCountRef.current === 0 && messageCount > 0;
       scrollToBottom(isInitialLoad ? "instant" : "smooth");
+    } else if (
+      scrollPaddingBottom !== undefined &&
+      nearBottom &&
+      messageCount > 0
+    ) {
+      scrollToBottom("instant");
     }
 
     previousMessageCountRef.current = messageCount;
@@ -69,6 +77,7 @@ export function useChatThreadAutoScroll({
     messages,
     phase,
     runStatus,
+    scrollPaddingBottom,
     scrollToBottom,
     streamingAssistantText,
     threadKey,

@@ -38,12 +38,15 @@ export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = "relative";
 export const MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS =
   "rounded-[calc(var(--radius-card)-0.25rem)] border border-glass-border bg-glass-nested backdrop-blur-md shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
 
+/** Extra space between the last message and overlay chrome when scrolled to the end. */
+export const MOBILE_CHAT_SCROLL_END_GAP_PX = 8;
+
 /** Reserved height for the floating bottom nav + inset + safe area. */
 const MOBILE_BOTTOM_NAV_CLEARANCE =
   "4.5rem+0.75rem+env(safe-area-inset-bottom,0px)";
 
-/** Approximate compact mobile composer block height. */
-const MOBILE_COMPOSER_BLOCK_HEIGHT = "5.75rem";
+/** Approximate compact mobile composer block height (fallback before measurement). */
+const MOBILE_COMPOSER_BLOCK_HEIGHT = "7.5rem";
 
 /** Toolbar row height; matches BUTTON_SM_HEIGHT_CLASS. */
 const MOBILE_TOOLBAR_BLOCK_HEIGHT = "2rem";
