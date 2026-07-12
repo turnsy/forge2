@@ -27,7 +27,7 @@ export function PageContent({
 
   return (
     <main
-      className={`mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden p-4 md:p-8${className ? ` ${className}` : ""}`}
+      className={`mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
     >
       <ScrollPage
         header={header}

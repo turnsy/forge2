@@ -5,8 +5,8 @@ import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
+import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
 import {
-  MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
@@ -71,7 +71,7 @@ export function CoachConversationPanel({
       preFooter={preFooter}
       footer={composer}
       footerInsetClassName={composerClassName}
-      contentInsetClassName={MOBILE_CHAT_CONTENT_INSET_X_CLASS}
+      contentInsetClassName={PAGE_CONTENT_INSET_X_CLASS}
     >
       {({ scrollPaddingTop, scrollPaddingBottom }) => {
         const scrollChromeReady =
@@ -91,7 +91,7 @@ export function CoachConversationPanel({
               scrollPaddingTop === undefined ? MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS : ""
             } ${
               scrollPaddingBottom === undefined ? fallbackScrollBottomClass : ""
-            } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            } ${PAGE_CONTENT_INSET_X_CLASS}`}
             scrollPaddingTop={scrollPaddingTop}
             scrollPaddingBottom={scrollPaddingBottom}
             scrollChromeReady={scrollChromeReady}

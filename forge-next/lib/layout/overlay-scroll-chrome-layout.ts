@@ -7,7 +7,7 @@ export const OVERLAY_TOP_CONTAINER_CLASS =
 
 /** Wraps top chrome content; progressive blur is sized to this row. */
 export const OVERLAY_TOP_CHROME_CLASS =
-  "relative pointer-events-auto pt-1 pb-2";
+  "relative pointer-events-auto pt-4 pb-2 md:pt-8";
 
 /** Pinned footer overlay for toolbars, composers, and bottom chrome. */
 export const OVERLAY_FOOTER_CLASS =

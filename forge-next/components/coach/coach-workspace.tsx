@@ -16,9 +16,7 @@ import { CoachSessionLoadingView } from "@/components/coach/coach-session-loadin
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_COLUMN_CLASS,
-  DESKTOP_ARTIFACT_INNER_PADDING_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
-  DESKTOP_CHAT_AREA_CLASS,
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
   DESKTOP_CHAT_COLLAPSED_WIDTH,
   DESKTOP_CHAT_GRID_TRANSITION_CLASS,
@@ -29,10 +27,10 @@ import {
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
+import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
@@ -162,7 +160,7 @@ function ArtifactPanel({
     />
   );
 
-  const contentInsetClassName = mobileOverlay ? MOBILE_CHAT_CONTENT_INSET_X_CLASS : "";
+  const contentInsetClassName = PAGE_CONTENT_INSET_X_CLASS;
 
   return (
     <FadeIn
@@ -788,9 +786,7 @@ function CoachWorkspaceInner({
           }
         >
           {showSplitPane ? (
-            <div
-              className={`overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS} ${DESKTOP_ARTIFACT_INNER_PADDING_CLASS}`}
-            >
+            <div className={`overflow-hidden ${DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS}`}>
                 <ArtifactPanel
                   state={state}
                   artifactFadeKey={artifactFadeKey}
@@ -819,9 +815,7 @@ function CoachWorkspaceInner({
           {chatCollapsed ? (
             desktopChatToggle
           ) : (
-            <div
-              className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden ${DESKTOP_CHAT_AREA_CLASS}`}
-            >
+            <div className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden`}>
               <CoachConversationPanel
                 state={state}
                 onAttach={attachFiles}

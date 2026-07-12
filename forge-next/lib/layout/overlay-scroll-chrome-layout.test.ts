@@ -11,7 +11,7 @@ import {
 describe("overlay scroll chrome layout classes", () => {
   it("defines overlay chrome positioning and spacing", () => {
     expect(OVERLAY_TOP_CONTAINER_CLASS).toContain("absolute");
-    expect(OVERLAY_TOP_CHROME_CLASS).toContain("relative");
+    expect(OVERLAY_TOP_CHROME_CLASS).toContain("pt-4");
     expect(OVERLAY_FOOTER_CLASS).toContain("absolute");
     expect(OVERLAY_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
     expect(OVERLAY_PRE_FOOTER_CLASS).toContain("mb-2");

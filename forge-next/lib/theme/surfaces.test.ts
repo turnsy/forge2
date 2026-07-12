@@ -122,9 +122,9 @@ describe("surface theme helpers", () => {
     expect(pillButtonClass(true)).toContain("glass-button-primary");
   });
 
-  it("uses tighter page padding on small screens", () => {
-    expect(pageContentClass()).toContain("p-4");
-    expect(pageContentClass()).toContain("md:p-8");
+  it("uses page content width without outer shell padding", () => {
+    expect(pageContentClass()).toContain("max-w-5xl");
+    expect(pageContentClass()).not.toContain("p-4");
   });
 
   it("returns default and success glass surface styling", () => {

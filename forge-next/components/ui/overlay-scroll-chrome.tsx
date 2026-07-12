@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import { useMeasuredHeight } from "@/lib/hooks/use-measured-height";
+import { PAGE_CONTENT_INSET_BOTTOM_CLASS } from "@/lib/layout/page-layout";
 import {
   OVERLAY_BOTTOM_BLUR_ZONE_CLASS,
   OVERLAY_FOOTER_CLASS,
@@ -16,6 +17,10 @@ export type OverlayScrollPadding = {
   scrollPaddingTop?: number;
   scrollPaddingBottom?: number;
 };
+
+function insetContentClassName(contentInsetClassName: string): string {
+  return contentInsetClassName ? ` ${contentInsetClassName}` : "";
+}
 
 export function OverlayScrollChrome({
   topChrome,
@@ -52,15 +57,14 @@ export function OverlayScrollChrome({
         <div
           className={`${OVERLAY_TOP_CONTAINER_CLASS}${topContainerClassName ? ` ${topContainerClassName}` : ""}`}
         >
-          <div
-            ref={topChromeRef}
-            className={`${OVERLAY_TOP_CHROME_CLASS}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
-          >
+          <div ref={topChromeRef} className={OVERLAY_TOP_CHROME_CLASS}>
             <ProgressiveBlur
               direction="top"
               className="pointer-events-none absolute inset-0 z-0"
             />
-            <div className="relative z-10">{topChrome}</div>
+            <div className={`relative z-10${insetContentClassName(contentInsetClassName)}`}>
+              {topChrome}
+            </div>
           </div>
         </div>
       ) : null}
@@ -73,15 +77,13 @@ export function OverlayScrollChrome({
             className="pointer-events-none absolute inset-0 z-0"
           />
           {preFooter ? (
-            <div
-              className={`${OVERLAY_PRE_FOOTER_CLASS}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
-            >
+            <div className={`${OVERLAY_PRE_FOOTER_CLASS}${insetContentClassName(contentInsetClassName)}`}>
               {preFooter}
             </div>
           ) : null}
           {footer ? (
             <div
-              className={`relative z-10 pointer-events-auto${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+              className={`relative z-10 pointer-events-auto${insetContentClassName(contentInsetClassName)}${footerInsetClassName ? "" : insetContentClassName(PAGE_CONTENT_INSET_BOTTOM_CLASS)}`}
             >
               {footer}
             </div>

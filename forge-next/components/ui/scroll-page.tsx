@@ -3,6 +3,10 @@
 import type { ReactNode } from "react";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import {
+  PAGE_CONTENT_INSET_BOTTOM_CLASS,
+  PAGE_CONTENT_INSET_X_CLASS,
+} from "@/lib/layout/page-layout";
 import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 export function ScrollPage({
@@ -11,7 +15,7 @@ export function ScrollPage({
   footer,
   children,
   className = "",
-  contentClassName = "",
+  contentClassName = PAGE_CONTENT_INSET_X_CLASS,
   footerInsetClassName,
   scrollClassName = "",
 }: {
@@ -27,7 +31,7 @@ export function ScrollPage({
   const isMobile = useIsMobile();
   const resolvedFooterInset =
     footerInsetClassName ??
-    (isMobile ? MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS : "");
+    (isMobile ? MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS : PAGE_CONTENT_INSET_BOTTOM_CLASS);
 
   return (
     <div
@@ -42,7 +46,7 @@ export function ScrollPage({
       >
         {({ scrollPaddingTop, scrollPaddingBottom }) => (
           <div
-            className={`absolute inset-0 z-0 overflow-y-auto${scrollClassName ? ` ${scrollClassName}` : ""}`}
+            className={`absolute inset-0 z-0 overflow-y-auto ${contentClassName}${scrollClassName ? ` ${scrollClassName}` : ""}`}
             style={{
               ...(scrollPaddingTop !== undefined
                 ? { paddingTop: scrollPaddingTop }
