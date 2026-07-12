@@ -1,31 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
-import { SessionListItem, type SessionListItemData } from "@/components/coach/session-list-item";
+import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
-import { listTaskSessions } from "@/lib/chat/actions";
-import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
+import {
+  navigateToCoachHome,
+  navigateToCoachSession,
+} from "@/lib/chat/session-url";
+import {
+  readWindowWorkspaceSessionId,
+  useCoachWorkspaceSessionId,
+} from "@/lib/chat/use-coach-workspace-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
-const EXPANDED_LIST_LIMIT = 50;
-
-function mergeSessionLists(
-  fetched: SessionListItemData[],
-  inserted: readonly SessionListItemData[],
-): SessionListItemData[] {
-  if (inserted.length === 0) {
-    return fetched;
-  }
-
-  const insertedIds = new Set(inserted.map((session) => session.id));
-  return [
-    ...inserted,
-    ...fetched.filter((session) => !insertedIds.has(session.id)),
-  ];
-}
 
 function ShowMoreButton({ onClick }: { onClick: () => void }) {
   return (
@@ -55,85 +46,44 @@ export function SessionHistoryList({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionNavigation = useOptionalSessionNavigation();
-  const [sessions, setSessions] = useState<SessionListItemData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const activeSessionId = useCoachWorkspaceSessionId();
+  const {
+    sessions,
+    sessionsLoading,
+    sessionsError,
+    removeSession,
+    updateSession,
+    refreshSessions,
+  } = useSessionNavigation();
   const [showAll, setShowAll] = useState(false);
 
-  const resolvedActiveSessionId = searchParams.get("sessionId");
-
-  const loadSessions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    const result = await listTaskSessions(EXPANDED_LIST_LIMIT);
-
-    if (!result.ok) {
-      setError(result.message);
-      setSessions([]);
-      setLoading(false);
-      return;
-    }
-
-    setSessions(result.sessions);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const result = await listTaskSessions(EXPANDED_LIST_LIMIT);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.ok) {
-        setError(result.message);
-        setSessions([]);
-      } else {
-        setSessions(result.sessions);
-      }
-
-      setLoading(false);
-    }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   function handleOpen(sessionId: string) {
-    if (sessionId !== resolvedActiveSessionId) {
-      sessionNavigation?.startSessionNavigation(sessionId);
-      router.push(`/coach?sessionId=${sessionId}`);
+    if (sessionId !== activeSessionId) {
+      navigateToCoachSession(router, sessionId);
     }
 
     onSessionOpen?.(sessionId);
   }
 
   function handleRenamed(sessionId: string, title: string) {
-    setSessions((current) =>
-      current.map((session) =>
-        session.id === sessionId ? { ...session, title } : session,
-      ),
-    );
+    updateSession(sessionId, { title });
   }
 
   function handleDeleted(sessionId: string) {
-    setSessions((current) => current.filter((session) => session.id !== sessionId));
+    const routerSessionId = searchParams.get("sessionId");
+    const windowSessionId = readWindowWorkspaceSessionId();
+    const isActiveSession =
+      sessionId === routerSessionId || sessionId === windowSessionId;
 
-    if (sessionId === resolvedActiveSessionId) {
+    removeSession(sessionId);
+
+    if (isActiveSession) {
       onActiveSessionDeleted?.();
-      router.push("/coach");
+      navigateToCoachHome(router);
     }
   }
 
-  if (loading) {
+  if (sessionsLoading && sessions.length === 0) {
     return (
       <div className={`flex justify-center py-4 ${className}`.trim()}>
         <Spinner className="h-5 w-5" label="Loading conversations" />
@@ -141,16 +91,16 @@ export function SessionHistoryList({
     );
   }
 
-  if (error) {
+  if (sessionsError && sessions.length === 0) {
     return (
       <div className={`space-y-2 px-1 py-2 text-sm ${className}`.trim()}>
-        <p className="text-surface-muted">{error}</p>
+        <p className="text-surface-muted">{sessionsError}</p>
         <Button
           type="button"
           variant="secondary"
           size="sm"
           fullWidth={false}
-          onClick={() => void loadSessions()}
+          onClick={() => void refreshSessions()}
         >
           Retry
         </Button>
@@ -158,7 +108,7 @@ export function SessionHistoryList({
     );
   }
 
-  if (sessions.length === 0 && (sessionNavigation?.insertedSessions.length ?? 0) === 0) {
+  if (sessions.length === 0) {
     return (
       <p className={`px-2 py-2 text-sm text-surface-muted ${className}`.trim()}>
         No conversations yet
@@ -166,25 +116,20 @@ export function SessionHistoryList({
     );
   }
 
-  const mergedSessions = mergeSessionLists(
-    sessions,
-    sessionNavigation?.insertedSessions ?? [],
-  );
-
   const visibleSessions =
     variant === "mobile" || showAll
-      ? mergedSessions
-      : mergedSessions.slice(0, INITIAL_VISIBLE_COUNT);
+      ? sessions
+      : sessions.slice(0, INITIAL_VISIBLE_COUNT);
   const canShowMore =
     variant !== "mobile" &&
     !showAll &&
-    mergedSessions.length > INITIAL_VISIBLE_COUNT;
+    sessions.length > INITIAL_VISIBLE_COUNT;
 
   const listItems = visibleSessions.map((session, index) => (
     <SessionListItem
       key={session.id}
       session={session}
-      isActive={session.id === resolvedActiveSessionId}
+      isActive={session.id === activeSessionId}
       onOpen={handleOpen}
       onRenamed={handleRenamed}
       onDeleted={handleDeleted}

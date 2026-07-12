@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionHistorySidebar } from "@/components/coach/session-history-sidebar";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
 
@@ -12,35 +13,43 @@ vi.mock("@/lib/chat/actions", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/coach",
 }));
+
+function renderSidebar(props: React.ComponentProps<typeof SessionHistorySidebar>) {
+  return render(
+    <SessionNavigationProvider>
+      <SessionHistorySidebar {...props} />
+    </SessionNavigationProvider>,
+  );
+}
 
 describe("SessionHistorySidebar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
   });
 
-  it("renders nothing when collapsed", () => {
-    const { container } = render(
-      <SessionHistorySidebar
-        collapsed
-        expanded={false}
-        onExpand={vi.fn()}
-      />,
-    );
+  it("hides history when collapsed", () => {
+    renderSidebar({
+      collapsed: true,
+      expanded: false,
+      onExpand: vi.fn(),
+    });
 
-    expect(container).toBeEmptyDOMElement();
+    expect(
+      screen.getByLabelText("Conversation history", { hidden: true }),
+    ).toHaveClass("hidden");
   });
 
   it("shows loading state while sessions load", () => {
     mockListTaskSessions.mockReturnValue(new Promise(() => {}));
 
-    render(
-      <SessionHistorySidebar
-        collapsed={false}
-        expanded={false}
-        onExpand={vi.fn()}
-      />,
-    );
+    renderSidebar({
+      collapsed: false,
+      expanded: false,
+      onExpand: vi.fn(),
+    });
 
     expect(screen.getByLabelText("Loading conversations")).toBeInTheDocument();
   });
@@ -48,13 +57,11 @@ describe("SessionHistorySidebar", () => {
   it("shows empty state when there are no sessions", async () => {
     mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
 
-    render(
-      <SessionHistorySidebar
-        collapsed={false}
-        expanded={false}
-        onExpand={vi.fn()}
-      />,
-    );
+    renderSidebar({
+      collapsed: false,
+      expanded: false,
+      onExpand: vi.fn(),
+    });
 
     expect(await screen.findByText("No conversations yet")).toBeInTheDocument();
   });
@@ -65,13 +72,11 @@ describe("SessionHistorySidebar", () => {
       message: "Could not load conversations.",
     });
 
-    render(
-      <SessionHistorySidebar
-        collapsed={false}
-        expanded={false}
-        onExpand={vi.fn()}
-      />,
-    );
+    renderSidebar({
+      collapsed: false,
+      expanded: false,
+      onExpand: vi.fn(),
+    });
 
     expect(
       await screen.findByText("Could not load conversations."),
@@ -91,13 +96,11 @@ describe("SessionHistorySidebar", () => {
       })),
     });
 
-    render(
-      <SessionHistorySidebar
-        collapsed={false}
-        expanded={false}
-        onExpand={onExpand}
-      />,
-    );
+    renderSidebar({
+      collapsed: false,
+      expanded: false,
+      onExpand,
+    });
 
     expect(await screen.findByText("Conversation 1")).toBeInTheDocument();
     expect(screen.getByText("Conversation 5")).toBeInTheDocument();

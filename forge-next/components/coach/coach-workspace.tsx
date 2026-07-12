@@ -57,9 +57,14 @@ import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
-import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
-import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import {
+  COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+  navigateToCoachHome,
+  syncCoachSessionUrl,
+  syncCoachWorkspaceUrl,
+} from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -247,6 +252,28 @@ export function CoachWorkspace(
   },
 ) {
   const catchUp = useCoachEveCatchUp(props.initialSession);
+  const [homeWorkspaceEpoch, setHomeWorkspaceEpoch] = useState(0);
+
+  useEffect(() => {
+    if (props.initialSession) {
+      return;
+    }
+
+    function handleHomeNavigate() {
+      setHomeWorkspaceEpoch((epoch) => epoch + 1);
+    }
+
+    window.addEventListener(
+      COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+      handleHomeNavigate,
+    );
+    return () => {
+      window.removeEventListener(
+        COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+        handleHomeNavigate,
+      );
+    };
+  }, [props.initialSession]);
 
   useEffect(() => {
     if (!props.initialSession || catchUp.loadPhase !== "ready") {
@@ -325,7 +352,7 @@ export function CoachWorkspace(
     <CoachWorkspaceInner
       // Remount when the live tail settles so the Eve agent store is always
       // created from a complete, consistent event log.
-      key={`${sessionKey}:${resuming ? "resuming" : "settled"}`}
+      key={`${sessionKey}:${homeWorkspaceEpoch}:${resuming ? "resuming" : "settled"}`}
       {...props}
       syncedEvents={catchUp.events}
       resuming={resuming}
@@ -381,7 +408,6 @@ function CoachWorkspaceInner({
       : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
-  const registeredSidebarSessionRef = useRef<string | null>(null);
 
   const handleThreadBound = useCallback(
     ({
@@ -399,23 +425,6 @@ function CoachWorkspaceInner({
     },
     [sessionNavigation],
   );
-
-  useEffect(() => {
-    if (!initialSession || !snapshotHasConversation(initialSession.snapshot)) {
-      return;
-    }
-
-    if (registeredSidebarSessionRef.current === initialSession.id) {
-      return;
-    }
-
-    registeredSidebarSessionRef.current = initialSession.id;
-    sessionNavigation?.registerNewSession({
-      id: initialSession.id,
-      title: initialSession.snapshot.title?.trim() || "New conversation",
-      updatedAt: initialSession.updatedAt,
-    });
-  }, [initialSession, sessionNavigation?.registerNewSession]);
 
   const handleSessionUrlNavigate = useCallback((sessionId: string) => {
     // Keep the live Eve stream on the current workspace instance. A hard
@@ -477,6 +486,22 @@ function CoachWorkspaceInner({
   useEffect(() => {
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
+
+  const workspaceSessionId = useCoachWorkspaceSessionId();
+  const previousWorkspaceSessionIdRef = useRef(workspaceSessionId);
+
+  useEffect(() => {
+    const previousWorkspaceSessionId = previousWorkspaceSessionIdRef.current;
+    previousWorkspaceSessionIdRef.current = workspaceSessionId;
+
+    if (initialSession || !previousWorkspaceSessionId || workspaceSessionId) {
+      return;
+    }
+
+    if (state.hasStarted) {
+      restart();
+    }
+  }, [initialSession, restart, state.hasStarted, workspaceSessionId]);
 
   useEffect(() => {
     if (!openArtifactOnMobileRef.current || !isMobile) {
@@ -601,16 +626,17 @@ function CoachWorkspaceInner({
       return;
     }
 
-    restart();
     savedSnapshotRef.current = null;
     setShowArtifact(false);
     navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, restart, router, state]);
+  }, [activePlanId, backlinkPlanId, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
-    restart();
     setMobileHistoryOpen(false);
-  }, [restart]);
+    if (!initialSession) {
+      restart();
+    }
+  }, [initialSession, restart]);
 
   const toggleMobileHistory = useCallback(() => {
     setMobileHistoryOpen((current) => !current);

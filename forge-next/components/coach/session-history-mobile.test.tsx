@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
 const mockPush = vi.fn();
@@ -15,7 +16,16 @@ vi.mock("@/lib/chat/actions", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/coach",
 }));
+
+function renderPanel(props: React.ComponentProps<typeof SessionHistoryMobilePanel>) {
+  return render(
+    <SessionNavigationProvider>
+      <SessionHistoryMobilePanel {...props} />
+    </SessionNavigationProvider>,
+  );
+}
 
 describe("SessionHistoryMobileToggle", () => {
   it("toggles pressed state and active styling", async () => {
@@ -55,7 +65,7 @@ describe("SessionHistoryMobilePanel", () => {
   });
 
   it("renders the inline session list with fade rows", async () => {
-    render(<SessionHistoryMobilePanel onClose={vi.fn()} />);
+    renderPanel({ onClose: vi.fn() });
 
     const row = await screen.findByText("Adjust weekly volume");
     expect(row).toBeInTheDocument();
@@ -65,7 +75,7 @@ describe("SessionHistoryMobilePanel", () => {
   it("shows loading state inline", () => {
     mockListTaskSessions.mockReturnValue(new Promise(() => {}));
 
-    render(<SessionHistoryMobilePanel onClose={vi.fn()} />);
+    renderPanel({ onClose: vi.fn() });
 
     expect(screen.getByLabelText("Loading conversations")).toBeInTheDocument();
   });
@@ -74,11 +84,12 @@ describe("SessionHistoryMobilePanel", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
 
-    render(<SessionHistoryMobilePanel onClose={onClose} />);
+    renderPanel({ onClose });
 
     await user.click(await screen.findByText("Adjust weekly volume"));
 
     expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 });

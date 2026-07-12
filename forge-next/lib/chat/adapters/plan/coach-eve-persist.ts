@@ -27,6 +27,8 @@ export type CoachEvePersister = {
     events: readonly HandleMessageStreamEvent[],
     lastTurn?: CoachTurnMarker | null,
   ) => Promise<boolean>;
+  /** Clears write-queue guards so a restarted home workspace can persist again. */
+  reset: () => void;
   dispose: () => void;
 };
 
@@ -127,6 +129,13 @@ export function createCoachEvePersister(options: {
     }, MID_TURN_PERSIST_DEBOUNCE_MS);
   };
 
+  const reset = () => {
+    clearDebounce();
+    pendingPersist = null;
+    writeQueue = Promise.resolve(false);
+    highWaterEventCount = 0;
+  };
+
   return {
     onStreamEvent(session, events, event) {
       if (shouldPersistImmediately(events, event)) {
@@ -137,6 +146,7 @@ export function createCoachEvePersister(options: {
       return Promise.resolve(false);
     },
     flush,
+    reset,
     dispose() {
       const pending = pendingPersist;
       clearDebounce();

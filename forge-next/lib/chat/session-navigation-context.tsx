@@ -6,81 +6,165 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
-  startTransition,
   type ReactNode,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
+import { listTaskSessions } from "@/lib/chat/actions";
 
 type SessionNavigationContextValue = {
-  pendingSessionId: string | null;
-  insertedSessions: readonly SessionListItemData[];
-  startSessionNavigation: (sessionId: string) => void;
+  sessions: readonly SessionListItemData[];
+  sessionsLoading: boolean;
+  sessionsError: string | null;
   registerNewSession: (session: SessionListItemData) => void;
+  removeSession: (sessionId: string) => void;
+  updateSession: (
+    sessionId: string,
+    patch: Partial<Pick<SessionListItemData, "title" | "updatedAt">>,
+  ) => void;
+  refreshSessions: () => Promise<void>;
 };
 
 const SessionNavigationContext =
   createContext<SessionNavigationContextValue | null>(null);
 
-const COACH_WORKSPACE_PATH = "/coach";
+const SESSION_LIST_LIMIT = 50;
+
+function sortSessionsByUpdatedAt(
+  sessions: SessionListItemData[],
+): SessionListItemData[] {
+  return [...sessions].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+}
+
+function upsertSession(
+  sessions: SessionListItemData[],
+  session: SessionListItemData,
+): SessionListItemData[] {
+  const withoutSession = sessions.filter((entry) => entry.id !== session.id);
+  return sortSessionsByUpdatedAt([session, ...withoutSession]);
+}
+
+function updateSessionInList(
+  sessions: SessionListItemData[],
+  sessionId: string,
+  patch: Partial<Pick<SessionListItemData, "title" | "updatedAt">>,
+): SessionListItemData[] {
+  return sortSessionsByUpdatedAt(
+    sessions.map((session) =>
+      session.id === sessionId ? { ...session, ...patch } : session,
+    ),
+  );
+}
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
-  const [insertedSessions, setInsertedSessions] = useState<
-    SessionListItemData[]
-  >([]);
-  const currentSessionId = searchParams.get("sessionId");
-  const pendingSessionId =
-    pathname === COACH_WORKSPACE_PATH &&
-    targetSessionId !== null &&
-    targetSessionId !== currentSessionId
-      ? targetSessionId
-      : null;
+  const [sessions, setSessions] = useState<SessionListItemData[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const fetchGenerationRef = useRef(0);
+
+  const loadSessions = useCallback(async (showLoading: boolean) => {
+    const generation = ++fetchGenerationRef.current;
+    setSessionsError(null);
+
+    if (showLoading) {
+      setSessionsLoading(true);
+    }
+
+    const result = await listTaskSessions(SESSION_LIST_LIMIT);
+
+    if (generation !== fetchGenerationRef.current) {
+      return;
+    }
+
+    if (!result.ok) {
+      setSessionsError(result.message);
+      setSessionsLoading(false);
+      return;
+    }
+
+    setSessions(result.sessions);
+    setSessionsLoading(false);
+  }, []);
 
   useEffect(() => {
-    if (targetSessionId === null) {
-      return;
-    }
+    let cancelled = false;
 
-    if (currentSessionId === targetSessionId) {
-      startTransition(() => {
-        setTargetSessionId(null);
-      });
-      return;
-    }
+    async function loadInitialSessions() {
+      const generation = ++fetchGenerationRef.current;
+      setSessionsError(null);
+      setSessionsLoading(true);
 
-    if (pathname !== COACH_WORKSPACE_PATH) {
-      startTransition(() => {
-        setTargetSessionId(null);
-      });
-    }
-  }, [currentSessionId, pathname, targetSessionId]);
+      const result = await listTaskSessions(SESSION_LIST_LIMIT);
 
-  const startSessionNavigation = useCallback((sessionId: string) => {
-    setTargetSessionId(sessionId);
-  }, []);
-
-  const registerNewSession = useCallback((session: SessionListItemData) => {
-    setInsertedSessions((current) => {
-      if (current.some((entry) => entry.id === session.id)) {
-        return current;
+      if (cancelled || generation !== fetchGenerationRef.current) {
+        return;
       }
 
-      return [session, ...current];
-    });
+      if (!result.ok) {
+        setSessionsError(result.message);
+        setSessions([]);
+        setSessionsLoading(false);
+        return;
+      }
+
+      setSessions(result.sessions);
+      setSessionsLoading(false);
+    }
+
+    void loadInitialSessions();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const refreshSessions = useCallback(async () => {
+    await loadSessions(sessions.length === 0);
+  }, [loadSessions, sessions.length]);
+
+  const registerNewSession = useCallback((session: SessionListItemData) => {
+    setSessions((current) => upsertSession(current, session));
+  }, []);
+
+  const removeSession = useCallback((sessionId: string) => {
+    setSessions((current) =>
+      current.filter((session) => session.id !== sessionId),
+    );
+  }, []);
+
+  const updateSession = useCallback(
+    (
+      sessionId: string,
+      patch: Partial<Pick<SessionListItemData, "title" | "updatedAt">>,
+    ) => {
+      setSessions((current) => updateSessionInList(current, sessionId, patch));
+    },
+    [],
+  );
 
   const contextValue = useMemo(
     () => ({
-      pendingSessionId,
-      insertedSessions,
-      startSessionNavigation,
+      sessions,
+      sessionsLoading,
+      sessionsError,
       registerNewSession,
+      removeSession,
+      updateSession,
+      refreshSessions,
     }),
-    [insertedSessions, pendingSessionId, registerNewSession, startSessionNavigation],
+    [
+      sessions,
+      sessionsLoading,
+      sessionsError,
+      registerNewSession,
+      removeSession,
+      updateSession,
+      refreshSessions,
+    ],
   );
 
   return (

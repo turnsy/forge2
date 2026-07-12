@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { ErrorState, PageContent, PageHeader, PageShell } from "@/components/ui";
 import { firstName } from "@/lib/auth/first-name";
@@ -53,6 +53,8 @@ export default async function CoachHomePage({
         </PageContent>
       );
     }
+
+    redirect("/coach");
   }
 
   if (planId) {

@@ -51,7 +51,16 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import { Sidebar } from "@/components/sidebar";
+
+function renderSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  return render(
+    <SessionNavigationProvider>
+      <Sidebar {...props} />
+    </SessionNavigationProvider>,
+  );
+}
 
 describe("Sidebar", () => {
   beforeEach(() => {
@@ -61,13 +70,11 @@ describe("Sidebar", () => {
   it("renders Forge text and profile menu when expanded", () => {
     usePathname.mockReturnValue("/coach");
 
-    render(
-      <Sidebar
-        role="coach"
-        fullName="Coach User"
-        email="coach@example.com"
-      />,
-    );
+    renderSidebar({
+      role: "coach",
+      fullName: "Coach User",
+      email: "coach@example.com",
+    });
 
     expect(screen.getByText("Forge")).toBeInTheDocument();
     expect(screen.getByText("Coach User")).toBeInTheDocument();
@@ -80,13 +87,11 @@ describe("Sidebar", () => {
     const user = userEvent.setup();
     usePathname.mockReturnValue("/coach");
 
-    render(
-      <Sidebar
-        role="coach"
-        fullName="Coach User"
-        email="coach@example.com"
-      />,
-    );
+    renderSidebar({
+      role: "coach",
+      fullName: "Coach User",
+      email: "coach@example.com",
+    });
 
     await user.click(
       screen.getByRole("button", { name: /Collapse sidebar/i }),
@@ -109,13 +114,11 @@ describe("Sidebar", () => {
     const user = userEvent.setup();
     usePathname.mockReturnValue("/coach");
 
-    render(
-      <Sidebar
-        role="coach"
-        fullName="Coach User"
-        email="coach@example.com"
-      />,
-    );
+    renderSidebar({
+      role: "coach",
+      fullName: "Coach User",
+      email: "coach@example.com",
+    });
 
     await user.click(
       screen.getByRole("button", { name: /Collapse sidebar/i }),
@@ -134,13 +137,11 @@ describe("Sidebar", () => {
     const user = userEvent.setup();
     usePathname.mockReturnValue("/coach");
 
-    render(
-      <Sidebar
-        role="coach"
-        fullName="Coach User"
-        email="coach@example.com"
-      />,
-    );
+    renderSidebar({
+      role: "coach",
+      fullName: "Coach User",
+      email: "coach@example.com",
+    });
 
     await user.click(
       screen.getByRole("button", { name: /Collapse sidebar/i }),
@@ -155,13 +156,11 @@ describe("Sidebar", () => {
     mockUseIsMobile.mockReturnValue(true);
     usePathname.mockReturnValue("/coach");
 
-    const { container } = render(
-      <Sidebar
-        role="coach"
-        fullName="Coach User"
-        email="coach@example.com"
-      />,
-    );
+    const { container } = renderSidebar({
+      role: "coach",
+      fullName: "Coach User",
+      email: "coach@example.com",
+    });
 
     expect(container).toBeEmptyDOMElement();
   });

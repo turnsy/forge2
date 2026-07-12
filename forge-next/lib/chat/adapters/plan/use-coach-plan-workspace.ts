@@ -756,6 +756,10 @@ export function useCoachPlanWorkspace(options?: {
     setStopPending(false);
     setFinalization(null);
     setSendFailure(null);
+    persisterRef.current.reset();
+    latestAgentSessionRef.current = null;
+    latestAgentEventsRef.current = [];
+    lastSyncedAgentArtifactRef.current = null;
     agent.reset();
     dispatchAttachments({ type: "RESTART", sessionId: forgeSessionId });
     sessionTitleRef.current = null;

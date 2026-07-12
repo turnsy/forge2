@@ -1,66 +1,48 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  hasCoachSessionInUrl,
+  COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
   hasCoachWorkspaceQueryParams,
   navigateToCoachHome,
+  navigateToCoachSession,
+  navigateToCoachWorkspace,
+  shouldForceCoachHomeNavigation,
   syncCoachSessionUrl,
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
 
-describe("syncCoachWorkspaceUrl", () => {
-  it("adds sessionId and planId without navigating", () => {
-    const replaceState = vi.fn();
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach?sessionId=session-42",
-        pathname: "/coach",
-        search: "?sessionId=session-42",
-        hash: "",
-      },
-      history: {
-        state: { idx: 0 },
-        replaceState,
-      },
-    });
-
-    syncCoachWorkspaceUrl({ planId: "plan-9" });
-
-    expect(replaceState).toHaveBeenCalledWith(
-      { idx: 0 },
-      "",
-      "/coach?sessionId=session-42&planId=plan-9",
-    );
+function stubWindow({
+  location,
+  history,
+  dispatchEvent = vi.fn(),
+}: {
+  location: {
+    href: string;
+    pathname: string;
+    search: string;
+    hash: string;
+  };
+  history: {
+    state: unknown;
+    replaceState: ReturnType<typeof vi.fn>;
+  };
+  dispatchEvent?: ReturnType<typeof vi.fn>;
+}) {
+  vi.stubGlobal("window", {
+    location,
+    history,
+    dispatchEvent,
   });
-
-  it("clears planId while keeping sessionId", () => {
-    const replaceState = vi.fn();
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach?sessionId=session-42&planId=plan-9",
-        pathname: "/coach",
-        search: "?sessionId=session-42&planId=plan-9",
-        hash: "",
-      },
-      history: {
-        state: null,
-        replaceState,
-      },
-    });
-
-    syncCoachWorkspaceUrl({ sessionId: "session-42", planId: null });
-
-    expect(replaceState).toHaveBeenCalledWith(
-      null,
-      "",
-      "/coach?sessionId=session-42",
-    );
-  });
-});
+}
 
 describe("syncCoachSessionUrl", () => {
-  it("adds sessionId to the current URL without navigating", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("updates the browser URL without a router navigation", () => {
     const replaceState = vi.fn();
-    vi.stubGlobal("window", {
+
+    stubWindow({
       location: {
         href: "https://example.com/coach",
         pathname: "/coach",
@@ -68,50 +50,6 @@ describe("syncCoachSessionUrl", () => {
         hash: "",
       },
       history: {
-        state: { idx: 0 },
-        replaceState,
-      },
-    });
-
-    syncCoachSessionUrl("session-42");
-
-    expect(replaceState).toHaveBeenCalledWith(
-      { idx: 0 },
-      "",
-      "/coach?sessionId=session-42",
-    );
-  });
-
-  it("removes sessionId from the current URL", () => {
-    const replaceState = vi.fn();
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach?sessionId=session-42",
-        pathname: "/coach",
-        search: "?sessionId=session-42",
-        hash: "",
-      },
-      history: {
-        state: null,
-        replaceState,
-      },
-    });
-
-    syncCoachSessionUrl(null);
-
-    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
-  });
-
-  it("does nothing when the URL is already in sync", () => {
-    const replaceState = vi.fn();
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach?sessionId=session-42",
-        pathname: "/coach",
-        search: "?sessionId=session-42",
-        hash: "",
-      },
-      history: {
         state: null,
         replaceState,
       },
@@ -119,40 +57,55 @@ describe("syncCoachSessionUrl", () => {
 
     syncCoachSessionUrl("session-42");
 
-    expect(replaceState).not.toHaveBeenCalled();
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach?sessionId=session-42");
   });
 });
 
-describe("hasCoachSessionInUrl", () => {
-  it("returns false when sessionId is absent", () => {
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach",
-      },
-    });
-
-    expect(hasCoachSessionInUrl()).toBe(false);
+describe("syncCoachWorkspaceUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it("returns true when sessionId is present", () => {
-    vi.stubGlobal("window", {
+  it("can set session and plan params together", () => {
+    const replaceState = vi.fn();
+
+    stubWindow({
       location: {
         href: "https://example.com/coach?sessionId=session-42",
+        pathname: "/coach",
+        search: "?sessionId=session-42",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
       },
     });
 
-    expect(hasCoachSessionInUrl()).toBe(true);
+    syncCoachWorkspaceUrl({ sessionId: "session-42", planId: "plan-9" });
+
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/coach?sessionId=session-42&planId=plan-9",
+    );
   });
 });
 
 describe("hasCoachWorkspaceQueryParams", () => {
-  it("returns true when coach workspace query params are present", () => {
+  it("returns true when sessionId is present", () => {
     expect(
       hasCoachWorkspaceQueryParams(new URLSearchParams("sessionId=session-1")),
     ).toBe(true);
-    expect(hasCoachWorkspaceQueryParams(new URLSearchParams("planId=plan-1"))).toBe(
+  });
+
+  it("returns true when planId is present", () => {
+    expect(hasCoachWorkspaceQueryParams(new URLSearchParams("planId=plan-9"))).toBe(
       true,
     );
+  });
+
+  it("returns true when new plan flag is present", () => {
     expect(hasCoachWorkspaceQueryParams(new URLSearchParams("new=1"))).toBe(true);
   });
 
@@ -162,28 +115,83 @@ describe("hasCoachWorkspaceQueryParams", () => {
 });
 
 describe("navigateToCoachHome", () => {
-  it("clears workspace query params and refreshes the coach home route", () => {
-    const replaceState = vi.fn();
-    const replace = vi.fn();
-    const refresh = vi.fn();
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
-    vi.stubGlobal("window", {
+  it("clears workspace query params, pushes the route, refreshes, and notifies listeners", () => {
+    const replaceState = vi.fn();
+    const push = vi.fn();
+    const refresh = vi.fn();
+    const dispatchEvent = vi.fn();
+
+    stubWindow({
       location: {
-        href: "https://example.com/coach?sessionId=session-42&planId=plan-9&new=1",
+        href: "https://example.com/coach?sessionId=session-42",
         pathname: "/coach",
-        search: "?sessionId=session-42&planId=plan-9&new=1",
+        search: "?sessionId=session-42",
         hash: "",
       },
       history: {
         state: null,
         replaceState,
       },
+      dispatchEvent,
     });
 
-    navigateToCoachHome({ replace, refresh });
+    navigateToCoachHome({ push, refresh });
 
     expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
-    expect(replace).toHaveBeenCalledWith("/coach");
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: COACH_WORKSPACE_HOME_NAVIGATE_EVENT }),
+    );
+    expect(push).toHaveBeenCalledWith("/coach");
     expect(refresh).toHaveBeenCalled();
+  });
+});
+
+describe("navigateToCoachSession", () => {
+  it("pushes the session route and refreshes server content", () => {
+    const push = vi.fn();
+    const refresh = vi.fn();
+
+    navigateToCoachSession({ push, refresh }, "session-42");
+
+    expect(push).toHaveBeenCalledWith("/coach?sessionId=session-42");
+    expect(refresh).toHaveBeenCalled();
+  });
+});
+
+describe("navigateToCoachWorkspace", () => {
+  it("replaces the workspace URL with the provided params", () => {
+    const replace = vi.fn();
+    const refresh = vi.fn();
+
+    navigateToCoachWorkspace(
+      { replace, refresh },
+      { sessionId: "session-42", planId: "plan-9" },
+    );
+
+    expect(replace).toHaveBeenCalledWith(
+      "/coach?sessionId=session-42&planId=plan-9",
+    );
+    expect(refresh).toHaveBeenCalled();
+  });
+});
+
+describe("shouldForceCoachHomeNavigation", () => {
+  it("returns true on /coach with workspace query params", () => {
+    expect(
+      shouldForceCoachHomeNavigation(
+        "/coach",
+        new URLSearchParams("sessionId=session-1"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false on bare /coach", () => {
+    expect(shouldForceCoachHomeNavigation("/coach", new URLSearchParams())).toBe(
+      false,
+    );
   });
 });

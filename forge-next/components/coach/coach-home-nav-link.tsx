@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
-import {
-  navigateToCoachHome,
-  shouldForceCoachHomeNavigation,
-} from "@/lib/chat/session-url";
+import { isNavItemActive } from "@/lib/navigation/active-path";
+import { navigateToCoachHome } from "@/lib/chat/session-url";
+import { useCoachWorkspaceSearchParams } from "@/lib/chat/use-coach-workspace-url";
 
 export function CoachHomeNavLink({
   children,
@@ -18,8 +17,9 @@ export function CoachHomeNavLink({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const workspaceSearchParams = useCoachWorkspaceSearchParams();
   const router = useRouter();
+  const active = isNavItemActive(pathname, "/coach", true, workspaceSearchParams);
 
   return (
     <SidebarNavLink
@@ -27,8 +27,9 @@ export function CoachHomeNavLink({
       icon={icon}
       exact
       collapsed={collapsed}
+      active={active}
       onClick={(event) => {
-        if (!shouldForceCoachHomeNavigation(pathname, searchParams)) {
+        if (pathname !== "/coach") {
           return;
         }
 

@@ -159,4 +159,34 @@ describe("createCoachEvePersister", () => {
       }),
     );
   });
+
+  it("reset clears the high-water mark so a restarted workspace can persist again", async () => {
+    const saveSnapshot = vi.fn().mockResolvedValue(true);
+    const persister = createCoachEvePersister({
+      forgeSessionId: "forge-1",
+      getTitle: () => null,
+      saveSnapshot,
+    });
+
+    const session = { sessionId: "eve-1", streamIndex: 0 };
+    const firstTurn = [
+      { type: "message.received" },
+      { type: "session.waiting" },
+    ];
+    const restartedTurn = [{ type: "message.received" }];
+
+    await persister.flush(session, firstTurn);
+    await persister.flush(session, restartedTurn);
+
+    expect(saveSnapshot).toHaveBeenCalledTimes(1);
+
+    persister.reset();
+
+    await persister.flush(session, restartedTurn);
+
+    expect(saveSnapshot).toHaveBeenCalledTimes(2);
+    expect(saveSnapshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({ events: restartedTurn }),
+    );
+  });
 });
