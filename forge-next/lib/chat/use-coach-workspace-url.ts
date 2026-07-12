@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
+import {
+  COACH_WORKSPACE_URL_CHANGE_EVENT,
+  hasCoachWorkspaceQueryParams,
+} from "@/lib/chat/session-url";
+
+function readWindowSearchParams(): URLSearchParams {
+  return new URL(window.location.href).searchParams;
+}
 
 export function useCoachWorkspaceSearchParams(): URLSearchParams {
   const routerParams = useSearchParams();
@@ -31,7 +38,18 @@ export function useCoachWorkspaceSearchParams(): URLSearchParams {
       return routerParams;
     }
 
-    return new URL(window.location.href).searchParams;
+    // Sidebar / home router navigation updates Next search params first.
+    if (hasCoachWorkspaceQueryParams(routerParams)) {
+      return routerParams;
+    }
+
+    // replaceState new-thread sync can update the window URL before the router.
+    const windowParams = readWindowSearchParams();
+    if (windowParams.get("sessionId")) {
+      return windowParams;
+    }
+
+    return routerParams;
   }, [replaceStateRevision, routerParams]);
 }
 

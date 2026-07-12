@@ -21,7 +21,16 @@ describe("useCoachWorkspaceSessionId", () => {
     window.history.replaceState(null, "", "/coach");
   });
 
-  it("reads the session id from the current window URL", () => {
+  it("prefers router search params for sidebar navigation", () => {
+    window.history.replaceState(null, "", "/coach?sessionId=session-a");
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-b"));
+
+    render(<SessionIdProbe />);
+
+    expect(screen.getByTestId("session-id")).toHaveTextContent("session-b");
+  });
+
+  it("falls back to the window URL for replaceState new-thread sync", () => {
     window.history.replaceState(null, "", "/coach?sessionId=session-a");
 
     render(<SessionIdProbe />);
@@ -39,5 +48,14 @@ describe("useCoachWorkspaceSessionId", () => {
     await waitFor(() => {
       expect(screen.getByTestId("session-id")).toHaveTextContent("session-a");
     });
+  });
+
+  it("clears the active session when router returns home", () => {
+    window.history.replaceState(null, "", "/coach");
+    mockSearchParams.mockReturnValue(new URLSearchParams());
+
+    render(<SessionIdProbe />);
+
+    expect(screen.getByTestId("session-id")).toHaveTextContent("none");
   });
 });

@@ -112,12 +112,31 @@ describe("hasCoachWorkspaceQueryParams", () => {
 });
 
 describe("navigateToCoachHome", () => {
-  it("replaces the coach home route and refreshes", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("clears workspace query params, replaces the route, and refreshes", () => {
+    const replaceState = vi.fn();
     const replace = vi.fn();
     const refresh = vi.fn();
 
+    stubWindow({
+      location: {
+        href: "https://example.com/coach?sessionId=session-42",
+        pathname: "/coach",
+        search: "?sessionId=session-42",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
+      },
+    });
+
     navigateToCoachHome({ replace, refresh });
 
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
     expect(replace).toHaveBeenCalledWith("/coach");
     expect(refresh).toHaveBeenCalled();
   });

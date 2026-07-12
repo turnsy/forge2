@@ -74,6 +74,11 @@ export function navigateToCoachHome(router: {
   replace: (href: string) => void;
   refresh: () => void;
 }): void {
+  syncCoachWorkspaceUrl({
+    sessionId: null,
+    planId: null,
+    newPlan: null,
+  });
   router.replace(COACH_HOME_PATH);
   router.refresh();
 }
