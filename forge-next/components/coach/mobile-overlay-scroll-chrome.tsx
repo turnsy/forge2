@@ -66,13 +66,6 @@ export function MobileOverlayScrollChrome({
         </div>
       ) : null}
       <div ref={footerRef} className={MOBILE_CHAT_FOOTER_CLASS}>
-        {preFooter ? (
-          <div
-            className={`${MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS} ${contentInsetClassName}`}
-          >
-            {preFooter}
-          </div>
-        ) : null}
         <div
           className={`${MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS}${footerInsetClassName ? ` ${footerInsetClassName}` : ""}`}
         >
@@ -80,6 +73,13 @@ export function MobileOverlayScrollChrome({
             direction="bottom"
             className="pointer-events-none absolute inset-0 z-0"
           />
+          {preFooter ? (
+            <div
+              className={`${MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS} ${contentInsetClassName}`}
+            >
+              {preFooter}
+            </div>
+          ) : null}
           {footer ? (
             <div className={`relative z-10 pointer-events-auto ${contentInsetClassName}`}>
               {footer}

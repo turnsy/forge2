@@ -36,7 +36,13 @@ describe("MobileOverlayScrollChrome", () => {
 
     expect(container.querySelector("[style*='linear-gradient']")).not.toBeNull();
     expect(container.innerHTML).toContain(MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS);
-    expect(container.querySelector(".pb-nav")).not.toBeNull();
+
+    const blurZone = container.querySelector(".pb-nav");
+    expect(blurZone).not.toBeNull();
+    expect(blurZone?.querySelector('button[type="button"]')?.textContent).toBe(
+      "View",
+    );
+    expect(blurZone?.textContent).toContain("Prompt");
 
     const scrollLayer = container.querySelector('[data-testid="scroll-layer"]');
     expect(scrollLayer).toHaveStyle({ paddingTop: "128px", paddingBottom: "128px" });

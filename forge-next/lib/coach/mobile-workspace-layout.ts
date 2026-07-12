@@ -16,8 +16,11 @@ export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 /** Separation between the attachment/view toolbar and the prompt (non-overlay layouts). */
 export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 
+/** Tighter separation between the toolbar and prompt in overlay chat. */
+export const MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS = "mb-2";
+
 /** Toolbar row wrapper in overlay chat; keeps spacing above the prompt. */
-export const MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS = `relative z-10 pointer-events-auto ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`;
+export const MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS = `relative z-10 pointer-events-auto ${MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS}`;
 
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
@@ -34,7 +37,7 @@ export const MOBILE_CHAT_TOP_CHROME_CLASS =
 export const MOBILE_CHAT_FOOTER_CLASS =
   "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col";
 
-/** Zone below the prompt where progressive blur extends through the bottom nav. */
+/** Zone where progressive blur extends from the toolbar or prompt through the bottom nav. */
 export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = "relative";
 
 /** Darker glass surface for the overlay prompt card (input + actions). */

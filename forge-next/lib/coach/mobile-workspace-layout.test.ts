@@ -16,6 +16,7 @@ import {
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
   MOBILE_COMPOSER_TOOLBAR_ROW_CLASS,
   MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS,
+  MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS,
   MOBILE_COMPOSER_VIEW_CONTROL_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
@@ -52,7 +53,8 @@ describe("mobile workspace layout classes", () => {
 
   it("defines spacing between the view control and composer", () => {
     expect(MOBILE_VIEW_ARTIFACT_SPACING_CLASS).toBe("mb-4");
-    expect(MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS).toContain("mb-4");
+    expect(MOBILE_COMPOSER_TOOLBAR_OVERLAY_SPACING_CLASS).toBe("mb-2");
+    expect(MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS).toContain("mb-2");
     expect(MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS).toContain("overflow-x-auto");
     expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain("h-8");
     expect(MOBILE_COMPOSER_VIEW_CONTROL_CLASS).not.toContain("bg-gradient-to-l");
