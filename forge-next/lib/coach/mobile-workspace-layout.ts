@@ -34,9 +34,9 @@ export const MOBILE_CHAT_FOOTER_CLASS =
 /** Zone below the prompt where progressive blur extends through the bottom nav. */
 export const MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS = "relative";
 
-/** More opaque glass surface for the overlay prompt input only. */
+/** Darker glass surface for the overlay prompt card (input + actions). */
 export const MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS =
-  "rounded-[calc(var(--radius-card)-0.25rem)] border border-glass-border bg-glass-nested backdrop-blur-md shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
+  "rounded-card border border-glass-border bg-surface/80 backdrop-blur-md shadow-[inset_0_1px_0_0_var(--color-glass-highlight)]";
 
 /** Extra space between the last message and overlay chrome when scrolled to the end. */
 export const MOBILE_CHAT_SCROLL_END_GAP_PX = 8;

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ChatComposer } from "@/components/chat/chat-composer";
@@ -151,7 +151,7 @@ describe("ChatComposer", () => {
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
   });
 
-  it("uses a transparent container and opaque input surface in overlay chrome mode", () => {
+  it("keeps actions inside the darker overlay prompt surface", () => {
     const { container } = render(
       <ChatComposer
         overlayChrome
@@ -160,13 +160,21 @@ describe("ChatComposer", () => {
         composerKey="composer-1"
         onAttach={vi.fn()}
         onSend={vi.fn()}
+        onReset={vi.fn()}
       />,
     );
 
-    const outer = container.querySelector(".flex.flex-col");
-    expect(outer?.className).toContain("bg-transparent");
-    expect(outer?.className).toContain("border-0");
-    expect(container.querySelector(".bg-glass-nested")).not.toBeNull();
+    const surface = container.querySelector(".rounded-card.border");
+    expect(surface).not.toBeNull();
+    expect(surface?.className).toContain("bg-surface/80");
+
+    const scoped = within(surface as HTMLElement);
+    expect(scoped.getByRole("textbox")).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "Attach" })).toBeInTheDocument();
+    expect(
+      scoped.getByRole("button", { name: "Reset conversation" }),
+    ).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "Send" })).toBeInTheDocument();
   });
 
   it("does not render attachments in the composer after the thread starts", () => {

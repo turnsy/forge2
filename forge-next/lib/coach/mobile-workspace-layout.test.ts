@@ -58,7 +58,7 @@ describe("mobile workspace layout classes", () => {
 
   it("defines mobile overlay chat chrome for progressive blur", () => {
     expect(MOBILE_CHAT_TOP_PROGRESSIVE_BLUR_CLASS).toContain("h-16");
-    expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-glass-nested");
+    expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-surface/80");
     expect(MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
     expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(8);
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");

@@ -68,16 +68,91 @@ export function ChatComposer({
     setDocumentEmpty(true);
   }
 
+  const promptComposer = (
+    <PromptComposer
+      key={composerKey}
+      compact={compact}
+      placeholder="Ask Forge to build or update a plan..."
+      onDocumentChange={(segments, isEmpty) => {
+        latestSegmentsRef.current = segments;
+        setDocumentEmpty(isEmpty);
+      }}
+      onSend={(segments) => {
+        if (sendAllowed) {
+          onSend(segments);
+          setDocumentEmpty(true);
+        }
+      }}
+    />
+  );
+
+  const actionRow = (
+    <div
+      className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
+    >
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          icon={<PaperclipIcon />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Attach
+        </Button>
+        {onReset ? (
+          <IconButton
+            variant="ghost"
+            size="sm"
+            icon={<RotateIcon />}
+            aria-label="Reset conversation"
+            onClick={onReset}
+          />
+        ) : null}
+      </div>
+      <IconButton
+        variant="primary"
+        size="sm"
+        icon={
+          stopAllowed ? (
+            <StopIcon className="h-3 w-3" />
+          ) : isInitializing ? (
+            <span
+              aria-hidden
+              className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
+            />
+          ) : (
+            <ArrowRightIcon />
+          )
+        }
+        aria-label={
+          stopAllowed
+            ? "Stop response"
+            : isInitializing
+              ? "Starting conversation"
+              : "Send"
+        }
+        disabled={!stopAllowed && !sendAllowed && !isInitializing}
+        onClick={stopAllowed ? onStop : handleSend}
+      />
+    </div>
+  );
+
   return (
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
           className={`flex flex-col transition ${
-            compact ? "min-h-0 p-2" : "min-h-40 rounded-card border p-3"
+            overlayChrome
+              ? "min-h-0"
+              : compact
+                ? "min-h-0 rounded-card border p-2"
+                : "min-h-40 rounded-card border p-3"
           } ${
             overlayChrome
-              ? "border-0 bg-transparent"
-              : `rounded-card border bg-glass backdrop-blur-md ${
+              ? "border-0 bg-transparent p-0"
+              : `bg-glass backdrop-blur-md ${
                   isDragging
                     ? "border-coach-muted bg-glass-focus"
                     : "border-glass-border"
@@ -111,93 +186,19 @@ export function ChatComposer({
           />
           {overlayChrome ? (
             <div
-              className={`${MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS} p-2${
+              className={`${MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS} flex flex-col p-2${
                 isDragging ? " border-coach-muted" : ""
               }`}
             >
-              <PromptComposer
-                key={composerKey}
-                compact={compact}
-                placeholder="Ask Forge to build or update a plan..."
-                onDocumentChange={(segments, isEmpty) => {
-                  latestSegmentsRef.current = segments;
-                  setDocumentEmpty(isEmpty);
-                }}
-                onSend={(segments) => {
-                  if (sendAllowed) {
-                    onSend(segments);
-                    setDocumentEmpty(true);
-                  }
-                }}
-              />
+              {promptComposer}
+              {actionRow}
             </div>
           ) : (
-            <PromptComposer
-              key={composerKey}
-              compact={compact}
-              placeholder="Ask Forge to build or update a plan..."
-              onDocumentChange={(segments, isEmpty) => {
-                latestSegmentsRef.current = segments;
-                setDocumentEmpty(isEmpty);
-              }}
-              onSend={(segments) => {
-                if (sendAllowed) {
-                  onSend(segments);
-                  setDocumentEmpty(true);
-                }
-              }}
-            />
+            <>
+              {promptComposer}
+              {actionRow}
+            </>
           )}
-          <div
-            className={`flex items-center justify-between gap-2 ${compact ? "mt-1.5" : "mt-3"}`}
-          >
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                fullWidth={false}
-                icon={<PaperclipIcon />}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Attach
-              </Button>
-              {onReset ? (
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  icon={<RotateIcon />}
-                  aria-label="Reset conversation"
-                  onClick={onReset}
-                />
-              ) : null}
-            </div>
-            <IconButton
-              variant="primary"
-              size="sm"
-              icon={
-                stopAllowed ? (
-                  <StopIcon className="h-3 w-3" />
-                ) : isInitializing ? (
-                  <span
-                    aria-hidden
-                    className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current"
-                  />
-                ) : (
-                  <ArrowRightIcon />
-                )
-              }
-              aria-label={
-                stopAllowed
-                  ? "Stop response"
-                  : isInitializing
-                    ? "Starting conversation"
-                    : "Send"
-              }
-              disabled={!stopAllowed && !sendAllowed && !isInitializing}
-              onClick={stopAllowed ? onStop : handleSend}
-            />
-          </div>
         </div>
       </div>
       {!state.hasStarted && state.attachments.length > 0 ? (
