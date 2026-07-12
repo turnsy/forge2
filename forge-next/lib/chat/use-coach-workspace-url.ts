@@ -8,7 +8,21 @@ import {
 } from "@/lib/chat/session-url";
 
 function readWindowSearchParams(): URLSearchParams {
+  if (typeof window === "undefined") {
+    return new URLSearchParams();
+  }
+
   return new URL(window.location.href).searchParams;
+}
+
+export function readWindowWorkspaceSessionId(): string | null {
+  return readWindowSearchParams().get("sessionId");
+}
+
+export function resolveWorkspaceSessionId(
+  routerParams: URLSearchParams,
+): string | null {
+  return routerParams.get("sessionId") ?? readWindowWorkspaceSessionId();
 }
 
 export function useCoachWorkspaceSearchParams(): URLSearchParams {

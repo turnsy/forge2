@@ -116,9 +116,9 @@ describe("navigateToCoachHome", () => {
     vi.unstubAllGlobals();
   });
 
-  it("clears workspace query params, replaces the route, and refreshes", () => {
+  it("clears workspace query params, pushes the route, and refreshes", () => {
     const replaceState = vi.fn();
-    const replace = vi.fn();
+    const push = vi.fn();
     const refresh = vi.fn();
 
     stubWindow({
@@ -134,10 +134,10 @@ describe("navigateToCoachHome", () => {
       },
     });
 
-    navigateToCoachHome({ replace, refresh });
+    navigateToCoachHome({ push, refresh });
 
     expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
-    expect(replace).toHaveBeenCalledWith("/coach");
+    expect(push).toHaveBeenCalledWith("/coach");
     expect(refresh).toHaveBeenCalled();
   });
 });

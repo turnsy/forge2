@@ -71,7 +71,7 @@ export function syncCoachSessionUrl(sessionId: string | null): void {
 }
 
 export function navigateToCoachHome(router: {
-  replace: (href: string) => void;
+  push: (href: string) => void;
   refresh: () => void;
 }): void {
   syncCoachWorkspaceUrl({
@@ -79,7 +79,7 @@ export function navigateToCoachHome(router: {
     planId: null,
     newPlan: null,
   });
-  router.replace(COACH_HOME_PATH);
+  router.push(COACH_HOME_PATH);
   router.refresh();
 }
 

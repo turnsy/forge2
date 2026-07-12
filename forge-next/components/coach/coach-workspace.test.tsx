@@ -241,9 +241,9 @@ describe("CoachWorkspace layout", () => {
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
-    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockPush).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalledOnce();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("keeps reset enabled while the agent is generating", async () => {
@@ -266,7 +266,7 @@ describe("CoachWorkspace layout", () => {
 
     await user.click(resetButton);
 
-    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockPush).toHaveBeenCalledWith("/coach");
   });
 
   it("shows the back link when a saved plan is in workspace state", () => {

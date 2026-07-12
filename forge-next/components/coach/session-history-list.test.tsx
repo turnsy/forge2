@@ -135,7 +135,7 @@ describe("SessionHistoryList integration", () => {
     expect(mockDeleteTaskSession).toHaveBeenCalledWith("session-1");
   });
 
-  it("redirects home when deleting the active session", async () => {
+  it("redirects home when deleting the active replaceState-synced session", async () => {
     const user = userEvent.setup();
     window.history.replaceState(null, "", "/coach?sessionId=session-1");
 
@@ -149,7 +149,7 @@ describe("SessionHistoryList integration", () => {
     await waitFor(() => {
       expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
     });
-    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockPush).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalled();
   });
 });

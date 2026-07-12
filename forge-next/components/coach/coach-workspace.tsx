@@ -63,6 +63,7 @@ import {
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -430,6 +431,7 @@ function CoachWorkspaceInner({
     setArtifactTitle,
     setPlanId,
     setArtifact,
+    restart,
   } = useCoachPlanWorkspace(
     initialPlan
       ? {
@@ -461,6 +463,22 @@ function CoachWorkspaceInner({
   useEffect(() => {
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
+
+  const workspaceSessionId = useCoachWorkspaceSessionId();
+  const previousWorkspaceSessionIdRef = useRef(workspaceSessionId);
+
+  useEffect(() => {
+    const previousWorkspaceSessionId = previousWorkspaceSessionIdRef.current;
+    previousWorkspaceSessionIdRef.current = workspaceSessionId;
+
+    if (initialSession || !previousWorkspaceSessionId || workspaceSessionId) {
+      return;
+    }
+
+    if (state.hasStarted) {
+      restart();
+    }
+  }, [initialSession, restart, state.hasStarted, workspaceSessionId]);
 
   useEffect(() => {
     if (!openArtifactOnMobileRef.current || !isMobile) {
@@ -592,7 +610,10 @@ function CoachWorkspaceInner({
 
   const handleActiveSessionDeleted = useCallback(() => {
     setMobileHistoryOpen(false);
-  }, []);
+    if (!initialSession) {
+      restart();
+    }
+  }, [initialSession, restart]);
 
   const toggleMobileHistory = useCallback(() => {
     setMobileHistoryOpen((current) => !current);

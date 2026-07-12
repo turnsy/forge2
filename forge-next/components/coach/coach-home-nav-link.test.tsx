@@ -5,7 +5,7 @@ import { CoachHomeNavLink } from "@/components/coach/coach-home-nav-link";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
-const mockReplace = vi.fn();
+const mockPush = vi.fn();
 const mockRefresh = vi.fn();
 const mockPathname = vi.fn(() => "/coach");
 const mockSearchParams = vi.fn(() => new URLSearchParams("sessionId=session-1"));
@@ -17,7 +17,7 @@ vi.mock("@/lib/chat/actions", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname(),
   useSearchParams: () => mockSearchParams(),
-  useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
+  useRouter: () => ({ push: mockPush, replace: vi.fn(), refresh: mockRefresh }),
 }));
 
 vi.mock("next/link", () => ({
@@ -58,7 +58,7 @@ describe("CoachHomeNavLink", () => {
 
     await user.click(screen.getByRole("link", { name: "Home" }));
 
-    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockPush).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalled();
   });
 
