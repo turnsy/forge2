@@ -44,7 +44,7 @@ export function AuthPanel({
   initialRole: UserRole;
   initialBanner?: string | null;
 }) {
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [mode, setMode] = useState<AuthMode>("sign-up");
   const [role, setRole] = useState<UserRole>(initialRole);
   const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
   const [shouldAnimate, setShouldAnimate] = useState(false);

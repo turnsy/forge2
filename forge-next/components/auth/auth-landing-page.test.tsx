@@ -19,10 +19,12 @@ vi.mock("react", async () => {
 import { AuthLandingPage } from "@/components/auth/auth-landing-page";
 
 describe("AuthLandingPage", () => {
-  it("renders centered Forge title and sign in form", () => {
+  it("renders centered Forge title and sign up form by default", () => {
     render(<AuthLandingPage initialRole="coach" />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Forge" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Sign in" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Current role: Coach/i }),
+    ).toBeInTheDocument();
   });
 });
