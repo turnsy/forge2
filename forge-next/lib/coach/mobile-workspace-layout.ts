@@ -13,8 +13,8 @@ export const MOBILE_OVERLAY_CLOSE_CLASS = "absolute right-4 top-1 z-20";
 /** Mobile chat header row for the reset control. */
 export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 
-/** Light separation between the view-artifact control and the composer. */
-export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "pb-2.5";
+/** Separation between the attachment/view toolbar and the prompt composer on mobile. */
+export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "pb-4";
 
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS} ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`;
