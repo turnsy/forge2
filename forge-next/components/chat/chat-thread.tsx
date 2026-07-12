@@ -7,6 +7,11 @@ import { MarkdownContent } from "@/components/ui/markdown-content";
 import { hasVisibleChatContent } from "@/lib/chat/message-content";
 import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import { useChatThreadAutoScroll } from "@/lib/chat/use-chat-thread-scroll";
+import {
+  hasOverlayScrollLane,
+  OVERLAY_SCROLL_LANE_CLASS,
+  overlayScrollLaneStyle,
+} from "@/lib/layout/overlay-scroll-lane";
 import type {
   ChatDisplayError,
   ChatMessage,
@@ -72,25 +77,33 @@ export function ChatThread({
     : null;
   const showTurnActivity = Boolean(activityLabel);
   const showErrors = errors.length > 0;
+  const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
+  const lanePositioned = hasOverlayScrollLane(lanePadding);
 
   return (
     <div
-      className={`flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
+      className={`relative flex min-h-0 flex-1 flex-col overflow-hidden${className ? ` ${className}` : ""}`}
     >
       <div
         ref={scrollRef}
-        className={`flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`}
+        className={
+          lanePositioned
+            ? `${OVERLAY_SCROLL_LANE_CLASS} flex flex-col gap-4 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`
+            : `flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`
+        }
         style={
-          scrollPaddingTop !== undefined || scrollPaddingBottom !== undefined
-            ? {
-                ...(scrollPaddingTop !== undefined
-                  ? { paddingTop: scrollPaddingTop }
-                  : {}),
-                ...(scrollPaddingBottom !== undefined
-                  ? { paddingBottom: scrollPaddingBottom }
-                  : {}),
-              }
-            : undefined
+          lanePositioned
+            ? overlayScrollLaneStyle(lanePadding)
+            : scrollPaddingTop !== undefined || scrollPaddingBottom !== undefined
+              ? {
+                  ...(scrollPaddingTop !== undefined
+                    ? { paddingTop: scrollPaddingTop }
+                    : {}),
+                  ...(scrollPaddingBottom !== undefined
+                    ? { paddingBottom: scrollPaddingBottom }
+                    : {}),
+                }
+              : undefined
         }
       >
         {messages.filter(isRenderableMessage).map((message, index) => (

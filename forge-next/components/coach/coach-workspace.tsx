@@ -31,6 +31,11 @@ import {
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
+import {
+  hasOverlayScrollLane,
+  OVERLAY_SCROLL_LANE_CLASS,
+  overlayScrollLaneStyle,
+} from "@/lib/layout/overlay-scroll-lane";
 import { isChatRunning } from "@/lib/chat";
 import { toArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
@@ -174,21 +179,19 @@ function ArtifactPanel({
         }
         contentInsetClassName={contentInsetClassName}
       >
-        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+        {({ scrollPaddingTop, scrollPaddingBottom }) => {
+          const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
+          const lanePositioned = hasOverlayScrollLane(lanePadding);
+
+          return (
           <div
-            className={`absolute inset-0 z-0 overflow-y-auto${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
-            style={{
-              ...(scrollPaddingTop !== undefined
-                ? { paddingTop: scrollPaddingTop }
-                : {}),
-              ...(scrollPaddingBottom !== undefined
-                ? { paddingBottom: scrollPaddingBottom }
-                : {}),
-            }}
+            className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+            style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
           >
             {preview}
           </div>
-        )}
+          );
+        }}
       </OverlayScrollChrome>
     </FadeIn>
   );

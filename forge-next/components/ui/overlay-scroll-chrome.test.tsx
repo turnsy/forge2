@@ -5,6 +5,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { OVERLAY_PRE_FOOTER_CLASS } from "@/lib/layout/overlay-scroll-chrome-layout";
+import { overlayScrollLaneStyle } from "@/lib/layout/overlay-scroll-lane";
 
 vi.mock("@/lib/hooks/use-measured-height", () => ({
   useMeasuredHeight: () => ({
@@ -22,13 +23,10 @@ describe("OverlayScrollChrome", () => {
         footer={<button type="button">Prompt</button>}
         footerInsetClassName="pb-nav"
       >
-        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+        {(lanePadding) => (
           <div
             data-testid="scroll-layer"
-            style={{
-              paddingTop: scrollPaddingTop,
-              paddingBottom: scrollPaddingBottom,
-            }}
+            style={overlayScrollLaneStyle(lanePadding)}
           />
         )}
       </OverlayScrollChrome>,
@@ -45,6 +43,6 @@ describe("OverlayScrollChrome", () => {
     expect(blurZone?.textContent).toContain("Prompt");
 
     const scrollLayer = container.querySelector('[data-testid="scroll-layer"]');
-    expect(scrollLayer).toHaveStyle({ paddingTop: "136px", paddingBottom: "136px" });
+    expect(scrollLayer).toHaveStyle({ top: "136px", bottom: "136px" });
   });
 });

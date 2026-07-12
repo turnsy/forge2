@@ -4,6 +4,11 @@ import type { ReactNode } from "react";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
+  hasOverlayScrollLane,
+  OVERLAY_SCROLL_LANE_CLASS,
+  overlayScrollLaneStyle,
+} from "@/lib/layout/overlay-scroll-lane";
+import {
   PAGE_CONTENT_INSET_BOTTOM_CLASS,
   PAGE_CONTENT_INSET_X_CLASS,
 } from "@/lib/layout/page-layout";
@@ -44,21 +49,19 @@ export function ScrollPage({
         footerInsetClassName={resolvedFooterInset}
         contentInsetClassName={contentClassName}
       >
-        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+        {({ scrollPaddingTop, scrollPaddingBottom }) => {
+          const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
+          const lanePositioned = hasOverlayScrollLane(lanePadding);
+
+          return (
           <div
-            className={`absolute inset-0 z-0 overflow-y-auto ${contentClassName}${scrollClassName ? ` ${scrollClassName}` : ""}`}
-            style={{
-              ...(scrollPaddingTop !== undefined
-                ? { paddingTop: scrollPaddingTop }
-                : {}),
-              ...(scrollPaddingBottom !== undefined
-                ? { paddingBottom: scrollPaddingBottom }
-                : {}),
-            }}
+            className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"} ${contentClassName}${scrollClassName ? ` ${scrollClassName}` : ""}`}
+            style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
           >
             {children}
           </div>
-        )}
+          );
+        }}
       </OverlayScrollChrome>
     </div>
   );
