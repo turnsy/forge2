@@ -4,10 +4,8 @@ import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SidebarNavLink } from "@/components/ui/sidebar-nav-link";
 import { isNavItemActive } from "@/lib/navigation/active-path";
-import {
-  navigateToCoachHome,
-  shouldForceCoachHomeNavigation,
-} from "@/lib/chat/session-url";
+import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { shouldForceCoachHomeNavigation } from "@/lib/chat/session-url";
 import { useCoachWorkspaceSearchParams } from "@/lib/chat/use-coach-workspace-url";
 
 export function CoachHomeNavLink({
@@ -22,6 +20,7 @@ export function CoachHomeNavLink({
   const pathname = usePathname();
   const workspaceSearchParams = useCoachWorkspaceSearchParams();
   const router = useRouter();
+  const { goToCoachHome } = useSessionNavigation();
   const active = isNavItemActive(
     pathname,
     "/coach",
@@ -42,7 +41,7 @@ export function CoachHomeNavLink({
         }
 
         event.preventDefault();
-        navigateToCoachHome(router);
+        goToCoachHome(router);
       }}
     >
       {children}

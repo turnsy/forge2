@@ -57,7 +57,7 @@ import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
-import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import { syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -426,7 +426,6 @@ function CoachWorkspaceInner({
     setArtifactTitle,
     setPlanId,
     setArtifact,
-    restart,
   } = useCoachPlanWorkspace(
     initialPlan
       ? {
@@ -582,16 +581,14 @@ function CoachWorkspaceInner({
       return;
     }
 
-    restart();
     savedSnapshotRef.current = null;
     setShowArtifact(false);
-    navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, restart, router, state]);
+    sessionNavigation?.goToCoachHome(router);
+  }, [activePlanId, backlinkPlanId, router, sessionNavigation, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
-    restart();
     setMobileHistoryOpen(false);
-  }, [restart]);
+  }, []);
 
   const toggleMobileHistory = useCallback(() => {
     setMobileHistoryOpen((current) => !current);

@@ -28,6 +28,7 @@ import {
   settingsPathForRole,
   type RoleNavItem,
 } from "@/lib/navigation/role-nav";
+import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
 import {
   navigateToCoachHome,
   shouldForceCoachHomeNavigation,
@@ -195,6 +196,7 @@ function BottomNavSlot({
   onActivePointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onActivePointerCancel: (event: React.PointerEvent<HTMLButtonElement>) => void;
 }) {
+  const sessionNavigation = useOptionalSessionNavigation();
   const active = isNavItemActive(pathname, item.href, item.exact, searchParams);
   const className = [slotClass, active ? slotActiveClass : ""]
     .filter(Boolean)
@@ -208,6 +210,11 @@ function BottomNavSlot({
     }
 
     event.preventDefault();
+    if (sessionNavigation) {
+      sessionNavigation.goToCoachHome(router);
+      return;
+    }
+
     navigateToCoachHome(router);
   };
 

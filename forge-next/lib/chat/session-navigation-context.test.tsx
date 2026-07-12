@@ -8,6 +8,7 @@ import {
 
 const mockListTaskSessions = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 const mockRefresh = vi.fn();
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 const mockPathname = vi.fn(() => "/coach");
@@ -66,6 +67,22 @@ function Probe() {
         onClick={() => updateSession("session-1", { title: "Renamed" })}
       >
         Rename
+      </button>
+    </div>
+  );
+}
+
+function HomeNavigationProbe() {
+  const { homeNavigationEpoch, goToCoachHome } = useSessionNavigation();
+
+  return (
+    <div>
+      <span data-testid="epoch">{homeNavigationEpoch}</span>
+      <button
+        type="button"
+        onClick={() => goToCoachHome({ replace: mockReplace, refresh: mockRefresh })}
+      >
+        Go home
       </button>
     </div>
   );
@@ -237,5 +254,23 @@ describe("SessionNavigationProvider", () => {
     await user.click(screen.getByRole("button", { name: "Rename" }));
 
     expect(screen.getByTestId("first-title")).toHaveTextContent("Renamed");
+  });
+
+  it("bumps the home navigation epoch and refreshes the route", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionNavigationProvider>
+        <HomeNavigationProbe />
+      </SessionNavigationProvider>,
+    );
+
+    expect(screen.getByTestId("epoch")).toHaveTextContent("0");
+
+    await user.click(screen.getByRole("button", { name: "Go home" }));
+
+    expect(screen.getByTestId("epoch")).toHaveTextContent("1");
+    expect(mockReplace).toHaveBeenCalledWith("/coach");
+    expect(mockRefresh).toHaveBeenCalled();
   });
 });

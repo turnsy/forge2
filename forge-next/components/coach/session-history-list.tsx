@@ -6,11 +6,8 @@ import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
 import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { navigateToCoachHome } from "@/lib/chat/session-url";
-import {
-  readCoachWorkspaceSessionId,
-  useCoachWorkspaceSessionId,
-} from "@/lib/chat/use-coach-workspace-url";
+import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { readCoachWorkspaceSessionId, useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -46,6 +43,7 @@ export function SessionHistoryList({
     sessions,
     sessionsLoading,
     sessionsError,
+    goToCoachHome,
     openSession,
     removeSession,
     updateSession,
@@ -73,7 +71,7 @@ export function SessionHistoryList({
 
     if (sessionId === currentSessionId) {
       onActiveSessionDeleted?.();
-      navigateToCoachHome(router);
+      goToCoachHome(router);
     }
   }
 

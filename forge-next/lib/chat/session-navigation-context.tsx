@@ -14,18 +14,28 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import { listTaskSessions } from "@/lib/chat/actions";
-import { navigateToCoachSession } from "@/lib/chat/session-url";
+import {
+  navigateToCoachHome,
+  navigateToCoachSession,
+} from "@/lib/chat/session-url";
 
 type CoachSessionRouter = {
   push: (href: string) => void;
   refresh: () => void;
 };
 
+type CoachHomeRouter = {
+  replace: (href: string) => void;
+  refresh: () => void;
+};
+
 type SessionNavigationContextValue = {
+  homeNavigationEpoch: number;
   pendingSessionId: string | null;
   sessions: readonly SessionListItemData[];
   sessionsLoading: boolean;
   sessionsError: string | null;
+  goToCoachHome: (router: CoachHomeRouter) => void;
   openSession: (sessionId: string, router: CoachSessionRouter) => void;
   registerNewSession: (session: SessionListItemData) => void;
   removeSession: (sessionId: string) => void;
@@ -85,6 +95,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const searchParams = useSearchParams();
   const routerSessionId = searchParams.get("sessionId");
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const [homeNavigationEpoch, setHomeNavigationEpoch] = useState(0);
   const [sessions, setSessions] = useState<SessionListItemData[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -182,6 +193,12 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     [],
   );
 
+  const goToCoachHome = useCallback((router: CoachHomeRouter) => {
+    setTargetSessionId(null);
+    setHomeNavigationEpoch((epoch) => epoch + 1);
+    navigateToCoachHome(router);
+  }, []);
+
   const registerNewSession = useCallback((session: SessionListItemData) => {
     setSessions((current) => upsertSession(current, session));
   }, []);
@@ -204,10 +221,12 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
   const contextValue = useMemo(
     () => ({
+      homeNavigationEpoch,
       pendingSessionId,
       sessions,
       sessionsLoading,
       sessionsError,
+      goToCoachHome,
       openSession,
       registerNewSession,
       removeSession,
@@ -215,10 +234,12 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       refreshSessions,
     }),
     [
+      homeNavigationEpoch,
       pendingSessionId,
       sessions,
       sessionsLoading,
       sessionsError,
+      goToCoachHome,
       openSession,
       refreshSessions,
       registerNewSession,

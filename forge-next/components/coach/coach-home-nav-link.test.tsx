@@ -2,7 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachHomeNavLink } from "@/components/coach/coach-home-nav-link";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
+
+const mockListTaskSessions = vi.fn();
+
+vi.mock("@/lib/chat/actions", () => ({
+  listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
+}));
 
 const mockReplace = vi.fn();
 const mockRefresh = vi.fn();
@@ -36,6 +43,7 @@ vi.mock("next/link", () => ({
 describe("CoachHomeNavLink", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
     mockPathname.mockReturnValue("/coach");
     window.history.replaceState(null, "", "/coach");
   });
@@ -61,7 +69,11 @@ describe("CoachHomeNavLink", () => {
       dispatchEvent: window.dispatchEvent.bind(window),
     });
 
-    render(<CoachHomeNavLink>Home</CoachHomeNavLink>);
+    render(
+      <SessionNavigationProvider>
+        <CoachHomeNavLink>Home</CoachHomeNavLink>
+      </SessionNavigationProvider>,
+    );
 
     await user.click(screen.getByRole("link", { name: "Home" }));
 
@@ -75,7 +87,11 @@ describe("CoachHomeNavLink", () => {
     window.history.replaceState(null, "", "/coach?sessionId=session-new");
     window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
 
-    render(<CoachHomeNavLink>Home</CoachHomeNavLink>);
+    render(
+      <SessionNavigationProvider>
+        <CoachHomeNavLink>Home</CoachHomeNavLink>
+      </SessionNavigationProvider>,
+    );
 
     const homeClasses = screen
       .getByRole("link", { name: "Home" })
