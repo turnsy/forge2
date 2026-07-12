@@ -252,6 +252,28 @@ export function CoachWorkspace(
   },
 ) {
   const catchUp = useCoachEveCatchUp(props.initialSession);
+  const [homeWorkspaceEpoch, setHomeWorkspaceEpoch] = useState(0);
+
+  useEffect(() => {
+    if (props.initialSession) {
+      return;
+    }
+
+    function handleHomeNavigate() {
+      setHomeWorkspaceEpoch((epoch) => epoch + 1);
+    }
+
+    window.addEventListener(
+      COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+      handleHomeNavigate,
+    );
+    return () => {
+      window.removeEventListener(
+        COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
+        handleHomeNavigate,
+      );
+    };
+  }, [props.initialSession]);
 
   useEffect(() => {
     if (!props.initialSession || catchUp.loadPhase !== "ready") {
@@ -325,28 +347,6 @@ export function CoachWorkspace(
 
   const sessionKey = props.initialSession?.id ?? "coach-home";
   const resuming = catchUp.loadPhase === "resuming";
-  const [homeWorkspaceEpoch, setHomeWorkspaceEpoch] = useState(0);
-
-  useEffect(() => {
-    if (props.initialSession) {
-      return;
-    }
-
-    function handleHomeNavigate() {
-      setHomeWorkspaceEpoch((epoch) => epoch + 1);
-    }
-
-    window.addEventListener(
-      COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
-      handleHomeNavigate,
-    );
-    return () => {
-      window.removeEventListener(
-        COACH_WORKSPACE_HOME_NAVIGATE_EVENT,
-        handleHomeNavigate,
-      );
-    };
-  }, [props.initialSession]);
 
   return (
     <CoachWorkspaceInner
