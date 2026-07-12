@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import { DESKTOP_ARTIFACT_COLUMN_CLASS, DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS, DESKTOP_CHAT_COLLAPSED_RAIL_CLASS } from "@/lib/coach/desktop-workspace-layout";
 
@@ -36,6 +37,7 @@ vi.mock("next/navigation", () => ({
     refresh: mockRefresh,
   }),
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/coach",
 }));
 
 vi.mock("@/lib/chat/actions", () => ({
@@ -73,6 +75,16 @@ const samplePlan = {
   name: "Test Plan",
   weeks: [],
 };
+
+function renderCoachWorkspace(
+  props: React.ComponentProps<typeof CoachWorkspace>,
+) {
+  return render(
+    <SessionNavigationProvider>
+      <CoachWorkspace {...props} />
+    </SessionNavigationProvider>,
+  );
+}
 
 function mockWorkspaceState(
   overrides: Partial<PlanWorkspaceState> = {},
@@ -117,7 +129,7 @@ describe("CoachWorkspace layout", () => {
   it("shows welcome before first message", () => {
     mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState()));
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
     expect(
@@ -132,7 +144,7 @@ describe("CoachWorkspace layout", () => {
     mockUseIsMobile.mockReturnValue(isMobile);
     mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState()));
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.querySelector(".bg-surface\\/80")).not.toBeNull();
     expect(container.querySelector(".border-0.bg-transparent")).not.toBeNull();
@@ -148,7 +160,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
     expect(container.innerHTML).toContain("p-4");
@@ -166,7 +178,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.querySelector(".max-w-3xl")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
@@ -185,7 +197,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(
       screen.queryByRole("button", { name: "Collapse chat" }),
@@ -206,7 +218,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
@@ -226,7 +238,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
     expect(mockRestart).toHaveBeenCalledOnce();
@@ -248,7 +260,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     const resetButton = screen.getByRole("button", { name: "Reset conversation" });
     expect(resetButton).toBeEnabled();
@@ -271,7 +283,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     const backLink = screen.getByRole("link", { name: "Back to plan" });
     expect(backLink).toBeVisible();
@@ -289,7 +301,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(
       screen.queryByRole("link", { name: "Back to plan" }),
@@ -307,7 +319,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
     expect(container.innerHTML).toContain("pb-[calc(4.5rem");
@@ -327,7 +339,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
     expect(container.innerHTML).toContain("pb-[calc(4.5rem");
@@ -345,13 +357,11 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(
-      <CoachWorkspace
-        firstName="Alex"
-        role="coach"
-        initialPlan={samplePlan}
-      />,
-    );
+    renderCoachWorkspace({
+      firstName: "Alex",
+      role: "coach",
+      initialPlan: samplePlan,
+    });
 
     expect(screen.getByRole("button", { name: "Close artifact" })).toBeVisible();
     expect(
@@ -373,7 +383,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(screen.getByRole("button", { name: "View artifact" })).toBeVisible();
     expect(
@@ -402,7 +412,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "View artifact" }));
 
     const saveButton = screen.getByRole("button", { name: "Save" });
@@ -424,7 +434,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "View artifact" }));
     await user.click(screen.getByRole("button", { name: "Close artifact" }));
 
@@ -446,7 +456,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(screen.getByRole("textbox")).toBeInTheDocument();
 
@@ -470,7 +480,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "Reset conversation" }));
 
     expect(mockPush).toHaveBeenCalledWith("/coach/plans/plan-1");
@@ -490,7 +500,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "Edit plan" }));
 
     expect(mockResetSaveStatus).toHaveBeenCalled();
@@ -507,7 +517,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    render(<CoachWorkspace firstName="Alex" role="coach" />);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(screen.getByRole("button", { name: "Collapse chat" })).toBeVisible();
   });
@@ -524,7 +534,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
     await user.click(screen.getByRole("button", { name: "Collapse chat" }));
 
     expect(screen.getByRole("button", { name: "Expand chat" })).toBeVisible();

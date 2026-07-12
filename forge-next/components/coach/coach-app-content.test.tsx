@@ -8,6 +8,8 @@ import {
 } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
+const mockPush = vi.fn();
+const mockRefresh = vi.fn();
 
 vi.mock("@/lib/chat/actions", () => ({
   listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
@@ -19,10 +21,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 function StartNavigationButton() {
-  const { startSessionNavigation } = useSessionNavigation();
+  const { openSession } = useSessionNavigation();
 
   return (
-    <button type="button" onClick={() => startSessionNavigation("session-1")}>
+    <button
+      type="button"
+      onClick={() => openSession("session-1", { push: mockPush, refresh: mockRefresh })}
+    >
       Start navigation
     </button>
   );

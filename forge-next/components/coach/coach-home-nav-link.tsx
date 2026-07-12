@@ -8,7 +8,7 @@ import {
   navigateToCoachHome,
   shouldForceCoachHomeNavigation,
 } from "@/lib/chat/session-url";
-import { useCoachWorkspaceSearchParams } from "@/lib/chat/use-coach-workspace-session-id";
+import { useCoachWorkspaceSearchParams } from "@/lib/chat/use-coach-workspace-url";
 
 export function CoachHomeNavLink({
   children,

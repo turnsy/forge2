@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { COACH_WORKSPACE_URL_CHANGE_EVENT, hasCoachWorkspaceQueryParams } from "@/lib/chat/session-url";
+import {
+  COACH_WORKSPACE_URL_CHANGE_EVENT,
+  hasCoachWorkspaceQueryParams,
+} from "@/lib/chat/session-url";
 
 export function readCoachWorkspaceSearchParams(): URLSearchParams {
   if (typeof window === "undefined") {
@@ -10,10 +13,6 @@ export function readCoachWorkspaceSearchParams(): URLSearchParams {
   }
 
   return new URL(window.location.href).searchParams;
-}
-
-export function readCoachWorkspaceSessionId(): string | null {
-  return readCoachWorkspaceSearchParams().get("sessionId");
 }
 
 export function useCoachWorkspaceSearchParams(): URLSearchParams {

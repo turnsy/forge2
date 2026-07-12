@@ -14,14 +14,19 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import { listTaskSessions } from "@/lib/chat/actions";
-import { mergeSessionLists } from "@/lib/chat/session-history-merge";
+import { navigateToCoachSession } from "@/lib/chat/session-url";
+
+type CoachSessionRouter = {
+  push: (href: string) => void;
+  refresh: () => void;
+};
 
 type SessionNavigationContextValue = {
   pendingSessionId: string | null;
   sessions: readonly SessionListItemData[];
   sessionsLoading: boolean;
   sessionsError: string | null;
-  startSessionNavigation: (sessionId: string) => void;
+  openSession: (sessionId: string, router: CoachSessionRouter) => void;
   registerNewSession: (session: SessionListItemData) => void;
   removeSession: (sessionId: string) => void;
   updateSession: (
@@ -37,14 +42,42 @@ const SessionNavigationContext =
 const COACH_WORKSPACE_PATH = "/coach";
 const SESSION_LIST_LIMIT = 50;
 
+function sortSessionsByUpdatedAt(
+  sessions: SessionListItemData[],
+): SessionListItemData[] {
+  return [...sessions].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+}
+
+function upsertSession(
+  sessions: SessionListItemData[],
+  session: SessionListItemData,
+): SessionListItemData[] {
+  const withoutSession = sessions.filter((entry) => entry.id !== session.id);
+  return sortSessionsByUpdatedAt([session, ...withoutSession]);
+}
+
 function updateSessionInList(
   sessions: SessionListItemData[],
   sessionId: string,
   patch: Partial<Pick<SessionListItemData, "title" | "updatedAt">>,
 ): SessionListItemData[] {
-  return sessions.map((session) =>
-    session.id === sessionId ? { ...session, ...patch } : session,
+  return sortSessionsByUpdatedAt(
+    sessions.map((session) =>
+      session.id === sessionId ? { ...session, ...patch } : session,
+    ),
   );
+}
+
+function mergeFetchedSessions(
+  current: SessionListItemData[],
+  fetched: SessionListItemData[],
+): SessionListItemData[] {
+  const fetchedIds = new Set(fetched.map((session) => session.id));
+  const localOnly = current.filter((session) => !fetchedIds.has(session.id));
+  return sortSessionsByUpdatedAt([...fetched, ...localOnly]);
 }
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
@@ -52,20 +85,10 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   const searchParams = useSearchParams();
   const routerSessionId = searchParams.get("sessionId");
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
-  const [fetchedSessions, setFetchedSessions] = useState<SessionListItemData[]>(
-    [],
-  );
-  const [insertedSessions, setInsertedSessions] = useState<
-    SessionListItemData[]
-  >([]);
+  const [sessions, setSessions] = useState<SessionListItemData[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const fetchGenerationRef = useRef(0);
-
-  const sessions = useMemo(
-    () => mergeSessionLists(fetchedSessions, insertedSessions),
-    [fetchedSessions, insertedSessions],
-  );
 
   const pendingSessionId =
     pathname === COACH_WORKSPACE_PATH &&
@@ -93,7 +116,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     }
   }, [pathname, routerSessionId, targetSessionId]);
 
-  const loadSessions = useCallback(async (showLoading: boolean) => {
+  const fetchSessions = useCallback(async (showLoading: boolean) => {
     const generation = ++fetchGenerationRef.current;
 
     if (showLoading) {
@@ -109,16 +132,12 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
     if (!result.ok) {
       setSessionsError(result.message);
-      setFetchedSessions((current) => (current.length === 0 ? [] : current));
+      setSessions((current) => (current.length === 0 ? [] : current));
       setSessionsLoading(false);
       return;
     }
 
-    const fetchedIds = new Set(result.sessions.map((session) => session.id));
-    setFetchedSessions(result.sessions);
-    setInsertedSessions((current) =>
-      current.filter((session) => !fetchedIds.has(session.id)),
-    );
+    setSessions((current) => mergeFetchedSessions(current, result.sessions));
     setSessionsLoading(false);
   }, []);
 
@@ -135,16 +154,12 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
       if (!result.ok) {
         setSessionsError(result.message);
-        setFetchedSessions([]);
+        setSessions([]);
         setSessionsLoading(false);
         return;
       }
 
-      const fetchedIds = new Set(result.sessions.map((session) => session.id));
-      setFetchedSessions(result.sessions);
-      setInsertedSessions((current) =>
-        current.filter((session) => !fetchedIds.has(session.id)),
-      );
+      setSessions((current) => mergeFetchedSessions(current, result.sessions));
       setSessionsLoading(false);
     }
 
@@ -156,33 +171,23 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
   }, []);
 
   const refreshSessions = useCallback(async () => {
-    const hasCachedSessions =
-      fetchedSessions.length > 0 || insertedSessions.length > 0;
-    await loadSessions(!hasCachedSessions);
-  }, [fetchedSessions.length, insertedSessions.length, loadSessions]);
+    await fetchSessions(sessions.length === 0);
+  }, [fetchSessions, sessions.length]);
 
-  const startSessionNavigation = useCallback((sessionId: string) => {
-    setTargetSessionId(sessionId);
-  }, []);
+  const openSession = useCallback(
+    (sessionId: string, router: CoachSessionRouter) => {
+      setTargetSessionId(sessionId);
+      navigateToCoachSession(router, sessionId);
+    },
+    [],
+  );
 
   const registerNewSession = useCallback((session: SessionListItemData) => {
-    setInsertedSessions((current) => {
-      const existingIndex = current.findIndex((entry) => entry.id === session.id);
-      if (existingIndex === -1) {
-        return [session, ...current];
-      }
-
-      const next = [...current];
-      next[existingIndex] = { ...current[existingIndex], ...session };
-      return next;
-    });
+    setSessions((current) => upsertSession(current, session));
   }, []);
 
   const removeSession = useCallback((sessionId: string) => {
-    setFetchedSessions((current) =>
-      current.filter((session) => session.id !== sessionId),
-    );
-    setInsertedSessions((current) =>
+    setSessions((current) =>
       current.filter((session) => session.id !== sessionId),
     );
   }, []);
@@ -192,12 +197,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       sessionId: string,
       patch: Partial<Pick<SessionListItemData, "title" | "updatedAt">>,
     ) => {
-      setFetchedSessions((current) =>
-        updateSessionInList(current, sessionId, patch),
-      );
-      setInsertedSessions((current) =>
-        updateSessionInList(current, sessionId, patch),
-      );
+      setSessions((current) => updateSessionInList(current, sessionId, patch));
     },
     [],
   );
@@ -208,7 +208,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       sessions,
       sessionsLoading,
       sessionsError,
-      startSessionNavigation,
+      openSession,
       registerNewSession,
       removeSession,
       updateSession,
@@ -219,10 +219,10 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       sessions,
       sessionsLoading,
       sessionsError,
+      openSession,
       refreshSessions,
       registerNewSession,
       removeSession,
-      startSessionNavigation,
       updateSession,
     ],
   );

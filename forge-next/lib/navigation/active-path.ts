@@ -1,3 +1,5 @@
+import { hasCoachWorkspaceQueryParams } from "@/lib/chat/session-url";
+
 const COACH_HOME_HREF = "/coach";
 
 function isPathActive(pathname: string, href: string, exact = false): boolean {
@@ -6,14 +8,6 @@ function isPathActive(pathname: string, href: string, exact = false): boolean {
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function isCoachHomeWorkspaceActive(searchParams: URLSearchParams): boolean {
-  return (
-    !searchParams.has("sessionId") &&
-    !searchParams.has("planId") &&
-    !searchParams.has("new")
-  );
 }
 
 export function isNavItemActive(
@@ -27,7 +21,7 @@ export function isNavItemActive(
   }
 
   if (exact && href === COACH_HOME_HREF && searchParams) {
-    return isCoachHomeWorkspaceActive(searchParams);
+    return !hasCoachWorkspaceQueryParams(searchParams);
   }
 
   return true;

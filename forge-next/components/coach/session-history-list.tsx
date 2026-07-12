@@ -5,12 +5,9 @@ import { useRouter } from "next/navigation";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
-import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
-import {
-  navigateToCoachHome,
-  navigateToCoachSession,
-} from "@/lib/chat/session-url";
-import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-session-id";
+import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { navigateToCoachHome } from "@/lib/chat/session-url";
+import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -42,29 +39,32 @@ export function SessionHistoryList({
   className?: string;
 }) {
   const router = useRouter();
-  const sessionNavigation = useOptionalSessionNavigation();
+  const {
+    sessions,
+    sessionsLoading,
+    sessionsError,
+    openSession,
+    removeSession,
+    updateSession,
+    refreshSessions,
+  } = useSessionNavigation();
   const activeSessionId = useCoachWorkspaceSessionId();
   const [showAll, setShowAll] = useState(false);
 
-  const sessions = sessionNavigation?.sessions ?? [];
-  const loading = sessionNavigation?.sessionsLoading ?? true;
-  const error = sessionNavigation?.sessionsError ?? null;
-
   function handleOpen(sessionId: string) {
     if (sessionId !== activeSessionId) {
-      sessionNavigation?.startSessionNavigation(sessionId);
-      navigateToCoachSession(router, sessionId);
+      openSession(sessionId, router);
     }
 
     onSessionOpen?.(sessionId);
   }
 
   function handleRenamed(sessionId: string, title: string) {
-    sessionNavigation?.updateSession(sessionId, { title });
+    updateSession(sessionId, { title });
   }
 
   function handleDeleted(sessionId: string) {
-    sessionNavigation?.removeSession(sessionId);
+    removeSession(sessionId);
 
     if (sessionId === activeSessionId) {
       onActiveSessionDeleted?.();
@@ -72,7 +72,7 @@ export function SessionHistoryList({
     }
   }
 
-  if (loading && sessions.length === 0) {
+  if (sessionsLoading && sessions.length === 0) {
     return (
       <div className={`flex justify-center py-4 ${className}`.trim()}>
         <Spinner className="h-5 w-5" label="Loading conversations" />
@@ -80,16 +80,16 @@ export function SessionHistoryList({
     );
   }
 
-  if (error && sessions.length === 0) {
+  if (sessionsError && sessions.length === 0) {
     return (
       <div className={`space-y-2 px-1 py-2 text-sm ${className}`.trim()}>
-        <p className="text-surface-muted">{error}</p>
+        <p className="text-surface-muted">{sessionsError}</p>
         <Button
           type="button"
           variant="secondary"
           size="sm"
           fullWidth={false}
-          onClick={() => void sessionNavigation?.refreshSessions()}
+          onClick={() => void refreshSessions()}
         >
           Retry
         </Button>

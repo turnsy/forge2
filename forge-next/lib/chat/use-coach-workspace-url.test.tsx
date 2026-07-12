@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-session-id";
+import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 

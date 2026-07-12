@@ -7,6 +7,8 @@ import {
 } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
+const mockPush = vi.fn();
+const mockRefresh = vi.fn();
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 const mockPathname = vi.fn(() => "/coach");
 
@@ -24,7 +26,7 @@ function Probe() {
     pendingSessionId,
     sessions,
     sessionsLoading,
-    startSessionNavigation,
+    openSession,
     registerNewSession,
     removeSession,
     updateSession,
@@ -36,7 +38,12 @@ function Probe() {
       <span data-testid="loading">{sessionsLoading ? "loading" : "ready"}</span>
       <span data-testid="session-count">{sessions.length}</span>
       <span data-testid="first-title">{sessions[0]?.title ?? "none"}</span>
-      <button type="button" onClick={() => startSessionNavigation("session-1")}>
+      <button
+        type="button"
+        onClick={() =>
+          openSession("session-1", { push: mockPush, refresh: mockRefresh })
+        }
+      >
         Navigate
       </button>
       <button
@@ -109,6 +116,8 @@ describe("SessionNavigationProvider", () => {
 
     await user.click(screen.getByRole("button", { name: "Navigate" }));
     expect(screen.getByTestId("pending")).toHaveTextContent("session-1");
+    expect(mockPush).toHaveBeenCalledWith("/coach?sessionId=session-1");
+    expect(mockRefresh).toHaveBeenCalled();
 
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
     rerender(
@@ -190,7 +199,7 @@ describe("SessionNavigationProvider", () => {
     expect(screen.getByTestId("first-title")).toHaveTextContent("Fresh thread");
   });
 
-  it("removes a session from both fetched and inserted lists", async () => {
+  it("removes a session from the list", async () => {
     const user = userEvent.setup();
 
     render(
@@ -212,7 +221,7 @@ describe("SessionNavigationProvider", () => {
     expect(screen.getByTestId("first-title")).toHaveTextContent("Fresh thread");
   });
 
-  it("updates a session title in the merged list", async () => {
+  it("updates a session title in the list", async () => {
     const user = userEvent.setup();
 
     render(

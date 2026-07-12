@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  hasCoachSessionInUrl,
   hasCoachWorkspaceQueryParams,
   navigateToCoachHome,
   navigateToCoachSession,
@@ -178,32 +177,6 @@ describe("syncCoachSessionUrl", () => {
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: "coach-workspace-url-change" }),
     );
-  });
-});
-
-describe("hasCoachSessionInUrl", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("returns false when sessionId is absent", () => {
-    stubWindow({
-      location: {
-        href: "https://example.com/coach",
-      },
-    });
-
-    expect(hasCoachSessionInUrl()).toBe(false);
-  });
-
-  it("returns true when sessionId is present", () => {
-    stubWindow({
-      location: {
-        href: "https://example.com/coach?sessionId=session-42",
-      },
-    });
-
-    expect(hasCoachSessionInUrl()).toBe(true);
   });
 });
 
