@@ -4,18 +4,12 @@ import type { ReactNode } from "react";
 import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { ProgressiveBlur } from "@/components/ui/progressive-blur";
-import { useMeasuredHeight } from "@/lib/hooks/use-measured-height";
+import { MobileOverlayScrollChrome } from "@/components/coach/mobile-overlay-scroll-chrome";
 import {
-  MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
-  MOBILE_CHAT_FOOTER_CLASS,
-  MOBILE_CHAT_SCROLL_END_GAP_PX,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOP_CHROME_CLASS,
-  MOBILE_CHAT_TOP_OVERLAY_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
@@ -61,90 +55,49 @@ export function CoachConversationPanel({
     />
   );
 
-  const { ref: footerRef, height: footerHeight } = useMeasuredHeight<HTMLDivElement>();
-  const { ref: topChromeRef, height: topChromeHeight } =
-    useMeasuredHeight<HTMLDivElement>();
-
   if (layout === "mobileOverlay") {
-    const measuredScrollPaddingBottom =
-      footerHeight > 0 ? footerHeight + MOBILE_CHAT_SCROLL_END_GAP_PX : undefined;
-    const measuredScrollPaddingTop =
-      topChrome && topChromeHeight > 0
-        ? topChromeHeight + MOBILE_CHAT_SCROLL_END_GAP_PX
-        : undefined;
     const fallbackScrollBottomClass = composerHeader
       ? MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS
       : MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS;
+    const preFooter =
+      composerHeader ??
+      (showAttachmentsAboveComposer && state.hasStarted ? (
+        <ChatAttachmentList
+          attachments={state.attachments}
+          onRemove={onRemoveAttachment}
+        />
+      ) : null);
 
     return (
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ChatThread
-          threadKey={state.sessionId}
-          messages={state.messages}
-          streamingAssistantText={state.streamingAssistantText}
-          runStatus={state.runStatus}
-          errors={state.errors}
-          phase={state.phase}
-          className="absolute inset-0 z-0"
-          scrollClassName={`${
-            measuredScrollPaddingTop === undefined
-              ? MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS
-              : ""
-          } ${
-            measuredScrollPaddingBottom === undefined
-              ? fallbackScrollBottomClass
-              : ""
-          } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-          scrollPaddingTop={measuredScrollPaddingTop}
-          scrollPaddingBottom={measuredScrollPaddingBottom}
-        />
-        {topChrome ? (
-          <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
-            <div
-              ref={topChromeRef}
-              className={`${MOBILE_CHAT_TOP_CHROME_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-            >
-              <ProgressiveBlur
-                direction="top"
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10">{topChrome}</div>
-            </div>
-          </div>
-        ) : null}
-        <div ref={footerRef} className={MOBILE_CHAT_FOOTER_CLASS}>
-          {composerHeader ? (
-            <div
-              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-            >
-              {composerHeader}
-            </div>
-          ) : showAttachmentsAboveComposer && state.hasStarted ? (
-            <div
-              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-            >
-              <ChatAttachmentList
-                attachments={state.attachments}
-                onRemove={onRemoveAttachment}
-                className="mb-2"
-              />
-            </div>
-          ) : null}
-          <div
-            className={`${MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS}${composerClassName ? ` ${composerClassName}` : ""}`}
-          >
-            <ProgressiveBlur
-              direction="bottom"
-              className="pointer-events-none absolute inset-0 z-0"
-            />
-            <div
-              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
-            >
-              {composer}
-            </div>
-          </div>
-        </div>
-      </div>
+      <MobileOverlayScrollChrome
+        topChrome={topChrome}
+        preFooter={preFooter}
+        footer={composer}
+        footerInsetClassName={composerClassName}
+      >
+        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+          <ChatThread
+            threadKey={state.sessionId}
+            messages={state.messages}
+            streamingAssistantText={state.streamingAssistantText}
+            runStatus={state.runStatus}
+            errors={state.errors}
+            phase={state.phase}
+            className="absolute inset-0 z-0"
+            scrollClassName={`${
+              scrollPaddingTop === undefined
+                ? MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS
+                : ""
+            } ${
+              scrollPaddingBottom === undefined
+                ? fallbackScrollBottomClass
+                : ""
+            } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            scrollPaddingTop={scrollPaddingTop}
+            scrollPaddingBottom={scrollPaddingBottom}
+          />
+        )}
+      </MobileOverlayScrollChrome>
     );
   }
 

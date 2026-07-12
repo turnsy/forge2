@@ -12,6 +12,7 @@ export function ArtifactPreview({
   isAwaitingArtifact,
   disabled,
   onPlanChange,
+  embeddedScroll = false,
 }: {
   artifact: ArtifactPreviewModel;
   runStatus: ChatStatus | null;
@@ -19,6 +20,7 @@ export function ArtifactPreview({
   isAwaitingArtifact: boolean;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
+  embeddedScroll?: boolean;
 }) {
   const turnInProgress = isTurnInProgress(phase, runStatus);
   const activityLabel = turnInProgress
@@ -50,6 +52,7 @@ export function ArtifactPreview({
           phase={phase}
           disabled={disabled}
           onPlanChange={onPlanChange}
+          embeddedScroll={embeddedScroll}
         />
       );
     default: {

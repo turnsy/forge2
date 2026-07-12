@@ -8,6 +8,7 @@ import { SessionHistoryMobileToggle } from "@/components/coach/session-history-m
 import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
+import { MobileOverlayScrollChrome } from "@/components/coach/mobile-overlay-scroll-chrome";
 import { WorkspaceCloseButton } from "@/components/coach/workspace-close-button";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -29,6 +30,7 @@ import {
 } from "@/lib/coach/desktop-workspace-layout";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
+  MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
@@ -106,6 +108,7 @@ function ArtifactPanel({
   onSave,
   disabled,
   onPlanChange,
+  mobileOverlay = false,
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
@@ -117,46 +120,87 @@ function ArtifactPanel({
   onSave: () => void;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
+  mobileOverlay?: boolean;
 }) {
+  const toolbar = (
+    <div className="flex flex-col gap-2">
+      <div className="flex shrink-0 items-center gap-2">
+        {resolvedBackHref ? (
+          <PageBackLink
+            href={resolvedBackHref}
+            ariaLabel="Back to plan"
+            onClick={onBackClick}
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <ArtifactToolbar
+            title={state.artifactTitle}
+            saveDisabled={isChatRunning(state) || !state.currentArtifact}
+            saveStatus={saveStatus}
+            onTitleChange={onTitleChange}
+            onSave={onSave}
+          />
+        </div>
+      </div>
+      {saveError ? (
+        <p className="text-sm text-red-400" role="alert">
+          {saveError}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const preview = (
+    <ArtifactPreview
+      artifact={toArtifactPreviewModel(state.currentArtifact)}
+      runStatus={state.runStatus}
+      phase={state.phase}
+      isAwaitingArtifact={false}
+      disabled={disabled}
+      onPlanChange={onPlanChange}
+      embeddedScroll={mobileOverlay}
+    />
+  );
+
+  if (mobileOverlay) {
+    return (
+      <FadeIn
+        key={artifactFadeKey}
+        className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <MobileOverlayScrollChrome
+          topContainerClassName={MOBILE_OVERLAY_CONTENT_CLASS}
+          topChrome={toolbar}
+          footerInsetClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
+        >
+          {({ scrollPaddingTop, scrollPaddingBottom }) => (
+            <div
+              className={`absolute inset-0 z-0 overflow-y-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              style={{
+                ...(scrollPaddingTop !== undefined
+                  ? { paddingTop: scrollPaddingTop }
+                  : {}),
+                ...(scrollPaddingBottom !== undefined
+                  ? { paddingBottom: scrollPaddingBottom }
+                  : {}),
+              }}
+            >
+              {preview}
+            </div>
+          )}
+        </MobileOverlayScrollChrome>
+      </FadeIn>
+    );
+  }
+
   return (
     <FadeIn
       key={artifactFadeKey}
       className="flex h-full min-h-0 flex-col gap-5 overflow-hidden max-md:gap-4"
     >
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-md:gap-4">
-        <div className="flex shrink-0 items-center gap-2">
-          {resolvedBackHref ? (
-            <PageBackLink
-              href={resolvedBackHref}
-              ariaLabel="Back to plan"
-              onClick={onBackClick}
-            />
-          ) : null}
-          <div className="min-w-0 flex-1">
-            <ArtifactToolbar
-              title={state.artifactTitle}
-              saveDisabled={isChatRunning(state) || !state.currentArtifact}
-              saveStatus={saveStatus}
-              onTitleChange={onTitleChange}
-              onSave={onSave}
-            />
-          </div>
-        </div>
-        {saveError ? (
-          <p className="text-sm text-red-400" role="alert">
-            {saveError}
-          </p>
-        ) : null}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ArtifactPreview
-            artifact={toArtifactPreviewModel(state.currentArtifact)}
-            runStatus={state.runStatus}
-            phase={state.phase}
-            isAwaitingArtifact={false}
-            disabled={disabled}
-            onPlanChange={onPlanChange}
-          />
-        </div>
+        {toolbar}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{preview}</div>
       </div>
     </FadeIn>
   );
@@ -672,16 +716,13 @@ function CoachWorkspaceInner({
     return (
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {showArtifact ? (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            <WorkspaceCloseButton
-              className={MOBILE_OVERLAY_CLOSE_CLASS}
-              variant="close"
-              ariaLabel="Close artifact"
-              onClick={() => setShowArtifact(false)}
-            />
-            <div
-              className={`flex min-h-0 flex-1 flex-col overflow-hidden ${MOBILE_OVERLAY_CONTENT_CLASS} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}
-            >
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+              <WorkspaceCloseButton
+                className={MOBILE_OVERLAY_CLOSE_CLASS}
+                variant="close"
+                ariaLabel="Close artifact"
+                onClick={() => setShowArtifact(false)}
+              />
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
@@ -693,9 +734,9 @@ function CoachWorkspaceInner({
                 onSave={handleSave}
                 disabled={isChatRunning(state)}
                 onPlanChange={handlePlanChange}
+                mobileOverlay
               />
             </div>
-          </div>
         ) : (
           <ChatWorkspaceShell>
             {renderMobileChatBody(

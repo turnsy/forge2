@@ -16,6 +16,9 @@ export const MOBILE_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
 /** Separation between the attachment/view toolbar and the prompt (non-overlay layouts). */
 export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 
+/** Toolbar row wrapper in overlay chat; keeps spacing above the prompt. */
+export const MOBILE_COMPOSER_TOOLBAR_FOOTER_CLASS = `relative z-10 pointer-events-auto ${MOBILE_VIEW_ARTIFACT_SPACING_CLASS}`;
+
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
 
