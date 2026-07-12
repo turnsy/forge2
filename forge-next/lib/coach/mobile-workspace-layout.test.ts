@@ -56,7 +56,7 @@ describe("mobile workspace layout classes", () => {
     expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(24);
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
-    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-12");
+    expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("pt-4");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("7.5rem");
     expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS).toContain(
       "2rem",

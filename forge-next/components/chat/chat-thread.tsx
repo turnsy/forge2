@@ -88,7 +88,7 @@ export function ChatThread({
         ref={scrollRef}
         className={
           lanePositioned
-            ? `${OVERLAY_SCROLL_LANE_CLASS} flex flex-col gap-4 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`
+            ? `${OVERLAY_SCROLL_LANE_CLASS} flex flex-col gap-4${scrollClassName ? ` ${scrollClassName}` : ""}`
             : `flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`
         }
         style={

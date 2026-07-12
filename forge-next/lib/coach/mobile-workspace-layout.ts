@@ -60,8 +60,14 @@ const MOBILE_COMPOSER_BLOCK_HEIGHT = "7.5rem";
 /** Toolbar row height; matches BUTTON_SM_HEIGHT_CLASS. */
 const MOBILE_TOOLBAR_BLOCK_HEIGHT = "2rem";
 
-/** Scroll inset so the first message clears the top overlay (fallback). */
-export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = "max-md:pt-12";
+/** Scroll inset so the first message clears fallback top chrome. */
+export const CHAT_THREAD_FALLBACK_TOP_CLASS = "pt-4 md:pt-6";
+
+/** Extra breathing room below measured overlay top chrome. */
+export const CHAT_THREAD_OVERLAY_TOP_GAP_CLASS = "pt-2";
+
+/** @deprecated Use CHAT_THREAD_FALLBACK_TOP_CLASS */
+export const MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS = CHAT_THREAD_FALLBACK_TOP_CLASS;
 
 /** Scroll end inset so the last message rests above the prompt and nav. */
 export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS = `max-md:pb-[calc(${MOBILE_COMPOSER_BLOCK_HEIGHT}+${MOBILE_BOTTOM_NAV_CLEARANCE})]`;

@@ -7,9 +7,10 @@ import { ChatThread } from "@/components/chat/chat-thread";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
 import {
+  CHAT_THREAD_FALLBACK_TOP_CLASS,
+  CHAT_THREAD_OVERLAY_TOP_GAP_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
-  MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 
@@ -88,7 +89,9 @@ export function CoachConversationPanel({
             phase={state.phase}
             className="absolute inset-0 z-0"
             scrollClassName={`${
-              scrollPaddingTop === undefined ? MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS : ""
+              scrollPaddingTop === undefined
+                ? CHAT_THREAD_FALLBACK_TOP_CLASS
+                : CHAT_THREAD_OVERLAY_TOP_GAP_CLASS
             } ${
               scrollPaddingBottom === undefined ? fallbackScrollBottomClass : ""
             } ${PAGE_CONTENT_INSET_X_CLASS}`}

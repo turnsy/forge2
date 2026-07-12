@@ -30,6 +30,7 @@ import {
   MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
+import { artifactStructureKey } from "@/lib/coach/artifact-scroll";
 import { useScrollTopOnKey } from "@/lib/hooks/use-scroll-top-on-key";
 import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
 import {
@@ -114,7 +115,10 @@ function ArtifactPanelScrollLane({
   const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
   const lanePositioned = hasOverlayScrollLane(lanePadding);
   const chromeReady = !lanePositioned || scrollPaddingTop !== undefined;
-  const scrollRef = useScrollTopOnKey(scrollResetKey, chromeReady);
+  const scrollRef = useScrollTopOnKey(
+    `${scrollResetKey}:${scrollPaddingTop ?? 0}:${scrollPaddingBottom ?? 0}`,
+    chromeReady,
+  );
 
   return (
     <div
@@ -497,6 +501,47 @@ function CoachWorkspaceInner({
 
   const showSplitPane = Boolean(state.currentArtifact);
   const chatCollapsed = showSplitPane && isChatCollapsed;
+  const artifactFadeKey = activePlanId ?? state.sessionId;
+  const previousArtifactRef = useRef(state.currentArtifact);
+  const hadSplitPaneRef = useRef(showSplitPane);
+
+  useEffect(() => {
+    const previous = previousArtifactRef.current;
+    const next = state.currentArtifact;
+    previousArtifactRef.current = next;
+
+    if (!next) {
+      return;
+    }
+
+    if (!previous) {
+      setArtifactScrollKey((key) => key + 1);
+      return;
+    }
+
+    if (
+      previous !== next &&
+      artifactStructureKey(previous) !== artifactStructureKey(next)
+    ) {
+      setArtifactScrollKey((key) => key + 1);
+    }
+  }, [state.currentArtifact]);
+
+  useEffect(() => {
+    if (showSplitPane && !hadSplitPaneRef.current) {
+      setArtifactScrollKey((key) => key + 1);
+    }
+
+    hadSplitPaneRef.current = showSplitPane;
+  }, [showSplitPane]);
+
+  useEffect(() => {
+    if (!state.currentArtifact) {
+      return;
+    }
+
+    setArtifactScrollKey((key) => key + 1);
+  }, [artifactFadeKey]);
 
   const toggleChatCollapsed = useCallback(() => {
     setIsChatCollapsed((current) => !current);
@@ -727,24 +772,6 @@ function CoachWorkspaceInner({
       </div>
     );
   }
-
-  const artifactFadeKey = activePlanId ?? state.sessionId;
-
-  useEffect(() => {
-    if (!state.currentArtifact) {
-      return;
-    }
-
-    setArtifactScrollKey((key) => key + 1);
-  }, [artifactFadeKey]);
-
-  useEffect(() => {
-    if (!showSplitPane) {
-      return;
-    }
-
-    setArtifactScrollKey((key) => key + 1);
-  }, [showSplitPane]);
 
   if (isMobile) {
     if (!showSplitPane) {
