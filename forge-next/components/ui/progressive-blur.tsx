@@ -14,22 +14,7 @@ const PROGRESSIVE_BLUR_LAYERS: Array<{
   { blurClass: "backdrop-blur-[64px]", from: "75%", to: "100%" },
 ];
 
-/** Scrim bands mirror blur layer masks so tint ramps with blur strength. */
-const PROGRESSIVE_SCRIM_LAYERS: Array<{
-  scrimClass: string;
-  from: string;
-  to: string;
-}> = [
-  { scrimClass: "bg-surface/6", from: "0%", to: "12.5%" },
-  { scrimClass: "bg-surface/10", from: "12.5%", to: "25%" },
-  { scrimClass: "bg-surface/14", from: "25%", to: "37.5%" },
-  { scrimClass: "bg-surface/18", from: "37.5%", to: "50%" },
-  { scrimClass: "bg-surface/24", from: "50%", to: "62.5%" },
-  { scrimClass: "bg-surface/32", from: "62.5%", to: "75%" },
-  { scrimClass: "bg-surface/40", from: "75%", to: "100%" },
-];
-
-function progressiveEffectMask(
+function progressiveBlurMask(
   direction: ProgressiveBlurDirection,
   from: string,
   to: string,
@@ -52,29 +37,11 @@ export function ProgressiveBlur({
     >
       {PROGRESSIVE_BLUR_LAYERS.map((layer) => (
         <div
-          key={`blur-${direction}-${layer.from}-${layer.to}`}
+          key={`${direction}-${layer.from}-${layer.to}`}
           className={`absolute inset-0 ${layer.blurClass}`}
           style={{
-            maskImage: progressiveEffectMask(direction, layer.from, layer.to),
-            WebkitMaskImage: progressiveEffectMask(
-              direction,
-              layer.from,
-              layer.to,
-            ),
-          }}
-        />
-      ))}
-      {PROGRESSIVE_SCRIM_LAYERS.map((layer) => (
-        <div
-          key={`scrim-${direction}-${layer.from}-${layer.to}`}
-          className={`absolute inset-0 ${layer.scrimClass}`}
-          style={{
-            maskImage: progressiveEffectMask(direction, layer.from, layer.to),
-            WebkitMaskImage: progressiveEffectMask(
-              direction,
-              layer.from,
-              layer.to,
-            ),
+            maskImage: progressiveBlurMask(direction, layer.from, layer.to),
+            WebkitMaskImage: progressiveBlurMask(direction, layer.from, layer.to),
           }}
         />
       ))}

@@ -95,7 +95,7 @@ export function PageShell({
         showMobileBack={showMobileBack}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <main className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
           <ShellScrollBody header={header} preFooter={preFooter} footer={footer}>
             {children}
           </ShellScrollBody>

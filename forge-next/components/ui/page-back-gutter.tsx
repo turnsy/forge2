@@ -1,6 +1,9 @@
 import type { MouseEvent, ReactNode } from "react";
 import { PageBackLink } from "@/components/ui/page-back-link";
-import { pageBackGutterAlignClass } from "@/lib/theme";
+import {
+  pageBackGutterAlignClass,
+  pageBackGutterOffsetClass,
+} from "@/lib/theme";
 
 export type PageBackConfig = {
   href: string;
@@ -14,6 +17,7 @@ export function PageBackGutter({
   className,
   contentClassName,
   backAlignClassName = pageBackGutterAlignClass(),
+  offsetClassName = pageBackGutterOffsetClass(),
   showMobileBack = true,
 }: {
   back: PageBackConfig;
@@ -21,35 +25,22 @@ export function PageBackGutter({
   className?: string;
   contentClassName?: string;
   backAlignClassName?: string;
+  offsetClassName?: string;
   showMobileBack?: boolean;
 }) {
-  const reserveHeaderSpace = showMobileBack
-    ? " [&_[data-page-header]]:pl-12"
-    : " [&_[data-page-header]]:md:pl-12";
+  const content = contentClassName ? (
+    <div className={contentClassName}>{children}</div>
+  ) : (
+    children
+  );
 
   return (
     <div
-      data-page-back-gutter
-      className={`relative${reserveHeaderSpace}${className ? ` ${className}` : ""}`}
+      className={`relative${showMobileBack ? " [&_[data-page-header]]:max-md:pl-12" : ""}${className ? ` ${className}` : ""}`}
     >
-      {contentClassName ? (
-        <div className={`relative z-0 ${contentClassName}`}>{children}</div>
-      ) : (
-        <div className="relative z-0">{children}</div>
-      )}
-      {showMobileBack ? (
-        <div
-          className={`pointer-events-auto absolute left-0 top-0 z-30 md:hidden ${backAlignClassName}`}
-        >
-          <PageBackLink
-            href={back.href}
-            ariaLabel={back.ariaLabel}
-            onClick={back.onClick}
-          />
-        </div>
-      ) : null}
+      {content}
       <div
-        className={`pointer-events-auto absolute left-0 top-0 z-30 hidden md:flex ${backAlignClassName}`}
+        className={`pointer-events-auto absolute right-full z-30 hidden md:flex ${backAlignClassName} ${offsetClassName}`}
       >
         <PageBackLink
           href={back.href}
@@ -57,6 +48,15 @@ export function PageBackGutter({
           onClick={back.onClick}
         />
       </div>
+      {showMobileBack ? (
+        <div className="pointer-events-auto absolute left-0 top-0 z-30 md:hidden">
+          <PageBackLink
+            href={back.href}
+            ariaLabel={back.ariaLabel}
+            onClick={back.onClick}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

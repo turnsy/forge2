@@ -4,7 +4,7 @@ import { PageBackGutter } from "@/components/ui/page-back-gutter";
 import { PageHeader } from "@/components/ui/page-header";
 
 describe("PageBackGutter", () => {
-  it("pins the back link above page content without narrowing the column", () => {
+  it("positions the back link outside content on desktop without narrowing it", () => {
     render(
       <PageBackGutter back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
         <main data-testid="content">Plan detail</main>
@@ -16,8 +16,8 @@ describe("PageBackGutter", () => {
       .getAllByRole("link", { name: "Back to plans" })
       .find((link) => link.parentElement?.className.includes("md:flex"))?.parentElement;
 
-    expect(content.parentElement).toHaveClass("relative", "z-0");
-    expect(desktopBackSlot).toHaveClass("absolute", "left-0", "z-30", "hidden", "md:flex");
+    expect(content.parentElement).toHaveClass("relative");
+    expect(desktopBackSlot).toHaveClass("absolute", "right-full", "z-30", "hidden", "md:flex");
     expect(content.contains(screen.getAllByRole("link", { name: "Back to plans" })[0])).toBe(
       false,
     );
@@ -35,12 +35,12 @@ describe("PageBackGutter", () => {
       .getAllByRole("link", { name: "Back to plans" })
       .find((link) => link.parentElement?.className.includes("md:hidden"))?.parentElement;
     const shell = screen.getByRole("heading", { name: "1-Week Bench Press Plan" })
-      .closest("[data-page-back-gutter]");
+      .closest(".relative");
     const header = document.querySelector("[data-page-header]");
     const body = screen.getByTestId("body");
 
     expect(mobileBackSlot).toHaveClass("absolute", "left-0", "top-0", "z-30", "md:hidden");
-    expect(shell?.className).toContain("[&_[data-page-header]]:pl-12");
+    expect(shell?.className).toContain("[&_[data-page-header]]:max-md:pl-12");
     expect(header).toBeTruthy();
     expect(body.className).not.toContain("pl-12");
     expect(body.parentElement?.className ?? "").not.toContain("flex");
@@ -60,14 +60,8 @@ describe("PageBackGutter", () => {
       screen.getAllByRole("link", { name: "Back to home" }),
     ).toHaveLength(1);
     expect(
-      screen.getByRole("heading", { name: "History" }).closest(
-        "[data-page-back-gutter]",
-      )?.className ?? "",
-    ).toContain("[&_[data-page-header]]:md:pl-12");
-    expect(
-      screen.getByRole("heading", { name: "History" }).closest(
-        "[data-page-back-gutter]",
-      )?.className ?? "",
-    ).not.toContain("[&_[data-page-header]]:pl-12");
+      screen.getByRole("heading", { name: "History" }).closest(".relative")
+        ?.className ?? "",
+    ).not.toContain("[&_[data-page-header]]:max-md:pl-12");
   });
 });
