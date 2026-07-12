@@ -30,6 +30,7 @@ import {
   MOBILE_HISTORY_OVERLAY_CLASS,
   MOBILE_WORKSPACE_X_PADDING_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
+import { useScrollTopOnKey } from "@/lib/hooks/use-scroll-top-on-key";
 import { PAGE_CONTENT_INSET_X_CLASS } from "@/lib/layout/page-layout";
 import {
   hasOverlayScrollLane,
@@ -97,9 +98,39 @@ function ChatWorkspaceShell({
   );
 }
 
+function ArtifactPanelScrollLane({
+  scrollResetKey,
+  scrollPaddingTop,
+  scrollPaddingBottom,
+  contentInsetClassName,
+  children,
+}: {
+  scrollResetKey: number;
+  scrollPaddingTop?: number;
+  scrollPaddingBottom?: number;
+  contentInsetClassName: string;
+  children: ReactNode;
+}) {
+  const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
+  const lanePositioned = hasOverlayScrollLane(lanePadding);
+  const chromeReady = !lanePositioned || scrollPaddingTop !== undefined;
+  const scrollRef = useScrollTopOnKey(scrollResetKey, chromeReady);
+
+  return (
+    <div
+      ref={scrollRef}
+      className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
+      style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ArtifactPanel({
   state,
   artifactFadeKey,
+  artifactScrollKey,
   resolvedBackHref,
   saveStatus,
   saveError,
@@ -113,6 +144,7 @@ function ArtifactPanel({
 }: {
   state: ReturnType<typeof useCoachPlanWorkspace>["state"];
   artifactFadeKey: string;
+  artifactScrollKey: number;
   resolvedBackHref: string | undefined;
   saveStatus: ReturnType<typeof useSavePlan>["saveStatus"];
   saveError: string | null;
@@ -179,19 +211,16 @@ function ArtifactPanel({
         }
         contentInsetClassName={contentInsetClassName}
       >
-        {({ scrollPaddingTop, scrollPaddingBottom }) => {
-          const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
-          const lanePositioned = hasOverlayScrollLane(lanePadding);
-
-          return (
-          <div
-            className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"}${contentInsetClassName ? ` ${contentInsetClassName}` : ""}`}
-            style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
+        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+          <ArtifactPanelScrollLane
+            scrollResetKey={artifactScrollKey}
+            scrollPaddingTop={scrollPaddingTop}
+            scrollPaddingBottom={scrollPaddingBottom}
+            contentInsetClassName={contentInsetClassName}
           >
             {preview}
-          </div>
-          );
-        }}
+          </ArtifactPanelScrollLane>
+        )}
       </OverlayScrollChrome>
     </FadeIn>
   );
@@ -337,6 +366,7 @@ function CoachWorkspaceInner({
   const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [artifactScrollKey, setArtifactScrollKey] = useState(0);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
@@ -700,6 +730,22 @@ function CoachWorkspaceInner({
 
   const artifactFadeKey = activePlanId ?? state.sessionId;
 
+  useEffect(() => {
+    if (!state.currentArtifact) {
+      return;
+    }
+
+    setArtifactScrollKey((key) => key + 1);
+  }, [artifactFadeKey]);
+
+  useEffect(() => {
+    if (!showSplitPane) {
+      return;
+    }
+
+    setArtifactScrollKey((key) => key + 1);
+  }, [showSplitPane]);
+
   if (isMobile) {
     if (!showSplitPane) {
       return (
@@ -714,6 +760,7 @@ function CoachWorkspaceInner({
               <ArtifactPanel
                 state={state}
                 artifactFadeKey={artifactFadeKey}
+                artifactScrollKey={artifactScrollKey}
                 resolvedBackHref={resolvedBackHref}
                 saveStatus={saveStatus}
                 saveError={saveError}
@@ -793,6 +840,7 @@ function CoachWorkspaceInner({
                 <ArtifactPanel
                   state={state}
                   artifactFadeKey={artifactFadeKey}
+                  artifactScrollKey={artifactScrollKey}
                   resolvedBackHref={resolvedBackHref}
                   saveStatus={saveStatus}
                   saveError={saveError}
