@@ -38,7 +38,7 @@ describe("mobile workspace layout classes", () => {
   });
 
   it("defines spacing between the view control and composer", () => {
-    expect(MOBILE_VIEW_ARTIFACT_SPACING_CLASS).toBe("pb-4");
+    expect(MOBILE_VIEW_ARTIFACT_SPACING_CLASS).toBe("mb-4");
     expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain(
       MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
     );
