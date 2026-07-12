@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
@@ -10,6 +10,7 @@ import {
   navigateToCoachHome,
   navigateToCoachSession,
 } from "@/lib/chat/session-url";
+import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -41,8 +42,7 @@ export function SessionHistoryList({
   className?: string;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const activeSessionId = searchParams.get("sessionId");
+  const activeSessionId = useCoachWorkspaceSessionId();
   const {
     sessions,
     sessionsLoading,

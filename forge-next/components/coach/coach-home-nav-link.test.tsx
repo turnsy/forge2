@@ -48,6 +48,7 @@ describe("CoachHomeNavLink", () => {
   it("forces a clean coach home navigation when workspace query params are present", async () => {
     const user = userEvent.setup();
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
+    window.history.replaceState(null, "", "/coach?sessionId=session-1");
 
     render(
       <SessionNavigationProvider>
@@ -63,6 +64,7 @@ describe("CoachHomeNavLink", () => {
 
   it("is not active when a session id is in the URL", () => {
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
+    window.history.replaceState(null, "", "/coach?sessionId=session-new");
 
     render(
       <SessionNavigationProvider>

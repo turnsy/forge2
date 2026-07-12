@@ -1,11 +1,93 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   hasCoachWorkspaceQueryParams,
   navigateToCoachHome,
   navigateToCoachSession,
   navigateToCoachWorkspace,
   shouldForceCoachHomeNavigation,
+  syncCoachSessionUrl,
+  syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
+
+function stubWindow({
+  location,
+  history,
+}: {
+  location: {
+    href: string;
+    pathname: string;
+    search: string;
+    hash: string;
+  };
+  history: {
+    state: unknown;
+    replaceState: ReturnType<typeof vi.fn>;
+  };
+}) {
+  vi.stubGlobal("window", {
+    location,
+    history,
+    dispatchEvent: vi.fn(),
+  });
+}
+
+describe("syncCoachSessionUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("updates the browser URL without a router navigation", () => {
+    const replaceState = vi.fn();
+
+    stubWindow({
+      location: {
+        href: "https://example.com/coach",
+        pathname: "/coach",
+        search: "",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
+      },
+    });
+
+    syncCoachSessionUrl("session-42");
+
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach?sessionId=session-42");
+  });
+});
+
+describe("syncCoachWorkspaceUrl", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("can set session and plan params together", () => {
+    const replaceState = vi.fn();
+
+    stubWindow({
+      location: {
+        href: "https://example.com/coach?sessionId=session-42",
+        pathname: "/coach",
+        search: "?sessionId=session-42",
+        hash: "",
+      },
+      history: {
+        state: null,
+        replaceState,
+      },
+    });
+
+    syncCoachWorkspaceUrl({ sessionId: "session-42", planId: "plan-9" });
+
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/coach?sessionId=session-42&planId=plan-9",
+    );
+  });
+});
 
 describe("hasCoachWorkspaceQueryParams", () => {
   it("returns true when sessionId is present", () => {

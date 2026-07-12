@@ -10,7 +10,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import { listTaskSessions } from "@/lib/chat/actions";
 
@@ -18,6 +17,7 @@ type SessionNavigationContextValue = {
   sessions: readonly SessionListItemData[];
   sessionsLoading: boolean;
   sessionsError: string | null;
+  registerNewSession: (session: SessionListItemData) => void;
   removeSession: (sessionId: string) => void;
   updateSession: (
     sessionId: string,
@@ -40,6 +40,14 @@ function sortSessionsByUpdatedAt(
   );
 }
 
+function upsertSession(
+  sessions: SessionListItemData[],
+  session: SessionListItemData,
+): SessionListItemData[] {
+  const withoutSession = sessions.filter((entry) => entry.id !== session.id);
+  return sortSessionsByUpdatedAt([session, ...withoutSession]);
+}
+
 function updateSessionInList(
   sessions: SessionListItemData[],
   sessionId: string,
@@ -53,13 +61,10 @@ function updateSessionInList(
 }
 
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get("sessionId");
   const [sessions, setSessions] = useState<SessionListItemData[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const fetchGenerationRef = useRef(0);
-  const hasMountedRef = useRef(false);
 
   const loadSessions = useCallback(async (showLoading: boolean) => {
     const generation = ++fetchGenerationRef.current;
@@ -108,7 +113,6 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
       setSessions(result.sessions);
       setSessionsLoading(false);
-      hasMountedRef.current = true;
     }
 
     void loadInitialSessions();
@@ -118,38 +122,13 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     };
   }, []);
 
-  useEffect(() => {
-    if (!hasMountedRef.current || !sessionId) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function refetchSessionsForNavigation() {
-      const generation = ++fetchGenerationRef.current;
-      const result = await listTaskSessions(SESSION_LIST_LIMIT);
-
-      if (cancelled || generation !== fetchGenerationRef.current) {
-        return;
-      }
-
-      if (!result.ok) {
-        return;
-      }
-
-      setSessions(result.sessions);
-    }
-
-    void refetchSessionsForNavigation();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
-
   const refreshSessions = useCallback(async () => {
     await loadSessions(sessions.length === 0);
   }, [loadSessions, sessions.length]);
+
+  const registerNewSession = useCallback((session: SessionListItemData) => {
+    setSessions((current) => upsertSession(current, session));
+  }, []);
 
   const removeSession = useCallback((sessionId: string) => {
     setSessions((current) =>
@@ -172,6 +151,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       sessions,
       sessionsLoading,
       sessionsError,
+      registerNewSession,
       removeSession,
       updateSession,
       refreshSessions,
@@ -180,6 +160,7 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
       sessions,
       sessionsLoading,
       sessionsError,
+      registerNewSession,
       removeSession,
       updateSession,
       refreshSessions,
@@ -201,4 +182,8 @@ export function useSessionNavigation() {
     );
   }
   return context;
+}
+
+export function useOptionalSessionNavigation() {
+  return useContext(SessionNavigationContext);
 }
