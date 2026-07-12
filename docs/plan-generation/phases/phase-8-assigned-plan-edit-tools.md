@@ -1,11 +1,11 @@
 # Phase 8 — Agent tools to edit an athlete's in-progress (assigned) plan
 
-**Goal:** Give the coach agent a safe, granular way to edit a plan an athlete is
-already executing — without a Python/Sandbox round trip, without clobbering
-logged work, and without silently diverging from the draft-editing tools built
-in Phases 1–6.
+**Goal:** Give the coach agent a safe way to edit a plan an athlete is
+already executing, reusing the exact same `forge_plan` Python builder and
+Sandbox mechanism already built for the draft/template path — not a parallel
+implementation.
 
-**Depends on:** Phase 4 (sandbox/codegen, for contrast), existing
+**Depends on:** Phase 4 (Sandbox + `forge_plan` builder), existing
 `isSetEditable`/`isDayEditable` client gating, `assigned_plans` table.
 
 **Blocks:** Nothing for v1 plan-chat (draft creation). This is additive.
@@ -49,216 +49,201 @@ actively relying on it. None of the existing agent tools reach it:
 So this phase has two parts that must both be true for "edit an in-progress
 plan" to mean anything useful:
 
-1. **New agent tools** that mutate `assigned_plans.plan_data` directly,
+1. **A new agent tool** that mutates `assigned_plans.plan_data` directly,
    scoped to one athlete, respecting what's already been logged.
 2. **A defined answer** to "what happens to edits made to the coach's
    template while an athlete is mid-plan on it" (propagation, not just
    direct assigned-plan edits — see [§6](#6-template-vs-assigned-edits-and-propagation)).
 
-## 2. Existing building blocks (reuse, don't duplicate)
+## 2. Existing building blocks (reuse everything, build nothing new where possible)
 
-| Concern | Already exists at |
-| --- | --- |
-| Load one athlete's active assignment (with coach/athlete link check) | `forge-next/agent/lib/assigned-plans.ts` (`fetchCoachAthleteActiveAssignment`) |
-| Editability rule (only `status: "planned"` sets/exercises/days are editable) | `forge-next/lib/plans/plan-editability.ts` |
-| Full-plan validation | `forge-next/lib/plans/validate.ts` (`loadWorkoutPlan`, Ajv against `workout-plan.schema.json`) |
-| Full-plan persist (already validates + `status === "active"` guard) | `forge-next/lib/athlete/plan/repository.ts` (`savePlanActuals`) via `saveAssignedPlanAction` |
-| Compact plan/day text summary | `forge-next/lib/plans/summarize-plan.ts` |
-| Structural mutation helpers (week/day only — **immutable, return a new plan**) | `forge-next/lib/plans/plan-structure.ts` |
-| Exercise/set locate + update helpers (**exercise/set update only, no add/remove/move**) | `forge-next/lib/plans/day-blocks.ts` |
-| Reference shape for the full CRUD surface we're missing in TS | `forge-next/sandbox/forge_plan/plan.py` (`WeekRef`/`DayRef`/`BlockRef`/`ExerciseRef`/`SetRef` — add/remove/move/update, all 0-based) |
-| Agent tool scaffolding pattern | `forge-next/agent/lib/define-forge-tool.ts`, any file in `forge-next/agent/tools/*.ts` |
+| Concern | Already exists at | Reused as-is? |
+| --- | --- | --- |
+| Plan object model + full CRUD ref API (add/remove/move/update at week/day/block/exercise/set) | `forge-next/sandbox/forge_plan/plan.py` (`WeekRef`/`DayRef`/`BlockRef`/`ExerciseRef`/`SetRef`) | **Yes, unchanged.** This is the whole point of this design — see [§3](#3-design-reuse-the-python-builder--sandbox). |
+| Model-facing API docs for that model | `forge-next/lib/plans/prompts/forge_plan_api_cheat_sheet.generated.ts` | Yes, unchanged. |
+| Codegen skill (loaded before any `submit_*` tool) | `forge-next/agent/skills/plan-codegen.ts` | Yes, unchanged. |
+| Sandbox definition + Python `forge_plan` copy | `forge-next/agent/sandbox/sandbox.ts`, `forge-next/agent/sandbox/workspace/forge_plan/` | Yes, unchanged. |
+| Sandbox run/validate sequence (write seed + script, exec, read output, `loadWorkoutPlan`) | `forge-next/agent/tools/submit_plan_code.ts` | Yes, as a template to generalize/extract — see [§4](#4-proposed-tool-submit_athlete_plan_code). |
+| Load one athlete's active assignment (with coach/athlete link check) | `forge-next/agent/lib/assigned-plans.ts` (`fetchCoachAthleteActiveAssignment`) | Yes, unchanged. |
+| Editability rule (only `status: "planned"` sets/exercises/days are editable) | `forge-next/lib/plans/plan-editability.ts` | Yes, but needs a new diff-mode helper — see [§3b](#3b-whats-actually-new-seedsink-swap--an-editability-diff-guard). |
+| Full-plan validation | `forge-next/lib/plans/validate.ts` (`loadWorkoutPlan`) | Yes, unchanged — same Ajv gate the draft path already uses. |
+| Full-plan persist for assigned copies | `forge-next/lib/athlete/plan/repository.ts` (`savePlanActuals`) | Yes, but needs the editability guard wired in — see [§3b](#3b-whats-actually-new-seedsink-swap--an-editability-diff-guard). |
 
-The Python ref API in `plan.py` is the best spec for the TS surface we need —
-it already solved "what does add/remove/move/update mean at each level" for
-the draft/codegen path. We should mirror its verbs, not invent new ones.
+## 3. Design: reuse the Python builder + Sandbox
 
-## 3. Gaps to close before writing tools
+### 3a. Why reuse `forge_plan` instead of building a parallel TS domain layer
 
-### 3a. TS domain layer: block/exercise/set CRUD
+An earlier draft of this doc proposed a standalone TypeScript CRUD layer
+(`addExerciseToDay`, `removeSetFromExercise`, etc.) plus four typed agent
+tools. That's the wrong call: `forge_plan`'s refs already implement the exact
+same operations, against the exact same schema, already exercised by
+`submit_plan_code` in production. Duplicating that in TS would mean:
 
-`day-blocks.ts` only has `updateFlattenedExercise` / `updateFlattenedSet`.
-There is no TS equivalent of `ExerciseRef.remove/move/add_set`,
-`BlockRef.remove/move`, or `SetRef.remove/move/update_target`. Extend
-`day-blocks.ts` (or a new `forge-next/lib/plans/day-edit.ts` if it grows too
-large) with pure, immutable functions mirroring the Python refs:
+- Two implementations of "what does add/remove/move/update mean at each
+  level" to keep in sync every time `workout-plan.schema.json` changes (on
+  top of the Python/TS-constant sync `phase-7-schema-and-packaging.md`
+  already flags as a risk with *one* copy).
+- Two different mental models for the agent depending on which artifact it's
+  editing, for what is conceptually the same verb set.
+- Contradicts the repo rule to reuse domain logic and avoid duplicated
+  implementations.
+
+The trade-offs a TS-native path would have bought — no Sandbox spin-up
+latency and lower token cost on trivial one-field edits, plus easier
+per-operation approval gating — are trade-offs **already accepted** for the
+draft path today (`submit_plan_code` pays the same Sandbox round trip for a
+one-line edit to an in-progress draft). There's no principled reason
+assigned-plan edits need a different cost/consistency trade-off than draft
+edits when it's the same object shape. If Sandbox latency turns out to be a
+real complaint specifically for assigned-plan edits in QA, that's a reason to
+revisit — see [§8.1](#8-open-questions) — but it shouldn't be the starting
+design.
+
+### 3b. What's actually new: seed/sink swap + an editability diff guard
+
+`submit_plan_code` today: seed = `coachArtifact.plan`, sink =
+`setCoachArtifact`. The new tool only changes where the plan comes from and
+where it goes:
 
 ```typescript
-addExerciseToDay(day, { blockPos?, name, notes?, videoUrl?, initialSets? }): Day
-removeExerciseFromDay(day, flatExercisePos): Day
-moveExerciseInDay(day, flatExercisePos, toIndex): Day
-updateExerciseInDay(day, flatExercisePos, { name?, notes?, videoUrl? }): Day // exists, generalize updateFlattenedExercise
-addSetToExercise(day, flatExercisePos, { reps, target, unit, count?, notes? }): Day
-removeSetFromExercise(day, flatExercisePos, setPos): Day
-moveSetInExercise(day, flatExercisePos, setPos, toIndex): Day
-updateSetInExercise(day, flatExercisePos, setPos, { reps?, target?, unit?, notes?, status?, locked? }): Day
+// submit_athlete_plan_code({ athleteId, python }, ctx)
+const coachId = getCoachId(ctx);
+const assignment = await fetchCoachAthleteActiveAssignment(coachId, athleteId); // existing helper
+const before = assignment.plan;
+
+// ...same sandbox write/exec/read/loadWorkoutPlan sequence as submit_plan_code,
+// seeded with `before` instead of coachArtifact.plan...
+
+const editabilityErrors = assertEditableChange(before, validated.plan); // new
+if (editabilityErrors.length > 0) {
+  return { ok: false, errors: editabilityErrors }; // same shape as a validation failure — model retries in-turn
+}
+
+await savePlanActuals(assignment.id, validated.plan); // existing helper, instead of setCoachArtifact
 ```
 
-Keep the same invariants the Python refs enforce (exercise must keep ≥1 set,
-block must keep ≥1 exercise, day must keep ≥1 block) and return `null`/throw a
-typed error on invalid indices, matching `plan-structure.ts`'s `| null`
-convention.
+The only genuinely new pieces:
 
-### 3b. Editability must be enforced server-side, not just in the UI
+1. **`assertEditableChange(before, after): WorkoutPlanValidationError[]`** in
+   `lib/plans/plan-editability.ts` — diffs `before`/`after` and flags any
+   changed set/day/exercise that was not `isSetEditable`/`isDayEditable` in
+   `before`. This is necessary regardless of whether the mutation came from
+   Python or hand-written TS: `SetRef.update()` in `plan.py` has no concept
+   of `status`/`locked` and will happily overwrite a completed set's
+   `planned` fields if the script touches it. The guard has to live outside
+   the builder, in the TS layer that already owns this rule for the manual
+   UI path.
+2. **Wire that guard into `savePlanActuals` itself**, not just the new tool.
+   Today `savePlanActuals` validates schema shape and `assignment.status ===
+   "active"` but does not re-check per-set/day editability — that's
+   currently enforced only by disabling inputs in `PlanEditableDay`/
+   `CoachEditableDayView`. A hand-crafted request to the existing manual-edit
+   server action could already overwrite a completed set. Fixing this in
+   `savePlanActuals` closes that gap for both the manual UI and the new
+   agent tool in one place.
+3. **The seed/sink swap itself** — cleanest as a small refactor: extract the
+   "write seed + script, exec, read output, validate" sequence out of
+   `submit_plan_code.ts` into a shared helper (e.g.
+   `agent/lib/run-plan-code.ts`) that both tools call with a `{ seed, onSuccess
+   }` argument, so the two tools differ only in seed source and persistence
+   call, not in duplicated Sandbox plumbing.
 
-`savePlanActuals` (`forge-next/lib/athlete/plan/repository.ts:126`) validates
-schema shape and assignment status, but **does not re-check per-set/day
-editability** — that's currently only enforced by disabling inputs in
-`PlanEditableDay`/`CoachEditableDayView`. A hand-crafted `fetch` to the server
-action today could already overwrite a completed set's `actual`/`status`.
-Agent tools make this worse because there's no UI in the loop at all.
+No changes needed to: `forge_plan` (Python), the cheat sheet, the
+`plan-codegen` skill, or `workout-plan.schema.json`.
 
-Add a shared guard, e.g. `assertEditableChange(before: WorkoutPlan, after: WorkoutPlan): WorkoutPlanValidationError[]`
-in `lib/plans/plan-editability.ts`, that diffs `before`/`after` and rejects any
-change touching a set/day that was not `isSetEditable`/`isDayEditable` in
-`before`. Call it from:
+### 3c. Concurrency
 
-- `savePlanActuals` (closes the existing gap for the manual UI path too).
-- Every new agent write tool, before persisting.
+There's no `updated_at`/version column on `assigned_plans` today, so an agent
+edit has a race window against the athlete's own logging (mobile app)
+between reading `assignment.plan` and writing the result. Two options,
+increasing cost:
 
-This is the single most important correctness fix in this phase — everything
-else is ergonomics.
-
-### 3c. `assigned_plans` needs a concurrency guard
-
-There's no `updated_at`/version column on `assigned_plans` today. An agent
-edit tool that reads-then-writes has a race window against the athlete's own
-logging (mobile app) between those two steps. Two options, in increasing
-cost:
-
-1. **Cheap v1:** re-validate editability against the row fetched *inside the
-   same tool call* right before the update (short window, no schema change).
+1. **Cheap v1:** re-fetch the assignment row and re-run
+   `assertEditableChange` against the freshly-fetched row immediately before
+   the `savePlanActuals` write (shrinks the window to one extra query, no
+   schema change).
 2. **Robust:** add `updated_at timestamptz` (+ trigger) to `assigned_plans`
-   and require the tool's write to include a `WHERE updated_at = :expected`
+   and require the write to include a `WHERE updated_at = :expected`
    optimistic-lock clause, surfacing a `CONFLICT` tool error to retry.
 
-Recommend starting with (1) and only building (2) if QA finds real races
-(coach and athlete editing at the same moment is rare in practice — same
-mitigation posture as `submit_plan_code`, which has no locking either).
+Start with (1); only build (2) if QA finds real races. This mirrors
+`submit_plan_code`'s own posture today (no locking on `coachArtifact`
+either).
 
-## 4. Proposed tools
-
-All new tools live in `forge-next/agent/tools/`, follow the
-`defineForgeTool` pattern, take `athleteId` (never a raw `assignmentId` —
-resolve via `fetchCoachAthleteActiveAssignment` so coach/athlete-link
-authorization is enforced the same way `get_athlete_plan_progress` already
-does), use **0-based** week/day/exercise/set indices (same convention as
-every existing plan tool — see `agent/instructions.md`), and **never** return
-full plan JSON to the model (`toModelOutput` returns a short confirmation or a
-typed error list, same as `submit_plan_code`).
-
-### Read (must ship first — the model needs indices before it can edit)
-
-| Tool | Input | Output (to model) |
-| --- | --- | --- |
-| `get_athlete_plan_progress` *(extend existing)* | `athleteId`, `week?`, `day?` | Already returns prose; no change needed for reads. |
-| `describe_athlete_plan_day` *(new)* | `athleteId`, `week`, `day` | Structured (not prose) list of `{ flatExercisePos, blockPos, name, sets: [{ setPos, status, editable }] }` for that day only. Purpose: let the model resolve exact indices reliably before calling a write tool, instead of parsing prose from `get_athlete_plan_progress`. Small, scoped to one day — never the full plan. |
-
-Whether `describe_athlete_plan_day` becomes its own tool or an `indices: true`
-option on `get_athlete_plan_progress` is an implementation choice — see
-[open questions](#7-open-questions).
-
-### Write — one tool per entity level, `action` discriminates the operation
-
-Consolidating into 4 tools (rather than ~16 single-purpose ones) keeps the
-tool-choice surface small for the model while still being fully typed via Zod
-discriminated unions per `action`. This mirrors how a coach actually talks
-("change this set", "add a day") — one entity, one verb, occasionally a
-target position.
+## 4. Proposed tool: `submit_athlete_plan_code`
 
 ```typescript
-edit_athlete_plan_week({
-  athleteId, week,
-  action: "update" | "remove" | "move" | "add_after",
-  // update: { label?, name?, notes? }
-  // remove: {}
-  // move: { toIndex }
-  // add_after: { name?, notes? }  -- inserts a new empty week
-})
-
-edit_athlete_plan_day({
-  athleteId, week, day,
-  action: "update" | "remove" | "move" | "add_after",
-  // update: { name?, notes? }
-  // remove: {}
-  // move: { toIndex }
-  // add_after: { name?, notes? }
-})
-
-edit_athlete_plan_exercise({
-  athleteId, week, day,
-  exercisePos, // flat index within the day; omitted for "add"
-  action: "update" | "remove" | "move" | "add",
-  // update: { name?, notes?, videoUrl? }
-  // remove: {}
-  // move: { toIndex }
-  // add: { name, notes?, videoUrl?, asSupersetWithBlockPos?, initialSets?: [{ reps, target, unit, count?, notes? }] }
-})
-
-edit_athlete_plan_set({
-  athleteId, week, day, exercisePos,
-  setPos, // omitted for "add"
-  action: "update" | "remove" | "move" | "add",
-  // update: { reps?, target?, unit?, notes?, locked? }  -- NOT status/actual; see below
-  // remove: {}
-  // move: { toIndex }
-  // add: { reps, target, unit, count?, notes? }
-})
+inputSchema: z.object({
+  athleteId: z.string().uuid().describe("Athlete profile id."),
+  python: z.string().min(1).describe(
+    "Complete run.py body: use Plan.load(), edit via week()/day()/block()/exercise()/set() refs, then plan.save(). " +
+    "Only touch sets/days that are not yet completed — edits to logged work are rejected.",
+  ),
+}),
 ```
 
-Every tool:
+Behavior, mirroring `submit_plan_code`'s existing retry/error UX exactly:
 
-1. Resolves the active assignment via `fetchCoachAthleteActiveAssignment(coachId, athleteId)` (404 if none/not linked, matching `get_athlete_plan_progress`).
-2. Applies the pure TS transform from [§3a](#3a-ts-domain-layer-blockexerciseset-crud) / `plan-structure.ts` to a clone of `assignment.plan`.
-3. Runs `assertEditableChange(before, after)` from [§3b](#3b-editability-must-be-enforced-server-side-not-just-in-the-ui) — rejects edits touching non-`planned` sets/days.
-4. Runs `loadWorkoutPlan(after)` (schema validation).
-5. Persists via `savePlanActuals(assignment.id, after)` (or a shared internal helper both this tool and `saveAssignedPlanAction` call, to avoid duplicating the validate+guard+update sequence).
-6. Returns `{ ok: true, summary: string }` on success (e.g. `"Updated set."`) or `{ ok: false, code, message }`/`{ ok: false, errors }` on failure — same shape family as `SubmitPlanCodeOutput` / `SetCurrentArtifactOutput` in `forge-tool-outputs.ts`. Add `EditAthletePlanOutput` alongside them.
+1. Resolve the active assignment via `fetchCoachAthleteActiveAssignment` (404
+   → tool error, same shape as `get_athlete_plan_progress`'s not-found case).
+2. Run the shared Sandbox sequence seeded with `assignment.plan` (see
+   [§3b](#3b-whats-actually-new-seedsink-swap--an-editability-diff-guard)).
+3. On sandbox/validation failure: return `{ ok: false, errors }` — same as
+   today; the model fixes and resubmits within the same per-turn retry
+   budget (reuse or extend `reserveSubmitPlanCodeAttempt`'s pattern, scoped
+   per tool+turn).
+4. On success but an editability violation: return `{ ok: false, errors:
+   [{ path, message: "This set is already completed and cannot be edited." }] }`
+   — model retries by regenerating the script without touching that path.
+5. On full success: `savePlanActuals(assignment.id, validated.plan)`, return
+   `{ ok: true, summary: "Updated Sarah's plan." }` — never full plan JSON,
+   same `toModelOutput` discipline as `submit_plan_code`.
 
-**Deliberately excluded from `update` on sets:** `status` and `actual`. Those
-are the athlete's logged truth; a coach agent silently marking a set
-"completed" would corrupt progress tracking and defeats the purpose of the
-editability guard. If a future need arises (e.g. "mark today's session as
-skipped since she's traveling"), model it as an explicit, separately-reviewed
-tool (`skip_athlete_plan_day`), not a generic field on `update`.
+**`skill: plan-codegen`** should load before this tool too (same builder,
+same schema) — add it to the "Always load before" list in
+`agent/instructions.md` alongside `submit_plan_code`, with a short note that
+edits to an athlete's in-progress plan should avoid already-completed
+work (the guard enforces it either way; the note just reduces wasted
+attempts).
 
-### Why not one mega tool, and why not ~16 tiny tools
+### Read tool
 
-- **One tool with `entity` + `action` + a big optional-everything payload**
-  is harder for the model to fill in correctly (ambiguous which fields apply)
-  and harder to validate with Zod (a five-way discriminated union nested
-  inside another discriminated union). Not recommended.
-- **One tool per (entity × action)** (`add_week`, `remove_week`, `move_week`,
-  `update_week`, `add_day`, … ~16-20 tools total) is the clearest per-call
-  contract but adds meaningful system-prompt/tool-list token cost every turn
-  and more surface for the model to pick the "almost right" tool. Consider
-  this only if the 4-tool `action`-discriminated design proves ambiguous in
-  practice (watch for: model calling `edit_athlete_plan_set` with
-  `action: "update"` when it meant to remove a set, etc. — cheap to detect in
-  eval transcripts).
-- The 4-tool design is the recommended starting point; both alternatives are
-  easy migrations later since the underlying domain functions
-  ([§3a](#3a-ts-domain-layer-blockexerciseset-crud)) are the same either way.
+`get_athlete_plan_progress` already exists and already returns per-set
+status/actuals when `week`/`day` are given — reuse it unchanged as the way
+the model finds out what it can safely touch before calling
+`submit_athlete_plan_code`. No new read tool is needed to start; the hard
+editability guard means the model doesn't need perfect foreknowledge, just a
+way to recover from a rejection.
+
+**Deliberately excluded from what the agent can change:** `status` and
+`actual` on any set. Those are the athlete's logged truth — even though
+`forge_plan`'s builder technically lets a script set them, the editability
+guard should reject any diff that changes `status`/`actual` on a set that
+already had `status !== "planned"`, and a coach agent silently marking a set
+"completed" would defeat the purpose of tracking real progress. If a future
+need arises (e.g. "mark today's session as skipped since she's traveling"),
+model it as an explicit, separately-approved tool, not a side effect of a
+generic Python submission.
 
 ## 5. Approval / safety posture
 
 `assign_plan` uses `approval: always()` (`eve/tools/approval`) because it's a
-one-way, athlete-visible action. Assigned-plan edits are similar in kind —
-they change what an athlete sees next time they open the app — but are
-usually low-stakes and reversible (a wrong load is not a wrong exercise
-assignment). Recommendation: **no approval gate for individual field
-updates** (`update`/`move`), but consider `approval: always()` for
-`remove` on exercises/days/weeks (destructive, harder to reconstruct) and for
-any future `skip_athlete_plan_day` tool. Revisit after QA if coaches report
-surprise edits.
+one-way, athlete-visible action. Recommend the same for
+`submit_athlete_plan_code`: unlike the four narrow, typed tools from the
+earlier draft of this doc, a Python-string tool can do anything the builder
+allows in one call, and there's no way to gate specific operations (e.g.
+"only removals need approval") without parsing the script — so gate the
+whole tool conservatively at first. Revisit (relax to no-approval, matching
+`submit_plan_code`) if QA shows coaches find blanket approval on every small
+assigned-plan edit annoying relative to the actual risk.
 
 ## 6. Template vs. assigned edits, and propagation
 
-This phase's tools only ever touch one athlete's `assigned_plans` row. They
-do not touch `plans`/`plan_versions`, and they do not need to — that keeps
-the blast radius contained to the athlete the coach is explicitly talking
-about, and reuses the exact persistence path (`savePlanActuals`) already
-proven for the manual UI.
+`submit_athlete_plan_code` only ever touches one athlete's `assigned_plans`
+row. It does not touch `plans`/`plan_versions`, and doesn't need to — that
+keeps the blast radius contained to the athlete the coach is explicitly
+talking about, and reuses the exact persistence path (`savePlanActuals`)
+already proven for the manual UI.
 
 **Explicitly out of scope for this phase, but worth recording now so nobody
 "fixes" `assign_plan_to_athletes`'s no-op behavior by accident:**
@@ -275,44 +260,46 @@ proven for the manual UI.
   already-shipped RPC semantics — needs its own migration + tests, not a
   drive-by change here.
 
-## 7. Open questions
-
-1. **`describe_athlete_plan_day` as its own tool vs. an option on
-   `get_athlete_plan_progress`.** Leaning toward extending the existing tool
-   (one fewer tool in the list) with a `withIndices?: boolean` flag that adds
-   an `exercises: [...]` structured array alongside the prose `summary`, if
-   the output-type plumbing in `forge-tool-outputs.ts` allows a clean
-   `toModelOutput` split. Needs a spike before locking the design.
-2. **Should `edit_athlete_plan_*` tools require the day/week/exercise to
-   currently be editable, or should "not editable" be a soft warning with an
-   override flag?** Current recommendation is a hard rejection (fits the
-   existing `isSetEditable` semantics used by the UI), but coaches may
-   legitimately want to fix a mis-logged set after the fact — that's arguably
-   a different, athlete-consented operation, not a silent coach override.
-3. **Undo.** `plan_versions` gives draft plans free rollback. `assigned_plans`
-   has no equivalent. Is a lightweight `assigned_plan_edit_log` (or reusing
-   `plan_versions` with a nullable `assignment_id`) worth adding alongside
-   this phase, or deferred until a coach actually asks for "undo my last
-   change to Sarah's plan"?
-4. **Multi-entity edits in one turn.** "Swap deadlift for RDLs and bump the
-   weight" is `edit_athlete_plan_exercise` (update name) +
-   `edit_athlete_plan_set` × N (update target) — multiple tool calls in one
-   turn is fine (same pattern as `submit_plan_code` retries), but confirm the
-   agent's per-turn tool-call budget is generous enough; there's no
-   `MAX_..._ATTEMPTS_PER_TURN`-style cap needed here since each call is a
-   fast, validated TS mutation, not a sandbox run — but a sane per-turn upper
-   bound (e.g. 20 calls) is still worth asserting defensively so a
-   confused model can't loop.
-
-## 8. Testing plan (required before merge — see `AGENTS.md`)
+## 7. Testing plan (required before merge — see `AGENTS.md`)
 
 | Layer | Tests |
 | --- | --- |
-| Domain functions (§3a) | Unit tests per function in `day-blocks.test.ts` (extend existing) covering: happy path, min-cardinality invariants (can't remove the last set/exercise/block), out-of-range indices, move to same index (no-op), superset add/remove edge cases |
-| `assertEditableChange` (§3b) | Unit tests: allowed edits to planned sets, rejected edits to completed/skipped sets, rejected edits to locked sets, allowed structural add (new set/exercise/day never conflicts with existing editability) |
-| Each new tool | Tool-level test with a fake `ToolContext` (pattern from `agent/lib/forge-client-context.test.ts`, `agent/lib/submit-plan-code-attempts.test.ts`): not-found athlete, not-editable rejection surfaced as a tool error (not a thrown exception), successful edit persists and returns the expected compact shape, `toModelOutput` never contains full plan JSON |
-| Persistence guard fix (§3b) | Regression test on `savePlanActuals` proving a completed-set edit is now rejected server-side even without going through a tool |
-| Integration | Extend `lib/chat/adapters/plan/eve-coach-reducer.test.ts`-style coverage if these tools should also update any client-visible state (tbd — see [§9](#9-does-the-client-need-to-know)) |
+| `assertEditableChange` | Unit tests: allowed edits to planned sets, rejected edits to completed/skipped sets, rejected edits to locked sets, rejected `status`/`actual` changes on non-planned sets, allowed structural additions (new set/exercise/day never conflicts with existing editability) |
+| `savePlanActuals` regression | Test proving a completed-set edit is now rejected server-side even without going through the new tool (closes the existing gap called out in [§3b](#3b-whats-actually-new-seedsink-swap--an-editability-diff-guard)) |
+| Shared Sandbox-run helper (extracted from `submit_plan_code.ts`) | Test both callers (`submit_plan_code`, `submit_athlete_plan_code`) against the same fixture scripts to confirm no behavior drift from the extraction |
+| `submit_athlete_plan_code` tool | Fake `ToolContext` tests (pattern from `agent/lib/submit-plan-code-attempts.test.ts`): athlete not found/not linked, sandbox failure passthrough, editability-violation rejection surfaced as a tool error (not a thrown exception), successful edit persists and returns the expected compact shape, `toModelOutput` never contains full plan JSON |
+| Retry/attempt limit | Same pattern as `submit-plan-code-attempts.test.ts`, scoped to the new tool |
+
+## 8. Open questions
+
+1. **Does Sandbox latency actually matter here in practice?** If QA/usage
+   shows coaches making many tiny single-field edits to assigned plans and
+   finding the round trip slow, that's the trigger to reconsider a narrow
+   TS-native fast path for the single most common case (e.g. just "update one
+   set's target/reps") without throwing away the Python path for everything
+   else. Don't build it speculatively.
+2. **Approval granularity.** Blanket `approval: always()` on the whole tool
+   ([§5](#5-approval--safety-posture)) vs. inspecting the sandbox's
+   before/after diff post-execution and only surfacing approval for
+   destructive changes (removals). The latter needs Eve's approval model to
+   support post-hoc/conditional approval, which may not exist — check before
+   committing to it.
+3. **Should "not editable" ever be an overridable warning instead of a hard
+   rejection?** Coaches may legitimately want to fix a mis-logged set after
+   the fact. Current recommendation is a hard rejection (matches the
+   existing `isSetEditable` semantics used by the UI), treating "fix a wrong
+   log" as a different, athlete-consented operation — not a silent coach
+   override via chat.
+4. **Undo.** `plan_versions` gives draft plans free rollback. `assigned_plans`
+   has no equivalent. Worth a lightweight edit log (or reusing
+   `plan_versions` with a nullable `assignment_id`) alongside this phase, or
+   defer until a coach actually asks for "undo my last change to Sarah's
+   plan"?
+5. **Multi-edit turns.** "Swap deadlift for RDLs and bump the weight" is one
+   `submit_athlete_plan_code` call with a script that does both — no
+   different from how `submit_plan_code` already handles multi-part draft
+   edits in one script. No new design needed here, just confirming the
+   retry-budget constant covers this tool too.
 
 ## 9. Does the client need to know?
 
@@ -328,15 +315,15 @@ under `app/coach/**`.
 
 ## Status
 
-- [ ] §3a — TS block/exercise/set CRUD helpers
-- [ ] §3b — `assertEditableChange` guard + `savePlanActuals` regression fix
-- [ ] §3c — concurrency mitigation (start with re-validate-on-write)
-- [ ] Read tool(s)
-- [ ] `edit_athlete_plan_week` / `_day` / `_exercise` / `_set`
-- [ ] `forge-tool-outputs.ts` — `EditAthletePlanOutput` type + guards
-- [ ] `agent/instructions.md` — routing note (which tool for which coach phrasing, athlete resolution before edit, no full-plan narration — same style as the existing plan-codegen note)
-- [ ] Tests (§8)
-- [ ] Manual QA: edit a real in-progress assignment, confirm athlete app reflects it, confirm completed sets are untouched
+- [ ] `assertEditableChange` guard in `lib/plans/plan-editability.ts`
+- [ ] Wire the guard into `savePlanActuals` (regression fix, independent of the rest of this phase)
+- [ ] Extract shared Sandbox-run helper from `submit_plan_code.ts`
+- [ ] `submit_athlete_plan_code` tool (seed from `assignment.plan`, sink via `savePlanActuals`)
+- [ ] `forge-tool-outputs.ts` — output type + guards for the new tool
+- [ ] `agent/instructions.md` — add `submit_athlete_plan_code` to the plan-codegen skill's "load before" list; note on avoiding completed work
+- [ ] Concurrency mitigation (start with re-validate-on-write, §3c)
+- [ ] Tests (§7)
+- [ ] Manual QA: edit a real in-progress assignment, confirm the athlete app reflects it, confirm completed sets are untouched
 
 ## Out of scope (this phase)
 
@@ -344,4 +331,5 @@ under `app/coach/**`.
 - Reassignment-as-refresh semantics for `assign_plan_to_athletes`
 - Marking sets completed/skipped via agent (`status`/`actual` fields)
 - Cross-page live sync of assigned-plan edits into an open chat session
-- Undo/version history for assigned-plan edits (tracked as an open question, §7.3)
+- Undo/version history for assigned-plan edits (open question, §8.4)
+- A TS-native fast path for common single-field edits (open question, §8.1) — considered and deferred, not rejected outright
