@@ -1,5 +1,8 @@
 /** Extra space between scroll content and overlay chrome when scrolled to the end. */
-export const OVERLAY_SCROLL_END_GAP_PX = 16;
+export const OVERLAY_SCROLL_END_GAP_PX = 24;
+
+/** Vertical stack spacing inside top chrome (header, filters, search, etc.). */
+export const OVERLAY_TOP_CHROME_HEADER_STACK_CLASS = "flex flex-col gap-6";
 
 /** Container for pinned top overlay chrome. */
 export const OVERLAY_TOP_CONTAINER_CLASS =

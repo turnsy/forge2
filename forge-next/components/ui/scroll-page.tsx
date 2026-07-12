@@ -12,6 +12,9 @@ import {
   overlayScrollLaneStyle,
 } from "@/lib/layout/overlay-scroll-lane";
 import {
+  OVERLAY_TOP_CHROME_HEADER_STACK_CLASS,
+} from "@/lib/layout/overlay-scroll-chrome-layout";
+import {
   PAGE_CONTENT_INSET_BOTTOM_CLASS,
   PAGE_CONTENT_INSET_X_CLASS,
 } from "@/lib/layout/page-layout";
@@ -53,7 +56,7 @@ function buildTopChrome({
           />
         </div>
       ) : null}
-      <div className="min-w-0 flex-1">{header}</div>
+      <div className={`min-w-0 flex-1 ${OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}`}>{header}</div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import {
   DESKTOP_CHAT_COLLAPSED_RAIL_CLASS,
   DESKTOP_CHAT_COLLAPSED_WIDTH,
   DESKTOP_CHAT_GRID_TRANSITION_CLASS,
-  DESKTOP_CHAT_HEADER_CLASS,
+  DESKTOP_CHAT_TOGGLE_ROW_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
@@ -24,9 +24,11 @@ describe("desktop workspace layout classes", () => {
     expect(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS).not.toContain("67cqi");
   });
 
-  it("defines a header row for the chat collapse control", () => {
-    expect(DESKTOP_CHAT_HEADER_CLASS).toContain("shrink-0");
-    expect(DESKTOP_CHAT_HEADER_CLASS).toContain("justify-end");
+  it("defines a toggle row for the chat collapse control", () => {
+    expect(DESKTOP_CHAT_TOGGLE_ROW_CLASS).toContain("shrink-0");
+    expect(DESKTOP_CHAT_TOGGLE_ROW_CLASS).toContain("justify-end");
+    expect(DESKTOP_CHAT_TOGGLE_ROW_CLASS).toContain("px-3");
+    expect(DESKTOP_CHAT_TOGGLE_ROW_CLASS).toContain("py-4");
   });
 
   it("defines a collapsed chat rail that matches the main sidebar width", () => {

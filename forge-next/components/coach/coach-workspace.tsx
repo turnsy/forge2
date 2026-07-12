@@ -21,7 +21,7 @@ import {
   DESKTOP_CHAT_COLLAPSED_WIDTH,
   DESKTOP_CHAT_GRID_TRANSITION_CLASS,
   DESKTOP_CHAT_COLUMN_CLASS,
-  DESKTOP_CHAT_HEADER_CLASS,
+  DESKTOP_CHAT_TOGGLE_ROW_CLASS,
   DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED,
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
@@ -818,22 +818,22 @@ function CoachWorkspaceInner({
           {chatCollapsed ? (
             desktopChatToggle
           ) : (
-            <div className={`flex ${DESKTOP_WORKSPACE_HEIGHT_CLASS} min-h-0 flex-1 flex-col overflow-hidden`}>
-              <CoachConversationPanel
-                state={state}
-                onAttach={attachFiles}
-                onRemoveAttachment={removeAttachment}
-                onSend={handleSendMessage}
-                onStop={stopResponse}
-                onReset={handleReset}
-                promptEnabled={promptEnabled}
-                topChrome={
-                  desktopChatToggle ? (
-                    <div className={DESKTOP_CHAT_HEADER_CLASS}>{desktopChatToggle}</div>
-                  ) : undefined
-                }
-              />
-            </div>
+            <>
+              {desktopChatToggle ? (
+                <div className={DESKTOP_CHAT_TOGGLE_ROW_CLASS}>{desktopChatToggle}</div>
+              ) : null}
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <CoachConversationPanel
+                  state={state}
+                  onAttach={attachFiles}
+                  onRemoveAttachment={removeAttachment}
+                  onSend={handleSendMessage}
+                  onStop={stopResponse}
+                  onReset={handleReset}
+                  promptEnabled={promptEnabled}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

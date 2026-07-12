@@ -9,14 +9,16 @@ export const DESKTOP_CHAT_GRID_TRANSITION_CLASS =
   "transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none";
 
 /** Desktop chat column: separated from artifact by border only. */
-export const DESKTOP_CHAT_COLUMN_CLASS = "border-l border-glass-border";
+export const DESKTOP_CHAT_COLUMN_CLASS =
+  "flex min-h-0 flex-col border-l border-glass-border";
 
 /** Narrow rail shown when chat is collapsed; keeps the toggle visible. */
 export const DESKTOP_CHAT_COLLAPSED_RAIL_CLASS =
-  "flex w-14 shrink-0 flex-col items-center border-l border-glass-border px-2 py-4";
+  "flex w-14 shrink-0 flex-col items-center border-l border-glass-border px-3 py-4";
 
-/** Desktop chat header row for the collapse control. */
-export const DESKTOP_CHAT_HEADER_CLASS = "flex shrink-0 justify-end pb-2";
+/** Toggle row aligned with the main app sidebar header (`px-3 py-4`). */
+export const DESKTOP_CHAT_TOGGLE_ROW_CLASS =
+  "flex shrink-0 items-center justify-end px-3 py-4";
 
 /** Expanded split grid: artifact ~67%, chat up to 33%. */
 export const DESKTOP_SPLIT_GRID_COLUMNS_EXPANDED =

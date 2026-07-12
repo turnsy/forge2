@@ -53,7 +53,7 @@ describe("mobile workspace layout classes", () => {
     expect(MOBILE_CHAT_TOP_OVERLAY_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_COMPOSER_INPUT_SURFACE_CLASS).toContain("bg-surface/80");
     expect(MOBILE_CHAT_BOTTOM_BLUR_ZONE_CLASS).toBe("relative");
-    expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(16);
+    expect(MOBILE_CHAT_SCROLL_END_GAP_PX).toBe(24);
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
     expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-12");
