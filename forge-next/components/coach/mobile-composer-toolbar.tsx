@@ -5,7 +5,7 @@ import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import {
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
   MOBILE_COMPOSER_TOOLBAR_ROW_CLASS,
-  MOBILE_COMPOSER_VIEW_OVERLAY_CLASS,
+  MOBILE_COMPOSER_VIEW_CONTROL_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { ChatAttachment } from "@/lib/chat/types";
 
@@ -30,9 +30,7 @@ export function MobileComposerToolbar({
           />
         </div>
       ) : null}
-      <div className={MOBILE_COMPOSER_VIEW_OVERLAY_CLASS}>
-        <div className="pointer-events-auto">{trailing}</div>
-      </div>
+      <div className={MOBILE_COMPOSER_VIEW_CONTROL_CLASS}>{trailing}</div>
     </div>
   );
 }

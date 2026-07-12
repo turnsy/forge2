@@ -28,7 +28,7 @@ describe("MobileComposerToolbar", () => {
     ).not.toBeNull();
     expect(
       container.querySelector(".bg-gradient-to-l"),
-    ).not.toBeNull();
+    ).toBeNull();
     expect(screen.getByText("my plan.csv")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
   });

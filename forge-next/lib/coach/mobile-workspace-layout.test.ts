@@ -2,15 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
   MOBILE_BOTTOM_NAV_SCROLL_END_CLASS,
+  MOBILE_CHAT_CHROME_BLUR_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
+  MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
+  MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS,
-  MOBILE_CHAT_TOP_FADE_CLASS,
+  MOBILE_CHAT_TOP_BLUR_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
   MOBILE_CHAT_HEADER_CLASS,
   MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS,
   MOBILE_COMPOSER_TOOLBAR_ROW_CLASS,
+  MOBILE_COMPOSER_VIEW_CONTROL_CLASS,
   MOBILE_OVERLAY_CLOSE_CLASS,
   MOBILE_OVERLAY_CONTENT_CLASS,
   MOBILE_VIEW_ARTIFACT_SPACING_CLASS,
@@ -48,14 +51,18 @@ describe("mobile workspace layout classes", () => {
     expect(MOBILE_VIEW_ARTIFACT_SPACING_CLASS).toBe("mb-4");
     expect(MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS).toContain("overflow-x-auto");
     expect(MOBILE_COMPOSER_TOOLBAR_ROW_CLASS).toContain("h-8");
+    expect(MOBILE_COMPOSER_VIEW_CONTROL_CLASS).not.toContain("bg-gradient-to-l");
   });
 
-  it("defines mobile overlay chat chrome for scroll-under gradients", () => {
-    expect(MOBILE_CHAT_TOP_FADE_CLASS).toContain("from-white/12");
-    expect(MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS).toContain(
-      "bg-gradient-to-b",
-    );
+  it("defines mobile overlay chat chrome for scroll-under blur", () => {
+    expect(MOBILE_CHAT_CHROME_BLUR_CLASS).toContain("backdrop-blur-md");
+    expect(MOBILE_CHAT_TOP_BLUR_CLASS).toContain("backdrop-blur-md");
     expect(MOBILE_CHAT_FOOTER_CLASS).toContain("absolute");
+    expect(MOBILE_CHAT_FOOTER_CLASS).toContain("pointer-events-none");
     expect(MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS).toContain("max-md:pt-14");
+    expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS).toContain("5.75rem");
+    expect(MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS).toContain(
+      "2rem",
+    );
   });
 });

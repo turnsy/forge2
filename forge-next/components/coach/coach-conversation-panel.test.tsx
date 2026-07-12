@@ -33,7 +33,7 @@ describe("CoachConversationPanel", () => {
     expect(chip.closest(".rounded-card")).toBeNull();
   });
 
-  it("uses overlay gradients on mobile so the thread scrolls under chrome", () => {
+  it("uses overlay blur on mobile so the thread scrolls under chrome", () => {
     const { container } = render(
       <CoachConversationPanel
         layout="mobileOverlay"
@@ -49,8 +49,9 @@ describe("CoachConversationPanel", () => {
       />,
     );
 
-    expect(container.querySelector(".from-white\\/12")).not.toBeNull();
+    expect(container.querySelector(".backdrop-blur-md")).not.toBeNull();
     expect(container.innerHTML).toContain(MOBILE_CHAT_FOOTER_CLASS);
     expect(container.querySelector(".absolute.inset-0")).not.toBeNull();
+    expect(container.querySelector(".bg-gradient-to-b")).toBeNull();
   });
 });

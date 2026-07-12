@@ -11,8 +11,8 @@ import {
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS,
-  MOBILE_CHAT_TOP_FADE_CLASS,
+  MOBILE_CHAT_TOOLBAR_SURFACE_CLASS,
+  MOBILE_CHAT_TOP_BLUR_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -77,7 +77,7 @@ export function CoachConversationPanel({
         />
         {topChrome ? (
           <div className={MOBILE_CHAT_TOP_OVERLAY_CLASS}>
-            <div aria-hidden className={MOBILE_CHAT_TOP_FADE_CLASS} />
+            <div aria-hidden className={MOBILE_CHAT_TOP_BLUR_CLASS} />
             <div
               className={`relative z-10 pointer-events-auto pb-2 ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
@@ -90,13 +90,13 @@ export function CoachConversationPanel({
         >
           {composerHeader ? (
             <div
-              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS} ${MOBILE_CHAT_TOOLBAR_SURFACE_CLASS}`}
             >
               {composerHeader}
             </div>
           ) : showAttachmentsAboveComposer && state.hasStarted ? (
             <div
-              className={`relative ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              className={`relative pointer-events-auto ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
               <ChatAttachmentList
                 attachments={state.attachments}
@@ -105,11 +105,8 @@ export function CoachConversationPanel({
               />
             </div>
           ) : null}
-          {composerHeader ? (
-            <div aria-hidden className={MOBILE_CHAT_TOOLBAR_TO_COMPOSER_FADE_CLASS} />
-          ) : null}
           <div
-            className={`relative z-10 shrink-0 ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            className={`relative z-10 shrink-0 pointer-events-auto ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
           >
             {composer}
           </div>
