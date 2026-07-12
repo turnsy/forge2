@@ -3,18 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachHomeNavLink } from "@/components/coach/coach-home-nav-link";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
-import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
 
 const mockListTaskSessions = vi.fn();
-
-vi.mock("@/lib/chat/actions", () => ({
-  listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
-}));
-
 const mockReplace = vi.fn();
 const mockRefresh = vi.fn();
 const mockPathname = vi.fn(() => "/coach");
 const mockSearchParams = vi.fn(() => new URLSearchParams("sessionId=session-1"));
+
+vi.mock("@/lib/chat/actions", () => ({
+  listTaskSessions: (...args: unknown[]) => mockListTaskSessions(...args),
+}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname(),
@@ -45,29 +43,11 @@ describe("CoachHomeNavLink", () => {
     vi.clearAllMocks();
     mockListTaskSessions.mockResolvedValue({ ok: true, sessions: [] });
     mockPathname.mockReturnValue("/coach");
-    window.history.replaceState(null, "", "/coach");
   });
 
   it("forces a clean coach home navigation when workspace query params are present", async () => {
     const user = userEvent.setup();
-    const replaceState = vi.fn();
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
-
-    vi.stubGlobal("window", {
-      location: {
-        href: "https://example.com/coach?sessionId=session-1",
-        pathname: "/coach",
-        search: "?sessionId=session-1",
-        hash: "",
-      },
-      history: {
-        state: null,
-        replaceState,
-      },
-      addEventListener: window.addEventListener.bind(window),
-      removeEventListener: window.removeEventListener.bind(window),
-      dispatchEvent: window.dispatchEvent.bind(window),
-    });
 
     render(
       <SessionNavigationProvider>
@@ -77,15 +57,12 @@ describe("CoachHomeNavLink", () => {
 
     await user.click(screen.getByRole("link", { name: "Home" }));
 
-    expect(replaceState).toHaveBeenCalledWith(null, "", "/coach");
     expect(mockReplace).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalled();
   });
 
-  it("is not active after replaceState adds a session id", () => {
-    mockSearchParams.mockReturnValue(new URLSearchParams());
-    window.history.replaceState(null, "", "/coach?sessionId=session-new");
-    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
+  it("is not active when a session id is in the URL", () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
 
     render(
       <SessionNavigationProvider>

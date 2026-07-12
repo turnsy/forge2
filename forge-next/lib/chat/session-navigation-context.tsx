@@ -8,36 +8,16 @@ import {
   useMemo,
   useRef,
   useState,
-  startTransition,
   type ReactNode,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { SessionListItemData } from "@/components/coach/session-list-item";
 import { listTaskSessions } from "@/lib/chat/actions";
-import {
-  navigateToCoachHome,
-  navigateToCoachSession,
-} from "@/lib/chat/session-url";
-
-type CoachSessionRouter = {
-  push: (href: string) => void;
-  refresh: () => void;
-};
-
-type CoachHomeRouter = {
-  replace: (href: string) => void;
-  refresh: () => void;
-};
 
 type SessionNavigationContextValue = {
-  homeNavigationEpoch: number;
-  pendingSessionId: string | null;
   sessions: readonly SessionListItemData[];
   sessionsLoading: boolean;
   sessionsError: string | null;
-  goToCoachHome: (router: CoachHomeRouter) => void;
-  openSession: (sessionId: string, router: CoachSessionRouter) => void;
-  registerNewSession: (session: SessionListItemData) => void;
   removeSession: (sessionId: string) => void;
   updateSession: (
     sessionId: string,
@@ -49,7 +29,6 @@ type SessionNavigationContextValue = {
 const SessionNavigationContext =
   createContext<SessionNavigationContextValue | null>(null);
 
-const COACH_WORKSPACE_PATH = "/coach";
 const SESSION_LIST_LIMIT = 50;
 
 function sortSessionsByUpdatedAt(
@@ -59,14 +38,6 @@ function sortSessionsByUpdatedAt(
     (left, right) =>
       new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
   );
-}
-
-function upsertSession(
-  sessions: SessionListItemData[],
-  session: SessionListItemData,
-): SessionListItemData[] {
-  const withoutSession = sessions.filter((entry) => entry.id !== session.id);
-  return sortSessionsByUpdatedAt([session, ...withoutSession]);
 }
 
 function updateSessionInList(
@@ -81,59 +52,22 @@ function updateSessionInList(
   );
 }
 
-function mergeFetchedSessions(
-  current: SessionListItemData[],
-  fetched: SessionListItemData[],
-): SessionListItemData[] {
-  const fetchedIds = new Set(fetched.map((session) => session.id));
-  const localOnly = current.filter((session) => !fetchedIds.has(session.id));
-  return sortSessionsByUpdatedAt([...fetched, ...localOnly]);
-}
-
 export function SessionNavigationProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const routerSessionId = searchParams.get("sessionId");
-  const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
-  const [homeNavigationEpoch, setHomeNavigationEpoch] = useState(0);
+  const sessionId = searchParams.get("sessionId");
   const [sessions, setSessions] = useState<SessionListItemData[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const fetchGenerationRef = useRef(0);
+  const hasMountedRef = useRef(false);
 
-  const pendingSessionId =
-    pathname === COACH_WORKSPACE_PATH &&
-    targetSessionId !== null &&
-    targetSessionId !== routerSessionId
-      ? targetSessionId
-      : null;
-
-  useEffect(() => {
-    if (targetSessionId === null) {
-      return;
-    }
-
-    if (routerSessionId === targetSessionId) {
-      startTransition(() => {
-        setTargetSessionId(null);
-      });
-      return;
-    }
-
-    if (pathname !== COACH_WORKSPACE_PATH) {
-      startTransition(() => {
-        setTargetSessionId(null);
-      });
-    }
-  }, [pathname, routerSessionId, targetSessionId]);
-
-  const fetchSessions = useCallback(async (showLoading: boolean) => {
+  const loadSessions = useCallback(async (showLoading: boolean) => {
     const generation = ++fetchGenerationRef.current;
+    setSessionsError(null);
 
     if (showLoading) {
       setSessionsLoading(true);
     }
-    setSessionsError(null);
 
     const result = await listTaskSessions(SESSION_LIST_LIMIT);
 
@@ -143,20 +77,22 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
     if (!result.ok) {
       setSessionsError(result.message);
-      setSessions((current) => (current.length === 0 ? [] : current));
       setSessionsLoading(false);
       return;
     }
 
-    setSessions((current) => mergeFetchedSessions(current, result.sessions));
+    setSessions(result.sessions);
     setSessionsLoading(false);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const generation = ++fetchGenerationRef.current;
 
     async function loadInitialSessions() {
+      const generation = ++fetchGenerationRef.current;
+      setSessionsError(null);
+      setSessionsLoading(true);
+
       const result = await listTaskSessions(SESSION_LIST_LIMIT);
 
       if (cancelled || generation !== fetchGenerationRef.current) {
@@ -170,8 +106,9 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
         return;
       }
 
-      setSessions((current) => mergeFetchedSessions(current, result.sessions));
+      setSessions(result.sessions);
       setSessionsLoading(false);
+      hasMountedRef.current = true;
     }
 
     void loadInitialSessions();
@@ -181,27 +118,38 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
     };
   }, []);
 
+  useEffect(() => {
+    if (!hasMountedRef.current || !sessionId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function refetchSessionsForNavigation() {
+      const generation = ++fetchGenerationRef.current;
+      const result = await listTaskSessions(SESSION_LIST_LIMIT);
+
+      if (cancelled || generation !== fetchGenerationRef.current) {
+        return;
+      }
+
+      if (!result.ok) {
+        return;
+      }
+
+      setSessions(result.sessions);
+    }
+
+    void refetchSessionsForNavigation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
   const refreshSessions = useCallback(async () => {
-    await fetchSessions(sessions.length === 0);
-  }, [fetchSessions, sessions.length]);
-
-  const openSession = useCallback(
-    (sessionId: string, router: CoachSessionRouter) => {
-      setTargetSessionId(sessionId);
-      navigateToCoachSession(router, sessionId);
-    },
-    [],
-  );
-
-  const goToCoachHome = useCallback((router: CoachHomeRouter) => {
-    setTargetSessionId(null);
-    setHomeNavigationEpoch((epoch) => epoch + 1);
-    navigateToCoachHome(router);
-  }, []);
-
-  const registerNewSession = useCallback((session: SessionListItemData) => {
-    setSessions((current) => upsertSession(current, session));
-  }, []);
+    await loadSessions(sessions.length === 0);
+  }, [loadSessions, sessions.length]);
 
   const removeSession = useCallback((sessionId: string) => {
     setSessions((current) =>
@@ -221,30 +169,20 @@ export function SessionNavigationProvider({ children }: { children: ReactNode })
 
   const contextValue = useMemo(
     () => ({
-      homeNavigationEpoch,
-      pendingSessionId,
       sessions,
       sessionsLoading,
       sessionsError,
-      goToCoachHome,
-      openSession,
-      registerNewSession,
       removeSession,
       updateSession,
       refreshSessions,
     }),
     [
-      homeNavigationEpoch,
-      pendingSessionId,
       sessions,
       sessionsLoading,
       sessionsError,
-      goToCoachHome,
-      openSession,
-      refreshSessions,
-      registerNewSession,
       removeSession,
       updateSession,
+      refreshSessions,
     ],
   );
 
@@ -263,8 +201,4 @@ export function useSessionNavigation() {
     );
   }
   return context;
-}
-
-export function useOptionalSessionNavigation() {
-  return useContext(SessionNavigationContext);
 }

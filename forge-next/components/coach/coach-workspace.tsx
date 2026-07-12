@@ -57,8 +57,11 @@ import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
 } from "@/lib/chat/session-types";
-import { syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
-import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import {
+  navigateToCoachHome,
+  navigateToCoachSession,
+  navigateToCoachWorkspace,
+} from "@/lib/chat/session-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -366,7 +369,6 @@ function CoachWorkspaceInner({
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
@@ -381,41 +383,25 @@ function CoachWorkspaceInner({
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
   const sessionIdRef = useRef("");
 
-  const handleThreadBound = useCallback(
-    ({
-      sessionId,
-      title,
-    }: {
-      sessionId: string;
-      title: string | null;
-    }) => {
-      sessionNavigation?.registerNewSession({
-        id: sessionId,
-        title: title?.trim() || "New conversation",
-        updatedAt: new Date().toISOString(),
-      });
+  const handleSessionUrlNavigate = useCallback(
+    (sessionId: string) => {
+      navigateToCoachSession(router, sessionId);
     },
-    [sessionNavigation],
+    [router],
   );
-
-  const handleSessionUrlNavigate = useCallback((sessionId: string) => {
-    // Keep the live Eve stream on the current workspace instance. A hard
-    // router navigation would remount, abort the turn, and replay from DB.
-    syncCoachSessionUrl(sessionId);
-  }, []);
 
   const handleArtifactCleared = useCallback(() => {
     savedSnapshotRef.current = null;
     setShowArtifact(false);
     setIsChatCollapsed(false);
     setBacklinkPlanId(null);
-    if (stripPlanIdOnClear) {
-      syncCoachWorkspaceUrl({
+    if (stripPlanIdOnClear && sessionIdRef.current) {
+      navigateToCoachWorkspace(router, {
         sessionId: sessionIdRef.current,
         planId: null,
       });
     }
-  }, [stripPlanIdOnClear]);
+  }, [router, stripPlanIdOnClear]);
 
   const {
     state,
@@ -432,7 +418,6 @@ function CoachWorkspaceInner({
           initialPlan,
           planId: initialPlanId,
           onArtifactCleared: handleArtifactCleared,
-          onThreadInitialized: handleThreadBound,
           onSessionUrlNavigate: handleSessionUrlNavigate,
         }
       : initialSession
@@ -449,7 +434,6 @@ function CoachWorkspaceInner({
           }
         : {
             onArtifactCleared: handleArtifactCleared,
-            onThreadInitialized: handleThreadBound,
             onSessionUrlNavigate: handleSessionUrlNavigate,
           },
   );
@@ -533,7 +517,7 @@ function CoachWorkspaceInner({
     if (!activePlanId) {
       setPlanId(result.planId);
       setBacklinkPlanId(result.planId);
-      syncCoachWorkspaceUrl({
+      navigateToCoachWorkspace(router, {
         sessionId: state.sessionId,
         planId: result.planId,
       });
@@ -543,7 +527,7 @@ function CoachWorkspaceInner({
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [activePlanId, savePlan, setPlanId, state]);
+  }, [activePlanId, router, savePlan, setPlanId, state]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -583,8 +567,8 @@ function CoachWorkspaceInner({
 
     savedSnapshotRef.current = null;
     setShowArtifact(false);
-    sessionNavigation?.goToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, router, sessionNavigation, state]);
+    navigateToCoachHome(router);
+  }, [activePlanId, backlinkPlanId, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     setMobileHistoryOpen(false);

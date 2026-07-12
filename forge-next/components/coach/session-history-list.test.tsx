@@ -1,13 +1,8 @@
-import { useEffect } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionHistoryList } from "@/components/coach/session-history-list";
-import {
-  SessionNavigationProvider,
-  useSessionNavigation,
-} from "@/lib/chat/session-navigation-context";
-import { COACH_WORKSPACE_URL_CHANGE_EVENT } from "@/lib/chat/session-url";
+import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 
 const mockListTaskSessions = vi.fn();
 const mockDeleteTaskSession = vi.fn();
@@ -27,24 +22,9 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/coach",
 }));
 
-function RegisterSessionOnMount() {
-  const { registerNewSession } = useSessionNavigation();
-
-  useEffect(() => {
-    registerNewSession({
-      id: "session-new",
-      title: "Just created",
-      updatedAt: "2026-06-28T00:00:00.000Z",
-    });
-  }, [registerNewSession]);
-
-  return null;
-}
-
-function renderList(children?: React.ReactNode) {
+function renderList() {
   return render(
     <SessionNavigationProvider>
-      {children}
       <SessionHistoryList />
     </SessionNavigationProvider>,
   );
@@ -86,33 +66,10 @@ describe("SessionHistoryList integration", () => {
     expect(mockRefresh).toHaveBeenCalled();
   });
 
-  it("prepends inserted sessions ahead of fetched history", async () => {
-    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-new"));
-    window.history.replaceState(null, "", "/coach?sessionId=session-new");
-
-    renderList(<RegisterSessionOnMount />);
-
-    const inserted = await screen.findByText("Just created");
-    const fetched = await screen.findByText("Build a plan");
-
-    expect(
-      inserted.compareDocumentPosition(fetched) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    await waitFor(() => {
-      expect(inserted.closest("[aria-current='true']")).toBeTruthy();
-    });
-  });
-
-  it("highlights the active session after replaceState URL sync", async () => {
-    mockSearchParams.mockReturnValue(new URLSearchParams());
+  it("highlights the active session from the URL param", async () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
 
     renderList();
-
-    expect(await screen.findByText("Build a plan")).toBeInTheDocument();
-
-    window.history.replaceState(null, "", "/coach?sessionId=session-1");
-    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
 
     await waitFor(() => {
       expect(
@@ -126,8 +83,7 @@ describe("SessionHistoryList integration", () => {
 
     renderList();
 
-    const row = await screen.findByText("Build a plan");
-    expect(row).toBeInTheDocument();
+    await screen.findByText("Build a plan");
 
     await user.click(screen.getAllByLabelText("Conversation actions")[0]);
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
@@ -141,7 +97,6 @@ describe("SessionHistoryList integration", () => {
   it("redirects home when deleting the active session", async () => {
     const user = userEvent.setup();
     mockSearchParams.mockReturnValue(new URLSearchParams("sessionId=session-1"));
-    window.history.replaceState(null, "", "/coach?sessionId=session-1");
 
     renderList();
 
@@ -156,27 +111,6 @@ describe("SessionHistoryList integration", () => {
     expect(mockReplace).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it("redirects home when deleting active session synced via replaceState", async () => {
-    const user = userEvent.setup();
-    mockSearchParams.mockReturnValue(new URLSearchParams());
-
-    renderList();
-
-    await screen.findByText("Build a plan");
-
-    window.history.replaceState(null, "", "/coach?sessionId=session-1");
-    window.dispatchEvent(new Event(COACH_WORKSPACE_URL_CHANGE_EVENT));
-
-    await user.click(screen.getAllByLabelText("Conversation actions")[0]);
-    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Build a plan")).not.toBeInTheDocument();
-    });
-    expect(mockReplace).toHaveBeenCalledWith("/coach");
-    expect(mockRefresh).toHaveBeenCalled();
   });
 
   it("preserves server-provided updatedAt order", async () => {

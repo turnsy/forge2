@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
 import { Button, List, Spinner } from "@/components/ui";
 import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { readCoachWorkspaceSessionId, useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
+import {
+  navigateToCoachHome,
+  navigateToCoachSession,
+} from "@/lib/chat/session-url";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
@@ -39,22 +41,21 @@ export function SessionHistoryList({
   className?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeSessionId = searchParams.get("sessionId");
   const {
     sessions,
     sessionsLoading,
     sessionsError,
-    goToCoachHome,
-    openSession,
     removeSession,
     updateSession,
     refreshSessions,
   } = useSessionNavigation();
-  const activeSessionId = useCoachWorkspaceSessionId();
   const [showAll, setShowAll] = useState(false);
 
   function handleOpen(sessionId: string) {
     if (sessionId !== activeSessionId) {
-      openSession(sessionId, router);
+      navigateToCoachSession(router, sessionId);
     }
 
     onSessionOpen?.(sessionId);
@@ -65,13 +66,11 @@ export function SessionHistoryList({
   }
 
   function handleDeleted(sessionId: string) {
-    const currentSessionId = readCoachWorkspaceSessionId() ?? activeSessionId;
-
     removeSession(sessionId);
 
-    if (sessionId === currentSessionId) {
+    if (sessionId === activeSessionId) {
       onActiveSessionDeleted?.();
-      goToCoachHome(router);
+      navigateToCoachHome(router);
     }
   }
 
