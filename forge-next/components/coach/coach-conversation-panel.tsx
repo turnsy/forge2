@@ -75,7 +75,12 @@ export function CoachConversationPanel({
         footer={composer}
         footerInsetClassName={composerClassName}
       >
-        {({ scrollPaddingTop, scrollPaddingBottom }) => (
+        {({ scrollPaddingTop, scrollPaddingBottom }) => {
+          const scrollChromeReady =
+            (!topChrome || scrollPaddingTop !== undefined) &&
+            scrollPaddingBottom !== undefined;
+
+          return (
           <ChatThread
             threadKey={state.sessionId}
             messages={state.messages}
@@ -95,8 +100,10 @@ export function CoachConversationPanel({
             } ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             scrollPaddingTop={scrollPaddingTop}
             scrollPaddingBottom={scrollPaddingBottom}
+            scrollChromeReady={scrollChromeReady}
           />
-        )}
+          );
+        }}
       </MobileOverlayScrollChrome>
     );
   }

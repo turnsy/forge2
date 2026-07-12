@@ -33,6 +33,7 @@ export function ChatThread({
   scrollClassName = "",
   scrollPaddingTop,
   scrollPaddingBottom,
+  scrollChromeReady = true,
 }: {
   threadKey: string;
   messages: ChatMessage[];
@@ -44,6 +45,7 @@ export function ChatThread({
   scrollClassName?: string;
   scrollPaddingTop?: number;
   scrollPaddingBottom?: number;
+  scrollChromeReady?: boolean;
 }) {
   const { scrollRef, bottomRef } = useChatThreadAutoScroll({
     threadKey,
@@ -52,7 +54,9 @@ export function ChatThread({
     runStatus,
     errors,
     phase,
+    scrollPaddingTop,
     scrollPaddingBottom,
+    scrollChromeReady,
   });
 
   const visibleStreamingText = streamingAssistantText.trim();
