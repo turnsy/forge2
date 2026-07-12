@@ -125,8 +125,11 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("uses overlay prompt styling on the mobile welcome composer", () => {
-    mockUseIsMobile.mockReturnValue(true);
+  it.each([
+    ["desktop", false],
+    ["mobile", true],
+  ])("uses overlay prompt styling on the %s welcome composer", (_, isMobile) => {
+    mockUseIsMobile.mockReturnValue(isMobile);
     mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState()));
 
     const { container } = render(<CoachWorkspace firstName="Alex" role="coach" />);
