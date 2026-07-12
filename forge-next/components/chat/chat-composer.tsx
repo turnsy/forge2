@@ -23,6 +23,7 @@ export function ChatComposer({
   promptEnabled = true,
   className = "",
   compact = false,
+  overlayChrome = false,
 }: {
   state: ChatWorkspaceState;
   composerKey: string;
@@ -34,6 +35,7 @@ export function ChatComposer({
   promptEnabled?: boolean;
   className?: string;
   compact?: boolean;
+  overlayChrome?: boolean;
 }) {
   const [documentEmpty, setDocumentEmpty] = useState(true);
   const [dragDepth, setDragDepth] = useState(0);
@@ -69,12 +71,18 @@ export function ChatComposer({
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
       <div>
         <div
-          className={`flex flex-col rounded-card border bg-glass backdrop-blur-md transition ${
+          className={`flex flex-col rounded-card border transition ${
             compact ? "min-h-0 p-2" : "min-h-40 p-3"
           } ${
-            isDragging
-              ? "border-coach-muted bg-glass-focus"
-              : "border-glass-border"
+            overlayChrome
+              ? isDragging
+                ? "border-coach-muted bg-transparent"
+                : "border-glass-border bg-transparent"
+              : `bg-glass backdrop-blur-md ${
+                  isDragging
+                    ? "border-coach-muted bg-glass-focus"
+                    : "border-glass-border"
+                }`
           }`}
           onDragEnter={(event) => {
             event.preventDefault();

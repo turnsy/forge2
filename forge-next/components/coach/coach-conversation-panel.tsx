@@ -5,13 +5,12 @@ import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread } from "@/components/chat/chat-thread";
 import {
-  MOBILE_CHAT_COMPOSER_SURFACE_CLASS,
+  MOBILE_CHAT_CHROME_BACKDROP_CLASS,
   MOBILE_CHAT_CONTENT_INSET_X_CLASS,
   MOBILE_CHAT_FOOTER_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS,
   MOBILE_CHAT_THREAD_SCROLL_TOP_CLASS,
-  MOBILE_CHAT_TOOLBAR_SURFACE_CLASS,
   MOBILE_CHAT_TOP_BLUR_CLASS,
   MOBILE_CHAT_TOP_OVERLAY_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
@@ -47,6 +46,7 @@ export function CoachConversationPanel({
   const composer = (
     <ChatComposer
       compact
+      overlayChrome
       state={state}
       composerKey={`${state.sessionId}-${state.messages.length}`}
       onAttach={onAttach}
@@ -90,25 +90,30 @@ export function CoachConversationPanel({
         >
           {composerHeader ? (
             <div
-              className={`relative z-10 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS} ${MOBILE_CHAT_TOOLBAR_SURFACE_CLASS}`}
+              className={`relative pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
-              {composerHeader}
+              <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
+              <div className="relative z-10">{composerHeader}</div>
             </div>
           ) : showAttachmentsAboveComposer && state.hasStarted ? (
             <div
-              className={`relative pointer-events-auto ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+              className={`relative pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
             >
-              <ChatAttachmentList
-                attachments={state.attachments}
-                onRemove={onRemoveAttachment}
-                className="mb-2"
-              />
+              <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
+              <div className="relative z-10">
+                <ChatAttachmentList
+                  attachments={state.attachments}
+                  onRemove={onRemoveAttachment}
+                  className="mb-2"
+                />
+              </div>
             </div>
           ) : null}
           <div
-            className={`relative z-10 shrink-0 pointer-events-auto ${MOBILE_CHAT_COMPOSER_SURFACE_CLASS} ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
+            className={`relative z-10 shrink-0 pointer-events-auto ${MOBILE_CHAT_CONTENT_INSET_X_CLASS}`}
           >
-            {composer}
+            <div aria-hidden className={MOBILE_CHAT_CHROME_BACKDROP_CLASS} />
+            <div className="relative z-10">{composer}</div>
           </div>
         </div>
       </div>

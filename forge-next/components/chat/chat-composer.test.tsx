@@ -151,6 +151,23 @@ describe("ChatComposer", () => {
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
   });
 
+  it("uses a transparent surface in overlay chrome mode", () => {
+    const { container } = render(
+      <ChatComposer
+        overlayChrome
+        compact
+        state={createInitialChatWorkspaceState()}
+        composerKey="composer-1"
+        onAttach={vi.fn()}
+        onSend={vi.fn()}
+      />,
+    );
+
+    const surface = container.querySelector(".rounded-card");
+    expect(surface?.className).toContain("bg-transparent");
+    expect(surface?.className).not.toContain("bg-glass");
+  });
+
   it("does not render attachments in the composer after the thread starts", () => {
     render(
       <ChatComposer

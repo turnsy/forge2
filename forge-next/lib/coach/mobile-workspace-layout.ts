@@ -19,8 +19,11 @@ export const MOBILE_VIEW_ARTIFACT_SPACING_CLASS = "mb-4";
 /** Mobile toolbar row that pairs horizontally scrolling attachments with the view control. */
 export const MOBILE_COMPOSER_TOOLBAR_ROW_CLASS = `relative ${BUTTON_SM_HEIGHT_CLASS}`;
 
-/** Shared frosted chrome for mobile scroll-under overlays. */
-export const MOBILE_CHAT_CHROME_BLUR_CLASS = "bg-surface/35 backdrop-blur-md";
+/** Shared backdrop blur for mobile scroll-under chrome (no tint). */
+export const MOBILE_CHAT_CHROME_BLUR_CLASS = "backdrop-blur-md";
+
+/** Positions blur behind overlay chrome content without covering it. */
+export const MOBILE_CHAT_CHROME_BACKDROP_CLASS = `pointer-events-none absolute inset-0 ${MOBILE_CHAT_CHROME_BLUR_CLASS}`;
 
 /** Container for the top history control. */
 export const MOBILE_CHAT_TOP_OVERLAY_CLASS =
@@ -32,9 +35,6 @@ export const MOBILE_CHAT_TOP_BLUR_CLASS = `pointer-events-none absolute inset-x-
 /** Pinned footer for the composer toolbar and prompt on mobile overlay chat. */
 export const MOBILE_CHAT_FOOTER_CLASS =
   "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col";
-
-/** Blur behind the attachment/view toolbar row. */
-export const MOBILE_CHAT_TOOLBAR_SURFACE_CLASS = MOBILE_CHAT_CHROME_BLUR_CLASS;
 
 /** Reserved height for the floating bottom nav + inset + safe area. */
 const MOBILE_BOTTOM_NAV_CLEARANCE =
@@ -57,9 +57,6 @@ export const MOBILE_CHAT_THREAD_SCROLL_BOTTOM_WITH_TOOLBAR_CLASS = `max-md:pb-[c
 
 /** Horizontal inset for mobile overlay chat content and chrome. */
 export const MOBILE_CHAT_CONTENT_INSET_X_CLASS = "max-md:px-4";
-
-/** Frosted surface behind the prompt inside the mobile overlay footer. */
-export const MOBILE_CHAT_COMPOSER_SURFACE_CLASS = MOBILE_CHAT_CHROME_BLUR_CLASS;
 
 /** Scroll lane for attachment chips; chips can pass under the view control. */
 export const MOBILE_COMPOSER_ATTACHMENT_SCROLL_CLASS =
