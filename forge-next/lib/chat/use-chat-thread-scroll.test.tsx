@@ -12,7 +12,7 @@ function TestThread({
   scrollChromeReady: boolean;
   scrollPaddingBottom?: number;
 }) {
-  const { scrollRef, bottomRef } = useChatThreadAutoScroll({
+  const { scrollRef } = useChatThreadAutoScroll({
     threadKey: "thread-1",
     messages: [{ role: "user", content: "Hello" }],
     streamingAssistantText: "",
@@ -26,11 +26,14 @@ function TestThread({
   return (
     <div
       ref={scrollRef}
-      style={{ height: 400, overflow: "auto" }}
+      style={{
+        height: 400,
+        overflow: "auto",
+        paddingBottom: scrollPaddingBottom,
+      }}
       data-scroll-height={1000}
     >
       <div style={{ height: 1000 }} />
-      <div ref={bottomRef} />
     </div>
   );
 }
@@ -41,26 +44,26 @@ describe("useChatThreadAutoScroll", () => {
   });
 
   it("scrolls again when overlay chrome padding becomes ready on initial load", () => {
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
       configurable: true,
-      value: scrollIntoView,
+      value: scrollTo,
     });
 
     const { rerender } = render(
       <TestThread scrollChromeReady={false} scrollPaddingBottom={undefined} />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
 
     rerender(
       <TestThread scrollChromeReady={true} scrollPaddingBottom={180} />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
-    expect(scrollIntoView).toHaveBeenLastCalledWith({
+    expect(scrollTo).toHaveBeenCalledTimes(2);
+    expect(scrollTo).toHaveBeenLastCalledWith({
       behavior: "instant",
-      block: "end",
+      top: expect.any(Number),
     });
   });
 });

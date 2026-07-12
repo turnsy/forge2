@@ -1,5 +1,25 @@
 const NEAR_BOTTOM_THRESHOLD_PX = 80;
 
+export function getChatThreadMaxScrollTop(
+  container: Pick<HTMLElement, "scrollHeight" | "clientHeight">,
+): number {
+  return Math.max(0, container.scrollHeight - container.clientHeight);
+}
+
+export function scrollChatThreadToBottom(
+  container: HTMLElement,
+  behavior: ScrollBehavior,
+): void {
+  const top = getChatThreadMaxScrollTop(container);
+
+  if (typeof container.scrollTo === "function") {
+    container.scrollTo({ top, behavior });
+    return;
+  }
+
+  container.scrollTop = top;
+}
+
 export function isChatThreadNearBottom(
   container: Pick<HTMLElement, "scrollHeight" | "scrollTop" | "clientHeight">,
   thresholdPx = NEAR_BOTTOM_THRESHOLD_PX,

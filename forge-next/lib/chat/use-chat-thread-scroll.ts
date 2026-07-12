@@ -3,6 +3,7 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 import {
   isChatThreadNearBottom,
+  scrollChatThreadToBottom,
   shouldAutoScrollChatThread,
 } from "@/lib/chat/chat-thread-scroll";
 import type {
@@ -34,13 +35,17 @@ export function useChatThreadAutoScroll({
   scrollChromeReady?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(0);
   const previousThreadKeyRef = useRef(threadKey);
   const initialScrollPendingRef = useRef(false);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
-    bottomRef.current?.scrollIntoView?.({ behavior, block: "end" });
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    scrollChatThreadToBottom(container, behavior);
   }, []);
 
   useLayoutEffect(() => {
@@ -99,5 +104,5 @@ export function useChatThreadAutoScroll({
     threadKey,
   ]);
 
-  return { scrollRef, bottomRef };
+  return { scrollRef };
 }
