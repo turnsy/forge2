@@ -23,7 +23,7 @@ export function AssignmentModalListPanel({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-0 flex-1 rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
+    <div className="min-h-0 flex-1 overflow-y-auto rounded-card border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
       {isListLoading ? (
         <ModalListLoading />
       ) : error ? (
