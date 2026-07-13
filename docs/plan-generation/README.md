@@ -15,6 +15,7 @@ Documentation for the coach plan-creation chat pipeline (v1).
   5. ~~[Client workspace](./phases/phase-5-client-workspace.md)~~ **Done**
   6. [Integration & QA](./phases/phase-6-integration.md) — **In progress** ([Task 2 spec](./task-2-edge-case-testing.md))
   7. [Schema guard & Python packaging](./phases/phase-7-schema-and-packaging.md)
+  8. [Agent tools to edit an athlete's in-progress plan](./phases/phase-8-assigned-plan-edit-tools.md) — **Design only, not started**
 
 ## Roles
 
