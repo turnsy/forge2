@@ -6,6 +6,7 @@ const mockGetCoachPlanById = vi.fn();
 const mockListCoachPlanVersions = vi.fn();
 const mockSaveCoachPlanVersion = vi.fn();
 const mockPreparePlanForSave = vi.fn();
+const mockPreparePlanExerciseResolution = vi.fn();
 
 vi.mock("@/lib/auth/api", () => ({
   requireApiRole: (...args: unknown[]) => mockRequireApiRole(...args),
@@ -23,6 +24,10 @@ vi.mock("@/lib/plans/mutations", () => ({
 vi.mock("@/lib/plans/utils", () => ({
   preparePlanForSave: (...args: unknown[]) => mockPreparePlanForSave(...args),
 }));
+vi.mock("@/lib/exercises/prepare-plan", () => ({
+  preparePlanExerciseResolution: (...args: unknown[]) =>
+    mockPreparePlanExerciseResolution(...args),
+}));
 
 import { GET, POST } from "@/app/api/coach/plans/[planId]/versions/route";
 
@@ -35,6 +40,7 @@ describe("/api/coach/plans/[planId]/versions", () => {
     mockListCoachPlanVersions.mockReset();
     mockSaveCoachPlanVersion.mockReset();
     mockPreparePlanForSave.mockReset();
+    mockPreparePlanExerciseResolution.mockReset();
 
     mockRequireApiRole.mockResolvedValue({
       ok: true,
@@ -61,6 +67,7 @@ describe("/api/coach/plans/[planId]/versions", () => {
       ok: true,
       plan: minimalWorkoutPlan,
     });
+    mockPreparePlanExerciseResolution.mockResolvedValue(minimalWorkoutPlan);
     mockSaveCoachPlanVersion.mockResolvedValue({
       ok: true,
       versionId: "version-2",

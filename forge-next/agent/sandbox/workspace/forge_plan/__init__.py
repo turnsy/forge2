@@ -1,4 +1,4 @@
-"""forge_plan — workout plan builder for Vercel Sandbox (schema v3.0.0)."""
+"""forge_plan — workout plan builder for Vercel Sandbox (schema v3.1.0)."""
 
 from forge_plan.builders import Block, Day, Exercise, Week
 from forge_plan.plan import (

@@ -17,7 +17,7 @@ function makeSet(id: string, reps: number, weight: number) {
 
 function makePercentagePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Percentage Block",
     weeks: [
       {
@@ -62,7 +62,7 @@ function makePercentagePlan(): WorkoutPlan {
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Strength Block",
     weeks: [
       {
@@ -104,7 +104,7 @@ function makePlan(): WorkoutPlan {
 
 function makeSupersetPlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Strength Block",
     weeks: [
       {

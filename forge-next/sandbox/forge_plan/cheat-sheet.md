@@ -1,6 +1,6 @@
-Schema validation (workout-plan.schema.json v3.0.0 — output must pass):
+Schema validation (workout-plan.schema.json v3.1.0 — output must pass):
 
-- Plan: schemaVersion "3.0.0", non-empty name, at least 1 week
+- Plan: schemaVersion "3.1.0", non-empty name, at least 1 week
 - Week: at least 1 day
 - Day: code is auto w{N}d{M} (lowercase, e.g. w1d1); at least 1 block; do not hand-set codes unless editing
 - Block: at least 1 exercise; 1 exercise = standalone, 2+ = superset

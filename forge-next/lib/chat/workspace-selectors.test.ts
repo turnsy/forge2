@@ -75,7 +75,7 @@ describe("workspace selectors", () => {
       hasStarted: true,
       phase: "streaming" as const,
       currentArtifact: {
-        schemaVersion: "3.0.0" as const,
+        schemaVersion: "3.1.0" as const,
         name: "Block",
         weeks: [],
       },

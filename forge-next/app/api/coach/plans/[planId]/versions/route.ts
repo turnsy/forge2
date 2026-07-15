@@ -5,6 +5,7 @@ import { saveCoachPlanVersion } from "@/lib/plans/mutations";
 import { parseSavePlanRequest } from "@/lib/plans/parse-save-plan-request";
 import { getCoachPlanById, listCoachPlanVersions } from "@/lib/plans/repository";
 import { preparePlanForSave } from "@/lib/plans/utils";
+import { preparePlanExerciseResolution } from "@/lib/exercises/prepare-plan";
 
 type RouteContext = {
   params: Promise<{ planId: string }>;
@@ -62,9 +63,19 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ errors: prepared.errors }, { status: 422 });
   }
 
+  let resolvedPlan;
+  try {
+    resolvedPlan = await preparePlanExerciseResolution(prepared.plan, auth.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Exercise resolution failed" },
+      { status: 422 },
+    );
+  }
+
   const result = await saveCoachPlanVersion(
     planId,
-    prepared.plan,
+    resolvedPlan,
     parsed.body.changeSummary,
   );
 
