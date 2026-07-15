@@ -27,6 +27,7 @@ import { Button, IconButton, Input } from "@/components/ui";
 import { BlockHeader } from "@/components/plan/block-header";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { ExerciseResolutionControls } from "@/components/plan/exercise-resolution-controls";
 import { athleteExerciseCardClassName } from "@/components/plan/plan-athlete-parts";
 import { formatReps } from "@/lib/plans/display";
 import { parseRepsValue } from "@/lib/plans/parse-reps";
@@ -347,15 +348,13 @@ function EditableExerciseBlock({
   return (
     <section className={[accordionNestedClass(), "space-y-3 p-4"].join(" ")} data-exercise-editable="true">
       <div className="flex items-start gap-2">
-        <Input
-          value={exercise.name}
-          readOnly={disabled}
-          aria-label="Exercise name"
-          className="min-w-0 flex-1 font-semibold"
-          onChange={(event) =>
-            onExerciseChange({ ...exercise, name: event.target.value })
-          }
-        />
+        <div className="min-w-0 flex-1">
+          <ExerciseResolutionControls
+            exercise={exercise}
+            disabled={disabled}
+            onChange={onExerciseChange}
+          />
+        </div>
         <div className="flex shrink-0 items-center gap-1">
           {onNeedVideoLink ? (
             <IconButton

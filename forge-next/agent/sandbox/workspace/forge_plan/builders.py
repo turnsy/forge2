@@ -9,7 +9,7 @@ from typing import Any
 from forge_plan.ids import new_id, next_set_id
 from forge_plan.target import parse_target
 
-SCHEMA_VERSION = "3.0.0"
+SCHEMA_VERSION = "3.1.0"
 
 
 class Exercise:

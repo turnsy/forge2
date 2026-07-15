@@ -4,7 +4,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(weekCount: number): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Plan",
     weeks: Array.from({ length: weekCount }, (_, weekIndex) => ({
       days: [

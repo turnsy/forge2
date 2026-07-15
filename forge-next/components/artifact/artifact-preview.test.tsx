@@ -9,7 +9,7 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 }));
 
 const samplePlan: WorkoutPlan = {
-  schemaVersion: "3.0.0",
+  schemaVersion: "3.1.0",
   name: "Strength",
   weeks: [],
 };

@@ -10,7 +10,7 @@ describe("forge-tool-outputs", () => {
     expect(
       isSubmitPlanCodeOutput({
         ok: true,
-        plan: { name: "Plan", schemaVersion: "3.0.0", weeks: [] },
+        plan: { name: "Plan", schemaVersion: "3.1.0", weeks: [] },
         title: "Plan",
       }),
     ).toBe(true);
@@ -24,7 +24,7 @@ describe("forge-tool-outputs", () => {
   });
 
   it("narrows artifact success outputs", () => {
-    const plan = { name: "Plan", schemaVersion: "3.0.0", weeks: [] };
+    const plan = { name: "Plan", schemaVersion: "3.1.0", weeks: [] };
     expect(isPlanArtifactToolSuccess({ ok: true, plan, title: "Plan" })).toBe(
       true,
     );

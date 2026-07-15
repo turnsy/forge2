@@ -9,6 +9,8 @@ import type {
   Week,
   Day,
 } from "@/lib/plans/workout-plan";
+import { computePrescribedWeight } from "@/lib/maxes/compute-weight";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 
 export function formatReps(reps: RepsValue): string {
   return String(reps);
@@ -28,6 +30,16 @@ function formatAbsoluteTarget(load: AbsoluteLoad): string {
 
 export function formatPercentageTarget(load: PercentageLoad): string {
   return `${load.value}% (${load.unit})`;
+}
+
+export function formatResolvedPercentageTarget(
+  load: PercentageLoad,
+  max: MaxValue | null,
+): string {
+  const weight = computePrescribedWeight(max, load.value, load.unit);
+  return weight === null
+    ? formatPercentageTarget(load)
+    : `${weight} ${load.unit} (${load.value}%)`;
 }
 
 export function formatTargetInstruction(instruction: string): string {

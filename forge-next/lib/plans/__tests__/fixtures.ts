@@ -8,7 +8,7 @@ import type {
 } from "@/lib/plans/workout-plan";
 
 export const minimalWorkoutPlan: WorkoutPlan = {
-  schemaVersion: "3.0.0",
+  schemaVersion: "3.1.0",
   name: "4-Week Strength Block",
   weeks: [
     {
@@ -237,7 +237,7 @@ export function makeWorkoutPlan(options: MakeWorkoutPlanOptions = {}): WorkoutPl
   }
 
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: options.name ?? "Strength Block",
     weeks: [{ days: days as Week["days"] }],
   };

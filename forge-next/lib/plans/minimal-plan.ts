@@ -3,7 +3,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 /** Minimal valid plan for sandbox stubs and smoke tests. */
 export function buildMinimalWorkoutPlan(name = "Generated Plan"): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name,
     weeks: [
       {
