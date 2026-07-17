@@ -15,6 +15,7 @@ import {
   type DaySelection,
 } from "@/lib/plans/plan-day-navigator";
 import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 
 export type PlanDayNavigatorProps = {
   plan: WorkoutPlan;
@@ -31,6 +32,7 @@ export type PlanDayNavigatorProps = {
   onPlanChange?: (plan: WorkoutPlan) => void;
   disabled?: boolean;
   canEditDay?: (day: Day) => boolean;
+  maxesByExerciseId?: Record<string, MaxValue>;
 };
 
 function SaveIndicator({
@@ -73,6 +75,7 @@ export function PlanDayNavigator({
   onPlanChange,
   disabled = false,
   canEditDay,
+  maxesByExerciseId = {},
 }: PlanDayNavigatorProps) {
   const defaultSelection = useMemo(
     () => getInitialDaySelection(plan, view, initialDay),
@@ -233,6 +236,7 @@ export function PlanDayNavigator({
         assignmentId={assignmentId}
         onPlanChange={onPlanChange}
         disabled={disabled}
+        maxesByExerciseId={maxesByExerciseId}
         onDayCompleted={
           view === "athlete" && !readOnly
             ? handleDayCompleted

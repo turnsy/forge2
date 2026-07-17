@@ -16,6 +16,11 @@ import {
   type ServiceResult,
 } from "@/lib/errors/service-error";
 import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { getFlattenedExercise } from "@/lib/plans/day-blocks";
+import { estimateOneRepMax } from "@/lib/maxes/estimate-one-rep-max";
+import { insertAthleteMax, listAthleteMaxes } from "@/lib/maxes/mutations";
+import { resolveCurrentMax } from "@/lib/maxes/resolve-current-max";
+import { convertWeight } from "@/lib/maxes/units";
 
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
 
@@ -60,7 +65,43 @@ export async function saveSetActualsAction(
     actual,
   );
 
-  return savePlanActuals(assignmentId, updatedPlan);
+  const saved = await savePlanActuals(assignmentId, updatedPlan);
+  if (saved.ok && actual?.reps !== undefined && actual.target?.type === "absolute") {
+    const day = updatedPlan.weeks[weekPos]?.days[dayPos];
+    const exercise = day ? getFlattenedExercise(day, exercisePos)?.exercise : null;
+    const exerciseId = exercise?.resolvedExerciseId;
+    const estimate = exerciseId
+      ? estimateOneRepMax(actual.target.value, actual.reps)
+      : null;
+    if (exerciseId && estimate !== null) {
+      try {
+        const rows = await listAthleteMaxes(auth.user.id, [exerciseId]);
+        const current = resolveCurrentMax(
+          rows.map((row) => ({
+            value: Number(row.value),
+            unit: row.unit,
+            loggedAt: row.logged_at,
+            source: row.source,
+          })),
+        );
+        const currentInLogUnit = current
+          ? convertWeight(current.value, current.unit, actual.target.unit)
+          : null;
+        if (currentInLogUnit === null || estimate <= currentInLogUnit * 1.2) {
+          await insertAthleteMax({
+            athleteId: auth.user.id,
+            exerciseId,
+            value: estimate,
+            unit: actual.target.unit,
+            source: "estimated_from_log",
+          });
+        }
+      } catch {
+        // Workout saving remains successful if max estimation is unavailable.
+      }
+    }
+  }
+  return saved;
 }
 
 export async function completeDayAction(

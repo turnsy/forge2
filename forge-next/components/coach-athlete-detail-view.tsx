@@ -9,6 +9,7 @@ import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
 import {
   Button,
+  ButtonLink,
   EmptyState,
   List,
   ListRow,
@@ -296,6 +297,9 @@ export function CoachAthleteDetailView({
                 <MetaItem label="Joined" value={formatDate(relationship.linkedAt)} />
               ) : null}
             </MetaGroup>
+            <ButtonLink href={`/coach/athletes/${relationship.athleteId}/maxes`}>
+              Manage maxes
+            </ButtonLink>
             <CoachAthleteDetailActions relationship={relationship} />
           </div>
         </TabPanel>

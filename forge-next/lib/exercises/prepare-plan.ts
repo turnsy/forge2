@@ -1,5 +1,7 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { resolveExercise } from "./resolve";
+import { createCoachExercise, findExactExercise } from "./repository";
+import { searchExercises, isAutoResolvable } from "./search";
+import { resolveAmbiguousExercises } from "./llm-resolution";
 
 /**
  * Save boundary: every exercise gets a catalog id. Unmatched names become a
@@ -10,6 +12,39 @@ export async function preparePlanExerciseResolution(
   coachId: string,
 ): Promise<WorkoutPlan> {
   const cache = new Map<string, string>();
+  const rawValues = new Set<string>();
+  for (const week of plan.weeks) {
+    for (const day of week.days) {
+      for (const block of day.blocks) {
+        for (const exercise of block.exercises) {
+          rawValues.add(exercise.name);
+          if (exercise.basisRaw?.trim()) rawValues.add(exercise.basisRaw.trim());
+        }
+      }
+    }
+  }
+
+  const ambiguous = new Map<string, Awaited<ReturnType<typeof searchExercises>>>();
+  for (const raw of rawValues) {
+    const exact = await findExactExercise(raw, coachId);
+    if (exact) {
+      cache.set(raw, exact.id);
+      continue;
+    }
+    try {
+      const results = await searchExercises(raw, coachId, 5);
+      if (!isAutoResolvable(results)) ambiguous.set(raw, results);
+      else if (results[0]) cache.set(raw, results[0].id);
+    } catch {
+      ambiguous.set(raw, []);
+    }
+  }
+  const modelResults = await resolveAmbiguousExercises({
+    values: [...ambiguous.keys()],
+    candidates: Object.fromEntries(ambiguous),
+    catalog: Object.values(Object.fromEntries(ambiguous)).flat(),
+  });
+
   const next = structuredClone(plan);
   for (const week of next.weeks) {
     for (const day of week.days) {
@@ -20,7 +55,7 @@ export async function preparePlanExerciseResolution(
           const exerciseResult =
             exercise.resolvedExerciseId || cachedExerciseId
               ? null
-              : await resolveExercise(exercise.name, coachId);
+              : await createOrResolve(exercise.name, coachId, modelResults, cache);
           const exerciseId =
             exercise.resolvedExerciseId ?? cachedExerciseId ?? exerciseResult?.exerciseId;
           if (!exerciseId) throw new Error(`Could not resolve exercise "${exercise.name}"`);
@@ -32,7 +67,7 @@ export async function preparePlanExerciseResolution(
             const basisResult =
               exercise.resolvedBasisExerciseId || cachedBasisId
                 ? null
-                : await resolveExercise(rawBasis, coachId);
+                  : await createOrResolve(rawBasis, coachId, modelResults, cache);
             exercise.resolvedBasisExerciseId =
               exercise.resolvedBasisExerciseId ?? cachedBasisId ?? basisResult?.exerciseId;
             if (!exercise.resolvedBasisExerciseId) {
@@ -48,4 +83,20 @@ export async function preparePlanExerciseResolution(
     }
   }
   return next;
+}
+
+async function createOrResolve(
+  raw: string,
+  coachId: string,
+  modelResults: Map<string, string | null>,
+  cache: Map<string, string>,
+) {
+  const modelId = modelResults.get(raw);
+  if (modelId) {
+    cache.set(raw, modelId);
+    return { exerciseId: modelId };
+  }
+  const created = await createCoachExercise(raw, coachId);
+  cache.set(raw, created.id);
+  return { exerciseId: created.id };
 }
