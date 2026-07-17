@@ -5,6 +5,7 @@ import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dial
 import { AthleteStandaloneExerciseSection } from "@/components/plan/athlete-standalone-exercise";
 import {
   AthleteSetRow,
+  getPrescribedTargetLabel,
   type AthleteSetFormState,
 } from "@/components/plan/plan-athlete-parts";
 import { PlanBlockSection } from "@/components/plan/plan-block-section";
@@ -33,6 +34,7 @@ import {
 import { getDayTitle } from "@/lib/plans/display";
 import { isDayEditable, resolveDayLocation } from "@/lib/plans/plan-day-navigator";
 import type { Day, Set, WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 
 const SAVE_DEBOUNCE_MS = 800;
 const COMPLETE_DAY_ERROR = "Could not complete the day. Try again.";
@@ -56,6 +58,7 @@ export type PlanDayViewProps = {
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
   onPlanChange?: (plan: WorkoutPlan) => void;
   disabled?: boolean;
+  maxesByExerciseId?: Record<string, MaxValue>;
 };
 
 function getSetKey(exercisePos: number, setPos: number): string {
@@ -89,13 +92,26 @@ function applyLocalActualsToDayForm(
   return applyLocalActualsToDay(day, formState, getSetKey, buildActualFromInputs);
 }
 
-function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }) {
+function AthleteReadOnlyDayContent({
+  day,
+  dayPos,
+  maxesByExerciseId,
+}: {
+  day: Day;
+  dayPos: number;
+  maxesByExerciseId: Record<string, MaxValue>;
+}) {
   return (
     <div className="space-y-4">
       <PlanDayHeader day={day} dayPos={dayPos} />
       {day.blocks.map((block) =>
         isSupersetBlock(block) ? (
-          <PlanSupersetView key={block.id} block={block} view="athlete" />
+          <PlanSupersetView
+            key={block.id}
+            block={block}
+            view="athlete"
+            maxesByExerciseId={maxesByExerciseId}
+          />
         ) : (
           <section key={block.id} className="space-y-4">
             {block.exercises.map((exercise, exercisePosInBlock) => (
@@ -111,6 +127,10 @@ function AthleteReadOnlyDayContent({ day, dayPos }: { day: Day; dayPos: number }
                       setIdx={setIdx}
                       reps={values.reps}
                       target={values.target}
+                      prescribedTarget={getPrescribedTargetLabel(
+                        set,
+                        maxesByExerciseId[exercise.resolvedBasisExerciseId ?? exercise.resolvedExerciseId ?? ""],
+                      )}
                       readOnly
                       complete={filled}
                     />
@@ -153,6 +173,7 @@ function AthleteEditableDayContent({
   weekPos,
   dayPos,
   assignmentId,
+  maxesByExerciseId,
   onDayCompleted,
   onSaveStatusChange,
 }: {
@@ -160,6 +181,7 @@ function AthleteEditableDayContent({
   weekPos: number;
   dayPos: number;
   assignmentId: string;
+  maxesByExerciseId: Record<string, MaxValue>;
   onDayCompleted?: (allDaysDone: boolean, plan: WorkoutPlan) => void;
   onSaveStatusChange?: (status: "idle" | "saving" | "saved" | "error") => void;
 }) {
@@ -455,6 +477,7 @@ function AthleteEditableDayContent({
               key={block.id}
               block={block}
               view="athlete"
+              maxesByExerciseId={maxesByExerciseId}
               athleteEntry={{
                 getExercisePos: (exercisePosInBlock) =>
                   getFlatExercisePos(savedDay, blockPos, exercisePosInBlock),
@@ -511,6 +534,14 @@ function AthleteEditableDayContent({
                           setIdx={setPos}
                           reps={local.reps}
                           target={local.target}
+                          prescribedTarget={getPrescribedTargetLabel(
+                            plannedExercise.sets[setPos],
+                            maxesByExerciseId[
+                              plannedExercise.resolvedBasisExerciseId ??
+                                plannedExercise.resolvedExerciseId ??
+                                ""
+                            ],
+                          )}
                           complete={complete}
                           setRef={(node) => {
                             setRefs.current[key] = node;
@@ -569,6 +600,7 @@ export function PlanDayView({
   onSaveStatusChange,
   onPlanChange,
   disabled = false,
+  maxesByExerciseId = {},
 }: PlanDayViewProps) {
   if (!plan) {
     return <p className="text-sm text-surface-muted">Day not found</p>;
@@ -590,13 +622,20 @@ export function PlanDayView({
           weekPos={weekPos}
           dayPos={dayPos}
           assignmentId={assignmentId}
+          maxesByExerciseId={maxesByExerciseId}
           onDayCompleted={onDayCompleted}
           onSaveStatusChange={onSaveStatusChange}
         />
       );
     }
 
-    return <AthleteReadOnlyDayContent day={day} dayPos={dayPos} />;
+    return (
+      <AthleteReadOnlyDayContent
+        day={day}
+        dayPos={dayPos}
+        maxesByExerciseId={maxesByExerciseId}
+      />
+    );
   }
 
   if (view === "coach" && !readOnly && onPlanChange && plan) {

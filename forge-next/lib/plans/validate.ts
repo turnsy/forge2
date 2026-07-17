@@ -36,9 +36,15 @@ function mapValidationErrors(errors: ErrorObject[]): WorkoutPlanValidationError[
 
 export function loadWorkoutPlan(value: unknown): WorkoutPlanLoadResult {
   const validate = getValidator();
+  const candidate =
+    value &&
+    typeof value === "object" &&
+    (value as { schemaVersion?: unknown }).schemaVersion === "3.0.0"
+      ? { ...(value as Record<string, unknown>), schemaVersion: "3.1.0" }
+      : value;
 
-  if (validate(value)) {
-    return { ok: true, plan: value as WorkoutPlan };
+  if (validate(candidate)) {
+    return { ok: true, plan: candidate as WorkoutPlan };
   }
 
   return {

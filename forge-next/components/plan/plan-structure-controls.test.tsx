@@ -6,7 +6,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Test Plan",
     weeks: [{ days: [makeDay({ code: "w1d1" }), makeDay({ code: "w1d2" })] }],
   };

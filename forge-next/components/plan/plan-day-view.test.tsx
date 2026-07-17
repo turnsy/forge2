@@ -164,7 +164,7 @@ describe("PlanDayView", () => {
       />,
     );
 
-    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
+    expect(screen.getByLabelText("Exercise")).toHaveValue("Back Squat");
     expect(screen.getAllByLabelText("Set 1 reps")[0]).toBeInTheDocument();
   });
 
@@ -181,7 +181,7 @@ describe("PlanDayView", () => {
       />,
     );
 
-    expect(screen.getByDisplayValue("Back Squat")).toHaveAttribute("readonly");
+    expect(screen.getByLabelText("Exercise")).toHaveAttribute("readonly");
   });
 
   it("calls onPlanChange when editing set reps", async () => {

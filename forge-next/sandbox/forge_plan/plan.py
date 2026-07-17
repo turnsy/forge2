@@ -510,7 +510,7 @@ class Plan:
         return WeekRef(self, week_pos)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return JSON-serializable plan data (schema v3.0.0)."""
+        """Return JSON-serializable plan data (schema v3.1.0)."""
         return dict(self._data)
 
     def save(self) -> None:

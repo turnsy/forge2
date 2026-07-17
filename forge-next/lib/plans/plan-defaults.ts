@@ -47,7 +47,7 @@ export function createDefaultSupersetBlock(): Block {
 
 export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name,
     weeks: [
       {
