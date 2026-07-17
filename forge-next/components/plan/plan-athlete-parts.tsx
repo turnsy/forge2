@@ -2,6 +2,8 @@ import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
 import { Input } from "@/components/ui";
 import { isSetActualComplete } from "@/lib/athlete/plan/domain";
 import { getSetNotes } from "@/lib/plans/display";
+import { computePrescribedWeight } from "@/lib/maxes/compute-weight";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 import type { AbsoluteLoad, PercentageLoad, Set } from "@/lib/plans/workout-plan";
 import {
   accordionClass,
@@ -37,6 +39,17 @@ function getAbsoluteLoadPlaceholder(set: Set): string {
   }
 
   return String((set.planned.target as AbsoluteLoad).value);
+}
+
+export function getPrescribedTargetLabel(
+  set: Set,
+  max: MaxValue | null | undefined,
+): string | undefined {
+  if (set.planned.type !== "exact" || set.planned.target.type !== "percentage") {
+    return undefined;
+  }
+  const weight = computePrescribedWeight(max ?? null, set.planned.target.value, set.planned.target.unit);
+  return weight === null ? undefined : `${weight} ${set.planned.target.unit}`;
 }
 
 export function athleteSetCardClassName(complete: boolean): string {
@@ -75,6 +88,7 @@ function SetRowInputs({
   set,
   reps,
   target,
+  prescribedTarget,
   onRepsChange,
   onTargetChange,
   readOnly = false,
@@ -82,6 +96,7 @@ function SetRowInputs({
   set: Set;
   reps: string;
   target: string;
+  prescribedTarget?: string;
   onRepsChange?: (value: string) => void;
   onTargetChange?: (value: string) => void;
   readOnly?: boolean;
@@ -116,9 +131,10 @@ function SetRowInputs({
         type="text"
         value={target}
         placeholder={
-          set.planned.target.type === "percentage"
+          prescribedTarget ??
+          (set.planned.target.type === "percentage"
             ? getPercentagePlaceholder(set)
-            : getAbsoluteLoadPlaceholder(set)
+            : getAbsoluteLoadPlaceholder(set))
         }
         readOnly={readOnly}
         onChange={
@@ -174,6 +190,7 @@ export function AthleteSetRow({
   setIdx,
   reps,
   target,
+  prescribedTarget,
   readOnly,
   complete,
   setRef,
@@ -184,6 +201,7 @@ export function AthleteSetRow({
   setIdx: number;
   reps: string;
   target: string;
+  prescribedTarget?: string;
   readOnly?: boolean;
   complete?: boolean;
   setRef?: (node: HTMLDivElement | null) => void;
@@ -212,6 +230,7 @@ export function AthleteSetRow({
           set={set}
           reps={reps}
           target={target}
+          prescribedTarget={prescribedTarget}
           readOnly={readOnly}
           onRepsChange={onRepsChange}
           onTargetChange={onTargetChange}

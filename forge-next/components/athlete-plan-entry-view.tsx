@@ -15,15 +15,18 @@ import {
 } from "@/lib/athlete/plan/milestones";
 import type { DaySelection } from "@/lib/plans/plan-day-navigator";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 
 export function AthletePlanEntryView({
   assignmentId,
   plan: initialPlan,
   coachName,
+  maxesByExerciseId = {},
 }: {
   assignmentId: string;
   plan: WorkoutPlan;
   coachName: string;
+  maxesByExerciseId?: Record<string, MaxValue>;
 }) {
   const [plan, setPlan] = useState(initialPlan);
   const [milestone, setMilestone] = useState<AthletePlanMilestone | null>(null);
@@ -81,6 +84,7 @@ export function AthletePlanEntryView({
         coachName={coachName}
         initialDay={navigateToDay}
         onDayCompleted={handleDayCompleted}
+        maxesByExerciseId={maxesByExerciseId}
       />
     </ScrollPage>
   );

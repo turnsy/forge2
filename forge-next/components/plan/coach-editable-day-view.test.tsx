@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -148,8 +148,9 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
+    const exerciseInputs = screen.getAllByLabelText("Exercise");
+    expect(exerciseInputs[0]).toHaveValue("Bench Press");
+    expect(exerciseInputs[1]).toHaveValue("Pull Ups");
   });
 
   it("shows day index as placeholder and allows clearing the day name", () => {
@@ -217,7 +218,7 @@ describe("CoachEditableDayView", () => {
     expect(dayNameInput).toHaveAttribute("placeholder", "Day 1");
   });
 
-  it("changing exercise name calls onPlanChange with the updated plan", () => {
+  it("changing exercise name calls onPlanChange with the updated plan", async () => {
     const onPlanChange = vi.fn();
     render(
       <CoachEditableDayView
@@ -229,8 +230,13 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getByDisplayValue("Bench Press");
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
+    fireEvent.blur(nameInput);
+
+    await waitFor(() => {
+      expect(onPlanChange).toHaveBeenCalled();
+    });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench");
@@ -385,7 +391,7 @@ describe("CoachEditableDayView", () => {
     expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].id).toBeTruthy();
   });
 
-  it("assigns stable ids to exercises without one", () => {
+  it("assigns stable ids to exercises without one", async () => {
     const plan = makePlan();
     delete plan.weeks[0].days[0].blocks[0].exercises[0].id;
 
@@ -404,8 +410,12 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    fireEvent.change(screen.getByDisplayValue("Bench Press"), {
-      target: { value: "Incline Bench" },
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
+    fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
+    fireEvent.blur(nameInput);
+
+    await waitFor(() => {
+      expect(onPlanChange).toHaveBeenCalled();
     });
 
     const exerciseId = currentPlan.weeks[0].days[0].blocks[0].exercises[0].id;
@@ -421,8 +431,12 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    fireEvent.change(screen.getByDisplayValue("Incline Bench"), {
-      target: { value: "Flat Bench" },
+    const updatedInput = screen.getAllByLabelText("Exercise")[0];
+    fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
+    fireEvent.blur(updatedInput);
+
+    await waitFor(() => {
+      expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Flat Bench");
     });
 
     expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].id).toBe(exerciseId);
@@ -648,7 +662,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    expect(screen.getByDisplayValue("Bench Press")).toHaveAttribute("readonly");
+    expect(screen.getAllByLabelText("Exercise")[0]).toHaveAttribute("readonly");
     expect(screen.getByRole("button", { name: "Add exercise" })).toBeDisabled();
     expect(screen.getAllByLabelText("Drag to reorder set")[0]).toBeDisabled();
     expect(document.querySelector("[data-plan-editable-day]")).toHaveClass(

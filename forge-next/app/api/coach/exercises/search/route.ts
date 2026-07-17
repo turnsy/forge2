@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
 import { createClient } from "@/utils/supabase/data-client";
+import { searchExercises } from "@/lib/exercises/search";
 
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
@@ -9,6 +10,13 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { query?: unknown };
   const query = typeof body.query === "string" ? body.query.trim() : "";
   if (!query) return NextResponse.json({ exercises: [] });
+
+  try {
+    const exercises = await searchExercises(query, auth.user.id, 5);
+    return NextResponse.json({ exercises });
+  } catch {
+    // Keep typeahead useful when embeddings are not configured locally.
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase

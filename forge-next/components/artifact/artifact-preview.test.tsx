@@ -55,7 +55,7 @@ describe("ArtifactPreview", () => {
       />,
     );
     expect(screen.getByLabelText("Week")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
+    expect(screen.getByLabelText("Exercise")).toHaveValue("Back Squat");
   });
 
   it("shows a spinner overlay during sandbox when an artifact exists", () => {

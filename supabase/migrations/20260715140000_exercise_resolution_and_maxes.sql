@@ -23,6 +23,28 @@ create table exercise_embeddings (
 create index exercise_embeddings_cosine_idx
   on exercise_embeddings using hnsw (embedding vector_cosine_ops);
 
+create or replace function public.search_exercises(
+  p_coach_id uuid,
+  p_embedding vector(1536),
+  p_limit integer default 5
+)
+returns table (id uuid, name text, owner_coach_id uuid, score double precision)
+language sql
+security definer
+set search_path = public
+as $$
+  select e.id, e.name, e.owner_coach_id,
+    1 - (ee.embedding <=> p_embedding) as score
+  from exercise_embeddings ee
+  join exercises e on e.id = ee.exercise_id
+  where e.owner_coach_id is null or e.owner_coach_id = p_coach_id
+  order by ee.embedding <=> p_embedding
+  limit greatest(1, least(p_limit, 20));
+$$;
+
+revoke all on function public.search_exercises(uuid, vector, integer) from public;
+grant execute on function public.search_exercises(uuid, vector, integer) to authenticated;
+
 create table athlete_maxes (
   id uuid primary key default gen_random_uuid(),
   athlete_id uuid not null references profiles(id) on delete cascade,

@@ -1,5 +1,6 @@
 import { normalize_v1 } from "./normalize";
 import { createClient } from "@/utils/supabase/data-client";
+import { embedExercise } from "./embeddings";
 
 export type ExerciseRecord = {
   id: string;
@@ -40,5 +41,17 @@ export async function createCoachExercise(
     .select("id,name,normalized_name,owner_coach_id")
     .single();
   if (error) throw error;
-  return data as ExerciseRecord;
+  const exercise = data as ExerciseRecord;
+  try {
+    const embedding = await embedExercise(normalize_v1(name));
+    await supabase.from("exercise_embeddings").insert({
+      exercise_id: exercise.id,
+      source_text: normalize_v1(name),
+      embedding,
+    });
+  } catch {
+    // A catalog row remains usable for exact matching if embeddings are
+    // temporarily unavailable; it can be backfilled later.
+  }
+  return exercise;
 }
