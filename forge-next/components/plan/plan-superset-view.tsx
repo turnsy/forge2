@@ -2,6 +2,7 @@ import type { MutableRefObject } from "react";
 import type { AccordionVariant } from "@/components/ui/accordion";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { BlockHeader } from "@/components/plan/block-header";
+import { ExerciseBasisLabel } from "@/components/plan/exercise-basis-label";
 import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
 import { PrescribedActualCell } from "@/components/plan/prescribed-actual-cell";
 import {
@@ -86,6 +87,7 @@ function CoachSupersetRoundTable({
                           <ExerciseVideoButton videoUrl={exercise.videoUrl} />
                         ) : null}
                       </div>
+                      <ExerciseBasisLabel exercise={exercise} />
                     </td>
                     <td className="px-3 py-2 text-surface-foreground">
                       <PrescribedActualCell

@@ -27,6 +27,20 @@ describe("PlanExerciseBlock", () => {
     expect(screen.queryByLabelText("Video link attached")).not.toBeInTheDocument();
   });
 
+  it("shows the percentage basis when it differs from the exercise name", () => {
+    render(
+      <PlanExerciseBlock
+        exercise={makeExercise({
+          name: "Close Grip Bench",
+          basisRaw: "Bench Press",
+        })}
+        view="coach"
+      />,
+    );
+
+    expect(screen.getByText("Basis: Bench Press")).toBeInTheDocument();
+  });
+
   it("opens the video link in a new tab when the icon is clicked", async () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);

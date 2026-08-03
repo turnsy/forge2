@@ -1,4 +1,5 @@
 import type { AccordionVariant } from "@/components/ui/accordion";
+import { ExerciseBasisLabel } from "@/components/plan/exercise-basis-label";
 import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
 import { PlanSetTable, type PlanViewerView } from "@/components/plan/plan-set-table";
 import type { Exercise } from "@/lib/plans/workout-plan";
@@ -25,6 +26,7 @@ export function PlanExerciseBlock({
             />
           ) : null}
         </div>
+        <ExerciseBasisLabel exercise={exercise} />
         {exercise.notes ? (
           <p className="mt-1 text-sm text-surface-muted">{exercise.notes}</p>
         ) : null}
