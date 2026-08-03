@@ -8,8 +8,36 @@ import {
   formatReps,
   formatTargetInstruction,
   getDayTitle,
+  getExerciseBasisLabel,
   getWeekTitle,
+  hasCustomBasis,
 } from "@/lib/plans/display";
+
+import { makeExercise } from "@/lib/plans/__tests__/fixtures";
+
+describe("getExerciseBasisLabel", () => {
+  it("returns the basis name when it differs from the exercise name", () => {
+    expect(
+      getExerciseBasisLabel(
+        makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" }),
+      ),
+    ).toBe("Bench Press");
+  });
+
+  it("returns null when basis matches exercise name or is missing", () => {
+    expect(getExerciseBasisLabel(makeExercise({ name: "Bench Press" }))).toBeNull();
+    expect(
+      getExerciseBasisLabel(makeExercise({ name: "Bench Press", basisRaw: "Bench Press" })),
+    ).toBeNull();
+  });
+
+  it("hasCustomBasis mirrors label presence", () => {
+    expect(
+      hasCustomBasis(makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" })),
+    ).toBe(true);
+    expect(hasCustomBasis(makeExercise({ name: "Bench Press" }))).toBe(false);
+  });
+});
 
 describe("formatReps", () => {
   it("formats integer reps", () => {

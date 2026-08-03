@@ -1,6 +1,7 @@
 import type {
   AbsoluteLoad,
   ActualSet,
+  Exercise,
   SetTarget,
   PercentageLoad,
   PlannedSet,
@@ -11,6 +12,17 @@ import type {
 } from "@/lib/plans/workout-plan";
 import { computePrescribedWeight } from "@/lib/maxes/compute-weight";
 import type { MaxValue } from "@/lib/maxes/compute-weight";
+
+export function getExerciseBasisLabel(exercise: Exercise): string | null {
+  const basisName = exercise.basisRaw?.trim();
+  if (!basisName) return null;
+  if (basisName.toLowerCase() === exercise.name.trim().toLowerCase()) return null;
+  return basisName;
+}
+
+export function hasCustomBasis(exercise: Exercise): boolean {
+  return getExerciseBasisLabel(exercise) !== null;
+}
 
 export function formatReps(reps: RepsValue): string {
   return String(reps);

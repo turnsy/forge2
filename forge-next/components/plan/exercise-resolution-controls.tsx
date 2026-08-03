@@ -3,13 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { ExerciseSearchField } from "@/components/plan/exercise-search-field";
+import { hasCustomBasis } from "@/lib/plans/display";
 import type { Exercise } from "@/lib/plans/workout-plan";
-
-function hasCustomBasis(exercise: Exercise): boolean {
-  const basisName = exercise.basisRaw?.trim();
-  if (!basisName) return false;
-  return basisName.toLowerCase() !== exercise.name.trim().toLowerCase();
-}
 
 export function ExerciseResolutionControls({
   exercise,
