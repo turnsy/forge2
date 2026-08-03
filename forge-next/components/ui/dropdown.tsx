@@ -13,15 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-
-const menuItemClass =
-  "flex w-full items-center rounded-lg px-3 py-1.5 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
-
-const defaultMenuItemClass =
-  `${menuItemClass} text-surface-muted hover:bg-glass hover:text-surface-foreground`;
-
-const destructiveMenuItemClass =
-  `${menuItemClass} !text-danger hover:bg-danger-muted/40 hover:!text-danger`;
+import { dropdownItemClass, dropdownMenuClass } from "@/lib/theme";
 
 const DropdownMenuContext = createContext<(() => void) | null>(null);
 
@@ -153,7 +145,7 @@ export function Dropdown({
           role="menu"
           aria-label={menuLabel}
           style={menuStyle}
-          className="flex min-w-[9rem] flex-col gap-0.5 overflow-hidden rounded-xl border border-glass-border bg-surface p-1 shadow-lg glass-surface"
+          className={dropdownMenuClass()}
         >
           {children}
         </div>,
@@ -193,7 +185,7 @@ export function DropdownItem({
     <button
       type="button"
       role="menuitem"
-      className={destructive ? destructiveMenuItemClass : defaultMenuItemClass}
+      className={dropdownItemClass(destructive)}
       onClick={(event) => {
         event.stopPropagation();
         onSelect();

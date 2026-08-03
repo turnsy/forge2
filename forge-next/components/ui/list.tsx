@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { listRowClass } from "@/lib/theme";
 import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const metaWidthClass = {
@@ -70,7 +71,7 @@ export function ListRow({
       style={{ animationDelay: `${staggerDelayMs(appearIndex)}ms` }}
     >
       <article
-        className={`grid grid-cols-1 items-center gap-4 rounded-card border border-glass-border bg-glass p-4 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md md:gap-6 ${
+        className={`grid grid-cols-1 items-center gap-4 ${listRowClass()} md:gap-6 ${
           actions ? "md:grid-cols-[minmax(0,1fr)_auto]" : ""
         }`}
       >

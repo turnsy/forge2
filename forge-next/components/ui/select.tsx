@@ -1,6 +1,7 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { selectClass } from "@/lib/theme";
+import { typography } from "@/lib/theme/tokens";
 
 function SelectChevron({ size }: { size: "sm" | "md" }) {
   return (
@@ -40,7 +41,7 @@ export function Select({
   if (label) {
     return (
       <label
-        className={`flex flex-col gap-1.5 text-sm font-medium${wrapperClassName ? ` ${wrapperClassName}` : ""}`}
+        className={`flex flex-col gap-1.5 ${typography.label}${wrapperClassName ? ` ${wrapperClassName}` : ""}`}
       >
         <span className={hideLabel ? "sr-only" : undefined}>{label}</span>
         {select}

@@ -54,12 +54,12 @@ describe("surface theme helpers", () => {
   });
 
   it("returns borderless back link styling", () => {
-    expect(pageBackLinkClass()).toContain("outline-none");
+    expect(pageBackLinkClass()).toContain("focus-visible:ring-2");
     expect(pageBackLinkClass()).not.toContain("border");
   });
 
   it("returns borderless plain icon button styling", () => {
-    expect(iconButtonVariantClass("plain", "sm")).toContain("outline-none");
+    expect(iconButtonVariantClass("plain", "sm")).toContain("focus-visible:ring-2");
     expect(iconButtonVariantClass("plain", "sm")).not.toContain(
       "glass-button-ghost",
     );
@@ -72,6 +72,10 @@ describe("surface theme helpers", () => {
 
   it("reserves left padding for the overlay back control", () => {
     expect(pageBackGutterReserveClass()).toBe("pl-12");
+  });
+
+  it("applies focus ring to primary buttons", () => {
+    expect(buttonVariantClass("primary", false)).toContain("focus-visible:ring-2");
   });
 
   it("returns shared control styling", () => {
@@ -114,7 +118,8 @@ describe("surface theme helpers", () => {
 
   it("returns pill styling", () => {
     expect(pillClass()).toContain("rounded-full");
-    expect(pillClass("danger")).toContain("bg-red-600");
+    expect(pillClass("danger")).toContain("bg-danger-muted");
+    expect(pillClass("danger")).toContain("text-danger");
   });
 
   it("returns pill button styling for selected and unselected states", () => {

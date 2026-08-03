@@ -6,7 +6,7 @@ describe("ChatBubble", () => {
   it("styles user and assistant bubbles without glass surfaces", () => {
     expect(chatBubbleClass("user")).toContain("bg-coach/14");
     expect(chatBubbleClass("user")).not.toContain("bg-glass");
-    expect(chatBubbleClass("assistant")).toContain("bg-[#131315]");
+    expect(chatBubbleClass("assistant")).toContain("bg-surface-elevated");
     expect(chatBubbleClass("assistant")).not.toContain("bg-glass");
   });
 

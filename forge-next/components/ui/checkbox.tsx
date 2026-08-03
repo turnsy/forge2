@@ -1,8 +1,5 @@
 import type { InputHTMLAttributes } from "react";
-import { radius } from "@/lib/theme/tokens";
-
-const boxClass =
-  "flex h-5 w-5 shrink-0 items-center justify-center border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition";
+import { glassControlBoxClass } from "@/lib/theme";
 
 export function Checkbox({
   checked,
@@ -25,7 +22,7 @@ export function Checkbox({
       />
       <span
         aria-hidden="true"
-        className={`${boxClass} ${radius.control} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary peer-checked:text-zinc-900`}
+        className={`${glassControlBoxClass()} peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary peer-checked:text-zinc-900`}
       >
         {checked ? (
           <svg

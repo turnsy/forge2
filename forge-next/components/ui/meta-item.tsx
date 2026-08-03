@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { metaLabelClass, metaValueClass } from "@/lib/theme";
 
 export function MetaItem({
   label,
@@ -9,12 +10,8 @@ export function MetaItem({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-medium uppercase tracking-wide text-surface-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 min-w-0 text-sm font-medium text-surface-foreground">
-        {value}
-      </dd>
+      <dt className={metaLabelClass()}>{label}</dt>
+      <dd className={metaValueClass()}>{value}</dd>
     </div>
   );
 }

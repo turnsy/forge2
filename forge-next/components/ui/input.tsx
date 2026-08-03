@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import { controlClass } from "@/lib/theme";
+import { typography } from "@/lib/theme/tokens";
 
 export const Input = forwardRef<
   HTMLInputElement,
@@ -12,7 +13,7 @@ export const Input = forwardRef<
 
   if (label) {
     return (
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className={`flex flex-col gap-1.5 ${typography.label}`}>
         <span>{label}</span>
         <input ref={ref} className={inputClassName} {...props} />
       </label>

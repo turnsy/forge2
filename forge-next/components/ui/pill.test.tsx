@@ -12,7 +12,8 @@ describe("Pill", () => {
 
     const link = screen.getByRole("link", { name: "Pending (2)" });
     expect(link).toHaveAttribute("href", "/coach/athletes/pending");
-    expect(link.className).toContain("bg-red-600");
+    expect(link.className).toContain("text-danger");
+    expect(link.className).toContain("bg-danger-muted");
   });
 
   it("renders a span when href is omitted", () => {
