@@ -8,6 +8,7 @@ import {
   Input,
   List,
   ListRow,
+  ListSectionSpinner,
   Message,
   MetaGroup,
   MetaItem,
@@ -79,8 +80,10 @@ export function CoachAthleteMaxesTab({
   const [maxes, setMaxes] = useState<AthleteMaxEntry[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadedListUrl, setLoadedListUrl] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const isLoading = loadedListUrl !== listUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -90,11 +93,13 @@ export function CoachAthleteMaxesTab({
         if (!cancelled) {
           setMaxes(entries);
           setError(null);
+          setLoadedListUrl(listUrl);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setError("Could not load maxes.");
+          setLoadedListUrl(listUrl);
         }
       });
 
@@ -147,7 +152,9 @@ export function CoachAthleteMaxesTab({
 
       {error ? <Message tone="error">{error}</Message> : null}
 
-      {filteredSummaries.length === 0 ? (
+      {isLoading ? (
+        <ListSectionSpinner />
+      ) : filteredSummaries.length === 0 ? (
         <EmptyState
           title={query.trim() ? "No matching maxes" : "No maxes yet"}
           description={

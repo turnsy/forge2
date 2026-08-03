@@ -4,6 +4,28 @@ import { describe, expect, it, vi } from "vitest";
 import { CoachAthleteMaxesTab } from "@/components/coach-athlete-maxes-tab";
 
 describe("CoachAthleteMaxesTab", () => {
+  it("shows a spinner while maxes are loading", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>(() => {
+            /* keep pending */
+          }),
+      ),
+    );
+
+    render(
+      <CoachAthleteMaxesTab
+        listUrl="/api/coach/athletes/athlete-1/maxes"
+        saveUrl="/api/coach/athletes/athlete-1/maxes"
+      />,
+    );
+
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByText("No maxes yet")).not.toBeInTheDocument();
+  });
+
   it("filters maxes and opens the add modal", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
