@@ -7,7 +7,8 @@ Schema validation (workout-plan.schema.json v3.1.0 — output must pass):
 - Exercise: non-empty id and name; at least 1 set
 - Exercise basis_raw: optional; use when % targets refer to a different exercise max (e.g. close-grip bench press at % of bench press max). Omit when the basis exercise is the same as the exercise name.
 - Set: id auto (e.g. w1d1-bs-1); planned.type "exact" from builders
-- Reps: integer preferred; "5+5" only for rep complexes — no units/sides in reps (use planned.notes)
+- Reps: integer preferred; "5+5" only for rep complexes — no units/sides in reps
+- Notes: omit by default; add only when the source clearly requires info reps/target cannot express (e.g. per-side, equipment variant)
 - Target: number = absolute load; string ending in % = percentage; unit required (kg, lb, m, yd)
 - Status: planned | completed | skipped (builders use planned)
 

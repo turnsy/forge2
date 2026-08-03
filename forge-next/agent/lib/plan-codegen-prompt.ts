@@ -18,6 +18,7 @@ export function buildPythonCodegenRules(): string {
     "- Avoid network access, subprocesses, and reading or writing any other files",
     "- Prefer the forge_plan API below over hand-built dicts",
     "- Be deterministic; use for-loops or data structures to build every week/day/exercise the user requested — do not stop after the first week or day",
+    "- Omit notes on weeks, days, blocks, exercises, and sets unless the source clearly requires them (e.g. per-side work, equipment variants)",
     "",
     "Full-program rule:",
     "- If the user's message specifies weeks, days per week, or a full block/mesocycle, generate all of it in this one script.",
