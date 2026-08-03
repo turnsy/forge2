@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import { messageToneClass } from "@/lib/theme";
+import {
+  errorStateClass,
+  statePanelDescriptionClass,
+  statePanelTitleClass,
+} from "@/lib/theme";
 
 export function ErrorState({
   title,
@@ -13,12 +17,11 @@ export function ErrorState({
   action?: ReactNode;
 }) {
   return (
-    <div
-      role="alert"
-      className={`flex flex-col items-center justify-center px-6 py-12 text-center ${messageToneClass("error")}`}
-    >
-      <h2 className="text-lg font-semibold">{title}</h2>
-      {description ? <p className="mt-2 max-w-md text-sm">{description}</p> : null}
+    <div role="alert" className={errorStateClass()}>
+      <h2 className={statePanelTitleClass()}>{title}</h2>
+      {description ? (
+        <p className={statePanelDescriptionClass()}>{description}</p>
+      ) : null}
       {details ? (
         <div className="mt-4 w-full max-w-2xl text-left text-sm">{details}</div>
       ) : null}

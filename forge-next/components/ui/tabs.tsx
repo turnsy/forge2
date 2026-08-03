@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { tabClass, tabListClass } from "@/lib/theme";
 
 type TabsContextValue = {
   activeTab: string;
@@ -43,10 +44,7 @@ export function Tabs({
 
 export function TabList({ children }: { children: ReactNode }) {
   return (
-    <div
-      role="tablist"
-      className="-mx-1 flex gap-1 overflow-x-auto border-b border-glass-border px-1 pb-px"
-    >
+    <div role="tablist" className={tabListClass()}>
       {children}
     </div>
   );
@@ -71,11 +69,7 @@ export function Tab({
       aria-controls={`${baseId}-panel-${id}`}
       tabIndex={selected ? 0 : -1}
       onClick={() => setActiveTab(id)}
-      className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition ${
-        selected
-          ? "border-surface-foreground text-surface-foreground"
-          : "border-transparent text-surface-muted hover:border-glass-border hover:text-surface-foreground"
-      }`}
+      className={tabClass(selected)}
     >
       {children}
     </button>

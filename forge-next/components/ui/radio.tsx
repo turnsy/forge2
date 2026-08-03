@@ -1,7 +1,5 @@
 import type { InputHTMLAttributes } from "react";
-
-const ringClass =
-  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-glass-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition";
+import { glassControlBoxClass } from "@/lib/theme";
 
 export function Radio({
   checked,
@@ -24,7 +22,7 @@ export function Radio({
       />
       <span
         aria-hidden="true"
-        className={`${ringClass} peer-focus-visible:ring-2 peer-focus-visible:ring-surface-foreground/30 peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-surface-foreground`}
+        className={`${glassControlBoxClass()} peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-surface-foreground`}
       >
         {checked ? (
           <span className="h-2.5 w-2.5 rounded-full bg-surface-foreground" />

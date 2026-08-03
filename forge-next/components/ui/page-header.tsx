@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import {
+  pageHeaderDescriptionClass,
+  pageHeaderTitleClass,
+} from "@/lib/theme";
 
 export function PageHeader({
   title,
@@ -15,9 +19,7 @@ export function PageHeader({
     <header className="space-y-1" data-page-header>
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-2xl font-semibold text-surface-foreground">
-            {title}
-          </h1>
+          <h1 className={pageHeaderTitleClass()}>{title}</h1>
           {titleAddon}
         </div>
         {actions ? (
@@ -25,7 +27,7 @@ export function PageHeader({
         ) : null}
       </div>
       {description ? (
-        <p className="text-sm text-surface-muted">{description}</p>
+        <p className={pageHeaderDescriptionClass()}>{description}</p>
       ) : null}
     </header>
   );
