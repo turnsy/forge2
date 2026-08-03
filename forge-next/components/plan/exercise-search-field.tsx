@@ -18,7 +18,7 @@ async function searchCandidates(query: string): Promise<ExerciseSearchCandidate[
   return (result.exercises ?? []).slice(0, 5);
 }
 
-export async function confirmExerciseCandidate(input: {
+async function confirmExerciseCandidate(input: {
   exerciseId?: string;
   name?: string;
 }): Promise<ExerciseSearchCandidate | null> {
@@ -37,13 +37,11 @@ export function ExerciseSearchField({
   value,
   disabled,
   onResolved,
-  autoFocus = false,
 }: {
   label: string;
   value: string;
   disabled: boolean;
   onResolved: (next: { name: string; exerciseId: string }) => void;
-  autoFocus?: boolean;
 }) {
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -51,8 +49,8 @@ export function ExerciseSearchField({
   const [typedQuery, setTypedQuery] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<ExerciseSearchCandidate[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const isFocusedRef = useRef(false);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -87,41 +85,40 @@ export function ExerciseSearchField({
     };
   }, [typedQuery]);
 
-  async function commit(nextValue: string, candidate?: ExerciseSearchCandidate) {
-    const trimmed = nextValue.trim();
-    if (!trimmed) return;
-
-    if (candidate) {
-      onResolved({ name: candidate.name, exerciseId: candidate.id });
-      setDraft(candidate.name);
-      return;
-    }
-
-    const matched = candidates.find(
-      (item) => item.name.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (matched) {
-      onResolved({ name: matched.name, exerciseId: matched.id });
-      setDraft(matched.name);
-      return;
-    }
-
-    const confirmed = await confirmExerciseCandidate({ name: trimmed });
-    if (confirmed) {
-      onResolved({ name: confirmed.name, exerciseId: confirmed.id });
-      setDraft(confirmed.name);
-    }
+  function closeDropdown() {
+    setIsOpen(false);
+    setTypedQuery(null);
+    setCandidates([]);
+    setIsSearching(false);
   }
 
   function handleSelect(candidate: ExerciseSearchCandidate) {
-    setTypedQuery(null);
-    setCandidates([]);
-    setIsOpen(false);
-    void commit(candidate.name, candidate);
+    closeDropdown();
+    setDraft(candidate.name);
+    onResolved({ name: candidate.name, exerciseId: candidate.id });
   }
 
-  const showResults =
-    isOpen && typedQuery !== null && typedQuery.trim().length > 0;
+  async function handleCreateCustom() {
+    const trimmed = draft.trim();
+    if (!trimmed || isCreating) return;
+
+    setIsCreating(true);
+    try {
+      const confirmed = await confirmExerciseCandidate({ name: trimmed });
+      if (confirmed) {
+        closeDropdown();
+        setDraft(confirmed.name);
+        onResolved({ name: confirmed.name, exerciseId: confirmed.id });
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  const trimmedQuery = typedQuery?.trim() ?? "";
+  const showResults = isOpen && trimmedQuery.length > 0;
+  const showCreateCustom =
+    showResults && !isSearching && candidates.length === 0 && trimmedQuery.length > 0;
 
   return (
     <div ref={rootRef} className="relative">
@@ -133,10 +130,8 @@ export function ExerciseSearchField({
         aria-controls={showResults ? listboxId : undefined}
         aria-autocomplete="list"
         role="combobox"
-        autoFocus={autoFocus}
         className="font-semibold"
         onFocus={() => {
-          isFocusedRef.current = true;
           setIsOpen(true);
         }}
         onBlur={(event) => {
@@ -145,11 +140,8 @@ export function ExerciseSearchField({
             return;
           }
 
-          isFocusedRef.current = false;
-          setIsOpen(false);
-          setTypedQuery(null);
-          setCandidates([]);
-          void commit(draft);
+          closeDropdown();
+          setDraft(value);
         }}
         onChange={(event) => {
           const nextValue = event.target.value;
@@ -162,18 +154,10 @@ export function ExerciseSearchField({
           }
         }}
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            setIsOpen(false);
-            setTypedQuery(null);
-            void commit(draft);
-          }
           if (event.key === "Escape") {
             event.preventDefault();
+            closeDropdown();
             setDraft(value);
-            setTypedQuery(null);
-            setCandidates([]);
-            setIsOpen(false);
           }
         }}
       />
@@ -186,9 +170,7 @@ export function ExerciseSearchField({
         >
           {isSearching ? (
             <p className="px-4 py-3 text-sm text-surface-muted">Searching…</p>
-          ) : candidates.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-surface-muted">No matches</p>
-          ) : (
+          ) : candidates.length > 0 ? (
             <ul className="py-1">
               {candidates.map((candidate) => (
                 <li key={candidate.id}>
@@ -205,7 +187,18 @@ export function ExerciseSearchField({
                 </li>
               ))}
             </ul>
-          )}
+          ) : null}
+          {showCreateCustom ? (
+            <button
+              type="button"
+              className="flex w-full border-t border-glass-border px-4 py-2.5 text-left text-sm font-medium text-surface-foreground transition hover:bg-glass disabled:opacity-60"
+              disabled={isCreating}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => void handleCreateCustom()}
+            >
+              {isCreating ? "Creating…" : `Create "${trimmedQuery}" as custom exercise`}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

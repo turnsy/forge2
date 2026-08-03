@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { isAutoResolvable } from "./search";
+import { isAutoResolvable, mergeExerciseSearchOptions } from "./search";
+
+describe("mergeExerciseSearchOptions", () => {
+  it("dedupes by id and preserves group order", () => {
+    expect(
+      mergeExerciseSearchOptions([
+        [{ id: "1", name: "Bench Press" }],
+        [
+          { id: "1", name: "Bench Press" },
+          { id: "2", name: "Incline Bench Press" },
+        ],
+      ]),
+    ).toEqual([
+      { id: "1", name: "Bench Press" },
+      { id: "2", name: "Incline Bench Press" },
+    ]);
+  });
+});
 
 describe("isAutoResolvable", () => {
   it("auto-picks when the top score is strong and clearly ahead", () => {

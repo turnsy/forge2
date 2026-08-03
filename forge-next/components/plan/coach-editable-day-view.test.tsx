@@ -232,15 +232,18 @@ describe("CoachEditableDayView", () => {
     );
 
     const nameInput = screen.getByDisplayValue("Bench Press");
-    fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
-    fireEvent.blur(nameInput);
+    fireEvent.focus(nameInput);
+    fireEvent.change(nameInput, { target: { value: "Incline" } });
+
+    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    fireEvent.click(option);
 
     await waitFor(() => {
       expect(onPlanChange).toHaveBeenCalled();
     });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench Press");
   });
 
   it("changing set reps calls onPlanChange", () => {
@@ -412,8 +415,11 @@ describe("CoachEditableDayView", () => {
     );
 
     const nameInput = screen.getByDisplayValue("Bench Press");
+    fireEvent.focus(nameInput);
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
-    fireEvent.blur(nameInput);
+
+    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    fireEvent.click(option);
 
     await waitFor(() => {
       expect(onPlanChange).toHaveBeenCalled();
@@ -432,9 +438,13 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const updatedInput = screen.getByDisplayValue("Incline Bench");
+    const updatedInput = screen.getByDisplayValue("Incline Bench Press");
+    fireEvent.focus(updatedInput);
     fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
-    fireEvent.blur(updatedInput);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: 'Create "Flat Bench" as custom exercise' }),
+    );
 
     await waitFor(() => {
       expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Flat Bench");
