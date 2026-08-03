@@ -51,21 +51,13 @@ describe("ExerciseSearchField", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("does not confirm on blur without selecting a result", async () => {
-    const onResolved = vi.fn();
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ exercises: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-
+  it("reverts draft on blur by default", () => {
     render(
       <ExerciseSearchField
         label="Exercise"
         value="Bench Press"
         disabled={false}
-        onResolved={onResolved}
+        onResolved={vi.fn()}
       />,
     );
 
@@ -74,11 +66,26 @@ describe("ExerciseSearchField", () => {
     fireEvent.change(input, { target: { value: "Incline Bench" } });
     fireEvent.blur(input);
 
-    expect(onResolved).not.toHaveBeenCalled();
-    expect(fetchSpy).not.toHaveBeenCalledWith(
-      "/api/coach/exercises/confirm",
-      expect.anything(),
+    expect(input).toHaveValue("Bench Press");
+  });
+
+  it("keeps draft text on blur when revertOnBlur is false", () => {
+    render(
+      <ExerciseSearchField
+        label="Exercise"
+        value=""
+        disabled={false}
+        revertOnBlur={false}
+        onResolved={vi.fn()}
+      />,
     );
+
+    const input = screen.getByLabelText("Exercise");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Incline Bench" } });
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue("Incline Bench");
   });
 
   it("creates a custom exercise only when the create action is clicked", async () => {

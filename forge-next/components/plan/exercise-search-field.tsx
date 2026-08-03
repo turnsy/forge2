@@ -36,11 +36,13 @@ export function ExerciseSearchField({
   label,
   value,
   disabled,
+  revertOnBlur = true,
   onResolved,
 }: {
   label: string;
   value: string;
   disabled: boolean;
+  revertOnBlur?: boolean;
   onResolved: (next: { name: string; exerciseId: string }) => void;
 }) {
   const listboxId = useId();
@@ -141,7 +143,9 @@ export function ExerciseSearchField({
           }
 
           closeDropdown();
-          setDraft(value);
+          if (revertOnBlur) {
+            setDraft(value);
+          }
         }}
         onChange={(event) => {
           const nextValue = event.target.value;
