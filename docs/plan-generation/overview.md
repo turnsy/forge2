@@ -81,6 +81,10 @@ flowchart LR
 | Persistence | **None** in v1 — preview in memory until explicit save (later) |
 | Future | Plan JSON traversal tools; DB `plan_versions`; intent router; saved-plan edits |
 
+Editing an athlete's already-**assigned** (in-progress) plan is a distinct
+artifact from the draft/template covered by this doc — see
+[phase-8-assigned-plan-edit-tools.md](./phases/phase-8-assigned-plan-edit-tools.md).
+
 ## Upload policy (defaults)
 
 | Rule | Value |

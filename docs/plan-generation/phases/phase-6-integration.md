@@ -59,10 +59,11 @@
 
 | Item | Owner |
 | --- | --- |
-| Persist draft / `plan_versions` | TBD |
-| Load plan by `planId` | TBD |
+| Persist draft / `plan_versions` | Done — see `set_current_artifact`, `list_plans`, `list_plan_versions` |
+| Load plan by `planId` | Done — see `set_current_artifact` |
 | Intent router | TBD |
 | **Plan** JSON traversal / glimpse tools (distinct from upload file list/read) | TBD |
 | Validation repair loop | TBD |
+| Agent tools to edit an athlete's in-progress **assigned** plan (distinct from the draft/template) | [Phase 8 design](./phase-8-assigned-plan-edit-tools.md) — TBD |
 | Athlete flows | TBD |
 | Plan-chat SSE `warnings` (forward upload truncation) | TBD |

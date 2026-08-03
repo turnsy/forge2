@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isPlanArtifactToolSuccess,
+  isSubmitAthletePlanCodeOutput,
   isSubmitPlanCodeOutput,
   isToolErrorsOutput,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
@@ -21,6 +22,23 @@ describe("forge-tool-outputs", () => {
       }),
     ).toBe(true);
     expect(isSubmitPlanCodeOutput({ ok: true })).toBe(false);
+  });
+
+  it("narrows submit_athlete_plan_code success and failure", () => {
+    expect(
+      isSubmitAthletePlanCodeOutput({
+        ok: true,
+        plan: { name: "Plan", schemaVersion: "3.0.0", weeks: [] },
+        summary: "Updated Jane's plan.",
+      }),
+    ).toBe(true);
+    expect(
+      isSubmitAthletePlanCodeOutput({
+        ok: false,
+        errors: [{ code: "SANDBOX_FAILED", message: "boom" }],
+      }),
+    ).toBe(true);
+    expect(isSubmitAthletePlanCodeOutput({ ok: true, plan: {} })).toBe(false);
   });
 
   it("narrows artifact success outputs", () => {

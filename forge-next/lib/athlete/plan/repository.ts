@@ -4,6 +4,7 @@ import {
   serviceError,
   type ServiceResult,
 } from "@/lib/errors/service-error";
+import { assertEditableChange } from "@/lib/plans/plan-editability";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import { getAthleteCoachLink } from "@/lib/links/repository";
@@ -134,6 +135,36 @@ export async function savePlanActuals(
   }
 
   const supabase = await resolveClient(client);
+  const { data, error: fetchError } = await supabase
+    .from("assigned_plans")
+    .select(ASSIGNED_PLAN_COLUMNS)
+    .eq("id", assignmentId)
+    .maybeSingle();
+
+  if (fetchError) {
+    return serviceError(ServiceErrorCode.DB_ERROR, fetchError.message);
+  }
+
+  if (!data) {
+    return serviceError(ServiceErrorCode.NOT_FOUND, "Assignment not found");
+  }
+
+  const existing = mapAssignedPlanRow(data as AssignedPlanRow);
+  if (!existing) {
+    return serviceError(
+      ServiceErrorCode.VALIDATION_ERROR,
+      "Invalid existing plan data",
+    );
+  }
+
+  const editabilityErrors = assertEditableChange(existing.plan, validation.plan);
+  if (editabilityErrors.length > 0) {
+    return serviceError(
+      ServiceErrorCode.VALIDATION_ERROR,
+      editabilityErrors.map((error) => error.message).join(" "),
+    );
+  }
+
   const { error } = await supabase
     .from("assigned_plans")
     .update({ plan_data: validation.plan as unknown as Record<string, unknown> })

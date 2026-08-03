@@ -1,17 +1,8 @@
 import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
 import { z } from "zod";
-import { loadWorkoutPlan } from "@/lib/plans/validate";
-import {
-  coachArtifact,
-  setCoachArtifact,
-} from "../lib/coach-artifact-state";
-import {
-  CURRENT_PLAN_PATH,
-  EMPTY_PLAN_SEED,
-  MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN,
-  OUTPUT_PLAN_PATH,
-  RUN_SCRIPT_PATH,
-} from "../lib/config";
+import { coachArtifact, setCoachArtifact } from "../lib/coach-artifact-state";
+import { MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN } from "../lib/config";
+import { runPlanCodeInSandbox } from "../lib/run-plan-code";
 import { reserveSubmitPlanCodeAttempt } from "../lib/submit-plan-code-attempts";
 import type { SubmitPlanCodeOutput } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 
@@ -43,83 +34,21 @@ export default defineTool({
     }
 
     const sandbox = await ctx.getSandbox();
-    const currentPlan = coachArtifact.get().plan;
-
-    await sandbox.writeTextFile({
-      path: CURRENT_PLAN_PATH,
-      content: JSON.stringify(currentPlan ?? EMPTY_PLAN_SEED),
+    const result = await runPlanCodeInSandbox({
+      sandbox,
+      seed: coachArtifact.get().plan,
+      python,
     });
-    await sandbox.writeTextFile({ path: RUN_SCRIPT_PATH, content: python });
-    await sandbox.run({ command: "mkdir -p output" });
 
-    const result = await sandbox.run({ command: "python3 run.py" });
-    if (result.exitCode !== 0) {
-      const detail = [result.stderr?.trim(), result.stdout?.trim()]
-        .filter(Boolean)
-        .join("\n");
-      return {
-        ok: false as const,
-        errors: [
-          {
-            code: "SANDBOX_FAILED",
-            message: detail || "Sandbox execution failed.",
-          },
-        ],
-      };
+    if (!result.ok) {
+      return result;
     }
 
-    let rawOutput: string | null;
-    try {
-      rawOutput = await sandbox.readTextFile({ path: OUTPUT_PLAN_PATH });
-    } catch {
-      return {
-        ok: false as const,
-        errors: [
-          {
-            code: "MISSING_OUTPUT",
-            message: "Sandbox did not produce output/plan.json.",
-          },
-        ],
-      };
-    }
-
-    if (!rawOutput) {
-      return {
-        ok: false as const,
-        errors: [
-          {
-            code: "MISSING_OUTPUT",
-            message: "Sandbox did not produce output/plan.json.",
-          },
-        ],
-      };
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawOutput);
-    } catch {
-      return {
-        ok: false as const,
-        errors: [
-          {
-            code: "INVALID_JSON",
-            message: "output/plan.json was not valid JSON.",
-          },
-        ],
-      };
-    }
-
-    const validated = loadWorkoutPlan(parsed);
-    if (!validated.ok) {
-      return { ok: false as const, errors: validated.errors };
-    }
-
-    setCoachArtifact({ plan: validated.plan });
+    setCoachArtifact({ plan: result.plan });
     return {
       ok: true as const,
-      plan: validated.plan,
-      title: validated.plan.name,
+      plan: result.plan,
+      title: result.plan.name,
     };
   },
   toModelOutput(output) {
