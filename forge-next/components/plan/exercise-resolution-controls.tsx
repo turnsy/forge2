@@ -48,10 +48,6 @@ function ExerciseCombobox({
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  useEffect(() => {
     let cancelled = false;
     void searchCandidates(draft).then((results) => {
       if (!cancelled) setCandidates(results);
@@ -127,6 +123,7 @@ export function ExerciseResolutionControls({
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       <ExerciseCombobox
+        key={`exercise:${exercise.name}:${exercise.resolvedExerciseId ?? ""}`}
         label="Exercise"
         value={exercise.name}
         disabled={disabled}
@@ -139,6 +136,7 @@ export function ExerciseResolutionControls({
         }
       />
       <ExerciseCombobox
+        key={`basis:${basisValue}:${exercise.resolvedBasisExerciseId ?? ""}`}
         label="Percentage basis exercise"
         value={basisValue}
         disabled={disabled}

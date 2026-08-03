@@ -34,6 +34,9 @@ export function MaxesEditor({
   const [unit, setUnit] = useState("kg");
   const [error, setError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Array<{ id: string; name: string }>>([]);
+  const trimmedExerciseQuery = exerciseQuery.trim();
+  const shouldSearchExercises = enableExerciseSearch && trimmedExerciseQuery.length > 0;
+  const visibleCandidates = shouldSearchExercises ? candidates : [];
 
   useEffect(() => {
     void fetch(listUrl)
@@ -43,19 +46,28 @@ export function MaxesEditor({
   }, [listUrl]);
 
   useEffect(() => {
-    if (!enableExerciseSearch || !exerciseQuery.trim()) {
-      setCandidates([]);
-      return;
-    }
+    if (!shouldSearchExercises) return;
+
+    let cancelled = false;
     void fetch("/api/coach/exercises/search", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query: exerciseQuery }),
+      body: JSON.stringify({ query: trimmedExerciseQuery }),
     })
       .then((response) => (response.ok ? response.json() : { exercises: [] }))
-      .then((result) => setCandidates((result.exercises ?? []).slice(0, 5)))
-      .catch(() => setCandidates([]));
-  }, [enableExerciseSearch, exerciseQuery]);
+      .then((result) => {
+        if (!cancelled) {
+          setCandidates((result.exercises ?? []).slice(0, 5));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCandidates([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldSearchExercises, trimmedExerciseQuery]);
 
   async function save() {
     setError(null);
@@ -95,7 +107,7 @@ export function MaxesEditor({
           onChange={(event) => {
             setExerciseQuery(event.target.value);
             if (enableExerciseSearch) {
-              const match = candidates.find(
+              const match = visibleCandidates.find(
                 (candidate) =>
                   candidate.name.toLowerCase() === event.target.value.trim().toLowerCase(),
               );
@@ -107,7 +119,7 @@ export function MaxesEditor({
         />
         {enableExerciseSearch ? (
           <datalist id="max-exercise-options">
-            {candidates.map((candidate) => (
+            {visibleCandidates.map((candidate) => (
               <option key={candidate.id} value={candidate.name} />
             ))}
           </datalist>
