@@ -15,22 +15,11 @@ export function ExerciseResolutionControls({
   disabled: boolean;
   onChange: (next: Exercise) => void;
 }) {
-  const customBasis = hasCustomBasis(exercise);
-  const [manualBasisOpen, setManualBasisOpen] = useState(false);
-  const basisOpen = customBasis || manualBasisOpen;
+  const hasBasis = hasCustomBasis(exercise);
+  const [basisFieldOpen, setBasisFieldOpen] = useState(hasBasis);
 
   function toggleBasis() {
-    if (basisOpen) {
-      onChange({
-        ...exercise,
-        basisRaw: undefined,
-        resolvedBasisExerciseId: undefined,
-      });
-      setManualBasisOpen(false);
-      return;
-    }
-
-    setManualBasisOpen(true);
+    setBasisFieldOpen((open) => !open);
   }
 
   return (
@@ -53,19 +42,19 @@ export function ExerciseResolutionControls({
         </div>
         <Button
           type="button"
-          variant={basisOpen ? "secondary" : "ghost"}
+          variant={hasBasis || basisFieldOpen ? "secondary" : "ghost"}
           size="sm"
           fullWidth={false}
           disabled={disabled}
           aria-label="Toggle percentage basis exercise"
-          aria-pressed={basisOpen}
+          aria-pressed={basisFieldOpen}
           className="mt-1 shrink-0"
           onClick={toggleBasis}
         >
           Basis
         </Button>
       </div>
-      {basisOpen ? (
+      {basisFieldOpen ? (
         <ExerciseSearchField
           key={`basis:${exercise.basisRaw ?? ""}:${exercise.resolvedBasisExerciseId ?? ""}`}
           label="Percentage basis exercise"
@@ -80,7 +69,7 @@ export function ExerciseResolutionControls({
               resolvedBasisExerciseId: sameAsExercise ? undefined : exerciseId,
             });
             if (sameAsExercise) {
-              setManualBasisOpen(false);
+              setBasisFieldOpen(false);
             }
           }}
         />
