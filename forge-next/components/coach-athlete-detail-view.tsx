@@ -23,7 +23,7 @@ import {
   TabPanel,
   Tabs,
 } from "@/components/ui";
-import { MaxesEditor } from "@/components/maxes-editor";
+import { CoachAthleteMaxesTab } from "@/components/coach-athlete-maxes-tab";
 import { formatDate } from "@/lib/format/date";
 import type { CoachAthleteDetailTab } from "@/lib/coach/athlete-detail-tabs";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
@@ -296,12 +296,7 @@ export function CoachAthleteDetailView({
         </TabPanel>
 
         <TabPanel id="maxes">
-          <MaxesEditor
-            listUrl={maxesListUrl}
-            saveUrl={maxesListUrl}
-            enableExerciseSearch
-            variant="embedded"
-          />
+          <CoachAthleteMaxesTab listUrl={maxesListUrl} saveUrl={maxesListUrl} />
         </TabPanel>
 
         <TabPanel id="info">

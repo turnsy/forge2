@@ -191,7 +191,7 @@ describe("CoachAthleteDetailView", () => {
     expect(screen.queryByRole("link", { name: "Manage maxes" })).not.toBeInTheDocument();
   });
 
-  it("shows maxes table on the maxes tab", async () => {
+  it("shows maxes list on the maxes tab and opens history", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
@@ -222,9 +222,14 @@ describe("CoachAthleteDetailView", () => {
 
     await user.click(screen.getByRole("tab", { name: "Maxes" }));
 
-    expect(await screen.findByRole("columnheader", { name: "Exercise" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Search maxes")).toBeInTheDocument();
     expect(screen.getByText("Bench Press")).toBeInTheDocument();
     expect(screen.getByText("225 lb")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add max" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Bench Press" }));
+
+    expect(screen.getByRole("button", { name: "Back to maxes" })).toBeInTheDocument();
+    expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
 });
