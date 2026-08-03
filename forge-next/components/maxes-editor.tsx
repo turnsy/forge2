@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ExerciseSearchField } from "@/components/plan/exercise-search-field";
 import { Button, Card, Input, Message } from "@/components/ui";
 import { formatDate } from "@/lib/format/date";
 
@@ -32,15 +33,12 @@ export function MaxesEditor({
   variant = "page",
 }: MaxesEditorProps) {
   const [maxes, setMaxes] = useState<MaxRow[]>([]);
-  const [exerciseQuery, setExerciseQuery] = useState("");
+  const [exerciseFieldKey, setExerciseFieldKey] = useState(0);
   const [exerciseId, setExerciseId] = useState("");
+  const [exerciseName, setExerciseName] = useState("");
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("kg");
   const [error, setError] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<Array<{ id: string; name: string }>>([]);
-  const trimmedExerciseQuery = exerciseQuery.trim();
-  const shouldSearchExercises = enableExerciseSearch && trimmedExerciseQuery.length > 0;
-  const visibleCandidates = shouldSearchExercises ? candidates : [];
 
   useEffect(() => {
     void fetch(listUrl)
@@ -48,30 +46,6 @@ export function MaxesEditor({
       .then((result) => setMaxes(result.maxes ?? []))
       .catch(() => setError("Could not load maxes."));
   }, [listUrl]);
-
-  useEffect(() => {
-    if (!shouldSearchExercises) return;
-
-    let cancelled = false;
-    void fetch("/api/coach/exercises/search", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query: trimmedExerciseQuery }),
-    })
-      .then((response) => (response.ok ? response.json() : { exercises: [] }))
-      .then((result) => {
-        if (!cancelled) {
-          setCandidates((result.exercises ?? []).slice(0, 5));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setCandidates([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [shouldSearchExercises, trimmedExerciseQuery]);
 
   async function save() {
     setError(null);
@@ -89,46 +63,42 @@ export function MaxesEditor({
       return;
     }
     const result = (await response.json()) as { max: MaxRow };
-    const matchedName = candidates.find((candidate) => candidate.id === exerciseId)?.name;
     setMaxes((current) => [
       {
         ...result.max,
-        exercise_name: matchedName ?? result.max.exercise_name ?? exerciseQuery.trim(),
+        exercise_name: exerciseName || result.max.exercise_name,
       },
       ...current,
     ]);
-    setExerciseQuery("");
+    setExerciseFieldKey((current) => current + 1);
     setExerciseId("");
+    setExerciseName("");
     setValue("");
   }
 
+  const exerciseInput = enableExerciseSearch ? (
+    <ExerciseSearchField
+      key={exerciseFieldKey}
+      label="Exercise"
+      value=""
+      disabled={false}
+      onResolved={({ name, exerciseId: nextExerciseId }) => {
+        setExerciseName(name);
+        setExerciseId(nextExerciseId);
+      }}
+    />
+  ) : (
+    <Input
+      aria-label="Exercise"
+      placeholder="Exercise id"
+      value={exerciseId}
+      onChange={(event) => setExerciseId(event.target.value.trim())}
+    />
+  );
+
   const addForm = (
     <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_6rem_auto]">
-      <Input
-        aria-label="Exercise"
-        placeholder={enableExerciseSearch ? "Search exercise" : "Exercise id"}
-        value={exerciseQuery}
-        list={enableExerciseSearch ? "max-exercise-options" : undefined}
-        onChange={(event) => {
-          setExerciseQuery(event.target.value);
-          if (enableExerciseSearch) {
-            const match = visibleCandidates.find(
-              (candidate) =>
-                candidate.name.toLowerCase() === event.target.value.trim().toLowerCase(),
-            );
-            setExerciseId(match?.id ?? "");
-          } else {
-            setExerciseId(event.target.value.trim());
-          }
-        }}
-      />
-      {enableExerciseSearch ? (
-        <datalist id="max-exercise-options">
-          {visibleCandidates.map((candidate) => (
-            <option key={candidate.id} value={candidate.name} />
-          ))}
-        </datalist>
-      ) : null}
+      {exerciseInput}
       <Input
         aria-label="Max value"
         type="number"
