@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
-import { createClient } from "@/utils/supabase/data-client";
-import { searchExercises } from "@/lib/exercises/search";
+import {
+  mergeExerciseSearchOptions,
+  searchExercises,
+  searchExercisesByText,
+} from "@/lib/exercises/search";
 
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
@@ -11,23 +14,19 @@ export async function POST(request: Request) {
   const query = typeof body.query === "string" ? body.query.trim() : "";
   if (!query) return NextResponse.json({ exercises: [] });
 
+  const textResults = await searchExercisesByText(query, auth.user.id, 5);
+
   try {
-    const exercises = await searchExercises(query, auth.user.id, 5);
+    const semanticResults = await searchExercises(query, auth.user.id, 5);
+    const exercises = mergeExerciseSearchOptions(
+      [
+        textResults,
+        semanticResults.map((exercise) => ({ id: exercise.id, name: exercise.name })),
+      ],
+      5,
+    );
     return NextResponse.json({ exercises });
   } catch {
-    // Keep typeahead useful when embeddings are not configured locally.
+    return NextResponse.json({ exercises: textResults });
   }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("id,name,normalized_name,owner_coach_id")
-    .or(`owner_coach_id.eq.${auth.user.id},owner_coach_id.is.null`)
-    .ilike("name", `%${query.replace(/[%_]/g, "")}%`)
-    .limit(5);
-
-  if (error) {
-    return NextResponse.json({ error: "Exercise search failed" }, { status: 500 });
-  }
-  return NextResponse.json({ exercises: data ?? [] });
 }

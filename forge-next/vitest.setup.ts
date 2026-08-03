@@ -11,8 +11,18 @@ function mockCoachExerciseFetch(
   const url = typeof input === "string" ? input : input.toString();
 
   if (url.includes("/api/coach/exercises/search")) {
+    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    const query = typeof body.query === "string" ? body.query.toLowerCase() : "";
+    const exercises: Array<{ id: string; name: string }> = [];
+
+    if (query.includes("incline")) {
+      exercises.push({ id: "incline-bench-id", name: "Incline Bench Press" });
+    } else if (query === "bench press" || query === "bench") {
+      exercises.push({ id: "bench-press-id", name: "Bench Press" });
+    }
+
     return Promise.resolve(
-      new Response(JSON.stringify({ exercises: [] }), {
+      new Response(JSON.stringify({ exercises }), {
         status: 200,
         headers: { "content-type": "application/json" },
       }),
