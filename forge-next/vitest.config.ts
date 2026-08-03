@@ -15,6 +15,7 @@ export default defineConfig({
     projects: [{
       extends: true,
       test: {
+        name: "unit",
         environment: "node",
         exclude: ["**/node_modules/**", "**/.eve/**"],
         environmentMatchGlobs: [["components/**/*.test.tsx", "jsdom"], ["app/**/*.test.tsx", "jsdom"], ["lib/chat/**/*.test.tsx", "jsdom"], ["lib/plans/**/*.test.tsx", "jsdom"], ["lib/lists/**/*.test.tsx", "jsdom"]],

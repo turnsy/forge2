@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Button } from "./button";
 import { MetaGroup } from "./meta-group";
 import { MetaItem } from "./meta-item";
 import { wideDecorator } from "../../.storybook/decorators";
