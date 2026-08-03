@@ -149,9 +149,9 @@ describe("CoachEditableDayView", () => {
     );
 
     expect(screen.getAllByLabelText("Exercise")).toHaveLength(2);
-    expect(screen.getAllByLabelText("Percentage basis exercise")).toHaveLength(2);
-    expect(screen.getAllByDisplayValue("Bench Press")).toHaveLength(2);
-    expect(screen.getAllByDisplayValue("Pull Ups")).toHaveLength(2);
+    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
   });
 
   it("shows day index as placeholder and allows clearing the day name", () => {
@@ -391,7 +391,7 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("");
     expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].id).toBeTruthy();
   });
 
@@ -510,7 +510,7 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks[0].exercises).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("");
   });
 
   it("allows entering a custom load unit", () => {

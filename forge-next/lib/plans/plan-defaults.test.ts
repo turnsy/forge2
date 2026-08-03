@@ -1,22 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
-import { loadWorkoutPlan } from "@/lib/plans/validate";
 
 describe("createEmptyWorkoutPlan", () => {
-  it("returns a schema-valid plan with one default day", () => {
+  it("returns a draft plan with one unnamed default exercise", () => {
     const plan = createEmptyWorkoutPlan();
 
-    const result = loadWorkoutPlan(plan);
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.plan.name).toBe("New Plan");
-    expect(result.plan.weeks).toHaveLength(1);
-    expect(result.plan.weeks[0]?.days).toHaveLength(1);
-    expect(result.plan.weeks[0]?.days[0]?.blocks).toHaveLength(1);
-    expect(result.plan.weeks[0]?.days[0]?.blocks[0]?.exercises).toHaveLength(1);
+    expect(plan.name).toBe("New Plan");
+    expect(plan.weeks).toHaveLength(1);
+    expect(plan.weeks[0]?.days).toHaveLength(1);
+    expect(plan.weeks[0]?.days[0]?.blocks).toHaveLength(1);
+    expect(plan.weeks[0]?.days[0]?.blocks[0]?.exercises).toHaveLength(1);
+    expect(plan.weeks[0]?.days[0]?.blocks[0]?.exercises[0]?.name).toBe("");
   });
 
   it("accepts a custom plan name", () => {
