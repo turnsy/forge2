@@ -9,6 +9,7 @@ import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { PlanViewerMeta } from "@/components/plan/plan-viewer-meta";
 import {
   Button,
+  ButtonLink,
   EmptyState,
   List,
   ListRow,
@@ -159,17 +160,27 @@ function CoachAssignedPlanPanel({
                   </Button>
                 </>
               ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  fullWidth={false}
-                  className="w-full md:w-auto"
-                  icon={<PencilIcon />}
-                  onClick={handleEnterEditMode}
-                >
-                  Edit plan
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    fullWidth={false}
+                    className="w-full md:w-auto"
+                    icon={<PencilIcon />}
+                    onClick={handleEnterEditMode}
+                  >
+                    Edit plan
+                  </Button>
+                  <ButtonLink
+                    href={`/coach?assignmentId=${assignedPlan.id}`}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full md:w-auto"
+                  >
+                    Edit with assistant
+                  </ButtonLink>
+                </>
               )}
             </div>
           ) : null}

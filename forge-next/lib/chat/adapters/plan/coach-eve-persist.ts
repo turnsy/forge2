@@ -1,5 +1,6 @@
 import { isCurrentTurnBoundaryEvent } from "eve/client";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { CoachAssignmentContext } from "@/lib/chat/assignment-context";
 import {
   buildCoachWorkspaceSnapshot,
   toForgeEvePointer,
@@ -14,6 +15,7 @@ export type CoachEvePersistSnapshot = {
   session: SessionState;
   events: readonly HandleMessageStreamEvent[];
   lastTurn?: CoachTurnMarker | null;
+  assignment?: CoachAssignmentContext | null;
 };
 
 export type CoachEvePersister = {
@@ -44,6 +46,7 @@ function shouldPersistImmediately(
 export function createCoachEvePersister(options: {
   forgeSessionId: string;
   getTitle: () => string | null;
+  getAssignment?: () => CoachAssignmentContext | null;
   saveSnapshot: (snapshot: CoachEvePersistSnapshot) => Promise<boolean>;
 }): CoachEvePersister {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -96,6 +99,7 @@ export function createCoachEvePersister(options: {
           session,
           events,
           lastTurn,
+          assignment: options.getAssignment?.() ?? null,
         }),
       () => false,
     );
@@ -169,5 +173,6 @@ export function buildPersistedCoachSnapshot(
     eve: pointer,
     eveEvents: input.events,
     lastTurn: input.lastTurn ?? null,
+    assignment: input.assignment ?? null,
   });
 }

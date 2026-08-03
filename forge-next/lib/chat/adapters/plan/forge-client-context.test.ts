@@ -14,6 +14,11 @@ describe("buildForgeClientContext", () => {
           planId: "plan-1",
           title: "Draft",
         },
+        assignment: {
+          assignmentId: "assignment-1",
+          athleteId: "athlete-1",
+          athleteName: "Jane",
+        },
       }),
     ).toEqual({
       forge: "forge",
@@ -22,6 +27,11 @@ describe("buildForgeClientContext", () => {
         plan,
         planId: "plan-1",
         title: "Draft",
+      },
+      assignment: {
+        assignmentId: "assignment-1",
+        athleteId: "athlete-1",
+        athleteName: "Jane",
       },
     });
   });

@@ -3,7 +3,7 @@ import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator
 import type { ArtifactPreviewModel } from "@/lib/chat/adapters/plan/artifact-preview";
 import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function ArtifactPreview({
   artifact,
@@ -13,6 +13,7 @@ export function ArtifactPreview({
   disabled,
   onPlanChange,
   embeddedScroll = false,
+  canEditDay,
 }: {
   artifact: ArtifactPreviewModel;
   runStatus: ChatStatus | null;
@@ -21,6 +22,7 @@ export function ArtifactPreview({
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
   embeddedScroll?: boolean;
+  canEditDay?: (day: Day) => boolean;
 }) {
   const turnInProgress = isTurnInProgress(phase, runStatus);
   const activityLabel = turnInProgress
@@ -53,6 +55,7 @@ export function ArtifactPreview({
           disabled={disabled}
           onPlanChange={onPlanChange}
           embeddedScroll={embeddedScroll}
+          canEditDay={canEditDay}
         />
       );
     default: {

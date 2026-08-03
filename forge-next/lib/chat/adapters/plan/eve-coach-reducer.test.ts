@@ -194,4 +194,47 @@ describe("createEveCoachReducer", () => {
     });
     expect(state.artifactTitle).toBe("Bench Plan");
   });
+
+  it("updates preview from submit_athlete_plan_code success", () => {
+    let state = {
+      ...reducer.initial(),
+      assignment: {
+        assignmentId: "assignment-1",
+        athleteId: "athlete-1",
+        athleteName: "Jane",
+      },
+      errors: [{ message: "Stale error" }],
+      phase: "streaming" as const,
+    };
+
+    state = reducer.reduce(state, {
+      type: "action.result",
+      data: {
+        turnId: "turn-1",
+        stepIndex: 1,
+        sequence: 3,
+        result: {
+          kind: "tool-result",
+          toolName: "submit_athlete_plan_code",
+          output: {
+            ok: true,
+            plan: { name: "Updated Plan", version: "3.0.0", weeks: [] },
+            summary: "Updated Jane's plan.",
+          },
+        },
+      },
+    });
+
+    expect(state.errors).toEqual([]);
+    expect(state.currentArtifact).toEqual({
+      name: "Updated Plan",
+      version: "3.0.0",
+      weeks: [],
+    });
+    expect(state.assignment).toEqual({
+      assignmentId: "assignment-1",
+      athleteId: "athlete-1",
+      athleteName: "Jane",
+    });
+  });
 });

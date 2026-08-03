@@ -65,6 +65,7 @@ describe("forge client context sync", () => {
       plan,
       planId: "plan-1",
       title: "Draft",
+      assignment: null,
     });
   });
 });

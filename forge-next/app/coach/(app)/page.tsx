@@ -3,9 +3,11 @@ import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { ErrorState, PageContent, PageHeader, PageShell } from "@/components/ui";
 import { firstName } from "@/lib/auth/first-name";
 import { requireRole } from "@/lib/auth/session";
+import { getAssignedPlanById } from "@/lib/athlete/plan/repository";
 import { loadChatSession } from "@/lib/chat/session-storage";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 import { getCoachPlanById } from "@/lib/plans/repository";
+import { getCoachAthleteRelationship } from "@/lib/links/repository";
 import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
 
 function PlanValidationErrors({
@@ -28,10 +30,15 @@ function PlanValidationErrors({
 export default async function CoachHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ planId?: string; sessionId?: string; new?: string }>;
+  searchParams: Promise<{
+    planId?: string;
+    sessionId?: string;
+    assignmentId?: string;
+    new?: string;
+  }>;
 }) {
   const user = await requireRole("coach");
-  const { planId, sessionId, new: newPlan } = await searchParams;
+  const { planId, sessionId, assignmentId, new: newPlan } = await searchParams;
   const promptEnabled = isPromptBetaEnabled(user.email);
 
   if (sessionId) {
@@ -53,6 +60,49 @@ export default async function CoachHomePage({
         </PageContent>
       );
     }
+  }
+
+  if (assignmentId) {
+    const assignmentResult = await getAssignedPlanById(assignmentId);
+
+    if (!assignmentResult.ok) {
+      throw new Error(assignmentResult.message);
+    }
+
+    const assignment = assignmentResult.plan;
+    if (
+      !assignment ||
+      assignment.coachId !== user.id ||
+      assignment.status !== "active"
+    ) {
+      notFound();
+    }
+
+    const relationship = await getCoachAthleteRelationship(assignment.athleteId);
+    if (!relationship || relationship.status !== "active") {
+      notFound();
+    }
+
+    return (
+      <PageContent
+        scrollable={false}
+        className="flex h-full min-h-0 flex-1 flex-col overflow-hidden max-w-none !gap-0 !p-0"
+      >
+        <CoachWorkspace
+          key={`assignment-${assignment.id}`}
+          firstName={firstName(user.fullName)}
+          role="coach"
+          initialPlan={assignment.plan}
+          initialAssignment={{
+            assignmentId: assignment.id,
+            athleteId: assignment.athleteId,
+            athleteName: relationship.athleteName,
+          }}
+          stripAssignmentIdOnClear
+          promptEnabled={promptEnabled}
+        />
+      </PageContent>
+    );
   }
 
   if (planId) {

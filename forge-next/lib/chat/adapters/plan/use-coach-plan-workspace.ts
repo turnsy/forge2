@@ -27,6 +27,8 @@ import {
   type ForgeEvePostResponse,
 } from "@/lib/chat/adapters/plan/forge-eve-client";
 import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
+import type { CoachAssignmentContext } from "@/lib/chat/assignment-context";
+import { refreshAssignedPlanAction } from "@/lib/coach/assigned-plan/actions";
 import {
   resolveEffectiveClientArtifact,
   resolveOutboundClientArtifact,
@@ -114,6 +116,7 @@ function resolveInitialEveSession(
 export function useCoachPlanWorkspace(options?: {
   initialPlan?: WorkoutPlan;
   planId?: string;
+  initialAssignment?: CoachAssignmentContext;
   initialSession?: { id: string; snapshot: CoachWorkspaceSnapshot };
   syncedEvents?: readonly HandleMessageStreamEvent[];
   /** True while the catch-up layer is still tailing a live turn. */
@@ -130,6 +133,7 @@ export function useCoachPlanWorkspace(options?: {
 }) {
   const initialPlan = options?.initialPlan;
   const entryPlanId = options?.planId;
+  const initialAssignment = options?.initialAssignment;
   const initialSession = options?.initialSession;
   const syncedEvents = options?.syncedEvents ?? EMPTY_SYNCED_EVENTS;
   const resuming = options?.resuming ?? false;
@@ -163,6 +167,10 @@ export function useCoachPlanWorkspace(options?: {
   const [localArtifactTitle, setLocalArtifactTitle] = useState(
     initialPlan?.name ?? "",
   );
+  const [localAssignment, setLocalAssignment] =
+    useState<CoachAssignmentContext | null>(
+      initialAssignment ?? normalizedSnapshot?.assignment ?? null,
+    );
 
   const reducerSeedMessages = useMemo(() => [], []);
 
@@ -173,8 +181,13 @@ export function useCoachPlanWorkspace(options?: {
         currentArtifact: null,
         planId: null,
         artifactTitle: "",
+        assignment: initialAssignment ?? normalizedSnapshot?.assignment ?? null,
       }),
-    [reducerSeedMessages],
+    [
+      initialAssignment,
+      normalizedSnapshot?.assignment,
+      reducerSeedMessages,
+    ],
   );
 
   const sessionTitleRef = useRef<string | null>(
@@ -220,12 +233,14 @@ export function useCoachPlanWorkspace(options?: {
   const localArtifactRef = useRef(localArtifact);
   const localPlanIdRef = useRef(localPlanId);
   const localArtifactTitleRef = useRef(localArtifactTitle);
+  const localAssignmentRef = useRef(localAssignment);
 
   useEffect(() => {
     localArtifactRef.current = localArtifact;
     localPlanIdRef.current = localPlanId;
     localArtifactTitleRef.current = localArtifactTitle;
-  }, [localArtifact, localArtifactTitle, localPlanId]);
+    localAssignmentRef.current = localAssignment;
+  }, [localArtifact, localArtifactTitle, localPlanId, localAssignment]);
 
   const ensureSessionTitle = useCallback(
     async (title: string | null, displayPrompt: string) => {
@@ -258,6 +273,7 @@ export function useCoachPlanWorkspace(options?: {
       createCoachEvePersister({
         forgeSessionId,
         getTitle: () => sessionTitleRef.current,
+        getAssignment: () => localAssignmentRef.current,
         saveSnapshot: async (input) => {
           const result = await saveSessionSnapshot(
             forgeSessionId,
@@ -421,7 +437,14 @@ export function useCoachPlanWorkspace(options?: {
                 planId: clientArtifact.planId,
                 title: clientArtifact.title,
               }
-            : null,
+            : localArtifactRef.current
+              ? {
+                  plan: localArtifactRef.current,
+                  planId: localPlanIdRef.current,
+                  title: localArtifactTitleRef.current || localArtifactRef.current.name,
+                }
+              : null,
+          assignment: localAssignmentRef.current,
         }),
       };
     },
@@ -452,6 +475,19 @@ export function useCoachPlanWorkspace(options?: {
       );
       if (saved) {
         maybeRedirectToSessionUrlRef.current();
+      }
+
+      const assignment = localAssignmentRef.current;
+      if (assignment) {
+        const refreshed = await refreshAssignedPlanAction(
+          assignment.assignmentId,
+        );
+        if (refreshed.ok) {
+          startTransition(() => {
+            setLocalArtifact(refreshed.plan);
+            setLocalArtifactTitle(refreshed.plan.name);
+          });
+        }
       }
     },
   });
@@ -567,6 +603,8 @@ export function useCoachPlanWorkspace(options?: {
   const displayedArtifact = effectiveArtifact?.plan ?? null;
   const displayedPlanId = effectiveArtifact?.planId ?? null;
   const displayedArtifactTitle = effectiveArtifact?.title ?? "";
+  const displayedAssignment =
+    projectionData.assignment ?? localAssignment ?? null;
 
   useEffect(() => {
     agentDataRef.current = {
@@ -603,10 +641,12 @@ export function useCoachPlanWorkspace(options?: {
       errors.length > 0 ||
       displayedArtifact !== null ||
       Boolean(initialPlan) ||
+      Boolean(initialAssignment) ||
       Boolean(normalizedSnapshot && snapshotHasConversation(normalizedSnapshot)),
     sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
+    assignment: displayedAssignment,
     messages: workspaceData.messages,
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
@@ -768,7 +808,8 @@ export function useCoachPlanWorkspace(options?: {
     setLocalArtifact(initialPlan ?? null);
     setLocalPlanId(entryPlanId ?? null);
     setLocalArtifactTitle(initialPlan?.name ?? "");
-  }, [agent, entryPlanId, forgeSessionId, initialPlan]);
+    setLocalAssignment(initialAssignment ?? null);
+  }, [agent, entryPlanId, forgeSessionId, initialAssignment, initialPlan]);
 
   const setArtifactTitle = useCallback((artifactTitle: string) => {
     setLocalArtifactTitle(artifactTitle);

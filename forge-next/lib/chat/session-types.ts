@@ -1,4 +1,5 @@
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { CoachAssignmentContext } from "@/lib/chat/assignment-context";
 import type {
   ChatDisplayError,
   ChatMessage,
@@ -29,6 +30,7 @@ export type CoachWorkspaceSnapshot = {
   eveEvents?: readonly HandleMessageStreamEvent[];
   /** Set when the last turn terminated without a server boundary event. */
   lastTurn?: CoachTurnMarker | null;
+  assignment?: CoachAssignmentContext | null;
 };
 
 export type EveCoachReducerData = {
@@ -36,6 +38,7 @@ export type EveCoachReducerData = {
   currentArtifact: WorkoutPlan | null;
   planId: string | null;
   artifactTitle: string;
+  assignment: CoachAssignmentContext | null;
   runStatus: ChatStatus | null;
   streamingAssistantText: string;
   errors: ChatDisplayError[];
@@ -56,6 +59,7 @@ export function buildCoachWorkspaceSnapshot(input: {
   eve: CoachWorkspaceSnapshot["eve"];
   eveEvents?: CoachWorkspaceSnapshot["eveEvents"];
   lastTurn?: CoachTurnMarker | null;
+  assignment?: CoachAssignmentContext | null;
 }): CoachWorkspaceSnapshot {
   return {
     title: input.title,
@@ -63,6 +67,7 @@ export function buildCoachWorkspaceSnapshot(input: {
     eve: input.eve,
     ...(input.eveEvents !== undefined ? { eveEvents: input.eveEvents } : {}),
     ...(input.lastTurn !== undefined ? { lastTurn: input.lastTurn } : {}),
+    ...(input.assignment !== undefined ? { assignment: input.assignment } : {}),
   };
 }
 

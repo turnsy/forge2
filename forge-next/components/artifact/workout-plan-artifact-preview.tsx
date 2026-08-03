@@ -3,6 +3,7 @@ import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator
 import { MOBILE_BOTTOM_NAV_SCROLL_END_CLASS } from "@/lib/coach/mobile-workspace-layout";
 import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
+import type { Day } from "@/lib/plans/workout-plan";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export function WorkoutPlanArtifactPreview({
@@ -12,6 +13,7 @@ export function WorkoutPlanArtifactPreview({
   disabled,
   onPlanChange,
   embeddedScroll = false,
+  canEditDay,
 }: {
   plan: WorkoutPlan;
   runStatus: ChatStatus | null;
@@ -19,6 +21,7 @@ export function WorkoutPlanArtifactPreview({
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
   embeddedScroll?: boolean;
+  canEditDay?: (day: Day) => boolean;
 }) {
   const showOverlaySpinner = isTurnInProgress(phase, runStatus);
   const activityLabel = showOverlaySpinner
@@ -52,6 +55,7 @@ export function WorkoutPlanArtifactPreview({
         readOnly={false}
         onPlanChange={onPlanChange}
         disabled={disabled}
+        canEditDay={canEditDay}
       />
     </div>
   );

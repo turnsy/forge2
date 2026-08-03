@@ -55,6 +55,30 @@ describe("syncCoachWorkspaceUrl", () => {
       "/coach?sessionId=session-42",
     );
   });
+
+  it("adds assignmentId without navigating", () => {
+    const replaceState = vi.fn();
+    vi.stubGlobal("window", {
+      location: {
+        href: "https://example.com/coach",
+        pathname: "/coach",
+        search: "",
+        hash: "",
+      },
+      history: {
+        state: { idx: 0 },
+        replaceState,
+      },
+    });
+
+    syncCoachWorkspaceUrl({ assignmentId: "assignment-1" });
+
+    expect(replaceState).toHaveBeenCalledWith(
+      { idx: 0 },
+      "",
+      "/coach?assignmentId=assignment-1",
+    );
+  });
 });
 
 describe("syncCoachSessionUrl", () => {
@@ -154,6 +178,9 @@ describe("hasCoachWorkspaceQueryParams", () => {
       true,
     );
     expect(hasCoachWorkspaceQueryParams(new URLSearchParams("new=1"))).toBe(true);
+    expect(
+      hasCoachWorkspaceQueryParams(new URLSearchParams("assignmentId=assignment-1")),
+    ).toBe(true);
   });
 
   it("returns false on bare /coach", () => {

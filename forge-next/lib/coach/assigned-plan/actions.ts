@@ -4,6 +4,7 @@ import {
   getAssignedPlanById,
   savePlanActuals,
 } from "@/lib/athlete/plan/repository";
+import type { AssignedPlan } from "@/lib/athlete/plan/repository";
 import { requireRoleAuth } from "@/lib/errors/require-role-auth";
 import {
   ServiceErrorCode,
@@ -13,11 +14,13 @@ import {
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 export type SaveAssignedPlanActionResult = ServiceResult<Record<never, never>>;
+export type RefreshAssignedPlanActionResult = ServiceResult<{
+  plan: WorkoutPlan;
+}>;
 
-export async function saveAssignedPlanAction(
+export async function refreshAssignedPlanAction(
   assignmentId: string,
-  planData: WorkoutPlan,
-): Promise<SaveAssignedPlanActionResult> {
+): Promise<RefreshAssignedPlanActionResult> {
   const auth = await requireRoleAuth("coach");
   if (!auth.ok) {
     return auth;
@@ -36,11 +39,51 @@ export async function saveAssignedPlanAction(
     );
   }
 
+  return { ok: true, plan: assignment.plan };
+}
+
+async function assertCoachOwnsActiveAssignment(
+  assignmentId: string,
+  coachId: string,
+): Promise<ServiceResult<{ assignment: AssignedPlan }>> {
+  const assignmentResult = await getAssignedPlanById(assignmentId);
+  if (!assignmentResult.ok) {
+    return assignmentResult;
+  }
+
+  const assignment = assignmentResult.plan;
+  if (!assignment || assignment.coachId !== coachId) {
+    return serviceError(
+      ServiceErrorCode.NOT_FOUND,
+      "Assignment not found or access denied",
+    );
+  }
+
   if (assignment.status !== "active") {
     return serviceError(
       ServiceErrorCode.VALIDATION_ERROR,
       "Only active assignments can be edited",
     );
+  }
+
+  return { ok: true, assignment };
+}
+
+export async function saveAssignedPlanAction(
+  assignmentId: string,
+  planData: WorkoutPlan,
+): Promise<SaveAssignedPlanActionResult> {
+  const auth = await requireRoleAuth("coach");
+  if (!auth.ok) {
+    return auth;
+  }
+
+  const assignmentResult = await assertCoachOwnsActiveAssignment(
+    assignmentId,
+    auth.user.id,
+  );
+  if (!assignmentResult.ok) {
+    return assignmentResult;
   }
 
   return savePlanActuals(assignmentId, planData);

@@ -7,6 +7,7 @@ import type {
 import type { EveCoachReducerData } from "@/lib/chat/session-types";
 import {
   isPlanArtifactToolSuccess,
+  isSubmitAthletePlanCodeOutput,
   isSubmitPlanCodeOutput,
   isToolErrorsOutput,
   toForgeToolDisplayErrors,
@@ -44,11 +45,14 @@ function applyArtifactFromTool(
       currentArtifact: null,
       planId: null,
       artifactTitle: "",
+      assignment: null,
     };
   }
 
   if (
-    (toolName === "submit_plan_code" || toolName === "set_current_artifact") &&
+    (toolName === "submit_plan_code" ||
+      toolName === "submit_athlete_plan_code" ||
+      toolName === "set_current_artifact") &&
     isPlanArtifactToolSuccess(output)
   ) {
     const title =
@@ -86,12 +90,33 @@ function applySubmitPlanCodeResult(
   return next;
 }
 
+function applySubmitAthletePlanCodeResult(
+  data: EveCoachReducerData,
+  output: unknown,
+): EveCoachReducerData {
+  let next = applyArtifactFromTool(data, "submit_athlete_plan_code", output);
+
+  if (isSubmitAthletePlanCodeOutput(output)) {
+    next = {
+      ...next,
+      runStatus: output.ok ? "validating" : "sandbox",
+      ...(output.ok ? { errors: [] } : {}),
+    };
+
+    if (!output.ok) {
+      return next;
+    }
+  }
+
+  return next;
+}
+
 function applyToolFailureErrors(
   data: EveCoachReducerData,
   toolName: string,
   output: unknown,
 ): EveCoachReducerData {
-  if (toolName === "submit_plan_code") {
+  if (toolName === "submit_plan_code" || toolName === "submit_athlete_plan_code") {
     return data;
   }
 
@@ -159,6 +184,7 @@ export function createEveCoachReducer(
       currentArtifact: initial.currentArtifact ?? null,
       planId: initial.planId ?? null,
       artifactTitle: initial.artifactTitle ?? "",
+      assignment: initial.assignment ?? null,
       runStatus: null,
       streamingAssistantText: "",
       errors: [],
@@ -202,7 +228,11 @@ export function createEveCoachReducer(
           return { ...data, runStatus: "generating", phase: "streaming" };
 
         case "actions.requested": {
-          if (getRequestedToolNames(event).includes("submit_plan_code")) {
+          const toolNames = getRequestedToolNames(event);
+          if (
+            toolNames.includes("submit_plan_code") ||
+            toolNames.includes("submit_athlete_plan_code")
+          ) {
             return { ...data, runStatus: "sandbox", errors: [] };
           }
           return data;
@@ -216,6 +246,10 @@ export function createEveCoachReducer(
 
           if (result.toolName === "submit_plan_code") {
             return applySubmitPlanCodeResult(data, result.output);
+          }
+
+          if (result.toolName === "submit_athlete_plan_code") {
+            return applySubmitAthletePlanCodeResult(data, result.output);
           }
 
           let next = applyArtifactFromTool(data, result.toolName, result.output);

@@ -14,7 +14,7 @@ vi.mock("@/lib/athlete/plan/repository", () => ({
   savePlanActuals: (...args: unknown[]) => mockSavePlanActuals(...args),
 }));
 
-import { saveAssignedPlanAction } from "@/lib/coach/assigned-plan/actions";
+import { saveAssignedPlanAction, refreshAssignedPlanAction } from "@/lib/coach/assigned-plan/actions";
 
 describe("saveAssignedPlanAction", () => {
   beforeEach(() => {
@@ -100,5 +100,11 @@ describe("saveAssignedPlanAction", () => {
       message: "Only active assignments can be edited",
     });
     expect(mockSavePlanActuals).not.toHaveBeenCalled();
+  });
+
+  it("refreshes assigned plan data for the authenticated coach", async () => {
+    const result = await refreshAssignedPlanAction("assignment-1");
+
+    expect(result).toEqual({ ok: true, plan: minimalWorkoutPlan });
   });
 });

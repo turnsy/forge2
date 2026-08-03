@@ -13,6 +13,7 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
+import { CompletionProgressRing } from "@/components/completion-progress-ring";
 import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_COLUMN_CLASS,
@@ -59,7 +60,11 @@ import {
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { navigateToCoachHome, syncCoachSessionUrl, syncCoachWorkspaceUrl } from "@/lib/chat/session-url";
+import type { CoachAssignmentContext } from "@/lib/chat/assignment-context";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
+import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
+import { useSaveAssignedPlan } from "@/lib/coach/assigned-plan/use-save-assigned-plan";
+import { isDayEditable } from "@/lib/plans/plan-editability";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -67,7 +72,7 @@ import {
   createPlanSnapshot,
   hasUnsavedPlanChanges,
 } from "@/lib/plans/snapshot";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { Day, WorkoutPlan } from "@/lib/plans/workout-plan";
 import { roleLinkClass } from "@/lib/theme";
 import type { HandleMessageStreamEvent } from "eve/client";
 
@@ -143,6 +148,8 @@ function ArtifactPanel({
   onSave,
   disabled,
   onPlanChange,
+  completionPercent,
+  canEditDay,
   mobileOverlay = false,
   onClose,
 }: {
@@ -157,6 +164,8 @@ function ArtifactPanel({
   onSave: () => void;
   disabled: boolean;
   onPlanChange: (plan: WorkoutPlan) => void;
+  completionPercent?: number;
+  canEditDay?: (day: Day) => boolean;
   mobileOverlay?: boolean;
   onClose?: () => void;
 }) {
@@ -166,7 +175,9 @@ function ArtifactPanel({
         {resolvedBackHref ? (
           <PageBackLink
             href={resolvedBackHref}
-            ariaLabel="Back to plan"
+            ariaLabel={
+              state.assignment ? "Back to athlete" : "Back to plan"
+            }
             onClick={onBackClick}
           />
         ) : null}
@@ -180,7 +191,15 @@ function ArtifactPanel({
             onClose={mobileOverlay ? onClose : undefined}
           />
         </div>
+        {completionPercent !== undefined ? (
+          <CompletionProgressRing percent={completionPercent} size={40} />
+        ) : null}
       </div>
+      {state.assignment ? (
+        <p className="text-sm text-surface-muted">
+          {state.assignment.athleteName}&apos;s active plan
+        </p>
+      ) : null}
       {saveError ? (
         <p className="text-sm text-red-400" role="alert">
           {saveError}
@@ -198,6 +217,7 @@ function ArtifactPanel({
       disabled={disabled}
       onPlanChange={onPlanChange}
       embeddedScroll
+      canEditDay={canEditDay}
     />
   );
 
@@ -236,6 +256,7 @@ export function CoachWorkspace(
     role: UserRole;
     planId?: string;
     initialPlan?: WorkoutPlan;
+    initialAssignment?: CoachAssignmentContext;
     initialSession?: {
       id: string;
       snapshot: CoachWorkspaceSnapshot;
@@ -243,6 +264,7 @@ export function CoachWorkspace(
       updatedAt: string;
     };
     stripPlanIdOnClear?: boolean;
+    stripAssignmentIdOnClear?: boolean;
     promptEnabled?: boolean;
   },
 ) {
@@ -340,18 +362,21 @@ function CoachWorkspaceInner({
   role,
   planId: initialPlanId,
   initialPlan,
+  initialAssignment,
   initialSession,
   syncedEvents = [],
   resuming = false,
   initialFinalizeReason = null,
   onStopResuming,
   stripPlanIdOnClear = false,
+  stripAssignmentIdOnClear = false,
   promptEnabled = true,
 }: {
   firstName: string;
   role: UserRole;
   planId?: string;
   initialPlan?: WorkoutPlan;
+  initialAssignment?: CoachAssignmentContext;
   initialSession?: {
     id: string;
     snapshot: CoachWorkspaceSnapshot;
@@ -363,6 +388,7 @@ function CoachWorkspaceInner({
   initialFinalizeReason?: TurnFinalizeReason | null;
   onStopResuming?: () => void;
   stripPlanIdOnClear?: boolean;
+  stripAssignmentIdOnClear?: boolean;
   promptEnabled?: boolean;
 }) {
   const router = useRouter();
@@ -370,13 +396,16 @@ function CoachWorkspaceInner({
   const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-  const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
+  const openArtifactOnMobileRef = useRef(Boolean(initialPlan || initialAssignment));
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
     initialPlanId ?? null,
   );
+  const [backlinkAthleteId, setBacklinkAthleteId] = useState<string | null>(
+    initialAssignment?.athleteId ?? null,
+  );
   const initialSavedSnapshot =
-    initialPlan != null && initialPlanId
+    initialPlan != null && (initialPlanId || initialAssignment)
       ? createPlanSnapshot(initialPlan, initialPlan.name)
       : null;
   const savedSnapshotRef = useRef<string | null>(initialSavedSnapshot);
@@ -428,13 +457,20 @@ function CoachWorkspaceInner({
     setShowArtifact(false);
     setIsChatCollapsed(false);
     setBacklinkPlanId(null);
+    setBacklinkAthleteId(null);
     if (stripPlanIdOnClear) {
       syncCoachWorkspaceUrl({
         sessionId: sessionIdRef.current,
         planId: null,
       });
     }
-  }, [stripPlanIdOnClear]);
+    if (stripAssignmentIdOnClear) {
+      syncCoachWorkspaceUrl({
+        sessionId: sessionIdRef.current,
+        assignmentId: null,
+      });
+    }
+  }, [stripAssignmentIdOnClear, stripPlanIdOnClear]);
 
   const {
     state,
@@ -447,7 +483,15 @@ function CoachWorkspaceInner({
     setArtifact,
     restart,
   } = useCoachPlanWorkspace(
-    initialPlan
+    initialPlan && initialAssignment
+      ? {
+          initialPlan,
+          initialAssignment,
+          onArtifactCleared: handleArtifactCleared,
+          onThreadInitialized: handleThreadBound,
+          onSessionUrlNavigate: handleSessionUrlNavigate,
+        }
+      : initialPlan
       ? {
           initialPlan,
           planId: initialPlanId,
@@ -488,15 +532,43 @@ function CoachWorkspaceInner({
   }, [isMobile]);
 
   const activePlanId = state.planId;
+  const activeAssignment = state.assignment;
   const resolvedBackPlanId = backlinkPlanId ?? activePlanId;
-  const resolvedBackHref = resolvedBackPlanId
-    ? `/coach/plans/${resolvedBackPlanId}`
-    : undefined;
+  const resolvedBackAthleteId =
+    backlinkAthleteId ?? activeAssignment?.athleteId ?? null;
+  const resolvedBackHref = resolvedBackAthleteId
+    ? `/coach/athletes/${resolvedBackAthleteId}`
+    : resolvedBackPlanId
+      ? `/coach/plans/${resolvedBackPlanId}`
+      : undefined;
 
-  const { saveStatus, saveError, savePlan, resetSaveStatus } =
-    useSavePlan(activePlanId, {
-      initialStatus: initialSavedSnapshot ? "saved" : undefined,
-    });
+  const {
+    saveStatus: templateSaveStatus,
+    saveError: templateSaveError,
+    savePlan,
+    resetSaveStatus: resetTemplateSaveStatus,
+  } = useSavePlan(activeAssignment ? null : activePlanId, {
+    initialStatus: initialSavedSnapshot ? "saved" : undefined,
+  });
+
+  const {
+    saveStatus: assignedSaveStatus,
+    saveError: assignedSaveError,
+    saveAssignedPlan,
+    resetSaveStatus: resetAssignedSaveStatus,
+  } = useSaveAssignedPlan(activeAssignment?.assignmentId ?? "");
+
+  const saveStatus = activeAssignment ? assignedSaveStatus : templateSaveStatus;
+  const saveError = activeAssignment ? assignedSaveError : templateSaveError;
+  const resetSaveStatus = activeAssignment
+    ? resetAssignedSaveStatus
+    : resetTemplateSaveStatus;
+
+  const completionPercent =
+    activeAssignment && state.currentArtifact
+      ? computePlanCompletionPercent(state.currentArtifact)
+      : undefined;
+  const canEditDay = activeAssignment ? isDayEditable : undefined;
 
   const showSplitPane = Boolean(state.currentArtifact);
   const chatCollapsed = showSplitPane && isChatCollapsed;
@@ -511,13 +583,13 @@ function CoachWorkspaceInner({
 
   const handleSendMessage = useCallback(
     async (...args: Parameters<typeof sendMessage>) => {
-      if (activePlanId) {
+      if (activePlanId || activeAssignment) {
         resetSaveStatus();
       }
 
       await sendMessage(...args);
     },
-    [activePlanId, resetSaveStatus, sendMessage],
+    [activeAssignment, activePlanId, resetSaveStatus, sendMessage],
   );
 
   const handlePlanChange = useCallback(
@@ -538,6 +610,19 @@ function CoachWorkspaceInner({
 
   const handleSave = useCallback(async () => {
     if (!state.currentArtifact || isChatRunning(state)) {
+      return;
+    }
+
+    if (activeAssignment) {
+      const result = await saveAssignedPlan({ plan: state.currentArtifact });
+      if (result === null) {
+        return;
+      }
+
+      savedSnapshotRef.current = createPlanSnapshot(
+        state.currentArtifact,
+        state.artifactTitle,
+      );
       return;
     }
 
@@ -563,7 +648,14 @@ function CoachWorkspaceInner({
       state.currentArtifact,
       state.artifactTitle,
     );
-  }, [activePlanId, savePlan, setPlanId, state]);
+  }, [
+    activeAssignment,
+    activePlanId,
+    saveAssignedPlan,
+    savePlan,
+    setPlanId,
+    state,
+  ]);
 
   const handleBackClick = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
@@ -596,6 +688,13 @@ function CoachWorkspaceInner({
       return;
     }
 
+    if (backlinkAthleteId ?? activeAssignment?.athleteId) {
+      router.push(
+        `/coach/athletes/${backlinkAthleteId ?? activeAssignment?.athleteId}`,
+      );
+      return;
+    }
+
     if (backlinkPlanId ?? activePlanId) {
       router.push(`/coach/plans/${backlinkPlanId ?? activePlanId}`);
       return;
@@ -605,7 +704,7 @@ function CoachWorkspaceInner({
     savedSnapshotRef.current = null;
     setShowArtifact(false);
     navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, restart, router, state]);
+  }, [activeAssignment?.athleteId, activePlanId, backlinkAthleteId, backlinkPlanId, restart, router, state]);
 
   const handleActiveSessionDeleted = useCallback(() => {
     restart();
@@ -758,6 +857,8 @@ function CoachWorkspaceInner({
                 onSave={handleSave}
                 disabled={isChatRunning(state)}
                 onPlanChange={handlePlanChange}
+                completionPercent={completionPercent}
+                canEditDay={canEditDay}
                 mobileOverlay
                 onClose={() => setShowArtifact(false)}
               />
@@ -838,6 +939,8 @@ function CoachWorkspaceInner({
                   onSave={handleSave}
                   disabled={isChatRunning(state)}
                   onPlanChange={handlePlanChange}
+                  completionPercent={completionPercent}
+                  canEditDay={canEditDay}
                 />
             </div>
           ) : null}

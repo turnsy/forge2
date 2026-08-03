@@ -1,4 +1,5 @@
 import { loadWorkoutPlan } from "@/lib/plans/validate";
+import type { CoachAssignmentContext } from "@/lib/chat/assignment-context";
 import {
   FORGE_CLIENT_CONTEXT_MARKER,
   type ForgeClientContext,
@@ -14,6 +15,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function parseCoachAssignmentContext(
+  value: unknown,
+): CoachAssignmentContext | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  if (
+    typeof value.assignmentId !== "string" ||
+    typeof value.athleteId !== "string" ||
+    typeof value.athleteName !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    assignmentId: value.assignmentId,
+    athleteId: value.athleteId,
+    athleteName: value.athleteName,
+  };
+}
+
 function parseForgeClientContext(value: unknown): ForgeClientContext | null {
   if (!isRecord(value) || value.forge !== FORGE_CLIENT_CONTEXT_MARKER) {
     return null;
@@ -23,11 +46,14 @@ function parseForgeClientContext(value: unknown): ForgeClientContext | null {
     return null;
   }
 
+  const assignment = parseCoachAssignmentContext(value.assignment);
+
   const clientArtifact = value.clientArtifact;
   if (clientArtifact === undefined || clientArtifact === null) {
     return {
       forge: FORGE_CLIENT_CONTEXT_MARKER,
       forgeSessionId: value.forgeSessionId,
+      ...(assignment ? { assignment } : {}),
     };
   }
 
@@ -54,6 +80,7 @@ function parseForgeClientContext(value: unknown): ForgeClientContext | null {
           ? clientArtifact.title
           : validated.plan.name,
     },
+    ...(assignment ? { assignment } : {}),
   };
 }
 
@@ -80,13 +107,33 @@ function stablePlanJson(plan: unknown): string {
   return JSON.stringify(plan);
 }
 
-function coachArtifactMatches(context: ForgeClientContext): boolean {
-  const incoming = context.clientArtifact;
-  if (!incoming) {
-    return coachArtifact.get().plan === null;
+function assignmentMatches(
+  left: CoachAssignmentContext | null,
+  right: CoachAssignmentContext | null | undefined,
+): boolean {
+  if (!left && !right) {
+    return true;
   }
 
+  if (!left || !right) {
+    return false;
+  }
+
+  return (
+    left.assignmentId === right.assignmentId &&
+    left.athleteId === right.athleteId &&
+    left.athleteName === right.athleteName
+  );
+}
+
+function coachArtifactMatches(context: ForgeClientContext): boolean {
+  const incoming = context.clientArtifact;
   const current = coachArtifact.get();
+
+  if (!incoming) {
+    return current.plan === null && assignmentMatches(current.assignment, context.assignment);
+  }
+
   if (!current.plan) {
     return false;
   }
@@ -94,18 +141,27 @@ function coachArtifactMatches(context: ForgeClientContext): boolean {
   return (
     current.planId === (incoming.planId ?? null) &&
     (incoming.title ?? incoming.plan.name) === current.title &&
-    stablePlanJson(current.plan) === stablePlanJson(incoming.plan)
+    stablePlanJson(current.plan) === stablePlanJson(incoming.plan) &&
+    assignmentMatches(current.assignment, context.assignment)
   );
 }
 
 export function syncCoachArtifactFromClientContext(
   context: ForgeClientContext,
 ): void {
-  if (!context.clientArtifact) {
+  if (!context.clientArtifact && !context.assignment) {
     return;
   }
 
   if (coachArtifactMatches(context)) {
+    return;
+  }
+
+  if (!context.clientArtifact) {
+    coachArtifact.update((current) => ({
+      ...current,
+      assignment: context.assignment ?? null,
+    }));
     return;
   }
 
@@ -114,6 +170,7 @@ export function syncCoachArtifactFromClientContext(
     planId: context.clientArtifact.planId ?? null,
     title:
       context.clientArtifact.title ?? context.clientArtifact.plan.name,
+    assignment: context.assignment ?? null,
   });
 }
 

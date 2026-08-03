@@ -1,6 +1,7 @@
 export type CoachWorkspaceUrlUpdate = {
   sessionId?: string | null;
   planId?: string | null;
+  assignmentId?: string | null;
   newPlan?: boolean | null;
 };
 
@@ -12,6 +13,7 @@ export function hasCoachWorkspaceQueryParams(
   return (
     searchParams.has("sessionId") ||
     searchParams.has("planId") ||
+    searchParams.has("assignmentId") ||
     searchParams.has("new")
   );
 }
@@ -39,6 +41,14 @@ export function syncCoachWorkspaceUrl(update: CoachWorkspaceUrlUpdate = {}): voi
     }
   }
 
+  if (update.assignmentId !== undefined) {
+    if (update.assignmentId) {
+      url.searchParams.set("assignmentId", update.assignmentId);
+    } else {
+      url.searchParams.delete("assignmentId");
+    }
+  }
+
   if (update.newPlan !== undefined) {
     if (update.newPlan) {
       url.searchParams.set("new", "1");
@@ -59,6 +69,7 @@ export function clearCoachWorkspaceQueryParams(): void {
   syncCoachWorkspaceUrl({
     sessionId: null,
     planId: null,
+    assignmentId: null,
     newPlan: null,
   });
 }

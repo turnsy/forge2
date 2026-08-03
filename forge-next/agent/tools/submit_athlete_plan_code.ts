@@ -3,6 +3,7 @@ import { always } from "eve/tools/approval";
 import { z } from "zod";
 import { savePlanActuals } from "@/lib/athlete/plan/repository";
 import { assertEditableChange } from "@/lib/plans/plan-editability";
+import { setCoachArtifact } from "../lib/coach-artifact-state";
 import { fetchCoachAthleteActiveAssignment } from "../lib/assigned-plans";
 import { getCoachId } from "../lib/coach-context";
 import { MAX_SUBMIT_PLAN_CODE_ATTEMPTS_PER_TURN } from "../lib/config";
@@ -103,6 +104,16 @@ export default defineTool({
         ],
       };
     }
+
+    setCoachArtifact({
+      plan: sandboxResult.plan,
+      planId: null,
+      assignment: {
+        assignmentId: assignment.id,
+        athleteId,
+        athleteName,
+      },
+    });
 
     return {
       ok: true as const,

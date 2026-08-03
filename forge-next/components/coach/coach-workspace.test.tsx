@@ -56,6 +56,15 @@ vi.mock("@/lib/plans/use-save-plan", () => ({
   }),
 }));
 
+vi.mock("@/lib/coach/assigned-plan/use-save-assigned-plan", () => ({
+  useSaveAssignedPlan: () => ({
+    saveStatus: "idle",
+    saveError: null,
+    saveAssignedPlan: vi.fn(),
+    resetSaveStatus: mockResetSaveStatus,
+  }),
+}));
+
 vi.mock("@/components/artifact/artifact-preview", () => ({
   ArtifactPreview: ({
     onPlanChange,
@@ -80,8 +89,10 @@ function mockWorkspaceState(
   return {
     sessionId: "session-1",
     hasStarted: false,
+    sessionTitle: null,
     artifactTitle: "",
     planId: null,
+    assignment: null,
     messages: [],
     currentArtifact: null,
     contextFileIds: [],

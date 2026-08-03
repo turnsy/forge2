@@ -29,6 +29,12 @@ vi.mock("@/agent/lib/coach-context", () => ({
   getCoachId: (...args: unknown[]) => mockGetCoachId(...args),
 }));
 
+const mockSetCoachArtifact = vi.fn();
+
+vi.mock("@/agent/lib/coach-artifact-state", () => ({
+  setCoachArtifact: (...args: unknown[]) => mockSetCoachArtifact(...args),
+}));
+
 import submitAthletePlanCode from "@/agent/tools/submit_athlete_plan_code";
 
 const athleteId = "00000000-0000-4000-8000-000000000001";
@@ -100,6 +106,15 @@ describe("submit_athlete_plan_code", () => {
       assignmentId,
       minimalWorkoutPlan,
     );
+    expect(mockSetCoachArtifact).toHaveBeenCalledWith({
+      plan: minimalWorkoutPlan,
+      planId: null,
+      assignment: {
+        assignmentId,
+        athleteId,
+        athleteName: "Jane Smith",
+      },
+    });
   });
 
   it("returns not found when the athlete is not linked", async () => {
