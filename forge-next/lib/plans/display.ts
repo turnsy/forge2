@@ -35,6 +35,16 @@ export function hasCustomBasis(exercise: Exercise): boolean {
   return customBasis.toLowerCase() !== exercise.name.trim().toLowerCase();
 }
 
+export function exerciseHasPercentageSets(exercise: Exercise): boolean {
+  return exercise.sets.some((set) => {
+    if (set.planned.type === "exact") {
+      return set.planned.target.type === "percentage";
+    }
+
+    return set.planned.target?.type === "percentage";
+  });
+}
+
 export function formatReps(reps: RepsValue): string {
   return String(reps);
 }

@@ -21,6 +21,16 @@ describe("PlanSupersetView", () => {
     block.exercises[0] = {
       ...block.exercises[0],
       basisRaw: "Barbell Curl",
+      sets: block.exercises[0].sets.map((set) => ({
+        ...set,
+        planned:
+          set.planned.type === "exact"
+            ? {
+                ...set.planned,
+                target: { type: "percentage" as const, value: 75, unit: "kg" },
+              }
+            : set.planned,
+      })),
     };
 
     render(<PlanSupersetView block={block} view="coach" />);

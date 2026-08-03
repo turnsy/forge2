@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
-import { makeExercise } from "@/lib/plans/__tests__/fixtures";
+import { makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
 
 describe("PlanExerciseBlock", () => {
   it("shows a video icon when exercise has a videoUrl", () => {
@@ -33,6 +33,16 @@ describe("PlanExerciseBlock", () => {
         exercise={makeExercise({
           name: "Close Grip Bench",
           basisRaw: "Bench Press",
+          sets: [
+            makeSet({
+              id: "set-1",
+              planned: {
+                type: "exact",
+                reps: 5,
+                target: { type: "percentage", value: 75, unit: "lb" },
+              },
+            }),
+          ],
         })}
         view="coach"
       />,
@@ -41,12 +51,35 @@ describe("PlanExerciseBlock", () => {
     expect(screen.getByText("Basis: Bench Press")).toBeInTheDocument();
   });
 
-  it("shows the exercise name as basis when no custom basis is set", () => {
+  it("shows the exercise name as basis when no custom basis is set on percentage sets", () => {
+    render(
+      <PlanExerciseBlock
+        exercise={makeExercise({
+          name: "Back Squat",
+          sets: [
+            makeSet({
+              id: "set-1",
+              planned: {
+                type: "exact",
+                reps: 5,
+                target: { type: "percentage", value: 75, unit: "lb" },
+              },
+            }),
+          ],
+        })}
+        view="coach"
+      />,
+    );
+
+    expect(screen.getByText("Basis: Back Squat")).toBeInTheDocument();
+  });
+
+  it("hides basis when sets are not percentage based", () => {
     render(
       <PlanExerciseBlock exercise={makeExercise({ name: "Back Squat" })} view="coach" />,
     );
 
-    expect(screen.getByText("Basis: Back Squat")).toBeInTheDocument();
+    expect(screen.queryByText(/^Basis:/)).not.toBeInTheDocument();
   });
 
   it("opens the video link in a new tab when the icon is clicked", async () => {

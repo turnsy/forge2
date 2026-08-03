@@ -47,13 +47,17 @@ export function shouldOfferCustomExerciseEntry(
 export function ExerciseSearchField({
   label,
   value,
+  placeholder,
   disabled,
+  size = "sm",
   revertOnBlur = true,
   onResolved,
 }: {
   label: string;
   value: string;
+  placeholder?: string;
   disabled: boolean;
+  size?: "sm" | "md";
   revertOnBlur?: boolean;
   onResolved: (next: { name: string; exerciseId: string }) => void;
 }) {
@@ -66,6 +70,16 @@ export function ExerciseSearchField({
   const [isCreating, setIsCreating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const requestIdRef = useRef(0);
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    if (prevValueRef.current === value || typedQuery !== null) {
+      return;
+    }
+
+    setDraft(value);
+    prevValueRef.current = value;
+  }, [value, typedQuery]);
 
   useEffect(() => {
     if (typedQuery === null) {
@@ -139,7 +153,9 @@ export function ExerciseSearchField({
   return (
     <div ref={rootRef} className="relative">
       <Input
+        size={size}
         value={draft}
+        placeholder={placeholder}
         readOnly={disabled}
         aria-label={label}
         aria-expanded={showResults}
