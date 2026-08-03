@@ -2,6 +2,7 @@ import {
   AthletesIcon,
   HistoryIcon,
   HomeIcon,
+  MaxesIcon,
   PlansIcon,
   SettingsNavIcon,
 } from "@/components/icons/sidebar-nav-icons";
@@ -15,6 +16,8 @@ export function renderNavIcon(icon: SidebarNavIcon) {
       return <PlansIcon />;
     case "athletes":
       return <AthletesIcon />;
+    case "maxes":
+      return <MaxesIcon />;
     case "history":
       return <HistoryIcon />;
     case "settings":

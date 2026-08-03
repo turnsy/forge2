@@ -49,7 +49,7 @@ export function getPrescribedTargetLabel(
     return undefined;
   }
   const weight = computePrescribedWeight(max ?? null, set.planned.target.value, set.planned.target.unit);
-  return weight === null ? undefined : `${weight} ${set.planned.target.unit}`;
+  return weight === null ? undefined : String(weight);
 }
 
 export function athleteSetCardClassName(complete: boolean): string {

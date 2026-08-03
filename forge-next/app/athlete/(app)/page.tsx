@@ -8,6 +8,7 @@ import { findCurrentDay } from "@/lib/athlete/plan/domain";
 import { getActiveAthletePlan } from "@/lib/athlete/plan/repository";
 import { getAthleteCoachLink } from "@/lib/links/repository";
 import { listAthleteMaxes } from "@/lib/maxes/mutations";
+import { buildMaxesByExerciseId } from "@/lib/maxes/build-maxes-map";
 
 const centeredMainClass =
   "mx-auto flex min-h-full max-w-3xl flex-1 items-center justify-center p-4 md:p-8";
@@ -62,9 +63,7 @@ export default async function AthletePage() {
     ),
   );
   const maxRows = await listAthleteMaxes(user.id, [...new Set(exerciseIds)]);
-  const maxesByExerciseId = Object.fromEntries(
-    maxRows.map((row) => [row.exercise_id, { value: Number(row.value), unit: row.unit }]),
-  );
+  const maxesByExerciseId = buildMaxesByExerciseId(maxRows);
 
   if (!currentDay) {
     return (

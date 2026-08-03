@@ -13,7 +13,7 @@ describe("getPrescribedTargetLabel", () => {
       },
     });
 
-    expect(getPrescribedTargetLabel(set, { value: 200, unit: "kg" })).toBe("150 kg");
+    expect(getPrescribedTargetLabel(set, { value: 200, unit: "kg" })).toBe("150");
   });
 
   it("converts max units before computing weight", () => {
@@ -26,7 +26,7 @@ describe("getPrescribedTargetLabel", () => {
       },
     });
 
-    expect(getPrescribedTargetLabel(set, { value: 200, unit: "lb" })).toBe("67.5 kg");
+    expect(getPrescribedTargetLabel(set, { value: 200, unit: "lb" })).toBe("68");
   });
 
   it("returns undefined when no max is available", () => {

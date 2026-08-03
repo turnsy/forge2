@@ -73,9 +73,13 @@ function CoachAthleteMaxHistoryPanel({
 export function CoachAthleteMaxesTab({
   listUrl,
   saveUrl,
+  searchUrl,
+  confirmUrl,
 }: {
   listUrl: string;
   saveUrl: string;
+  searchUrl?: string;
+  confirmUrl?: string;
 }) {
   const [maxes, setMaxes] = useState<AthleteMaxEntry[]>([]);
   const [query, setQuery] = useState("");
@@ -204,6 +208,8 @@ export function CoachAthleteMaxesTab({
       <CoachAthleteMaxAddModal
         open={addOpen}
         saveUrl={saveUrl}
+        searchUrl={searchUrl}
+        confirmUrl={confirmUrl}
         onClose={() => setAddOpen(false)}
         onSaved={() => void refreshMaxes()}
       />

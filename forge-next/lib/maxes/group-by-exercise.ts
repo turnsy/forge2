@@ -1,3 +1,5 @@
+import { resolveCurrentMax } from "@/lib/maxes/resolve-current-max";
+
 export type AthleteMaxEntry = {
   id: string;
   exercise_id: string;
@@ -31,13 +33,27 @@ export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSumma
     const sorted = [...history].sort(
       (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
     );
-    const current = sorted[0];
+    const current = resolveCurrentMax(
+      history.map((entry) => ({
+        value: entry.value,
+        unit: entry.unit,
+        loggedAt: entry.logged_at,
+      })),
+    );
+    const currentEntry =
+      sorted.find(
+        (entry) =>
+          current &&
+          entry.value === current.value &&
+          entry.unit === current.unit,
+      ) ?? sorted[0];
+
     summaries.push({
       exerciseId,
-      exerciseName: current.exercise_name,
-      currentValue: current.value,
-      currentUnit: current.unit,
-      loggedAt: current.logged_at,
+      exerciseName: currentEntry.exercise_name,
+      currentValue: current?.value ?? currentEntry.value,
+      currentUnit: current?.unit ?? currentEntry.unit,
+      loggedAt: currentEntry.logged_at,
       history: sorted,
     });
   }

@@ -8,11 +8,15 @@ import { Modal } from "@/components/ui/modal";
 export function CoachAthleteMaxAddModal({
   open,
   saveUrl,
+  searchUrl = "/api/coach/exercises/search",
+  confirmUrl = "/api/coach/exercises/confirm",
   onClose,
   onSaved,
 }: {
   open: boolean;
   saveUrl: string;
+  searchUrl?: string;
+  confirmUrl?: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -91,6 +95,8 @@ export function CoachAthleteMaxAddModal({
           value={exerciseName}
           disabled={false}
           revertOnBlur={false}
+          searchUrl={searchUrl}
+          confirmUrl={confirmUrl}
           onResolved={({ name, exerciseId: nextExerciseId }) => {
             setExerciseName(name);
             setExerciseId(nextExerciseId);

@@ -14,9 +14,8 @@ export function convertWeight(value: number, from: string, to: string): number |
 export function incrementForUnit(unit: string): number | null {
   switch (unit.trim().toLowerCase()) {
     case "kg":
-      return 2.5;
     case "lb":
-      return 5;
+      return 0.5;
     default:
       return null;
   }
