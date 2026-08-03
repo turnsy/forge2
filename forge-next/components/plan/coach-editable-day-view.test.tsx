@@ -443,7 +443,7 @@ describe("CoachEditableDayView", () => {
     fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
 
     fireEvent.click(
-      await screen.findByRole("button", { name: 'Create "Flat Bench" as custom exercise' }),
+      await screen.findByRole("button", { name: "Flat Bench" }),
     );
 
     await waitFor(() => {
