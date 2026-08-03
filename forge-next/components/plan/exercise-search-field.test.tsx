@@ -114,7 +114,7 @@ describe("ExerciseSearchField", () => {
     fireEvent.change(input, { target: { value: "Zercher Squat" } });
 
     fireEvent.click(
-      await screen.findByRole("button", { name: 'Create "Zercher Squat" as custom exercise' }),
+      await screen.findByRole("button", { name: "Zercher Squat" }),
     );
 
     await waitFor(() => {

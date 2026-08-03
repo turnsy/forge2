@@ -196,7 +196,7 @@ export function ExerciseSearchField({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void handleCreateCustom()}
             >
-              {isCreating ? "Creating…" : `Create "${trimmedQuery}" as custom exercise`}
+              {isCreating ? "Creating…" : trimmedQuery}
             </button>
           ) : null}
         </div>
