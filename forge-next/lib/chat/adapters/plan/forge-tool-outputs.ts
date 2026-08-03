@@ -19,6 +19,16 @@ export type SubmitPlanCodeFailure = {
 
 export type SubmitPlanCodeOutput = SubmitPlanCodeSuccess | SubmitPlanCodeFailure;
 
+export type SubmitAthletePlanCodeSuccess = {
+  ok: true;
+  plan: WorkoutPlan;
+  summary: string;
+};
+
+export type SubmitAthletePlanCodeOutput =
+  | SubmitAthletePlanCodeSuccess
+  | SubmitPlanCodeFailure;
+
 export type SetCurrentArtifactSuccess = {
   ok: true;
   planId: string;
@@ -63,6 +73,20 @@ export function isSubmitPlanCodeOutput(
 
   if (output.ok) {
     return isRecord(output.plan);
+  }
+
+  return Array.isArray(output.errors);
+}
+
+export function isSubmitAthletePlanCodeOutput(
+  output: unknown,
+): output is SubmitAthletePlanCodeOutput {
+  if (!isRecord(output) || typeof output.ok !== "boolean") {
+    return false;
+  }
+
+  if (output.ok) {
+    return isRecord(output.plan) && typeof output.summary === "string";
   }
 
   return Array.isArray(output.errors);

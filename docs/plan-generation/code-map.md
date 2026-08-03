@@ -25,7 +25,7 @@ Authoritative layout for the coach plan agent (Eve cutover). See [overview.md](.
 | Dynamic upload notice | `agent/instructions/session-uploads.ts` |
 | Codegen skill | `agent/skills/plan-codegen.ts` |
 | Sandbox definition | `agent/sandbox/sandbox.ts` |
-| Coach tools (15) | `agent/tools/*.ts` |
+| Coach tools (16) | `agent/tools/*.ts` |
 
 Eve is wired into Next via `withEve()` in `next.config.ts`. Agent HTTP surface is `/eve/v1/*` (health, sessions, turns).
 
@@ -60,6 +60,7 @@ Coach auth required. **`x-forge-session-id`** header on Eve requests carries the
 | Conversation detection | `lib/chat/snapshot-messages.ts` (`snapshotHasConversation`) |
 | List session uploads (tool) | `agent/tools/list_session_files.ts` → `agent/lib/uploads.ts` |
 | Submit plan code (tool) | `agent/tools/submit_plan_code.ts` → Eve sandbox |
+| Submit athlete plan code (tool) | `agent/tools/submit_athlete_plan_code.ts` → Eve sandbox → `savePlanActuals` |
 | Artifact state (server) | `agent/lib/coach-artifact-state.ts` |
 | Cheat sheet (generated) | `lib/plans/prompts/forge_plan_api_cheat_sheet.generated.ts` |
 | Cheat sheet script | `sandbox/scripts/generate_api_cheat_sheet.py` |

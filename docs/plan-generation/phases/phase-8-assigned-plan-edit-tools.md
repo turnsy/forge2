@@ -4,7 +4,7 @@
 by reusing the same `forge_plan` Python builder and Sandbox mechanism
 `submit_plan_code` already uses — not a parallel implementation.
 
-**Status:** Design only, not started. See [checklist](#checklist).
+**Status:** Implemented. See [checklist](#checklist).
 
 ---
 
@@ -104,12 +104,12 @@ actual risk.
 
 ## Checklist
 
-- [ ] `assertEditableChange` guard in `lib/plans/plan-editability.ts`
-- [ ] Wire the guard into `savePlanActuals` (independent regression fix)
-- [ ] Extract shared Sandbox-run helper from `submit_plan_code.ts`
-- [ ] `submit_athlete_plan_code` tool
-- [ ] `forge-tool-outputs.ts` output type + guards
-- [ ] `agent/instructions.md` — add to plan-codegen skill's "load before" list
-- [ ] Concurrency mitigation (re-validate-on-write)
-- [ ] Tests
+- [x] `assertEditableChange` guard in `lib/plans/plan-editability.ts`
+- [x] Wire the guard into `savePlanActuals` (independent regression fix)
+- [x] Extract shared Sandbox-run helper from `submit_plan_code.ts`
+- [x] `submit_athlete_plan_code` tool
+- [x] `forge-tool-outputs.ts` output type + guards
+- [x] `agent/instructions.md` — add to plan-codegen skill's "load before" list
+- [x] Concurrency mitigation (re-validate-on-write via `savePlanActuals` fetch-before-write)
+- [x] Tests
 - [ ] Manual QA: real in-progress assignment, athlete app reflects the edit, completed sets untouched

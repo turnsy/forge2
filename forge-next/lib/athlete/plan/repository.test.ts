@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
+import { makeWorkoutPlan, minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 
 const mockFrom = vi.fn();
 const mockSelect = vi.fn();
@@ -137,7 +137,24 @@ describe("athlete plan repository", () => {
   it("updates plan_data when saving actuals", async () => {
     const updateEq = vi.fn().mockResolvedValue({ error: null });
     mockFrom.mockReturnValue({
+      select: mockSelect,
       update: vi.fn().mockReturnValue({ eq: updateEq }),
+    });
+    mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        id: "assignment-1",
+        athlete_id: "athlete-1",
+        coach_id: "coach-1",
+        plan_data: minimalWorkoutPlan,
+        status: "active",
+        assigned_at: "2026-01-01T00:00:00.000Z",
+        completed_at: null,
+        unassigned_at: null,
+        plan_version_id: null,
+      },
+      error: null,
     });
 
     await expect(savePlanActuals("assignment-1", minimalWorkoutPlan)).resolves.toEqual({
@@ -145,6 +162,45 @@ describe("athlete plan repository", () => {
     });
 
     expect(updateEq).toHaveBeenCalledWith("id", "assignment-1");
+  });
+
+  it("rejects edits to completed sets", async () => {
+    const completedPlan = makeWorkoutPlan({ dayComplete: true });
+    const editedPlan = structuredClone(completedPlan);
+    editedPlan.weeks[0].days[0].blocks[0].exercises[0].sets[0].planned = {
+      type: "exact",
+      reps: 6,
+      target: { type: "absolute", value: 110, unit: "kg" },
+    };
+
+    mockFrom.mockReturnValue({
+      select: mockSelect,
+    });
+    mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        id: "assignment-1",
+        athlete_id: "athlete-1",
+        coach_id: "coach-1",
+        plan_data: completedPlan,
+        status: "active",
+        assigned_at: "2026-01-01T00:00:00.000Z",
+        completed_at: null,
+        unassigned_at: null,
+        plan_version_id: null,
+      },
+      error: null,
+    });
+
+    const result = await savePlanActuals("assignment-1", editedPlan);
+
+    expect(result).toEqual({
+      ok: false,
+      code: "validation_error",
+      message: expect.stringMatching(/completed|locked/i),
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it("lists non-active assigned plans for an athlete and coach", async () => {
