@@ -148,9 +148,10 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const exerciseInputs = screen.getAllByLabelText("Exercise");
-    expect(exerciseInputs[0]).toHaveValue("Bench Press");
-    expect(exerciseInputs[1]).toHaveValue("Pull Ups");
+    expect(screen.getAllByLabelText("Exercise")).toHaveLength(2);
+    expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
   });
 
   it("shows day index as placeholder and allows clearing the day name", () => {
@@ -230,7 +231,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getAllByLabelText("Exercise")[0];
+    const nameInput = screen.getByDisplayValue("Bench Press");
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
     fireEvent.blur(nameInput);
 
@@ -410,7 +411,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getAllByLabelText("Exercise")[0];
+    const nameInput = screen.getByDisplayValue("Bench Press");
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
     fireEvent.blur(nameInput);
 
@@ -431,7 +432,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const updatedInput = screen.getAllByLabelText("Exercise")[0];
+    const updatedInput = screen.getByDisplayValue("Incline Bench");
     fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
     fireEvent.blur(updatedInput);
 

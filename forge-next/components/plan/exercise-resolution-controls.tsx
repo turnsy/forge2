@@ -1,112 +1,18 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { Input } from "@/components/ui";
+import { useState } from "react";
+import { Button } from "@/components/ui";
+import { Modal } from "@/components/ui/modal";
+import {
+  confirmExerciseCandidate,
+  ExerciseSearchField,
+} from "@/components/plan/exercise-search-field";
 import type { Exercise } from "@/lib/plans/workout-plan";
 
-type Candidate = { id: string; name: string };
-
-async function searchCandidates(query: string): Promise<Candidate[]> {
-  if (!query.trim()) return [];
-  const response = await fetch("/api/coach/exercises/search", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
-  if (!response.ok) return [];
-  const result = (await response.json()) as { exercises?: Candidate[] };
-  return (result.exercises ?? []).slice(0, 5);
-}
-
-async function confirmExercise(input: {
-  exerciseId?: string;
-  name?: string;
-}): Promise<Candidate | null> {
-  const response = await fetch("/api/coach/exercises/confirm", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) return null;
-  const result = (await response.json()) as { exercise?: Candidate };
-  return result.exercise ?? null;
-}
-
-function ExerciseCombobox({
-  label,
-  value,
-  disabled,
-  onResolved,
-}: {
-  label: string;
-  value: string;
-  disabled: boolean;
-  onResolved: (next: { name: string; exerciseId: string }) => void;
-}) {
-  const listId = useId();
-  const [draft, setDraft] = useState(value);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void searchCandidates(draft).then((results) => {
-      if (!cancelled) setCandidates(results);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [draft]);
-
-  async function commit(nextValue: string, candidate?: Candidate) {
-    const trimmed = nextValue.trim();
-    if (!trimmed) return;
-
-    if (candidate) {
-      onResolved({ name: candidate.name, exerciseId: candidate.id });
-      setDraft(candidate.name);
-      return;
-    }
-
-    const matched = candidates.find(
-      (item) => item.name.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (matched) {
-      onResolved({ name: matched.name, exerciseId: matched.id });
-      setDraft(matched.name);
-      return;
-    }
-
-    const confirmed = await confirmExercise({ name: trimmed });
-    if (confirmed) {
-      onResolved({ name: confirmed.name, exerciseId: confirmed.id });
-      setDraft(confirmed.name);
-    }
-  }
-
-  return (
-    <div>
-      <Input
-        value={draft}
-        readOnly={disabled}
-        list={listId}
-        aria-label={label}
-        className="font-semibold"
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => void commit(draft)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            void commit(draft);
-          }
-        }}
-      />
-      <datalist id={listId}>
-        {candidates.map((candidate) => (
-          <option key={candidate.id} value={candidate.name} />
-        ))}
-      </datalist>
-    </div>
-  );
+function hasCustomBasis(exercise: Exercise): boolean {
+  const basisName = exercise.basisRaw?.trim();
+  if (!basisName) return false;
+  return basisName.toLowerCase() !== exercise.name.trim().toLowerCase();
 }
 
 export function ExerciseResolutionControls({
@@ -118,37 +24,155 @@ export function ExerciseResolutionControls({
   disabled: boolean;
   onChange: (next: Exercise) => void;
 }) {
-  const basisValue = exercise.basisRaw ?? exercise.name;
+  const [basisModalOpen, setBasisModalOpen] = useState(false);
+  const [basisDraftName, setBasisDraftName] = useState("");
+  const [basisDraftId, setBasisDraftId] = useState<string | null>(null);
+  const customBasis = hasCustomBasis(exercise);
+  const basisLabel = exercise.basisRaw ?? exercise.name;
+
+  function openBasisModal() {
+    setBasisDraftName(basisLabel);
+    setBasisDraftId(exercise.resolvedBasisExerciseId ?? exercise.resolvedExerciseId ?? null);
+    setBasisModalOpen(true);
+  }
+
+  function closeBasisModal() {
+    setBasisModalOpen(false);
+    setBasisDraftName("");
+    setBasisDraftId(null);
+  }
+
+  async function saveBasisModal() {
+    const trimmed = basisDraftName.trim();
+    if (!trimmed) {
+      closeBasisModal();
+      return;
+    }
+
+    const sameAsExercise = trimmed.toLowerCase() === exercise.name.trim().toLowerCase();
+    if (sameAsExercise) {
+      onChange({
+        ...exercise,
+        basisRaw: undefined,
+        resolvedBasisExerciseId: undefined,
+      });
+      closeBasisModal();
+      return;
+    }
+
+    let exerciseId = basisDraftId;
+    if (!exerciseId) {
+      const confirmed = await confirmExerciseCandidate({ name: trimmed });
+      exerciseId = confirmed?.id ?? null;
+    }
+
+    if (!exerciseId) {
+      return;
+    }
+
+    onChange({
+      ...exercise,
+      basisRaw: trimmed,
+      resolvedBasisExerciseId: exerciseId,
+    });
+    closeBasisModal();
+  }
+
+  function clearBasis() {
+    onChange({
+      ...exercise,
+      basisRaw: undefined,
+      resolvedBasisExerciseId: undefined,
+    });
+    closeBasisModal();
+  }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      <ExerciseCombobox
-        key={`exercise:${exercise.name}:${exercise.resolvedExerciseId ?? ""}`}
-        label="Exercise"
-        value={exercise.name}
-        disabled={disabled}
-        onResolved={({ name, exerciseId }) =>
-          onChange({
-            ...exercise,
-            name,
-            resolvedExerciseId: exerciseId,
-          })
+    <>
+      <div className="space-y-2">
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <ExerciseSearchField
+              key={`exercise:${exercise.name}:${exercise.resolvedExerciseId ?? ""}`}
+              label="Exercise"
+              value={exercise.name}
+              disabled={disabled}
+              onResolved={({ name, exerciseId }) =>
+                onChange({
+                  ...exercise,
+                  name,
+                  resolvedExerciseId: exerciseId,
+                })
+              }
+            />
+          </div>
+          <Button
+            type="button"
+            variant={customBasis ? "secondary" : "ghost"}
+            size="sm"
+            fullWidth={false}
+            disabled={disabled}
+            aria-label="Set percentage basis exercise"
+            className="mt-1 shrink-0"
+            onClick={openBasisModal}
+          >
+            Basis
+          </Button>
+        </div>
+        {customBasis ? (
+          <p className="text-xs text-surface-muted">
+            Percentage basis: <span className="font-medium text-surface-foreground">{basisLabel}</span>
+          </p>
+        ) : null}
+      </div>
+
+      <Modal
+        open={basisModalOpen}
+        title="Percentage basis exercise"
+        size="large"
+        onClose={closeBasisModal}
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            {customBasis ? (
+              <Button
+                type="button"
+                variant="ghost"
+                fullWidth={false}
+                onClick={clearBasis}
+              >
+                Use exercise name
+              </Button>
+            ) : null}
+            <Button type="button" variant="secondary" fullWidth={false} onClick={closeBasisModal}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              fullWidth={false}
+              disabled={!basisDraftName.trim()}
+              onClick={() => void saveBasisModal()}
+            >
+              Save
+            </Button>
+          </div>
         }
-      />
-      <ExerciseCombobox
-        key={`basis:${basisValue}:${exercise.resolvedBasisExerciseId ?? ""}`}
-        label="Percentage basis exercise"
-        value={basisValue}
-        disabled={disabled}
-        onResolved={({ name, exerciseId }) => {
-          const sameAsExercise = name.trim().toLowerCase() === exercise.name.trim().toLowerCase();
-          onChange({
-            ...exercise,
-            basisRaw: sameAsExercise ? undefined : name,
-            resolvedBasisExerciseId: sameAsExercise ? undefined : exerciseId,
-          });
-        }}
-      />
-    </div>
+      >
+        <p className="mb-4 text-sm text-surface-muted">
+          Choose which exercise max to use when this movement is prescribed as a percentage
+          (for example, Front Squat at a percentage of Back Squat).
+        </p>
+        <ExerciseSearchField
+          key={basisModalOpen ? `basis-modal:${basisLabel}` : "basis-modal-closed"}
+          label="Percentage basis exercise"
+          value={basisDraftName}
+          disabled={false}
+          autoFocus
+          onResolved={({ name, exerciseId }) => {
+            setBasisDraftName(name);
+            setBasisDraftId(exerciseId);
+          }}
+        />
+      </Modal>
+    </>
   );
 }
