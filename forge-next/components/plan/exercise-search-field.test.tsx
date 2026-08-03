@@ -88,6 +88,34 @@ describe("ExerciseSearchField", () => {
     expect(input).toHaveValue("Incline Bench");
   });
 
+  it("shows a custom entry alongside partial catalog matches", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ exercises: [{ id: "bench-1", name: "Bench Press" }] }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+
+    render(
+      <ExerciseSearchField
+        label="Percentage basis exercise"
+        value=""
+        disabled={false}
+        onResolved={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByLabelText("Percentage basis exercise");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Close Grip Bench" } });
+
+    expect(await screen.findByRole("option", { name: "Bench Press" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close Grip Bench" })).toBeInTheDocument();
+  });
+
   it("creates a custom exercise only when the create action is clicked", async () => {
     const onResolved = vi.fn();
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {

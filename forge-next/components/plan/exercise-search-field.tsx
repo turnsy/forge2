@@ -32,6 +32,18 @@ async function confirmExerciseCandidate(input: {
   return result.exercise ?? null;
 }
 
+export function shouldOfferCustomExerciseEntry(
+  query: string,
+  candidates: ExerciseSearchCandidate[],
+): boolean {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+
+  return !candidates.some(
+    (candidate) => candidate.name.trim().toLowerCase() === trimmed.toLowerCase(),
+  );
+}
+
 export function ExerciseSearchField({
   label,
   value,
@@ -120,7 +132,9 @@ export function ExerciseSearchField({
   const trimmedQuery = typedQuery?.trim() ?? "";
   const showResults = isOpen && trimmedQuery.length > 0;
   const showCreateCustom =
-    showResults && !isSearching && candidates.length === 0 && trimmedQuery.length > 0;
+    showResults &&
+    !isSearching &&
+    shouldOfferCustomExerciseEntry(trimmedQuery, candidates);
 
   return (
     <div ref={rootRef} className="relative">
@@ -195,7 +209,9 @@ export function ExerciseSearchField({
           {showCreateCustom ? (
             <button
               type="button"
-              className="flex w-full border-t border-glass-border px-4 py-2.5 text-left text-sm font-medium text-surface-foreground transition hover:bg-glass disabled:opacity-60"
+              className={`flex w-full px-4 py-2.5 text-left text-sm font-medium text-surface-foreground transition hover:bg-glass disabled:opacity-60${
+                candidates.length > 0 ? " border-t border-glass-border" : ""
+              }`}
               disabled={isCreating}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void handleCreateCustom()}

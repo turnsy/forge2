@@ -20,6 +20,7 @@ class Exercise:
         name: str,
         *,
         exercise_id: str | None = None,
+        basis_raw: str | None = None,
         notes: str | None = None,
         video_url: str | None = None,
     ) -> None:
@@ -27,6 +28,9 @@ class Exercise:
         if not self._name:
             raise ValueError("exercise name must be non-empty")
         self._exercise_id = exercise_id
+        self._basis_raw = basis_raw.strip() if basis_raw else None
+        if self._basis_raw == "":
+            self._basis_raw = None
         self._notes = notes
         self._video_url = video_url
         self._set_specs: list[dict[str, Any]] = []
@@ -218,6 +222,11 @@ def materialize_exercise(exercise: Exercise, day_code: str) -> dict[str, Any]:
         exercise_dict["notes"] = exercise._notes
     if exercise._video_url:
         exercise_dict["videoUrl"] = exercise._video_url
+    if (
+        exercise._basis_raw
+        and exercise._basis_raw.lower() != exercise._name.lower()
+    ):
+        exercise_dict["basisRaw"] = exercise._basis_raw
 
     sets: list[dict[str, Any]] = []
     for spec in exercise._set_specs:

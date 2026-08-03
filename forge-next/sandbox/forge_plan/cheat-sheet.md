@@ -5,6 +5,7 @@ Schema validation (workout-plan.schema.json v3.1.0 — output must pass):
 - Day: code is auto w{N}d{M} (lowercase, e.g. w1d1); at least 1 block; do not hand-set codes unless editing
 - Block: at least 1 exercise; 1 exercise = standalone, 2+ = superset
 - Exercise: non-empty id and name; at least 1 set
+- Exercise basis_raw: optional; use when % targets refer to a different exercise max (e.g. close-grip bench press at % of bench press max). Omit when the basis exercise is the same as the exercise name.
 - Set: id auto (e.g. w1d1-bs-1); planned.type "exact" from builders
 - Reps: integer preferred; "5+5" only for rep complexes — no units/sides in reps (use planned.notes)
 - Target: number = absolute load; string ending in % = percentage; unit required (kg, lb, m, yd)
@@ -21,4 +22,5 @@ Conventions:
 - add_exercise → 1-exercise block; add_superset(*exercises) → superset
 - Exercise.add_set / add_sets before navigating refs on new work
 - Edit: plan.week(0).day(0).block(0).exercise(0).set(0).update(...)
+- Example basis: Exercise("Close-grip bench press", basis_raw="Bench press").add_set(reps=5, target="75%", unit="kg")
 - day.exercise(n) works across blocks; all indices are 0-based
