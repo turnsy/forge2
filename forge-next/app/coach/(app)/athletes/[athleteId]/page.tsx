@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CoachAthleteDetailView } from "@/components/coach-athlete-detail-view";
 import { PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
+import { parseCoachAthleteDetailTab } from "@/lib/coach/athlete-detail-tabs";
 import {
   getActiveAthletePlan,
   listAthleteAssignedPlans,
@@ -10,11 +11,15 @@ import { getCoachAthleteRelationship } from "@/lib/links/repository";
 
 export default async function CoachAthleteDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ athleteId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const coach = await requireRole("coach");
   const { athleteId } = await params;
+  const { tab } = await searchParams;
+  const initialTab = parseCoachAthleteDetailTab(tab);
   const relationship = await getCoachAthleteRelationship(athleteId);
 
   if (!relationship || relationship.status !== "active") {
@@ -45,6 +50,7 @@ export default async function CoachAthleteDetailPage({
         relationship={relationship}
         activePlan={activePlan}
         previousPlans={previousPlans}
+        initialTab={initialTab}
       />
     </PageShell>
   );
