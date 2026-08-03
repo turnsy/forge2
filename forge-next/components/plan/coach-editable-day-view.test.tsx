@@ -149,9 +149,9 @@ describe("CoachEditableDayView", () => {
     );
 
     expect(screen.getAllByLabelText("Exercise")).toHaveLength(2);
-    expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("Percentage basis exercise")).toHaveLength(2);
+    expect(screen.getAllByDisplayValue("Bench Press")).toHaveLength(2);
+    expect(screen.getAllByDisplayValue("Pull Ups")).toHaveLength(2);
   });
 
   it("shows day index as placeholder and allows clearing the day name", () => {
@@ -231,7 +231,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getByDisplayValue("Bench Press");
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
     fireEvent.focus(nameInput);
     fireEvent.change(nameInput, { target: { value: "Incline" } });
 
@@ -414,7 +414,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getByDisplayValue("Bench Press");
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
     fireEvent.focus(nameInput);
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
 
@@ -438,7 +438,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const updatedInput = screen.getByDisplayValue("Incline Bench Press");
+    const updatedInput = screen.getAllByLabelText("Exercise")[0];
     fireEvent.focus(updatedInput);
     fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
 
@@ -627,7 +627,7 @@ describe("CoachEditableDayView", () => {
     );
     expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("75");
     expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
-    expect(screen.queryByLabelText("Percentage basis")).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("Percentage basis exercise")[0]).toHaveValue("Back Squat");
     expect(screen.queryByLabelText("Percentage operator")).not.toBeInTheDocument();
   });
 
