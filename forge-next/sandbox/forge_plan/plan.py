@@ -200,12 +200,20 @@ class ExerciseRef:
         self,
         *,
         name: str | None = None,
+        basis_raw: str | None = None,
         notes: str | None = None,
         video_url: str | None = None,
     ) -> ExerciseRef:
         exercise = self._require_exercise()
         if name is not None:
             exercise["name"] = name
+        if basis_raw is not None:
+            trimmed = basis_raw.strip()
+            exercise_name = str(exercise.get("name", "")).strip()
+            if trimmed and trimmed.lower() != exercise_name.lower():
+                exercise["basisRaw"] = trimmed
+            else:
+                exercise.pop("basisRaw", None)
         if notes is not None:
             if notes:
                 exercise["notes"] = notes
