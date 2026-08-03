@@ -28,6 +28,7 @@ import { BlockHeader } from "@/components/plan/block-header";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { ExerciseResolutionControls } from "@/components/plan/exercise-resolution-controls";
+import { ExerciseBasisControl } from "@/components/plan/exercise-basis-control";
 import { athleteExerciseCardClassName } from "@/components/plan/plan-athlete-parts";
 import { formatReps } from "@/lib/plans/display";
 import { parseRepsValue } from "@/lib/plans/parse-reps";
@@ -427,6 +428,20 @@ function EditableExerciseBlock({
                 </tr>
               </thead>
               <tbody className="max-md:block">
+                <tr className="border-b border-glass-border/60 max-md:mb-3 max-md:block max-md:rounded-lg max-md:border max-md:p-3">
+                  <td className="w-8 px-2 py-2 max-md:hidden" />
+                  <td
+                    colSpan={3}
+                    className="px-2 py-2 max-md:col-span-3 max-md:p-0"
+                  >
+                    <ExerciseBasisControl
+                      exercise={exercise}
+                      disabled={disabled}
+                      onChange={onExerciseChange}
+                    />
+                  </td>
+                  <td className="w-10 px-2 py-2 max-md:hidden" />
+                </tr>
                 <SortableContext
                   items={editableSets.map((set) => set.id)}
                   strategy={verticalListSortingStrategy}

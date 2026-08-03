@@ -1,35 +1,31 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi, afterEach } from "vitest";
-import { ExerciseResolutionControls } from "@/components/plan/exercise-resolution-controls";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ExerciseBasisControl } from "@/components/plan/exercise-basis-control";
 import { makeExercise } from "@/lib/plans/__tests__/fixtures";
 
-describe("ExerciseResolutionControls", () => {
+describe("ExerciseBasisControl", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("opens an empty basis field when Basis is toggled on without an existing basis", async () => {
-    const user = userEvent.setup();
-
+  it("shows the exercise name as the default basis", () => {
     render(
-      <ExerciseResolutionControls
+      <ExerciseBasisControl
         exercise={makeExercise({ name: "Close Grip Bench" })}
         disabled={false}
         onChange={vi.fn()}
       />,
     );
 
-    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Toggle percentage basis exercise" }));
-
-    expect(screen.getByLabelText("Percentage basis exercise")).toHaveValue("");
+    expect(screen.getByLabelText("Percentage basis exercise")).toHaveValue(
+      "Close Grip Bench",
+    );
   });
 
-  it("shows an existing basis when the field is opened", () => {
+  it("shows a custom basis when one is set", () => {
     render(
-      <ExerciseResolutionControls
+      <ExerciseBasisControl
         exercise={makeExercise({
           name: "Close Grip Bench",
           basisRaw: "Bench Press",
@@ -43,34 +39,7 @@ describe("ExerciseResolutionControls", () => {
     expect(screen.getByLabelText("Percentage basis exercise")).toHaveValue("Bench Press");
   });
 
-  it("does not clear basis when toggling the field closed and open again", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-
-    render(
-      <ExerciseResolutionControls
-        exercise={makeExercise({
-          name: "Close Grip Bench",
-          basisRaw: "Bench Press",
-          resolvedBasisExerciseId: "bench-1",
-        })}
-        disabled={false}
-        onChange={onChange}
-      />,
-    );
-
-    const toggle = screen.getByRole("button", { name: "Toggle percentage basis exercise" });
-
-    await user.click(toggle);
-    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
-    expect(onChange).not.toHaveBeenCalled();
-
-    await user.click(toggle);
-    expect(screen.getByLabelText("Percentage basis exercise")).toHaveValue("Bench Press");
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it("clears basis only when the selected basis matches the exercise name", async () => {
+  it("clears stored basis when reset to the exercise name", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.includes("/search")) {
@@ -94,7 +63,7 @@ describe("ExerciseResolutionControls", () => {
     const onChange = vi.fn();
 
     render(
-      <ExerciseResolutionControls
+      <ExerciseBasisControl
         exercise={makeExercise({
           name: "Close Grip Bench",
           basisRaw: "Bench Press",
@@ -120,5 +89,38 @@ describe("ExerciseResolutionControls", () => {
         }),
       );
     });
+  });
+
+  it("updates basis when a different exercise is selected", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ exercises: [{ id: "bench-1", name: "Bench Press" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const onChange = vi.fn();
+
+    render(
+      <ExerciseBasisControl
+        exercise={makeExercise({ name: "Close Grip Bench" })}
+        disabled={false}
+        onChange={onChange}
+      />,
+    );
+
+    const basisInput = screen.getByLabelText("Percentage basis exercise");
+    await user.clear(basisInput);
+    await user.type(basisInput, "Bench");
+
+    fireEvent.click(await screen.findByRole("option", { name: "Bench Press" }));
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        basisRaw: "Bench Press",
+        resolvedBasisExerciseId: "bench-1",
+      }),
+    );
   });
 });

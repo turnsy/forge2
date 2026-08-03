@@ -41,6 +41,14 @@ describe("PlanExerciseBlock", () => {
     expect(screen.getByText("Basis: Bench Press")).toBeInTheDocument();
   });
 
+  it("shows the exercise name as basis when no custom basis is set", () => {
+    render(
+      <PlanExerciseBlock exercise={makeExercise({ name: "Back Squat" })} view="coach" />,
+    );
+
+    expect(screen.getByText("Basis: Back Squat")).toBeInTheDocument();
+  });
+
   it("opens the video link in a new tab when the icon is clicked", async () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);

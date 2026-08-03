@@ -13,15 +13,26 @@ import type {
 import { computePrescribedWeight } from "@/lib/maxes/compute-weight";
 import type { MaxValue } from "@/lib/maxes/compute-weight";
 
-export function getExerciseBasisLabel(exercise: Exercise): string | null {
-  const basisName = exercise.basisRaw?.trim();
-  if (!basisName) return null;
-  if (basisName.toLowerCase() === exercise.name.trim().toLowerCase()) return null;
-  return basisName;
+export function getEffectiveExerciseBasis(exercise: Exercise): string {
+  const customBasis = exercise.basisRaw?.trim();
+  if (
+    customBasis &&
+    customBasis.toLowerCase() !== exercise.name.trim().toLowerCase()
+  ) {
+    return customBasis;
+  }
+
+  return exercise.name.trim();
+}
+
+export function getExerciseBasisLabel(exercise: Exercise): string {
+  return getEffectiveExerciseBasis(exercise);
 }
 
 export function hasCustomBasis(exercise: Exercise): boolean {
-  return getExerciseBasisLabel(exercise) !== null;
+  const customBasis = exercise.basisRaw?.trim();
+  if (!customBasis) return false;
+  return customBasis.toLowerCase() !== exercise.name.trim().toLowerCase();
 }
 
 export function formatReps(reps: RepsValue): string {

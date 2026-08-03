@@ -16,7 +16,7 @@ import {
 import { makeExercise } from "@/lib/plans/__tests__/fixtures";
 
 describe("getExerciseBasisLabel", () => {
-  it("returns the basis name when it differs from the exercise name", () => {
+  it("returns the custom basis name when it differs from the exercise name", () => {
     expect(
       getExerciseBasisLabel(
         makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" }),
@@ -24,18 +24,21 @@ describe("getExerciseBasisLabel", () => {
     ).toBe("Bench Press");
   });
 
-  it("returns null when basis matches exercise name or is missing", () => {
-    expect(getExerciseBasisLabel(makeExercise({ name: "Bench Press" }))).toBeNull();
+  it("returns the exercise name when basis is missing or matches the exercise", () => {
+    expect(getExerciseBasisLabel(makeExercise({ name: "Bench Press" }))).toBe("Bench Press");
     expect(
       getExerciseBasisLabel(makeExercise({ name: "Bench Press", basisRaw: "Bench Press" })),
-    ).toBeNull();
+    ).toBe("Bench Press");
   });
 
-  it("hasCustomBasis mirrors label presence", () => {
+  it("hasCustomBasis is true only when basis differs from exercise name", () => {
     expect(
       hasCustomBasis(makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" })),
     ).toBe(true);
     expect(hasCustomBasis(makeExercise({ name: "Bench Press" }))).toBe(false);
+    expect(
+      hasCustomBasis(makeExercise({ name: "Bench Press", basisRaw: "Bench Press" })),
+    ).toBe(false);
   });
 });
 
