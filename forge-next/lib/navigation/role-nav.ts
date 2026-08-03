@@ -4,6 +4,7 @@ export type SidebarNavIcon =
   | "home"
   | "plans"
   | "athletes"
+  | "maxes"
   | "history"
   | "settings";
 
@@ -22,6 +23,7 @@ export const roleNavItems: Record<UserRole, RoleNavItem[]> = {
   ],
   athlete: [
     { href: "/athlete", label: "Home", icon: "home", exact: true },
+    { href: "/athlete/maxes", label: "Maxes", icon: "maxes" },
     { href: "/athlete/history", label: "History", icon: "history" },
     { href: "/athlete/settings", label: "Settings", icon: "settings" },
   ],

@@ -87,7 +87,12 @@ export async function saveSetActualsAction(
         const currentInLogUnit = current
           ? convertWeight(current.value, current.unit, actual.target.unit)
           : null;
-        if (currentInLogUnit === null || estimate <= currentInLogUnit * 1.2) {
+        const isImprovement =
+          currentInLogUnit === null || estimate > currentInLogUnit;
+        const withinSanityBound =
+          currentInLogUnit === null || estimate <= currentInLogUnit * 1.2;
+
+        if (isImprovement && withinSanityBound) {
           await insertAthleteMax({
             athleteId: auth.user.id,
             exerciseId,

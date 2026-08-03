@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
-import { listAthleteMaxes, insertAthleteMax } from "@/lib/maxes/mutations";
+import { listAthleteMaxesWithExerciseNames } from "@/lib/maxes/list-with-exercise-names";
+import { insertAthleteMax } from "@/lib/maxes/mutations";
 
 export async function GET() {
   const auth = await requireApiRole("athlete");
   if (!auth.ok) return auth.response;
-  return NextResponse.json({ maxes: await listAthleteMaxes(auth.user.id) });
+  return NextResponse.json({ maxes: await listAthleteMaxesWithExerciseNames(auth.user.id) });
 }
 
 export async function POST(request: Request) {

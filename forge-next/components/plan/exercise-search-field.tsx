@@ -7,8 +7,11 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export type ExerciseSearchCandidate = { id: string; name: string };
 
-async function searchCandidates(query: string): Promise<ExerciseSearchCandidate[]> {
-  const response = await fetch("/api/coach/exercises/search", {
+async function searchCandidates(
+  query: string,
+  searchUrl: string,
+): Promise<ExerciseSearchCandidate[]> {
+  const response = await fetch(searchUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
@@ -18,11 +21,14 @@ async function searchCandidates(query: string): Promise<ExerciseSearchCandidate[
   return (result.exercises ?? []).slice(0, 5);
 }
 
-async function confirmExerciseCandidate(input: {
-  exerciseId?: string;
-  name?: string;
-}): Promise<ExerciseSearchCandidate | null> {
-  const response = await fetch("/api/coach/exercises/confirm", {
+async function confirmExerciseCandidate(
+  input: {
+    exerciseId?: string;
+    name?: string;
+  },
+  confirmUrl: string,
+): Promise<ExerciseSearchCandidate | null> {
+  const response = await fetch(confirmUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
@@ -51,6 +57,8 @@ export function ExerciseSearchField({
   disabled,
   size = "sm",
   revertOnBlur = true,
+  searchUrl = "/api/coach/exercises/search",
+  confirmUrl = "/api/coach/exercises/confirm",
   onResolved,
 }: {
   label: string;
@@ -59,6 +67,8 @@ export function ExerciseSearchField({
   disabled: boolean;
   size?: "sm" | "md";
   revertOnBlur?: boolean;
+  searchUrl?: string;
+  confirmUrl?: string;
   onResolved: (next: { name: string; exerciseId: string }) => void;
 }) {
   const listboxId = useId();
@@ -95,7 +105,7 @@ export function ExerciseSearchField({
 
     const timer = window.setTimeout(() => {
       setIsSearching(true);
-      void searchCandidates(trimmed)
+      void searchCandidates(trimmed, searchUrl)
         .then((results) => {
           if (requestIdRef.current !== requestId) return;
           setCandidates(results);
@@ -111,7 +121,7 @@ export function ExerciseSearchField({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [typedQuery]);
+  }, [typedQuery, searchUrl]);
 
   function closeDropdown() {
     setIsOpen(false);
@@ -132,7 +142,7 @@ export function ExerciseSearchField({
 
     setIsCreating(true);
     try {
-      const confirmed = await confirmExerciseCandidate({ name: trimmed });
+      const confirmed = await confirmExerciseCandidate({ name: trimmed }, confirmUrl);
       if (confirmed) {
         closeDropdown();
         setDraft(confirmed.name);

@@ -1,4 +1,4 @@
-import { MaxesEditor } from "@/components/maxes-editor";
+import { CoachAthleteMaxesTab } from "@/components/coach-athlete-maxes-tab";
 import { PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 
@@ -7,11 +7,11 @@ export default async function AthleteMaxesPage() {
   return (
     <PageShell>
       <main className="mx-auto w-full max-w-3xl p-4 md:p-8">
-        <MaxesEditor
+        <CoachAthleteMaxesTab
           listUrl="/api/athlete/maxes"
           saveUrl="/api/athlete/maxes"
-          title="Exercise maxes"
-          description="Record a tested or current training max."
+          searchUrl="/api/athlete/exercises/search"
+          confirmUrl="/api/athlete/exercises/confirm"
         />
       </main>
     </PageShell>
