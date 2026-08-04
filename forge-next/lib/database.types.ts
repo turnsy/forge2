@@ -103,6 +103,51 @@ export type Database = {
           },
         ]
       }
+      athlete_maxes: {
+        Row: {
+          athlete_id: string
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          unit: string
+          value: number
+        }
+        Insert: {
+          athlete_id: string
+          exercise_id: string
+          id?: string
+          logged_at?: string
+          source: string
+          unit: string
+          value: number
+        }
+        Update: {
+          athlete_id?: string
+          exercise_id?: string
+          id?: string
+          logged_at?: string
+          source?: string
+          unit?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_maxes_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_maxes_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_sessions: {
         Row: {
           coach_id: string
@@ -174,6 +219,67 @@ export type Database = {
           {
             foreignKeyName: "coach_athletes_coach_id_fkey"
             columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_embeddings: {
+        Row: {
+          created_at: string
+          embedding: string
+          exercise_id: string
+          source_text: string
+        }
+        Insert: {
+          created_at?: string
+          embedding: string
+          exercise_id: string
+          source_text: string
+        }
+        Update: {
+          created_at?: string
+          embedding?: string
+          exercise_id?: string
+          source_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_embeddings_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: true
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          normalized_name: string
+          owner_coach_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          normalized_name: string
+          owner_coach_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          normalized_name?: string
+          owner_coach_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_owner_coach_id_fkey"
+            columns: ["owner_coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -323,6 +429,7 @@ export type Database = {
           version_id: string
         }[]
       }
+      delete_athlete_max: { Args: { p_max_id: string }; Returns: undefined }
       delete_coach_plan: { Args: { p_plan_id: string }; Returns: undefined }
       get_athlete_coach_link: {
         Args: never
@@ -389,6 +496,42 @@ export type Database = {
           week_count: number
         }[]
       }
+      insert_athlete_max: {
+        Args: {
+          p_athlete_id: string
+          p_exercise_id: string
+          p_source: string
+          p_unit: string
+          p_value: number
+        }
+        Returns: {
+          athlete_id: string
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          unit: string
+          value: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "athlete_maxes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      list_athlete_maxes: {
+        Args: { p_athlete_id: string; p_exercise_ids?: string[] }
+        Returns: {
+          athlete_id: string
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          unit: string
+          value: number
+        }[]
+      }
       list_coach_plan_versions: {
         Args: { p_plan_id: string }
         Returns: {
@@ -413,6 +556,15 @@ export type Database = {
         }
         Returns: {
           version_id: string
+        }[]
+      }
+      search_exercises: {
+        Args: { p_coach_id: string; p_embedding: string; p_limit?: number }
+        Returns: {
+          id: string
+          name: string
+          owner_coach_id: string
+          score: number
         }[]
       }
       unlink_coach_athlete: {

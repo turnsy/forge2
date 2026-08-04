@@ -4,6 +4,7 @@ import {
   getAssignedPlanById,
   savePlanActuals,
 } from "@/lib/athlete/plan/repository";
+import { preparePlanExerciseResolution } from "@/lib/exercises/prepare-plan";
 import { requireRoleAuth } from "@/lib/errors/require-role-auth";
 import {
   ServiceErrorCode,
@@ -43,5 +44,15 @@ export async function saveAssignedPlanAction(
     );
   }
 
-  return savePlanActuals(assignmentId, planData);
+  let resolvedPlan: WorkoutPlan;
+  try {
+    resolvedPlan = await preparePlanExerciseResolution(planData, auth.user.id);
+  } catch (error) {
+    return serviceError(
+      ServiceErrorCode.VALIDATION_ERROR,
+      error instanceof Error ? error.message : "Exercise resolution failed",
+    );
+  }
+
+  return savePlanActuals(assignmentId, resolvedPlan);
 }

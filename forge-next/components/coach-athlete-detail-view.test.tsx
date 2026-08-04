@@ -64,6 +64,7 @@ describe("CoachAthleteDetailView", () => {
       />,
     );
 
+    expect(screen.getByRole("tablist")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Current plan" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -187,5 +188,48 @@ describe("CoachAthleteDetailView", () => {
 
     expect(screen.getByText("alex@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Unlink athlete" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Manage maxes" })).not.toBeInTheDocument();
+  });
+
+  it("shows maxes list on the maxes tab and opens history", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          maxes: [
+            {
+              id: "max-1",
+              exercise_id: "ex-1",
+              exercise_name: "Bench Press",
+              value: 225,
+              unit: "lb",
+              source: "tested",
+              logged_at: "2026-01-10T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <CoachAthleteDetailView
+        relationship={relationship}
+        activePlan={assignedPlan()}
+        previousPlans={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Maxes" }));
+
+    expect(await screen.findByLabelText("Search maxes")).toBeInTheDocument();
+    expect(screen.getByText("Bench Press")).toBeInTheDocument();
+    expect(screen.getByText("225 lb")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add max" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Bench Press" }));
+
+    expect(screen.getByRole("button", { name: "Back to maxes" })).toBeInTheDocument();
+    expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
 });

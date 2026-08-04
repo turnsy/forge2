@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
+import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 import { buildForgeClientContext } from "@/lib/chat/adapters/plan/forge-client-context";
 
 const { getCoachArtifact, setCoachArtifact } = vi.hoisted(() => ({
@@ -30,7 +30,7 @@ describe("forge client context sync", () => {
   });
 
   it("parses forge client context messages", () => {
-    const plan = createEmptyWorkoutPlan();
+    const plan = minimalWorkoutPlan;
     const payload = buildForgeClientContext({
       forgeSessionId: "session-1",
       clientArtifact: {
@@ -48,7 +48,7 @@ describe("forge client context sync", () => {
   });
 
   it("updates coachArtifact when the client artifact differs", () => {
-    const plan = createEmptyWorkoutPlan();
+    const plan = minimalWorkoutPlan;
 
     syncCoachArtifactFromClientContext(
       buildForgeClientContext({

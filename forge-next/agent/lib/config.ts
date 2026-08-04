@@ -9,7 +9,7 @@ export const RUN_SCRIPT_PATH = "run.py";
 export const OUTPUT_PLAN_PATH = "output/plan.json";
 
 export const EMPTY_PLAN_SEED = {
-  schemaVersion: "3.0.0",
+  schemaVersion: "3.1.0",
   name: "",
   weeks: [],
 } as const;

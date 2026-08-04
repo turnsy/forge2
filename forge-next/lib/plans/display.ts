@@ -1,6 +1,7 @@
 import type {
   AbsoluteLoad,
   ActualSet,
+  Exercise,
   SetTarget,
   PercentageLoad,
   PlannedSet,
@@ -9,6 +10,40 @@ import type {
   Week,
   Day,
 } from "@/lib/plans/workout-plan";
+import { computePrescribedWeight } from "@/lib/maxes/compute-weight";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
+
+export function getEffectiveExerciseBasis(exercise: Exercise): string {
+  const customBasis = exercise.basisRaw?.trim();
+  if (
+    customBasis &&
+    customBasis.toLowerCase() !== exercise.name.trim().toLowerCase()
+  ) {
+    return customBasis;
+  }
+
+  return exercise.name.trim();
+}
+
+export function getExerciseBasisLabel(exercise: Exercise): string {
+  return getEffectiveExerciseBasis(exercise);
+}
+
+export function hasCustomBasis(exercise: Exercise): boolean {
+  const customBasis = exercise.basisRaw?.trim();
+  if (!customBasis) return false;
+  return customBasis.toLowerCase() !== exercise.name.trim().toLowerCase();
+}
+
+export function exerciseHasPercentageSets(exercise: Exercise): boolean {
+  return exercise.sets.some((set) => {
+    if (set.planned.type === "exact") {
+      return set.planned.target.type === "percentage";
+    }
+
+    return set.planned.target?.type === "percentage";
+  });
+}
 
 export function formatReps(reps: RepsValue): string {
   return String(reps);
@@ -28,6 +63,16 @@ function formatAbsoluteTarget(load: AbsoluteLoad): string {
 
 export function formatPercentageTarget(load: PercentageLoad): string {
   return `${load.value}% (${load.unit})`;
+}
+
+export function formatResolvedPercentageTarget(
+  load: PercentageLoad,
+  max: MaxValue | null,
+): string {
+  const weight = computePrescribedWeight(max, load.value, load.unit);
+  return weight === null
+    ? formatPercentageTarget(load)
+    : `${weight} ${load.unit} (${load.value}%)`;
 }
 
 export function formatTargetInstruction(instruction: string): string {

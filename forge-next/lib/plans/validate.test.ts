@@ -17,7 +17,7 @@ describe("loadWorkoutPlan", () => {
   });
 
   it("rejects missing required fields", () => {
-    const result = loadWorkoutPlan({ schemaVersion: "3.0.0" });
+    const result = loadWorkoutPlan({ schemaVersion: "3.1.0" });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

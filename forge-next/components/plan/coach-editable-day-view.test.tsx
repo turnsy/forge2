@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -17,7 +17,7 @@ function makeSet(id: string, reps: number, weight: number) {
 
 function makePercentagePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Percentage Block",
     weeks: [
       {
@@ -62,7 +62,7 @@ function makePercentagePlan(): WorkoutPlan {
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Strength Block",
     weeks: [
       {
@@ -104,7 +104,7 @@ function makePlan(): WorkoutPlan {
 
 function makeSupersetPlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Strength Block",
     weeks: [
       {
@@ -148,6 +148,8 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
+    expect(screen.getAllByLabelText("Exercise")).toHaveLength(2);
+    expect(screen.queryByLabelText("Percentage basis exercise")).not.toBeInTheDocument();
     expect(screen.getByDisplayValue("Bench Press")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Pull Ups")).toBeInTheDocument();
   });
@@ -217,7 +219,7 @@ describe("CoachEditableDayView", () => {
     expect(dayNameInput).toHaveAttribute("placeholder", "Day 1");
   });
 
-  it("changing exercise name calls onPlanChange with the updated plan", () => {
+  it("changing exercise name calls onPlanChange with the updated plan", async () => {
     const onPlanChange = vi.fn();
     render(
       <CoachEditableDayView
@@ -229,11 +231,19 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    const nameInput = screen.getByDisplayValue("Bench Press");
-    fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
+    fireEvent.focus(nameInput);
+    fireEvent.change(nameInput, { target: { value: "Incline" } });
+
+    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    fireEvent.click(option);
+
+    await waitFor(() => {
+      expect(onPlanChange).toHaveBeenCalled();
+    });
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
-    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Incline Bench Press");
   });
 
   it("changing set reps calls onPlanChange", () => {
@@ -381,11 +391,11 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("");
     expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].id).toBeTruthy();
   });
 
-  it("assigns stable ids to exercises without one", () => {
+  it("assigns stable ids to exercises without one", async () => {
     const plan = makePlan();
     delete plan.weeks[0].days[0].blocks[0].exercises[0].id;
 
@@ -404,8 +414,15 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    fireEvent.change(screen.getByDisplayValue("Bench Press"), {
-      target: { value: "Incline Bench" },
+    const nameInput = screen.getAllByLabelText("Exercise")[0];
+    fireEvent.focus(nameInput);
+    fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
+
+    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    fireEvent.click(option);
+
+    await waitFor(() => {
+      expect(onPlanChange).toHaveBeenCalled();
     });
 
     const exerciseId = currentPlan.weeks[0].days[0].blocks[0].exercises[0].id;
@@ -421,8 +438,16 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    fireEvent.change(screen.getByDisplayValue("Incline Bench"), {
-      target: { value: "Flat Bench" },
+    const updatedInput = screen.getAllByLabelText("Exercise")[0];
+    fireEvent.focus(updatedInput);
+    fireEvent.change(updatedInput, { target: { value: "Flat Bench" } });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Flat Bench" }),
+    );
+
+    await waitFor(() => {
+      expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].name).toBe("Flat Bench");
     });
 
     expect(currentPlan.weeks[0].days[0].blocks[0].exercises[0].id).toBe(exerciseId);
@@ -485,7 +510,7 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks[0].exercises).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("New Exercise");
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("");
   });
 
   it("allows entering a custom load unit", () => {
@@ -602,7 +627,7 @@ describe("CoachEditableDayView", () => {
     );
     expect(screen.getAllByLabelText("Set 1 target")[0]).toHaveValue("75");
     expect(screen.getAllByLabelText("Unit")[0]).toHaveValue("lb");
-    expect(screen.queryByLabelText("Percentage basis")).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("Percentage basis exercise")[0]).toHaveValue("Back Squat");
     expect(screen.queryByLabelText("Percentage operator")).not.toBeInTheDocument();
   });
 
@@ -648,7 +673,7 @@ describe("CoachEditableDayView", () => {
       />,
     );
 
-    expect(screen.getByDisplayValue("Bench Press")).toHaveAttribute("readonly");
+    expect(screen.getAllByLabelText("Exercise")[0]).toHaveAttribute("readonly");
     expect(screen.getByRole("button", { name: "Add exercise" })).toBeDisabled();
     expect(screen.getAllByLabelText("Drag to reorder set")[0]).toBeDisabled();
     expect(document.querySelector("[data-plan-editable-day]")).toHaveClass(

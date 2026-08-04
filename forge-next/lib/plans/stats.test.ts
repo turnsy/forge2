@@ -5,7 +5,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(weekDayCounts: number[], name = "Test Plan"): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name,
     weeks: weekDayCounts.map((dayCount, weekIndex) => ({
       days: Array.from({ length: dayCount }, (_, dayIndex) => ({

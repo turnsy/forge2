@@ -121,6 +121,26 @@ class ForgePlanBuildTests(unittest.TestCase):
         self.assertEqual(target["value"], 85.0)
         assert_valid_schema(self, plan.to_dict())
 
+    def test_basis_raw_is_materialized_when_different_from_exercise_name(self) -> None:
+        plan = (
+            Plan("Basis")
+            .add_week(
+                Week()
+                .add_day(
+                    Day()
+                    .add_exercise(
+                        Exercise(
+                            "Close-grip bench press",
+                            basis_raw="Bench press",
+                        ).add_set(reps=5, target="75%", unit="kg")
+                    )
+                )
+            )
+        )
+        exercise = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]
+        self.assertEqual(exercise["basisRaw"], "Bench press")
+        assert_valid_schema(self, plan.to_dict())
+
 
 class ForgePlanEditTests(unittest.TestCase):
     def test_positional_update(self) -> None:
@@ -150,6 +170,14 @@ class ForgePlanEditTests(unittest.TestCase):
 
         sets = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]["sets"]
         self.assertEqual(len(sets), 4)
+        assert_valid_schema(self, plan.to_dict())
+
+    def test_ref_update_basis_raw(self) -> None:
+        plan = build_sample_plan()
+        plan.week(0).day(0).block(0).exercise(0).update(basis_raw="Competition bench press")
+
+        exercise = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]
+        self.assertEqual(exercise["basisRaw"], "Competition bench press")
         assert_valid_schema(self, plan.to_dict())
 
     def test_move_and_remove_day(self) -> None:

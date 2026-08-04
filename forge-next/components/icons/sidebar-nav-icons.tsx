@@ -82,6 +82,27 @@ export function HistoryIcon({ className = iconClass }: { className?: string }) {
   );
 }
 
+export function MaxesIcon({ className = iconClass }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M4 20V10" />
+      <path d="M10 20V4" />
+      <path d="M16 20v-6" />
+      <path d="M22 20V8" />
+    </svg>
+  );
+}
+
 export function SettingsNavIcon({
   className = iconClass,
 }: {

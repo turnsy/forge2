@@ -1,0 +1,57 @@
+import { convertWeight } from "@/lib/maxes/units";
+
+export type AthleteMax = {
+  value: number;
+  unit: string;
+  loggedAt: string | Date;
+  source?: string;
+};
+
+function maxValueInKg(row: AthleteMax): number | null {
+  return convertWeight(row.value, row.unit, "kg");
+}
+
+/** Highest recorded value — used where only improvements matter (e.g. log estimates). */
+export function resolveBestMax(rows: AthleteMax[]): AthleteMax | null {
+  const usable = rows.filter((row) => Number.isFinite(row.value) && row.value > 0);
+  if (usable.length === 0) {
+    return null;
+  }
+
+  return usable.reduce<AthleteMax | null>((best, row) => {
+    if (!best) {
+      return row;
+    }
+
+    const bestKg = maxValueInKg(best);
+    const rowKg = maxValueInKg(row);
+
+    if (bestKg !== null && rowKg !== null) {
+      return rowKg > bestKg ? row : best;
+    }
+
+    if (row.unit === best.unit && row.value > best.value) {
+      return row;
+    }
+
+    return best;
+  }, null);
+}
+
+/** Most recent entry — effective max for prescription and maxes UI (append-only; manual updates may lower). */
+export function resolveCurrentMax(rows: AthleteMax[]): AthleteMax | null {
+  const usable = rows.filter((row) => Number.isFinite(row.value) && row.value > 0);
+  if (usable.length === 0) {
+    return null;
+  }
+
+  return usable.reduce<AthleteMax | null>((latest, row) => {
+    if (!latest) {
+      return row;
+    }
+
+    return new Date(row.loggedAt).getTime() > new Date(latest.loggedAt).getTime()
+      ? row
+      : latest;
+  }, null);
+}

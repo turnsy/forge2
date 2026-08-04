@@ -6,6 +6,7 @@ import { createCoachPlan } from "@/lib/plans/mutations";
 import { parseSavePlanRequest } from "@/lib/plans/parse-save-plan-request";
 import { listCoachPlans } from "@/lib/plans/repository";
 import { preparePlanForSave } from "@/lib/plans/utils";
+import { preparePlanExerciseResolution } from "@/lib/exercises/prepare-plan";
 
 export async function POST(request: Request) {
   const auth = await requireApiRole("coach");
@@ -34,7 +35,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ errors: prepared.errors }, { status: 422 });
   }
 
-  const result = await createCoachPlan(prepared.plan, parsed.body.changeSummary);
+  let resolvedPlan;
+  try {
+    resolvedPlan = await preparePlanExerciseResolution(prepared.plan, auth.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Exercise resolution failed" },
+      { status: 422 },
+    );
+  }
+  const result = await createCoachPlan(resolvedPlan, parsed.body.changeSummary);
 
   if (!result.ok) {
     return NextResponse.json(

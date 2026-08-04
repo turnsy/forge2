@@ -23,10 +23,12 @@ export function createDefaultSet(): Set {
   };
 }
 
+export const NEW_EXERCISE_PLACEHOLDER = "New exercise";
+
 export function createDefaultExercise(): Exercise {
   return {
     id: createExerciseId(),
-    name: "New Exercise",
+    name: "",
     sets: [createDefaultSet()],
   };
 }
@@ -47,7 +49,7 @@ export function createDefaultSupersetBlock(): Block {
 
 export function createEmptyWorkoutPlan(name = "New Plan"): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name,
     weeks: [
       {
@@ -75,7 +77,7 @@ export function isDefaultDayContent(day: Day): boolean {
   }
 
   const exercise = block.exercises[0];
-  if (exercise.name !== "New Exercise" || exercise.sets.length !== 1) {
+  if (exercise.name.trim() || exercise.sets.length !== 1) {
     return false;
   }
 

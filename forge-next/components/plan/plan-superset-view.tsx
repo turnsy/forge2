@@ -2,6 +2,7 @@ import type { MutableRefObject } from "react";
 import type { AccordionVariant } from "@/components/ui/accordion";
 import type { PlanViewerView } from "@/components/plan/plan-set-table";
 import { BlockHeader } from "@/components/plan/block-header";
+import { ExerciseBasisLabel } from "@/components/plan/exercise-basis-label";
 import { ExerciseVideoButton } from "@/components/plan/exercise-video-button";
 import { PrescribedActualCell } from "@/components/plan/prescribed-actual-cell";
 import {
@@ -10,6 +11,7 @@ import {
   AthleteSetRow,
   athleteExerciseCardClassName,
   athleteSupersetRoundCardClassName,
+  getPrescribedTargetLabel,
   type AthleteSetFormState,
 } from "@/components/plan/plan-athlete-parts";
 import {
@@ -23,6 +25,7 @@ import {
 import { getSupersetRounds } from "@/lib/plans/day-blocks";
 import { setFormStateFromActual } from "@/lib/athlete/plan/domain";
 import type { Block, Set } from "@/lib/plans/workout-plan";
+import type { MaxValue } from "@/lib/maxes/compute-weight";
 import { accordionContentCardClass } from "@/lib/theme";
 
 const mutedCellClass = "text-surface-muted";
@@ -84,6 +87,7 @@ function CoachSupersetRoundTable({
                           <ExerciseVideoButton videoUrl={exercise.videoUrl} />
                         ) : null}
                       </div>
+                      <ExerciseBasisLabel exercise={exercise} />
                     </td>
                     <td className="px-3 py-2 text-surface-foreground">
                       <PrescribedActualCell
@@ -129,10 +133,12 @@ function AthleteSupersetRoundCard({
   roundNumber,
   entries,
   athleteEntry,
+  maxesByExerciseId = {},
 }: {
   roundNumber: number;
   entries: ReturnType<typeof getSupersetRounds>[number]["entries"];
   athleteEntry?: AthleteSupersetEntryState;
+  maxesByExerciseId?: Record<string, MaxValue>;
 }) {
   const readOnly = !athleteEntry;
 
@@ -181,6 +187,12 @@ function AthleteSupersetRoundCard({
                 setIdx={setPos}
                 reps={values.reps}
                 target={values.target}
+                prescribedTarget={getPrescribedTargetLabel(
+                  plannedSet,
+                  maxesByExerciseId[
+                    exercise.resolvedBasisExerciseId ?? exercise.resolvedExerciseId ?? ""
+                  ],
+                )}
                 readOnly={readOnly}
                 complete={complete}
                 setRef={
@@ -216,11 +228,13 @@ export function PlanSupersetView({
   view,
   surfaceVariant = "default",
   athleteEntry,
+  maxesByExerciseId = {},
 }: {
   block: Block;
   view: PlanViewerView;
   surfaceVariant?: AccordionVariant;
   athleteEntry?: AthleteSupersetEntryState;
+  maxesByExerciseId?: Record<string, MaxValue>;
 }) {
   const rounds = getSupersetRounds(block);
 
@@ -246,6 +260,7 @@ export function PlanSupersetView({
               roundNumber={round.roundNumber}
               entries={round.entries}
               athleteEntry={athleteEntry}
+              maxesByExerciseId={maxesByExerciseId}
             />
           ),
         )}

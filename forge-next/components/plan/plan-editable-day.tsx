@@ -27,8 +27,10 @@ import { Button, IconButton, Input } from "@/components/ui";
 import { BlockHeader } from "@/components/plan/block-header";
 import { PlanLoadTargetControl } from "@/components/plan/plan-load-target-control";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
+import { ExerciseResolutionControls } from "@/components/plan/exercise-resolution-controls";
+import { ExerciseBasisControl } from "@/components/plan/exercise-basis-control";
 import { athleteExerciseCardClassName } from "@/components/plan/plan-athlete-parts";
-import { formatReps } from "@/lib/plans/display";
+import { formatReps, exerciseHasPercentageSets } from "@/lib/plans/display";
 import { parseRepsValue } from "@/lib/plans/parse-reps";
 import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
 import {
@@ -347,15 +349,13 @@ function EditableExerciseBlock({
   return (
     <section className={[accordionNestedClass(), "space-y-3 p-4"].join(" ")} data-exercise-editable="true">
       <div className="flex items-start gap-2">
-        <Input
-          value={exercise.name}
-          readOnly={disabled}
-          aria-label="Exercise name"
-          className="min-w-0 flex-1 font-semibold"
-          onChange={(event) =>
-            onExerciseChange({ ...exercise, name: event.target.value })
-          }
-        />
+        <div className="min-w-0 flex-1">
+          <ExerciseResolutionControls
+            exercise={exercise}
+            disabled={disabled}
+            onChange={onExerciseChange}
+          />
+        </div>
         <div className="flex shrink-0 items-center gap-1">
           {onNeedVideoLink ? (
             <IconButton
@@ -410,6 +410,15 @@ function EditableExerciseBlock({
       />
 
       <div className={accordionContentCardClass()}>
+        {exerciseHasPercentageSets(exercise) ? (
+          <div className="border-b border-glass-border/60 px-2 py-2">
+            <ExerciseBasisControl
+              exercise={exercise}
+              disabled={disabled}
+              onChange={onExerciseChange}
+            />
+          </div>
+        ) : null}
         <DndContext
           id={dndId}
           sensors={sensors}
@@ -635,11 +644,12 @@ export function PlanEditableDay({
       data-plan-editable-day
     >
       <Input
+        size="sm"
         value={editableDay.name ?? ""}
         placeholder={`Day ${dayPos + 1}`}
         readOnly={disabled}
         aria-label="Day name"
-        className="text-lg font-semibold"
+        className="font-semibold"
         onChange={(event) =>
           emitChange({
             ...editableDay,

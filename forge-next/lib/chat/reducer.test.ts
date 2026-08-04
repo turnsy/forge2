@@ -4,7 +4,7 @@ import { chatWorkspaceReducer } from "@/lib/chat/reducer";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 const samplePlan: WorkoutPlan = {
-  schemaVersion: "3.0.0",
+  schemaVersion: "3.1.0",
   name: "Block",
   weeks: [],
 };

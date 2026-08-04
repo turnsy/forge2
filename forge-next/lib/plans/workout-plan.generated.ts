@@ -12,7 +12,7 @@ export type SetTarget = AbsoluteLoad | PercentageLoad;
  * Athlete-facing workout plan schema: Plan → Week → Day → Block → Exercise → Set.
  */
 export interface WorkoutPlan {
-  schemaVersion: "3.0.0";
+  schemaVersion: "3.1.0";
   id?: NonEmptyString;
   name: NonEmptyString;
   discipline?: NonEmptyString;
@@ -53,6 +53,9 @@ export interface Block {
 export interface Exercise {
   id: NonEmptyString;
   name: NonEmptyString;
+  basisRaw?: string;
+  resolvedExerciseId?: string;
+  resolvedBasisExerciseId?: string;
   notes?: string;
   videoUrl?: string;
   /**

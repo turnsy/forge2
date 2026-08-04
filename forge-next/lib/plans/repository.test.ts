@@ -112,7 +112,7 @@ describe("mapCoachPlanDetailRow", () => {
       id: "plan-1",
       created_at: "2026-01-01T00:00:00.000Z",
       active_version: {
-        plan_data: { schemaVersion: "3.0.0" },
+        plan_data: { schemaVersion: "3.1.0" },
       },
     });
 

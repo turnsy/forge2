@@ -2,7 +2,7 @@
 
 Fluent builder library for workout plan mutations inside **Vercel Sandbox** (`python3.13` runtime).
 
-Targets **workout-plan.schema.json v3.0.0**: `Plan → Week → Day → Block → Exercise → Set`.
+Targets **workout-plan.schema.json v3.1.0**: `Plan → Week → Day → Block → Exercise → Set`.
 
 Bundled into each sandbox run together with:
 
