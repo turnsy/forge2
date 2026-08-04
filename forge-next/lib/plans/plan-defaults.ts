@@ -28,7 +28,7 @@ export const NEW_EXERCISE_PLACEHOLDER = "New exercise";
 export function createDefaultExercise(): Exercise {
   return {
     id: createExerciseId(),
-    name: NEW_EXERCISE_PLACEHOLDER,
+    name: "",
     sets: [createDefaultSet()],
   };
 }
@@ -77,7 +77,7 @@ export function isDefaultDayContent(day: Day): boolean {
   }
 
   const exercise = block.exercises[0];
-  if (exercise.name !== NEW_EXERCISE_PLACEHOLDER || exercise.sets.length !== 1) {
+  if (exercise.name.trim() || exercise.sets.length !== 1) {
     return false;
   }
 
