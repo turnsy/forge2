@@ -114,7 +114,37 @@ describe("CoachAthleteMaxesTab", () => {
     expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("opens the update modal for a listed max", async () => {
+  it("does not show update max on the list view", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          maxes: [
+            {
+              id: "max-1",
+              exercise_id: "bench",
+              exercise_name: "Bench Press",
+              value: 225,
+              unit: "lb",
+              logged_at: "2026-01-10T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <CoachAthleteMaxesTab
+        listUrl="/api/coach/athletes/athlete-1/maxes"
+        saveUrl="/api/coach/athletes/athlete-1/maxes"
+      />,
+    );
+
+    expect(await screen.findByText("Bench Press")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Update max" })).not.toBeInTheDocument();
+  });
+
+  it("opens the update modal from the exercise detail view", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
@@ -141,7 +171,8 @@ describe("CoachAthleteMaxesTab", () => {
       />,
     );
 
-    await user.click(await screen.findByRole("button", { name: "Update max" }));
+    await user.click(await screen.findByRole("button", { name: "Bench Press" }));
+    await user.click(screen.getByRole("button", { name: "Update max" }));
 
     expect(screen.getByRole("dialog", { name: "Update max" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("225")).toBeInTheDocument();
