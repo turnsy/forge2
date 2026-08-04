@@ -3,6 +3,7 @@ import { requireApiRole } from "@/lib/auth/api";
 import { getCoachAthleteRelationship } from "@/lib/links/repository";
 import { insertAthleteMax } from "@/lib/maxes/mutations";
 import { listAthleteMaxesWithExerciseNames } from "@/lib/maxes/list-with-exercise-names";
+import { normalizeWeightUnit } from "@/lib/maxes/units";
 
 type RouteContext = {
   params: Promise<{ athleteId: string }>;
@@ -43,11 +44,16 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
+  const unit = normalizeWeightUnit(body.unit);
+  if (!unit) {
+    return NextResponse.json({ error: "unit must be kg or lb" }, { status: 400 });
+  }
+
   const max = await insertAthleteMax({
     athleteId,
     exerciseId: body.exerciseId,
     value: body.value,
-    unit: body.unit,
+    unit,
     source: "coach_entered",
   });
 

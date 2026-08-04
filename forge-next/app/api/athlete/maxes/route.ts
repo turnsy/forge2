@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth/api";
 import { listAthleteMaxesWithExerciseNames } from "@/lib/maxes/list-with-exercise-names";
 import { insertAthleteMax } from "@/lib/maxes/mutations";
+import { normalizeWeightUnit } from "@/lib/maxes/units";
 
 export async function GET() {
   const auth = await requireApiRole("athlete");
@@ -20,11 +21,17 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "exerciseId, value, and unit are required" }, { status: 400 });
   }
+
+  const unit = normalizeWeightUnit(body.unit);
+  if (!unit) {
+    return NextResponse.json({ error: "unit must be kg or lb" }, { status: 400 });
+  }
+
   const max = await insertAthleteMax({
     athleteId: auth.user.id,
     exerciseId: body.exerciseId,
     value: body.value,
-    unit: body.unit,
+    unit,
     source: "athlete_entered",
   });
   return NextResponse.json({ max }, { status: 201 });

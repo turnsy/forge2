@@ -1,4 +1,5 @@
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import { NEW_EXERCISE_PLACEHOLDER } from "@/lib/plans/plan-defaults";
 import { createCoachExercise, findExactExercise } from "./repository";
 import { searchExercises, isAutoResolvable } from "./search";
 import { resolveAmbiguousExercises } from "./llm-resolution";
@@ -17,6 +18,9 @@ export async function preparePlanExerciseResolution(
     for (const day of week.days) {
       for (const block of day.blocks) {
         for (const exercise of block.exercises) {
+          if (exercise.name.trim() === NEW_EXERCISE_PLACEHOLDER) {
+            throw new Error("Every exercise must have a name before saving");
+          }
           rawValues.add(exercise.name);
           if (exercise.basisRaw?.trim()) rawValues.add(exercise.basisRaw.trim());
         }

@@ -176,6 +176,70 @@ describe("CoachAthleteMaxesTab", () => {
 
     expect(screen.getByRole("dialog", { name: "Update max" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("225")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("lb")).toBeInTheDocument();
+    expect(screen.getByLabelText("Unit")).toHaveValue("lb");
+  });
+
+  it("deletes a history entry from the exercise detail view", async () => {
+    const user = userEvent.setup();
+    let deleted = false;
+    const fetchMock = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/maxes/max-1") && init?.method === "DELETE") {
+        deleted = true;
+        return new Response(null, { status: 204 });
+      }
+      if (url.endsWith("/maxes")) {
+        return Response.json({
+          maxes: deleted
+            ? [
+                {
+                  id: "max-2",
+                  exercise_id: "bench",
+                  exercise_name: "Bench Press",
+                  value: 215,
+                  unit: "lb",
+                  logged_at: "2026-01-01T00:00:00.000Z",
+                },
+              ]
+            : [
+                {
+                  id: "max-1",
+                  exercise_id: "bench",
+                  exercise_name: "Bench Press",
+                  value: 225,
+                  unit: "lb",
+                  logged_at: "2026-02-01T00:00:00.000Z",
+                },
+                {
+                  id: "max-2",
+                  exercise_id: "bench",
+                  exercise_name: "Bench Press",
+                  value: 215,
+                  unit: "lb",
+                  logged_at: "2026-01-01T00:00:00.000Z",
+                },
+              ],
+        });
+      }
+      return new Response(null, { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <CoachAthleteMaxesTab
+        listUrl="/api/coach/athletes/athlete-1/maxes"
+        saveUrl="/api/coach/athletes/athlete-1/maxes"
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Bench Press" }));
+    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/coach/athletes/athlete-1/maxes/max-1",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+    expect(await screen.findByText("215 lb")).toBeInTheDocument();
+    expect(screen.queryByText("225 lb")).not.toBeInTheDocument();
   });
 });

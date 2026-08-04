@@ -1,6 +1,21 @@
 export type WeightUnit = "kg" | "lb";
 
+export const WEIGHT_UNITS: WeightUnit[] = ["kg", "lb"];
+
 const LB_TO_KG = 0.45359237;
+
+export function isValidWeightUnit(unit: string): unit is WeightUnit {
+  const normalized = unit.trim().toLowerCase();
+  return normalized === "kg" || normalized === "lb";
+}
+
+export function normalizeWeightUnit(unit: string): WeightUnit | null {
+  const normalized = unit.trim().toLowerCase();
+  if (normalized === "kg" || normalized === "lb") {
+    return normalized;
+  }
+  return null;
+}
 
 export function convertWeight(value: number, from: string, to: string): number | null {
   const source = from.trim().toLowerCase();
