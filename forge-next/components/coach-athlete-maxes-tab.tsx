@@ -41,11 +41,11 @@ async function fetchMaxes(listUrl: string): Promise<AthleteMaxEntry[]> {
 function CoachAthleteMaxHistoryPanel({
   summary,
   onBack,
-  onEditEntry,
+  onUpdateMax,
 }: {
   summary: ExerciseMaxSummary;
   onBack: () => void;
-  onEditEntry: (entry: AthleteMaxEntry) => void;
+  onUpdateMax: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -56,22 +56,7 @@ function CoachAthleteMaxHistoryPanel({
             {summary.exerciseName}
           </h2>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          onClick={() =>
-            onEditEntry({
-              id: summary.currentMaxId,
-              exercise_id: summary.exerciseId,
-              exercise_name: summary.exerciseName,
-              value: summary.currentValue,
-              unit: summary.currentUnit,
-              logged_at: summary.loggedAt,
-            })
-          }
-        >
+        <Button type="button" variant="secondary" size="sm" fullWidth={false} onClick={onUpdateMax}>
           Update max
         </Button>
       </div>
@@ -89,17 +74,6 @@ function CoachAthleteMaxHistoryPanel({
               <MetaGroup>
                 <MetaItem label="Recorded" value={formatDate(entry.logged_at)} />
               </MetaGroup>
-            }
-            actions={
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                fullWidth={false}
-                onClick={() => onEditEntry(entry)}
-              >
-                Edit
-              </Button>
             }
           />
         ))}
@@ -124,8 +98,8 @@ export function CoachAthleteMaxesTab({
   const [error, setError] = useState<string | null>(null);
   const [loadedListUrl, setLoadedListUrl] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<"add" | "edit">("add");
-  const [editEntry, setEditEntry] = useState<MaxFormEntry | null>(null);
+  const [formMode, setFormMode] = useState<"add" | "update">("add");
+  const [formEntry, setFormEntry] = useState<MaxFormEntry | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const isLoading = loadedListUrl !== listUrl;
 
@@ -163,18 +137,17 @@ export function CoachAthleteMaxesTab({
 
   function openAddModal() {
     setFormMode("add");
-    setEditEntry(null);
+    setFormEntry(null);
     setFormOpen(true);
   }
 
-  function openEditModal(entry: AthleteMaxEntry) {
-    setFormMode("edit");
-    setEditEntry({
-      id: entry.id,
-      exerciseId: entry.exercise_id,
-      exerciseName: entry.exercise_name,
-      value: entry.value,
-      unit: entry.unit,
+  function openUpdateModal(summary: ExerciseMaxSummary) {
+    setFormMode("update");
+    setFormEntry({
+      exerciseId: summary.exerciseId,
+      exerciseName: summary.exerciseName,
+      value: summary.currentValue,
+      unit: summary.currentUnit,
     });
     setFormOpen(true);
   }
@@ -193,12 +166,12 @@ export function CoachAthleteMaxesTab({
         <CoachAthleteMaxHistoryPanel
           summary={selectedSummary}
           onBack={() => setSelectedExerciseId(null)}
-          onEditEntry={openEditModal}
+          onUpdateMax={() => openUpdateModal(selectedSummary)}
         />
         <CoachAthleteMaxFormModal
           open={formOpen}
           mode={formMode}
-          initialEntry={editEntry}
+          initialEntry={formEntry}
           saveUrl={saveUrl}
           searchUrl={searchUrl}
           confirmUrl={confirmUrl}
@@ -277,18 +250,9 @@ export function CoachAthleteMaxesTab({
                   variant="ghost"
                   size="sm"
                   fullWidth={false}
-                  onClick={() =>
-                    openEditModal({
-                      id: summary.currentMaxId,
-                      exercise_id: summary.exerciseId,
-                      exercise_name: summary.exerciseName,
-                      value: summary.currentValue,
-                      unit: summary.currentUnit,
-                      logged_at: summary.loggedAt,
-                    })
-                  }
+                  onClick={() => openUpdateModal(summary)}
                 >
-                  Edit
+                  Update max
                 </Button>
               }
             />
@@ -299,7 +263,7 @@ export function CoachAthleteMaxesTab({
       <CoachAthleteMaxFormModal
         open={formOpen}
         mode={formMode}
-        initialEntry={editEntry}
+        initialEntry={formEntry}
         saveUrl={saveUrl}
         searchUrl={searchUrl}
         confirmUrl={confirmUrl}

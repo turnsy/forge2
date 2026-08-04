@@ -114,7 +114,7 @@ describe("CoachAthleteMaxesTab", () => {
     expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("opens the edit modal for a listed max", async () => {
+  it("opens the update modal for a listed max", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
@@ -141,7 +141,7 @@ describe("CoachAthleteMaxesTab", () => {
       />,
     );
 
-    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.click(await screen.findByRole("button", { name: "Update max" }));
 
     expect(screen.getByRole("dialog", { name: "Update max" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("225")).toBeInTheDocument();

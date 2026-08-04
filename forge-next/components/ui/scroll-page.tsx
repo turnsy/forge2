@@ -82,6 +82,7 @@ export function ScrollPage({
   showMobileBack: showMobileBackProp,
 }: {
   header?: ReactNode;
+  /** When using tabs with a page back link, pass TabList here so tabs align with body content. */
   subHeader?: ReactNode;
   preFooter?: ReactNode;
   footer?: ReactNode;

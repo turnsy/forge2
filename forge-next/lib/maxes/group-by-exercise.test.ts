@@ -29,7 +29,7 @@ const entries = [
 ];
 
 describe("groupMaxesByExercise", () => {
-  it("groups history and picks the best max as current", () => {
+  it("groups history and picks the most recent entry as current", () => {
     const summaries = groupMaxesByExercise(entries);
 
     expect(summaries).toHaveLength(2);

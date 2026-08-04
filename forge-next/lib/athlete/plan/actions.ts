@@ -19,7 +19,7 @@ import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
 import { getFlattenedExercise } from "@/lib/plans/day-blocks";
 import { estimateOneRepMax } from "@/lib/maxes/estimate-one-rep-max";
 import { insertAthleteMax, listAthleteMaxes } from "@/lib/maxes/mutations";
-import { resolveCurrentMax } from "@/lib/maxes/resolve-current-max";
+import { resolveBestMax } from "@/lib/maxes/resolve-current-max";
 import { convertWeight } from "@/lib/maxes/units";
 
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
@@ -76,7 +76,7 @@ export async function saveSetActualsAction(
     if (exerciseId && estimate !== null) {
       try {
         const rows = await listAthleteMaxes(auth.user.id, [exerciseId]);
-        const current = resolveCurrentMax(
+        const current = resolveBestMax(
           rows.map((row) => ({
             value: Number(row.value),
             unit: row.unit,
