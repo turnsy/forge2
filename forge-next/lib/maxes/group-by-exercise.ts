@@ -41,13 +41,7 @@ export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSumma
         loggedAt: entry.logged_at,
       })),
     );
-    const currentEntry =
-      sorted.find(
-        (entry) =>
-          current &&
-          entry.value === current.value &&
-          entry.unit === current.unit,
-      ) ?? sorted[0];
+    const currentEntry = sorted[0];
 
     summaries.push({
       exerciseId,

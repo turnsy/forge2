@@ -6,7 +6,6 @@ import { Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui/modal";
 
 export type MaxFormEntry = {
-  id?: string;
   exerciseName: string;
   exerciseId: string;
   value: number;
@@ -24,7 +23,7 @@ export function CoachAthleteMaxFormModal({
   onSaved,
 }: {
   open: boolean;
-  mode: "add" | "edit";
+  mode: "add" | "update";
   initialEntry?: MaxFormEntry | null;
   saveUrl: string;
   searchUrl?: string;
@@ -44,7 +43,7 @@ export function CoachAthleteMaxFormModal({
       return;
     }
 
-    if (mode === "edit" && initialEntry) {
+    if (mode === "update" && initialEntry) {
       setExerciseName(initialEntry.exerciseName);
       setExerciseId(initialEntry.exerciseId);
       setValue(String(initialEntry.value));
@@ -66,28 +65,18 @@ export function CoachAthleteMaxFormModal({
 
     try {
       const numericValue = Number(value);
-      const response =
-        mode === "edit" && initialEntry?.id
-          ? await fetch(`${saveUrl}/${initialEntry.id}`, {
-              method: "PATCH",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                value: numericValue,
-                unit,
-              }),
-            })
-          : await fetch(saveUrl, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                exerciseId,
-                value: numericValue,
-                unit,
-              }),
-            });
+      const response = await fetch(saveUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          exerciseId,
+          value: numericValue,
+          unit,
+        }),
+      });
 
       if (!response.ok) {
-        setError(mode === "edit" ? "Could not update max." : "Could not save max.");
+        setError(mode === "update" ? "Could not update max." : "Could not save max.");
         return;
       }
 
@@ -98,8 +87,8 @@ export function CoachAthleteMaxFormModal({
     }
   }
 
-  const title = mode === "edit" ? "Update max" : "Add max";
-  const saveLabel = mode === "edit" ? "Save changes" : "Save max";
+  const title = mode === "update" ? "Update max" : "Add max";
+  const saveLabel = mode === "update" ? "Save max" : "Save max";
 
   return (
     <Modal
@@ -114,11 +103,7 @@ export function CoachAthleteMaxFormModal({
           <Button
             type="button"
             size="sm"
-            disabled={
-              !value ||
-              isSaving ||
-              (mode === "add" ? !exerciseId : !initialEntry?.id)
-            }
+            disabled={!value || isSaving || !exerciseId}
             onClick={() => void handleSave()}
           >
             {isSaving ? "Saving…" : saveLabel}
