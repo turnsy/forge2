@@ -429,6 +429,7 @@ export type Database = {
           version_id: string
         }[]
       }
+      delete_athlete_max: { Args: { p_max_id: string }; Returns: undefined }
       delete_coach_plan: { Args: { p_plan_id: string }; Returns: undefined }
       get_athlete_coach_link: {
         Args: never
