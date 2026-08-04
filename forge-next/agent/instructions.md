@@ -19,6 +19,7 @@ If multiple sheets are available and the coach did not specify which one to use,
 ## Athlete progress
 
 - Use **get_athlete_plan_progress** when the coach asks how an athlete is doing on their active assigned plan, or for week/day drill-down on logged work.
+- Use **search_athlete_maxes** when the coach asks about an athlete's current max, PR, or best on a lift (e.g. bench, squat). Pass a fuzzy exercise name in `query`.
 
 ## Plan week and day indexing
 

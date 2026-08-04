@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CoachAthleteMaxAddModal } from "@/components/coach-athlete-max-add-modal";
+import {
+  CoachAthleteMaxFormModal,
+  type MaxFormEntry,
+} from "@/components/coach-athlete-max-form-modal";
 import {
   Button,
   EmptyState,
@@ -38,15 +41,39 @@ async function fetchMaxes(listUrl: string): Promise<AthleteMaxEntry[]> {
 function CoachAthleteMaxHistoryPanel({
   summary,
   onBack,
+  onEditEntry,
 }: {
   summary: ExerciseMaxSummary;
   onBack: () => void;
+  onEditEntry: (entry: AthleteMaxEntry) => void;
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <PageBackButton ariaLabel="Back to maxes" onClick={onBack} />
-        <h2 className="text-lg font-semibold text-surface-foreground">{summary.exerciseName}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <PageBackButton ariaLabel="Back to maxes" onClick={onBack} />
+          <h2 className="truncate text-lg font-semibold text-surface-foreground">
+            {summary.exerciseName}
+          </h2>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onClick={() =>
+            onEditEntry({
+              id: summary.currentMaxId,
+              exercise_id: summary.exerciseId,
+              exercise_name: summary.exerciseName,
+              value: summary.currentValue,
+              unit: summary.currentUnit,
+              logged_at: summary.loggedAt,
+            })
+          }
+        >
+          Update max
+        </Button>
       </div>
       <List>
         {summary.history.map((entry, index) => (
@@ -62,6 +89,17 @@ function CoachAthleteMaxHistoryPanel({
               <MetaGroup>
                 <MetaItem label="Recorded" value={formatDate(entry.logged_at)} />
               </MetaGroup>
+            }
+            actions={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                onClick={() => onEditEntry(entry)}
+              >
+                Edit
+              </Button>
             }
           />
         ))}
@@ -85,7 +123,9 @@ export function CoachAthleteMaxesTab({
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loadedListUrl, setLoadedListUrl] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"add" | "edit">("add");
+  const [editEntry, setEditEntry] = useState<MaxFormEntry | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const isLoading = loadedListUrl !== listUrl;
 
@@ -121,6 +161,24 @@ export function CoachAthleteMaxesTab({
     }
   }
 
+  function openAddModal() {
+    setFormMode("add");
+    setEditEntry(null);
+    setFormOpen(true);
+  }
+
+  function openEditModal(entry: AthleteMaxEntry) {
+    setFormMode("edit");
+    setEditEntry({
+      id: entry.id,
+      exerciseId: entry.exercise_id,
+      exerciseName: entry.exercise_name,
+      value: entry.value,
+      unit: entry.unit,
+    });
+    setFormOpen(true);
+  }
+
   const summaries = useMemo(() => groupMaxesByExercise(maxes), [maxes]);
   const filteredSummaries = useMemo(
     () => filterMaxSummaries(summaries, query),
@@ -131,10 +189,23 @@ export function CoachAthleteMaxesTab({
 
   if (selectedSummary) {
     return (
-      <CoachAthleteMaxHistoryPanel
-        summary={selectedSummary}
-        onBack={() => setSelectedExerciseId(null)}
-      />
+      <>
+        <CoachAthleteMaxHistoryPanel
+          summary={selectedSummary}
+          onBack={() => setSelectedExerciseId(null)}
+          onEditEntry={openEditModal}
+        />
+        <CoachAthleteMaxFormModal
+          open={formOpen}
+          mode={formMode}
+          initialEntry={editEntry}
+          saveUrl={saveUrl}
+          searchUrl={searchUrl}
+          confirmUrl={confirmUrl}
+          onClose={() => setFormOpen(false)}
+          onSaved={() => void refreshMaxes()}
+        />
+      </>
     );
   }
 
@@ -149,7 +220,7 @@ export function CoachAthleteMaxesTab({
           className="min-w-0 flex-1"
           onChange={(event) => setQuery(event.target.value)}
         />
-        <Button type="button" fullWidth={false} onClick={() => setAddOpen(true)}>
+        <Button type="button" fullWidth={false} onClick={openAddModal}>
           Add max
         </Button>
       </div>
@@ -168,7 +239,7 @@ export function CoachAthleteMaxesTab({
           }
           action={
             query.trim() ? undefined : (
-              <Button type="button" onClick={() => setAddOpen(true)}>
+              <Button type="button" onClick={openAddModal}>
                 Add max
               </Button>
             )
@@ -200,17 +271,39 @@ export function CoachAthleteMaxesTab({
                   <MetaItem label="Updated" value={formatDate(summary.loggedAt)} />
                 </MetaGroup>
               }
+              actions={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  fullWidth={false}
+                  onClick={() =>
+                    openEditModal({
+                      id: summary.currentMaxId,
+                      exercise_id: summary.exerciseId,
+                      exercise_name: summary.exerciseName,
+                      value: summary.currentValue,
+                      unit: summary.currentUnit,
+                      logged_at: summary.loggedAt,
+                    })
+                  }
+                >
+                  Edit
+                </Button>
+              }
             />
           ))}
         </List>
       )}
 
-      <CoachAthleteMaxAddModal
-        open={addOpen}
+      <CoachAthleteMaxFormModal
+        open={formOpen}
+        mode={formMode}
+        initialEntry={editEntry}
         saveUrl={saveUrl}
         searchUrl={searchUrl}
         confirmUrl={confirmUrl}
-        onClose={() => setAddOpen(false)}
+        onClose={() => setFormOpen(false)}
         onSaved={() => void refreshMaxes()}
       />
     </div>
