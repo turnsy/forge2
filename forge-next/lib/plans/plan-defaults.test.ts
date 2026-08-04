@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyWorkoutPlan, NEW_EXERCISE_PLACEHOLDER } from "@/lib/plans/plan-defaults";
+import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 
 describe("createEmptyWorkoutPlan", () => {
-  it("returns a draft plan with one placeholder default exercise", () => {
+  it("returns a draft plan with one unnamed default exercise", () => {
     const plan = createEmptyWorkoutPlan();
 
     expect(plan.name).toBe("New Plan");
@@ -10,9 +10,7 @@ describe("createEmptyWorkoutPlan", () => {
     expect(plan.weeks[0]?.days).toHaveLength(1);
     expect(plan.weeks[0]?.days[0]?.blocks).toHaveLength(1);
     expect(plan.weeks[0]?.days[0]?.blocks[0]?.exercises).toHaveLength(1);
-    expect(plan.weeks[0]?.days[0]?.blocks[0]?.exercises[0]?.name).toBe(
-      NEW_EXERCISE_PLACEHOLDER,
-    );
+    expect(plan.weeks[0]?.days[0]?.blocks[0]?.exercises[0]?.name).toBe("");
   });
 
   it("accepts a custom plan name", () => {

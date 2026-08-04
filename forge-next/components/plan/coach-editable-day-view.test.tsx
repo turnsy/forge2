@@ -6,7 +6,6 @@ import { makeBlock, makeDay, makeExercise, makeWeightedSet } from "@/lib/plans/_
 import { CoachEditableDayView } from "@/components/plan/coach-editable-day-view";
 import { reorderSetsInExercise } from "@/lib/plans/reorder-sets";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
-import { NEW_EXERCISE_PLACEHOLDER } from "@/lib/plans/plan-defaults";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => false,
@@ -392,9 +391,7 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe(
-      NEW_EXERCISE_PLACEHOLDER,
-    );
+    expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].name).toBe("");
     expect(lastCall.weeks[0].days[0].blocks[2].exercises[0].id).toBeTruthy();
   });
 
@@ -513,9 +510,7 @@ describe("CoachEditableDayView", () => {
 
     const lastCall = onPlanChange.mock.calls.at(-1)?.[0] as WorkoutPlan;
     expect(lastCall.weeks[0].days[0].blocks[0].exercises).toHaveLength(3);
-    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe(
-      NEW_EXERCISE_PLACEHOLDER,
-    );
+    expect(lastCall.weeks[0].days[0].blocks[0].exercises[2].name).toBe("");
   });
 
   it("allows entering a custom load unit", () => {
