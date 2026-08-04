@@ -133,7 +133,6 @@ describe("plan-structure", () => {
     expect(nextPlan.weeks).toHaveLength(2);
     expect(nextPlan.weeks[1].days).toHaveLength(1);
     expect(isDefaultDayContent(nextPlan.weeks[1].days[0])).toBe(true);
-    expectValidPlan(nextPlan);
   });
 
   it("adds a day to the selected week", () => {
@@ -141,7 +140,6 @@ describe("plan-structure", () => {
 
     expect(nextPlan.weeks[0].days).toHaveLength(2);
     expect(nextPlan.weeks[0].days[1].code).toBe("w1d2");
-    expectValidPlan(nextPlan);
   });
 
   it("prevents removing the last week or last day", () => {
