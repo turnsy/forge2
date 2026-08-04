@@ -14,6 +14,7 @@ export type ExerciseMaxSummary = {
   exerciseName: string;
   currentValue: number;
   currentUnit: string;
+  currentMaxId: string;
   loggedAt: string;
   history: AthleteMaxEntry[];
 };
@@ -53,6 +54,7 @@ export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSumma
       exerciseName: currentEntry.exercise_name,
       currentValue: current?.value ?? currentEntry.value,
       currentUnit: current?.unit ?? currentEntry.unit,
+      currentMaxId: currentEntry.id,
       loggedAt: currentEntry.logged_at,
       history: sorted,
     });

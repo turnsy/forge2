@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PageBackProvider } from "@/components/ui/page-back-context";
 import { PageHeader } from "@/components/ui/page-header";
 import { ScrollPage } from "@/components/ui/scroll-page";
+import { Tab, TabList, Tabs } from "@/components/ui/tabs";
 
 vi.mock("@/lib/hooks/use-is-mobile", () => ({
   useIsMobile: () => false,
@@ -35,5 +36,34 @@ describe("ScrollPage", () => {
       "/coach/plans",
     );
     expect(screen.getByRole("heading", { name: "Plan detail" })).toBeInTheDocument();
+  });
+
+  it("renders subHeader outside the back-link row so tabs align with content", () => {
+    render(
+      <PageBackProvider
+        back={{ href: "/coach/athletes", ariaLabel: "Back to athletes" }}
+      >
+        <ScrollPage
+          header={<PageHeader title="Alex Rivera" />}
+          subHeader={
+            <Tabs defaultTab="info">
+              <TabList>
+                <Tab id="info">Profile</Tab>
+              </TabList>
+            </Tabs>
+          }
+        >
+          <p>Profile details</p>
+        </ScrollPage>
+      </PageBackProvider>,
+    );
+
+    const tablist = screen.getByRole("tablist");
+    const backLink = screen.getByRole("link", { name: "Back to athletes" });
+    const headerRow = backLink.parentElement;
+    const subHeaderRow = tablist.parentElement;
+
+    expect(headerRow).not.toBe(subHeaderRow);
+    expect(headerRow?.contains(tablist)).toBe(false);
   });
 });

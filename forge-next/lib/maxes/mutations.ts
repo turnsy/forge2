@@ -47,3 +47,18 @@ export async function insertAthleteMax(input: {
   if (error) throw error;
   return data as AthleteMaxRecord;
 }
+
+export async function updateAthleteMax(input: {
+  maxId: string;
+  value: number;
+  unit: string;
+}): Promise<AthleteMaxRecord> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("update_athlete_max", {
+    p_max_id: input.maxId,
+    p_value: input.value,
+    p_unit: input.unit,
+  });
+  if (error) throw error;
+  return data as AthleteMaxRecord;
+}

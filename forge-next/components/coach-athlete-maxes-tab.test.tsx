@@ -113,4 +113,38 @@ describe("CoachAthleteMaxesTab", () => {
     expect(screen.getByText("215 lb")).toBeInTheDocument();
     expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
+
+  it("opens the edit modal for a listed max", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          maxes: [
+            {
+              id: "max-1",
+              exercise_id: "bench",
+              exercise_name: "Bench Press",
+              value: 225,
+              unit: "lb",
+              logged_at: "2026-01-10T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <CoachAthleteMaxesTab
+        listUrl="/api/coach/athletes/athlete-1/maxes"
+        saveUrl="/api/coach/athletes/athlete-1/maxes"
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+
+    expect(screen.getByRole("dialog", { name: "Update max" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("225")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("lb")).toBeInTheDocument();
+  });
 });

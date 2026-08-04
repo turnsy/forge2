@@ -24,16 +24,18 @@ function buildTopChrome({
   back,
   showMobileBack,
   header,
+  subHeader,
 }: {
   back?: PageBackConfig;
   showMobileBack: boolean;
   header?: ReactNode;
+  subHeader?: ReactNode;
 }): ReactNode | undefined {
-  if (!back && !header) {
+  if (!back && !header && !subHeader) {
     return undefined;
   }
 
-  if (!header) {
+  if (!header && !subHeader) {
     return back ? (
       <div className={showMobileBack ? undefined : "hidden md:block"}>
         <PageBackLink
@@ -46,23 +48,29 @@ function buildTopChrome({
   }
 
   return (
-    <div className="flex items-start gap-2">
-      {back ? (
-        <div className={showMobileBack ? "shrink-0" : "hidden shrink-0 md:block"}>
-          <PageBackLink
-            href={back.href}
-            ariaLabel={back.ariaLabel}
-            onClick={back.onClick}
-          />
+    <div className={OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}>
+      {header || back ? (
+        <div className="flex items-start gap-2">
+          {back ? (
+            <div className={showMobileBack ? "shrink-0" : "hidden shrink-0 md:block"}>
+              <PageBackLink
+                href={back.href}
+                ariaLabel={back.ariaLabel}
+                onClick={back.onClick}
+              />
+            </div>
+          ) : null}
+          {header ? <div className="min-w-0 flex-1">{header}</div> : null}
         </div>
       ) : null}
-      <div className={`min-w-0 flex-1 ${OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}`}>{header}</div>
+      {subHeader}
     </div>
   );
 }
 
 export function ScrollPage({
   header,
+  subHeader,
   preFooter,
   footer,
   children,
@@ -74,6 +82,7 @@ export function ScrollPage({
   showMobileBack: showMobileBackProp,
 }: {
   header?: ReactNode;
+  subHeader?: ReactNode;
   preFooter?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
@@ -88,7 +97,7 @@ export function ScrollPage({
   const { back: contextBack, showMobileBack: contextShowMobileBack } = usePageBack();
   const back = backProp ?? contextBack;
   const showMobileBack = showMobileBackProp ?? contextShowMobileBack;
-  const topChrome = buildTopChrome({ back, showMobileBack, header });
+  const topChrome = buildTopChrome({ back, showMobileBack, header, subHeader });
   const resolvedFooterInset =
     footerInsetClassName ??
     (isMobile ? MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS : PAGE_CONTENT_INSET_BOTTOM_CLASS);

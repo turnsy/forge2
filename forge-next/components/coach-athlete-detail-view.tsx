@@ -266,16 +266,14 @@ export function CoachAthleteDetailView({
   return (
     <Tabs defaultTab={initialTab}>
       <ScrollPage
-        header={
-          <>
-            <PageHeader title={relationship.athleteName} />
-            <TabList>
-              <Tab id="current-plan">Current plan</Tab>
-              <Tab id="previous-plans">History</Tab>
-              <Tab id="maxes">Maxes</Tab>
-              <Tab id="info">Profile</Tab>
-            </TabList>
-          </>
+        header={<PageHeader title={relationship.athleteName} />}
+        subHeader={
+          <TabList>
+            <Tab id="current-plan">Current plan</Tab>
+            <Tab id="previous-plans">History</Tab>
+            <Tab id="maxes">Maxes</Tab>
+            <Tab id="info">Profile</Tab>
+          </TabList>
         }
         scrollClassName="flex flex-col gap-6"
       >

@@ -37,6 +37,7 @@ describe("groupMaxesByExercise", () => {
     expect(summaries[1]).toMatchObject({
       exerciseId: "bench",
       currentValue: 225,
+      currentMaxId: "1",
       history: [
         expect.objectContaining({ id: "1" }),
         expect.objectContaining({ id: "2" }),
