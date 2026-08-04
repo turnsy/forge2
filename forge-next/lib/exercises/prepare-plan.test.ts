@@ -88,4 +88,13 @@ describe("preparePlanExerciseResolution", () => {
       resolved.weeks[0].days[0].blocks[0].exercises[1].resolvedExerciseId,
     ).toBe("ex-created");
   });
+
+  it("rejects plans that still contain placeholder exercise names", async () => {
+    const plan = makePlan();
+    plan.weeks[0].days[0].blocks[0].exercises[0].name = "New exercise";
+
+    await expect(preparePlanExerciseResolution(plan, "coach-1")).rejects.toThrow(
+      "Every exercise must have a name before saving",
+    );
+  });
 });

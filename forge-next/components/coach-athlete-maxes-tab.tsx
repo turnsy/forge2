@@ -40,13 +40,36 @@ async function fetchMaxes(listUrl: string): Promise<AthleteMaxEntry[]> {
 
 function CoachAthleteMaxHistoryPanel({
   summary,
+  saveUrl,
   onBack,
   onUpdateMax,
+  onDeleted,
 }: {
   summary: ExerciseMaxSummary;
+  saveUrl: string;
   onBack: () => void;
   onUpdateMax: () => void;
+  onDeleted: () => void;
 }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete(maxId: string) {
+    setError(null);
+    setDeletingId(maxId);
+
+    try {
+      const response = await fetch(`${saveUrl}/${maxId}`, { method: "DELETE" });
+      if (!response.ok) {
+        setError("Could not delete max entry.");
+        return;
+      }
+      onDeleted();
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -60,6 +83,7 @@ function CoachAthleteMaxHistoryPanel({
           Update max
         </Button>
       </div>
+      {error ? <Message tone="error">{error}</Message> : null}
       <List>
         {summary.history.map((entry, index) => (
           <ListRow
@@ -74,6 +98,18 @@ function CoachAthleteMaxHistoryPanel({
               <MetaGroup>
                 <MetaItem label="Recorded" value={formatDate(entry.logged_at)} />
               </MetaGroup>
+            }
+            actions={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                disabled={deletingId === entry.id}
+                onClick={() => void handleDelete(entry.id)}
+              >
+                {deletingId === entry.id ? "Deleting…" : "Delete"}
+              </Button>
             }
           />
         ))}
@@ -126,12 +162,15 @@ export function CoachAthleteMaxesTab({
     };
   }, [listUrl]);
 
-  async function refreshMaxes() {
+  async function refreshMaxes(): Promise<AthleteMaxEntry[]> {
     try {
-      setMaxes(await fetchMaxes(listUrl));
+      const entries = await fetchMaxes(listUrl);
+      setMaxes(entries);
       setError(null);
+      return entries;
     } catch {
       setError("Could not load maxes.");
+      return maxes;
     }
   }
 
@@ -165,8 +204,19 @@ export function CoachAthleteMaxesTab({
       <>
         <CoachAthleteMaxHistoryPanel
           summary={selectedSummary}
+          saveUrl={saveUrl}
           onBack={() => setSelectedExerciseId(null)}
           onUpdateMax={() => openUpdateModal(selectedSummary)}
+          onDeleted={() => {
+            void refreshMaxes().then((entries) => {
+              const stillHasExercise = entries.some(
+                (entry) => entry.exercise_id === selectedExerciseId,
+              );
+              if (!stillHasExercise) {
+                setSelectedExerciseId(null);
+              }
+            });
+          }}
         />
         <CoachAthleteMaxFormModal
           open={formOpen}

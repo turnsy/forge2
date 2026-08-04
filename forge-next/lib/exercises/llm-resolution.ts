@@ -2,7 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { createGateway } from "@ai-sdk/gateway";
 import { getAiGatewayApiKey } from "@/lib/env/plan-generation";
-import type { ExerciseCandidate } from "./resolve-plan";
+import type { ExerciseCandidate } from "./types";
 
 const resultSchema = z.object({
   resolutions: z.array(

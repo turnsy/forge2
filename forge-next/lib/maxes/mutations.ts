@@ -47,3 +47,11 @@ export async function insertAthleteMax(input: {
   if (error) throw error;
   return data as AthleteMaxRecord;
 }
+
+export async function deleteAthleteMax(maxId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_athlete_max", {
+    p_max_id: maxId,
+  });
+  if (error) throw error;
+}

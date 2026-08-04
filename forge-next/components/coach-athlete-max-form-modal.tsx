@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ExerciseSearchField } from "@/components/plan/exercise-search-field";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Select } from "@/components/ui";
 import { Modal } from "@/components/ui/modal";
+import { WEIGHT_UNITS, type WeightUnit } from "@/lib/maxes/units";
 
 export type MaxFormEntry = {
   exerciseName: string;
@@ -34,7 +35,7 @@ export function CoachAthleteMaxFormModal({
   const [exerciseName, setExerciseName] = useState("");
   const [exerciseId, setExerciseId] = useState("");
   const [value, setValue] = useState("");
-  const [unit, setUnit] = useState("kg");
+  const [unit, setUnit] = useState<WeightUnit>("kg");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -47,7 +48,7 @@ export function CoachAthleteMaxFormModal({
       setExerciseName(initialEntry.exerciseName);
       setExerciseId(initialEntry.exerciseId);
       setValue(String(initialEntry.value));
-      setUnit(initialEntry.unit);
+      setUnit(initialEntry.unit as WeightUnit);
     } else {
       setExerciseName("");
       setExerciseId("");
@@ -141,12 +142,19 @@ export function CoachAthleteMaxFormModal({
             value={value}
             onChange={(event) => setValue(event.target.value)}
           />
-          <Input
+          <Select
             aria-label="Unit"
-            placeholder="Unit"
+            label="Unit"
+            hideLabel
             value={unit}
-            onChange={(event) => setUnit(event.target.value)}
-          />
+            onChange={(event) => setUnit(event.target.value as WeightUnit)}
+          >
+            {WEIGHT_UNITS.map((weightUnit) => (
+              <option key={weightUnit} value={weightUnit}>
+                {weightUnit}
+              </option>
+            ))}
+          </Select>
         </div>
         {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       </div>
