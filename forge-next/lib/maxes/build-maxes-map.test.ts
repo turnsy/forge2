@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildMaxesByExerciseId } from "./build-maxes-map";
 
 describe("buildMaxesByExerciseId", () => {
-  it("uses the best max per exercise", () => {
+  it("uses the most recent max per exercise for prescription", () => {
     expect(
       buildMaxesByExerciseId([
         {
@@ -11,7 +11,7 @@ describe("buildMaxesByExerciseId", () => {
           exercise_id: "bench",
           value: 100,
           unit: "kg",
-          source: "athlete_entered",
+          source: "coach_entered",
           logged_at: "2026-02-01T00:00:00.000Z",
         },
         {
@@ -25,7 +25,7 @@ describe("buildMaxesByExerciseId", () => {
         },
       ]),
     ).toEqual({
-      bench: { value: 110, unit: "kg" },
+      bench: { value: 100, unit: "kg" },
     });
   });
 });

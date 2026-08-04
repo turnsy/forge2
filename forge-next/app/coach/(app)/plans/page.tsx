@@ -54,14 +54,13 @@ export default async function CoachPlansPage({
 
   return (
     <PageContent
-      header={
-        <>
-          <PlansPageHeader />
-          <ListSearchField
-            pathname="/coach/plans"
-            defaultValue={params.q ?? ""}
-          />
-        </>
+      listLayout
+      header={<PlansPageHeader />}
+      subHeader={
+        <ListSearchField
+          pathname="/coach/plans"
+          defaultValue={params.q ?? ""}
+        />
       }
     >
       <Suspense

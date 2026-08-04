@@ -9,3 +9,6 @@ export const PAGE_SCROLL_CONTENT_INSET_CLASS = `${PAGE_CONTENT_INSET_X_CLASS} ${
 
 /** Bottom inset for desktop pane footers (composer/toolbars). */
 export const PAGE_CONTENT_INSET_BOTTOM_CLASS = "pb-4 md:pb-8";
+
+/** Extra space between list page chrome (header + search) and the scrolling list body. */
+export const LIST_PAGE_SCROLL_CLASS = "flex flex-col gap-6 pt-2 md:pt-4";

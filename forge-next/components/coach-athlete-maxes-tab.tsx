@@ -244,17 +244,6 @@ export function CoachAthleteMaxesTab({
                   <MetaItem label="Updated" value={formatDate(summary.loggedAt)} />
                 </MetaGroup>
               }
-              actions={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  fullWidth={false}
-                  onClick={() => openUpdateModal(summary)}
-                >
-                  Update max
-                </Button>
-              }
             />
           ))}
         </List>
