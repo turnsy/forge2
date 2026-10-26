@@ -1,14 +1,6 @@
 import { createClient } from "@/utils/supabase/data-client";
-import { embedExercise } from "./embeddings";
-import { normalize_v1 } from "./normalize";
+import { normalizeExercise } from "./normalize";
 import { findExactExercise } from "./repository";
-
-export type ExerciseSearchResult = {
-  id: string;
-  name: string;
-  owner_coach_id: string | null;
-  score: number;
-};
 
 export type ExerciseSearchOption = {
   id: string;
@@ -51,7 +43,7 @@ export async function searchExercisesByText(
   const supabase = await createClient();
   const exact = await findExactExercise(trimmed, coachId, supabase);
   const namePattern = `%${escapeIlikePattern(trimmed)}%`;
-  const normalizedPattern = `%${escapeIlikePattern(normalize_v1(trimmed))}%`;
+  const normalizedPattern = `%${escapeIlikePattern(normalizeExercise(trimmed))}%`;
 
   const [byName, byNormalized] = await Promise.all([
     supabase
@@ -59,12 +51,14 @@ export async function searchExercisesByText(
       .select("id,name")
       .or(`owner_coach_id.eq.${coachId},owner_coach_id.is.null`)
       .ilike("name", namePattern)
+      .order("name")
       .limit(limit),
     supabase
       .from("exercises")
       .select("id,name")
       .or(`owner_coach_id.eq.${coachId},owner_coach_id.is.null`)
       .ilike("normalized_name", normalizedPattern)
+      .order("name")
       .limit(limit),
   ]);
 
@@ -78,36 +72,5 @@ export async function searchExercisesByText(
       (byNormalized.data ?? []).map((row) => ({ id: row.id, name: row.name })),
     ],
     limit,
-  );
-}
-
-export async function searchExercises(
-  query: string,
-  coachId: string,
-  limit = 5,
-): Promise<ExerciseSearchResult[]> {
-  const normalized = normalize_v1(query);
-  if (!normalized) return [];
-  const embedding = await embedExercise(normalized);
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("search_exercises", {
-    p_coach_id: coachId,
-    p_embedding: embedding,
-    p_limit: limit,
-  });
-  if (error) throw error;
-  return (data ?? []) as ExerciseSearchResult[];
-}
-
-export function isAutoResolvable(
-  results: Pick<ExerciseSearchResult, "score">[],
-  threshold = 0.85,
-  margin = 0.05,
-): boolean {
-  const [first, second] = results;
-  return Boolean(
-    first &&
-      first.score >= threshold &&
-      (!second || first.score - second.score >= margin),
   );
 }

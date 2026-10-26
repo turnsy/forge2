@@ -143,6 +143,17 @@ class ForgePlanBuildTests(unittest.TestCase):
 
 
 class ForgePlanEditTests(unittest.TestCase):
+    def test_exercise_edits_clear_stale_catalog_references(self) -> None:
+        plan = build_sample_plan()
+        exercise = plan.to_dict()["weeks"][0]["days"][0]["blocks"][0]["exercises"][0]
+        exercise["resolvedExerciseId"] = "old-exercise"
+        exercise["resolvedBasisExerciseId"] = "old-basis"
+        exercise["basisRaw"] = "Other exercise"
+        plan.week(0).day(0).exercise(0).update(name="New exercise", basis_raw="")
+        self.assertNotIn("resolvedExerciseId", exercise)
+        self.assertNotIn("resolvedBasisExerciseId", exercise)
+        self.assertNotIn("basisRaw", exercise)
+
     def test_positional_update(self) -> None:
         plan = build_sample_plan()
         plan.week(0).day(0).block(0).exercise(0).set(0).update(reps=6, target=55, unit="kg")

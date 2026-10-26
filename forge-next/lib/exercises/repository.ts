@@ -1,6 +1,5 @@
-import { normalize_v1 } from "./normalize";
+import { normalizeExercise } from "./normalize";
 import { createClient } from "@/utils/supabase/data-client";
-import { embedExercise } from "./embeddings";
 
 export type ExerciseRecord = {
   id: string;
@@ -20,7 +19,7 @@ export async function findExactExercise(
   const { data, error } = await supabase
     .from("exercises")
     .select("id,name,normalized_name,owner_coach_id")
-    .eq("normalized_name", normalize_v1(raw))
+    .eq("normalized_name", normalizeExercise(raw))
     .or(`owner_coach_id.eq.${coachId},owner_coach_id.is.null`)
     .order("owner_coach_id", { ascending: false, nullsFirst: false })
     .limit(1)
@@ -35,23 +34,18 @@ export async function createCoachExercise(
   client?: ExercisesClient,
 ): Promise<ExerciseRecord> {
   const supabase = client ?? (await createClient());
+  if (!name.trim()) throw new Error("Exercise name is required");
   const { data, error } = await supabase
     .from("exercises")
-    .insert({ name: name.trim(), normalized_name: normalize_v1(name), owner_coach_id: coachId })
+    .insert({ name: name.trim(), normalized_name: normalizeExercise(name), owner_coach_id: coachId })
     .select("id,name,normalized_name,owner_coach_id")
     .single();
-  if (error) throw error;
-  const exercise = data as ExerciseRecord;
-  try {
-    const embedding = await embedExercise(normalize_v1(name));
-    await supabase.from("exercise_embeddings").insert({
-      exercise_id: exercise.id,
-      source_text: normalize_v1(name),
-      embedding,
-    });
-  } catch {
-    // A catalog row remains usable for exact matching if embeddings are
-    // temporarily unavailable; it can be backfilled later.
+  if (error) {
+    if (error.code === "23505") {
+      const existing = await findExactExercise(name, coachId, supabase);
+      if (existing) return existing;
+    }
+    throw error;
   }
-  return exercise;
+  return data as ExerciseRecord;
 }

@@ -12,6 +12,7 @@ export default async function AthleteMaxesPage() {
           saveUrl="/api/athlete/maxes"
           searchUrl="/api/athlete/exercises/search"
           confirmUrl="/api/athlete/exercises/confirm"
+          allowCreate={false}
         />
       </main>
     </PageShell>

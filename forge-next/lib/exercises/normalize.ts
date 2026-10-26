@@ -1,14 +1,6 @@
 /**
- * Versioned catalog key normalization. Keep all catalog lookups on this path.
+ * Catalog identity normalization. Preserve equipment and variation qualifiers.
  */
-export function normalize_v1(value: string): string {
-  return value
-    .replace(/\([^)]*\)/g, " ")
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}%\s]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+export function normalizeExercise(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
-
-export const normalizeExercise = normalize_v1;

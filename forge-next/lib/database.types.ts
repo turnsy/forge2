@@ -558,15 +558,6 @@ export type Database = {
           version_id: string
         }[]
       }
-      search_exercises: {
-        Args: { p_coach_id: string; p_embedding: string; p_limit?: number }
-        Returns: {
-          id: string
-          name: string
-          owner_coach_id: string
-          score: number
-        }[]
-      }
       unlink_coach_athlete: {
         Args: { p_relationship_id: string }
         Returns: undefined

@@ -206,8 +206,11 @@ class ExerciseRef:
     ) -> ExerciseRef:
         exercise = self._require_exercise()
         if name is not None:
+            if name != exercise.get("name"):
+                exercise.pop("resolvedExerciseId", None)
             exercise["name"] = name
         if basis_raw is not None:
+            exercise.pop("resolvedBasisExerciseId", None)
             trimmed = basis_raw.strip()
             exercise_name = str(exercise.get("name", "")).strip()
             if trimmed and trimmed.lower() != exercise_name.lower():

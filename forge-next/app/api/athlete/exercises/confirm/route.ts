@@ -17,11 +17,14 @@ export async function POST(request: Request) {
     name?: unknown;
   };
 
+  if (!body.exerciseId || typeof body.exerciseId !== "string") {
+    return NextResponse.json({ error: "Select an existing exercise. Only coaches can create exercises." }, { status: 403 });
+  }
+
   try {
     const exercise = await confirmExerciseSelection(
       {
         exerciseId: typeof body.exerciseId === "string" ? body.exerciseId : undefined,
-        name: typeof body.name === "string" ? body.name : undefined,
       },
       link.coachId,
     );

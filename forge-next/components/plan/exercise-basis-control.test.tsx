@@ -78,7 +78,7 @@ describe("ExerciseBasisControl", () => {
     fireEvent.focus(basisInput);
     fireEvent.change(basisInput, { target: { value: "Close Grip Bench" } });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Close Grip Bench" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Create “Close Grip Bench”" }));
 
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith(

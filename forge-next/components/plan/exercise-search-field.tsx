@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui";
+import { normalizeExercise } from "@/lib/exercises/normalize";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -16,7 +17,7 @@ async function searchCandidates(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
   });
-  if (!response.ok) return [];
+  if (!response.ok) throw new Error("Could not search exercises. Try again.");
   const result = (await response.json()) as { exercises?: ExerciseSearchCandidate[] };
   return (result.exercises ?? []).slice(0, 5);
 }
@@ -46,7 +47,7 @@ export function shouldOfferCustomExerciseEntry(
   if (!trimmed) return false;
 
   return !candidates.some(
-    (candidate) => candidate.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    (candidate) => normalizeExercise(candidate.name) === normalizeExercise(trimmed),
   );
 }
 
@@ -57,6 +58,8 @@ export function ExerciseSearchField({
   disabled,
   size = "sm",
   revertOnBlur = true,
+  allowCreate = true,
+  onDraftChange,
   searchUrl = "/api/coach/exercises/search",
   confirmUrl = "/api/coach/exercises/confirm",
   onResolved,
@@ -67,6 +70,8 @@ export function ExerciseSearchField({
   disabled: boolean;
   size?: "sm" | "md";
   revertOnBlur?: boolean;
+  allowCreate?: boolean;
+  onDraftChange?: () => void;
   searchUrl?: string;
   confirmUrl?: string;
   onResolved: (next: { name: string; exerciseId: string }) => void;
@@ -79,6 +84,7 @@ export function ExerciseSearchField({
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const prevValueRef = useRef(value);
 
@@ -102,28 +108,32 @@ export function ExerciseSearchField({
     }
 
     const requestId = ++requestIdRef.current;
+    let cancelled = false;
 
     const timer = window.setTimeout(() => {
       setIsSearching(true);
       void searchCandidates(trimmed, searchUrl)
         .then((results) => {
-          if (requestIdRef.current !== requestId) return;
+          if (cancelled || requestIdRef.current !== requestId) return;
           setCandidates(results);
           setIsSearching(false);
         })
         .catch(() => {
-          if (requestIdRef.current !== requestId) return;
+          if (cancelled || requestIdRef.current !== requestId) return;
           setCandidates([]);
           setIsSearching(false);
+          setError("Could not search exercises. Try again.");
         });
     }, SEARCH_DEBOUNCE_MS);
 
     return () => {
       window.clearTimeout(timer);
+      cancelled = true;
     };
   }, [typedQuery, searchUrl]);
 
   function closeDropdown() {
+    requestIdRef.current++;
     setIsOpen(false);
     setTypedQuery(null);
     setCandidates([]);
@@ -147,7 +157,11 @@ export function ExerciseSearchField({
         closeDropdown();
         setDraft(confirmed.name);
         onResolved({ name: confirmed.name, exerciseId: confirmed.id });
+      } else {
+        setError("Could not create exercise. Try again.");
       }
+    } catch {
+      setError("Could not create exercise. Try again.");
     } finally {
       setIsCreating(false);
     }
@@ -157,6 +171,7 @@ export function ExerciseSearchField({
   const showResults = isOpen && trimmedQuery.length > 0;
   const showCreateCustom =
     showResults &&
+    allowCreate &&
     !isSearching &&
     shouldOfferCustomExerciseEntry(trimmedQuery, candidates);
 
@@ -166,7 +181,7 @@ export function ExerciseSearchField({
         size={size}
         value={draft}
         placeholder={placeholder}
-        readOnly={disabled}
+        readOnly={disabled || isCreating}
         aria-label={label}
         aria-expanded={showResults}
         aria-controls={showResults ? listboxId : undefined}
@@ -189,6 +204,11 @@ export function ExerciseSearchField({
         }}
         onChange={(event) => {
           const nextValue = event.target.value;
+          requestIdRef.current++;
+          setError(null);
+          setCandidates([]);
+          setIsSearching(Boolean(nextValue.trim()));
+          onDraftChange?.();
           setDraft(nextValue);
           setTypedQuery(nextValue);
           setIsOpen(true);
@@ -205,6 +225,7 @@ export function ExerciseSearchField({
           }
         }}
       />
+      {error ? <p role="alert" className="mt-1 text-sm text-surface-muted">{error}</p> : null}
       {showResults ? (
         <div
           id={listboxId}
@@ -231,6 +252,8 @@ export function ExerciseSearchField({
                 </li>
               ))}
             </ul>
+          ) : !showCreateCustom ? (
+            <p className="px-4 py-3 text-sm text-surface-muted">No matching exercises.</p>
           ) : null}
           {showCreateCustom ? (
             <button
@@ -242,7 +265,7 @@ export function ExerciseSearchField({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void handleCreateCustom()}
             >
-              {isCreating ? "Creating…" : trimmedQuery}
+              {isCreating ? "Creating…" : `Create “${trimmedQuery}”`}
             </button>
           ) : null}
         </div>

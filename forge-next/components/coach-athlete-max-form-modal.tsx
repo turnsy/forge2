@@ -37,6 +37,7 @@ function CoachAthleteMaxFormFields({
   saveUrl,
   searchUrl,
   confirmUrl,
+  allowCreate,
   onClose,
   onSaved,
 }: {
@@ -45,6 +46,7 @@ function CoachAthleteMaxFormFields({
   saveUrl: string;
   searchUrl: string;
   confirmUrl: string;
+  allowCreate: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -95,6 +97,8 @@ function CoachAthleteMaxFormFields({
             value={exerciseName}
             disabled={false}
             revertOnBlur={false}
+            allowCreate={allowCreate}
+            onDraftChange={() => setExerciseId("")}
             searchUrl={searchUrl}
             confirmUrl={confirmUrl}
             onResolved={({ name, exerciseId: nextExerciseId }) => {
@@ -158,6 +162,7 @@ export function CoachAthleteMaxFormModal({
   saveUrl,
   searchUrl = "/api/coach/exercises/search",
   confirmUrl = "/api/coach/exercises/confirm",
+  allowCreate = true,
   onClose,
   onSaved,
 }: {
@@ -167,6 +172,7 @@ export function CoachAthleteMaxFormModal({
   saveUrl: string;
   searchUrl?: string;
   confirmUrl?: string;
+  allowCreate?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -186,6 +192,7 @@ export function CoachAthleteMaxFormModal({
           saveUrl={saveUrl}
           searchUrl={searchUrl}
           confirmUrl={confirmUrl}
+          allowCreate={allowCreate}
           onClose={onClose}
           onSaved={onSaved}
         />

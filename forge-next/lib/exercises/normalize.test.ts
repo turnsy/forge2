@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalize_v1 } from "./normalize";
+import { normalizeExercise } from "./normalize";
 
-describe("normalize_v1", () => {
-  it("normalizes case, parentheticals, punctuation, and whitespace", () => {
-    expect(normalize_v1("  Back Squat (high-bar)!!! ")).toBe("back squat");
-    expect(normalize_v1("Bench  Press 75%")).toBe("bench press 75%");
+describe("normalizeExercise", () => {
+  it("normalizes only case and whitespace", () => {
+    expect(normalizeExercise("  Back  Squat (high-bar) ")).toBe("back squat (high-bar)");
+    expect(normalizeExercise("Bench  Press 75%")).toBe("bench press 75%");
+    expect(normalizeExercise("Bench Press (dumbbell)")).not.toBe(normalizeExercise("Bench Press (barbell)"));
+    expect(normalizeExercise("Clean & Jerk")).not.toBe(normalizeExercise("Clean and Jerk"));
   });
 });

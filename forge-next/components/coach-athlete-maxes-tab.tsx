@@ -123,11 +123,13 @@ export function CoachAthleteMaxesTab({
   saveUrl,
   searchUrl,
   confirmUrl,
+  allowCreate = true,
 }: {
   listUrl: string;
   saveUrl: string;
   searchUrl?: string;
   confirmUrl?: string;
+  allowCreate?: boolean;
 }) {
   const [maxes, setMaxes] = useState<AthleteMaxEntry[]>([]);
   const [query, setQuery] = useState("");
@@ -225,6 +227,7 @@ export function CoachAthleteMaxesTab({
           saveUrl={saveUrl}
           searchUrl={searchUrl}
           confirmUrl={confirmUrl}
+          allowCreate={allowCreate}
           onClose={() => setFormOpen(false)}
           onSaved={() => void refreshMaxes()}
         />
@@ -306,6 +309,7 @@ export function CoachAthleteMaxesTab({
         saveUrl={saveUrl}
         searchUrl={searchUrl}
         confirmUrl={confirmUrl}
+        allowCreate={allowCreate}
         onClose={() => setFormOpen(false)}
         onSaved={() => void refreshMaxes()}
       />

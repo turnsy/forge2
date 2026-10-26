@@ -23,6 +23,33 @@ describe("ExerciseSearchField", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("selects an existing result without creating an exercise", async () => {
+    const onResolved = vi.fn();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ exercises: [{ id: "squat", name: "Back Squat" }] }));
+    render(<ExerciseSearchField label="Exercise" value="" disabled={false} onResolved={onResolved} />);
+    fireEvent.change(screen.getByLabelText("Exercise"), { target: { value: "squat" } });
+    fireEvent.click(await screen.findByRole("option", { name: "Back Squat" }));
+    expect(onResolved).toHaveBeenCalledWith({ name: "Back Squat", exerciseId: "squat" });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer creation for athletes", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ exercises: [{ id: "bench", name: "Bench Press" }] }));
+    render(<ExerciseSearchField label="Exercise" value="" disabled={false} allowCreate={false} onResolved={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Exercise"), { target: { value: "bench" } });
+    expect(await screen.findByRole("option", { name: "Bench Press" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Create/ })).not.toBeInTheDocument();
+  });
+
+  it("shows creation failures instead of silently dropping the request", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => String(input).includes("/search")
+      ? Response.json({ exercises: [] }) : Response.json({ error: "failed" }, { status: 422 }));
+    render(<ExerciseSearchField label="Exercise" value="" disabled={false} onResolved={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Exercise"), { target: { value: "New Lift" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Create “New Lift”" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not create exercise");
+  });
+
   it("debounces search while typing", async () => {
     vi.useFakeTimers();
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -113,7 +140,7 @@ describe("ExerciseSearchField", () => {
     fireEvent.change(input, { target: { value: "Close Grip Bench" } });
 
     expect(await screen.findByRole("option", { name: "Bench Press" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Close Grip Bench" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create “Close Grip Bench”" })).toBeInTheDocument();
   });
 
   it("creates a custom exercise only when the create action is clicked", async () => {
@@ -149,7 +176,7 @@ describe("ExerciseSearchField", () => {
     fireEvent.change(input, { target: { value: "Zercher Squat" } });
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Zercher Squat" }),
+      await screen.findByRole("button", { name: "Create “Zercher Squat”" }),
     );
 
     await waitFor(() => {
