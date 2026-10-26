@@ -62,13 +62,11 @@ describe("PromptComposer", () => {
     vi.unstubAllGlobals();
   });
 
-  it("replaces selected text on paste, preserves mentions, and sends with Enter", () => {
-    const onSend = vi.fn();
+  it("replaces selected text on paste and preserves mentions", () => {
     const onDocumentChange = vi.fn();
     render(
       <PromptComposer
         placeholder="Ask Forge..."
-        onSend={onSend}
         onDocumentChange={onDocumentChange}
       />,
     );
@@ -92,8 +90,6 @@ describe("PromptComposer", () => {
     const caret = window.getSelection()!.getRangeAt(0).cloneRange();
     caret.setEnd(editor, editor.childNodes.length);
     expect(caret.toString()).toBe(" please");
-    fireEvent.keyDown(editor, { key: "Enter" });
-    expect(onSend).toHaveBeenCalledExactlyOnceWith(expected);
   });
 
   it("does not interpret pasted HTML as markup or mention chips", () => {
@@ -199,11 +195,10 @@ describe("PromptComposer", () => {
     expect(editor).toHaveTextContent("@jane");
   });
 
-  it("selects a mention with Enter instead of sending", async () => {
+  it("selects a mention with Tab", async () => {
     const user = userEvent.setup();
-    const onSend = vi.fn();
 
-    render(<PromptComposer placeholder="Ask Forge..." onSend={onSend} />);
+    render(<PromptComposer placeholder="Ask Forge..." />);
 
     const editor = screen.getByRole("textbox");
     await user.click(editor);
@@ -213,10 +208,22 @@ describe("PromptComposer", () => {
       expect(screen.getByRole("option", { name: /Jane Smith/i })).toBeInTheDocument();
     });
 
-    await user.keyboard("{Enter}");
+    await user.keyboard("{Tab}");
 
-    expect(onSend).not.toHaveBeenCalled();
     expect(editor.querySelector("[data-mention-id='a1']")).toBeTruthy();
+  });
+
+  it("starts a new line and closes suggestions when Enter is pressed in a mention query", async () => {
+    const user = userEvent.setup();
+    render(<PromptComposer placeholder="Ask Forge..." />);
+    const editor = screen.getByRole("textbox");
+    await user.click(editor);
+    await user.type(editor, "@jane");
+    await screen.findByRole("option", { name: /Jane Smith/i });
+    await user.keyboard("{Enter}");
+    expect(editor.textContent).toBe("@jane\n");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(editor.querySelector("[data-mention-id]")).toBeNull();
   });
 
   it("uses at least 16px text in compact mode to avoid iOS focus zoom", () => {

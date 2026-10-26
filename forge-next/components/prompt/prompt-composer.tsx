@@ -39,12 +39,10 @@ type SuppressedMentionRange = {
 export function PromptComposer({
   placeholder,
   onDocumentChange,
-  onSend,
   compact = false,
 }: {
   placeholder: string;
   onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
-  onSend?: (segments: PromptSegment[]) => void;
   compact?: boolean;
 }) {
   const menuId = useId();
@@ -220,10 +218,8 @@ export function PromptComposer({
     syncCaret();
   }
 
-  function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
-    event.preventDefault();
+  const insertText = useCallback((text: string) => {
     const editor = editorRef.current;
-    const text = event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n");
     if (!editor || !text) return;
 
     const selection = window.getSelection();
@@ -240,7 +236,7 @@ export function PromptComposer({
       range.collapse(false);
     }
 
-    // Keep clipboard markup out of the mention-aware editor document.
+    // Keep text flat so line breaks and pasted content remain in the document.
     range.deleteContents();
     const node = document.createTextNode(text);
     range.insertNode(node);
@@ -249,6 +245,26 @@ export function PromptComposer({
     selection.removeAllRanges();
     selection.addRange(range);
     syncCaret();
+  }, [syncCaret]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    // Mobile keyboards can insert a paragraph without firing a keydown.
+    function handleBeforeInput(event: InputEvent) {
+      if (!event.isComposing && event.cancelable &&
+        (event.inputType === "insertParagraph" || event.inputType === "insertLineBreak")) {
+        event.preventDefault();
+        insertText("\n");
+      }
+    }
+    editor.addEventListener("beforeinput", handleBeforeInput);
+    return () => editor.removeEventListener("beforeinput", handleBeforeInput);
+  }, [insertText]);
+
+  function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    insertText(event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n"));
   }
 
   function selectMention(item: PromptMentionItem) {
@@ -269,6 +285,7 @@ export function PromptComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     if (menuVisible && !mentionLoading && menuItems.length > 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
@@ -284,7 +301,7 @@ export function PromptComposer({
         return;
       }
 
-      if (event.key === "Enter" || event.key === "Tab") {
+      if (event.key === "Tab") {
         event.preventDefault();
         const item = menuItems[activeHighlightedIndex];
         if (item) {
@@ -313,9 +330,9 @@ export function PromptComposer({
       }
     }
 
-    if (event.key === "Enter" && !event.shiftKey && !menuVisible) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      onSend?.(readSegmentsFromEditor());
+      insertText("\n");
     }
   }
 
