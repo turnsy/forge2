@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
+import { CANCEL_INPUT_REQUEST_TEXT } from "@/lib/chat/input-request-presentation";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 const mockPathname = vi.fn(() => "/coach");
@@ -155,6 +156,21 @@ vi.mock("eve/react", () => ({
 }));
 
 describe("useCoachPlanWorkspace", () => {
+  it("can cancel a selection-only question without submitting a candidate", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "question-1", display: "select", allowFreeform: false,
+      options: [{ id: "jay-1", label: "Jay" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.respondToInput({ requestId: "question-1", text: CANCEL_INPUT_REQUEST_TEXT });
+    });
+    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+      inputResponses: [{ requestId: "question-1", text: CANCEL_INPUT_REQUEST_TEXT }],
+    }));
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
+  });
   it("does not submit an approval after Eve has reset a failed session cursor", async () => {
     Object.assign(agentDataState.current, { pendingInputRequests: [{
       requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Yes" }],

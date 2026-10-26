@@ -50,6 +50,7 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
+import { CANCEL_INPUT_REQUEST_TEXT } from "@/lib/chat/input-request-presentation";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -723,7 +724,7 @@ export function useCoachPlanWorkspace(options?: {
     const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
     if (!request) return;
     if (response.optionId && !request.options?.some((option) => option.id === response.optionId)) return;
-    if (response.text && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && !request.options?.length))) return;
+    if (response.text && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && (!request.options?.length || response.text === CANCEL_INPUT_REQUEST_TEXT)))) return;
     if (!response.optionId && !response.text?.trim()) return;
     inputResponsePendingRef.current = true;
     setSendFailure(null);
