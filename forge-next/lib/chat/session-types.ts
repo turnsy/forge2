@@ -1,4 +1,4 @@
-import type { HandleMessageStreamEvent, InputRequest, SessionState } from "eve/client";
+import type { HandleMessageStreamEvent, InputRequest, InputResponse, SessionState } from "eve/client";
 import type {
   ChatDisplayError,
   ChatMessage,
@@ -22,6 +22,7 @@ export type CoachTurnMarker = {
 };
 
 export type CoachWorkspaceSnapshot = {
+  inputCardResponses?: readonly InputResponse[];
   title: string | null;
   forgeSessionId: string;
   eve: ForgeEvePointer | null;
@@ -52,6 +53,7 @@ export function withForgeSessionId(
 }
 
 export function buildCoachWorkspaceSnapshot(input: {
+  inputCardResponses?: readonly InputResponse[];
   forgeSessionId: string;
   title: string | null;
   eve: CoachWorkspaceSnapshot["eve"];
@@ -59,6 +61,7 @@ export function buildCoachWorkspaceSnapshot(input: {
   lastTurn?: CoachTurnMarker | null;
 }): CoachWorkspaceSnapshot {
   return {
+    ...(input.inputCardResponses ? { inputCardResponses: input.inputCardResponses } : {}),
     title: input.title,
     forgeSessionId: input.forgeSessionId,
     eve: input.eve,

@@ -51,6 +51,7 @@ import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
 import { CANCEL_INPUT_REQUEST_TEXT } from "@/lib/chat/input-request-presentation";
+import { getConfirmationProposal, parseConfirmedChoice } from "@/lib/chat/confirmed-actions";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -166,16 +167,20 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const reducerSeedMessages = useMemo(() => [], []);
+  const initialInputCardResponses = normalizedSnapshot?.inputCardResponses;
+  const inputCardResponsesRef = useRef<InputResponse[]>([...initialInputCardResponses ?? []]);
+  const inputResponseToPersistRef = useRef<InputResponse | null>(null);
 
   const eveReducer = useMemo(
     () =>
       createEveCoachReducer({
+        inputCardResponses: initialInputCardResponses,
         messages: reducerSeedMessages,
         currentArtifact: null,
         planId: null,
         artifactTitle: "",
       }),
-    [reducerSeedMessages],
+    [reducerSeedMessages, initialInputCardResponses],
   );
 
   const sessionTitleRef = useRef<string | null>(
@@ -259,6 +264,7 @@ export function useCoachPlanWorkspace(options?: {
       createCoachEvePersister({
         forgeSessionId,
         getTitle: () => sessionTitleRef.current,
+        getInputCardResponses: () => inputCardResponsesRef.current,
         saveSnapshot: async (input) => {
           const result = await saveSessionSnapshot(
             forgeSessionId,
@@ -318,6 +324,13 @@ export function useCoachPlanWorkspace(options?: {
       continuationToken: response.continuationToken,
       streamIndex: latestAgentEventsRef.current.length,
     };
+    const inputResponse = inputResponseToPersistRef.current;
+    if (inputResponse) {
+      // Persist the selected row as soon as Eve acknowledges receipt, before
+      // waiting for model/tool events. A reload must not reopen the same form.
+      inputCardResponsesRef.current = [...inputCardResponsesRef.current.filter((item) => item.requestId !== inputResponse.requestId), inputResponse];
+      void persisterRef.current.flush(latestAgentSessionRef.current, latestAgentEventsRef.current).catch(() => false);
+    }
   }, []);
 
   const handleAgentStreamEventRef = useRef<
@@ -724,9 +737,14 @@ export function useCoachPlanWorkspace(options?: {
     const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
     if (!request) return;
     if (response.optionId && !request.options?.some((option) => option.id === response.optionId)) return;
-    if (response.text && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && (!request.options?.length || response.text === CANCEL_INPUT_REQUEST_TEXT)))) return;
+    const proposal = getConfirmationProposal(request);
+    const choice = parseConfirmedChoice(response.text);
+    const confirmedChoice = (response.optionId === "approve" || response.optionId === "deny") && proposal && choice?.confirmationId === proposal.confirmationId && choice.toolName === request.action.toolName && proposal.choices.some((option) => option.id === choice.choiceId);
+    if (response.text && !confirmedChoice && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && (!request.options?.length || response.text === CANCEL_INPUT_REQUEST_TEXT)))) return;
+    if (proposal && response.optionId === "approve" && !confirmedChoice) return;
     if (!response.optionId && !response.text?.trim()) return;
     inputResponsePendingRef.current = true;
+    inputResponseToPersistRef.current = response;
     setSendFailure(null);
     try {
       await agent.send({ inputResponses: [response] });
@@ -734,6 +752,7 @@ export function useCoachPlanWorkspace(options?: {
       setSendFailure(error instanceof Error ? error.message : "Couldn't send your response.");
     } finally {
       inputResponsePendingRef.current = false;
+      inputResponseToPersistRef.current = null;
     }
   }, [agent, canSendNow, workspaceData.pendingInputRequests]);
 
@@ -778,6 +797,8 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const restart = useCallback(() => {
+    inputCardResponsesRef.current = [];
+    inputResponseToPersistRef.current = null;
     stopPendingRef.current = false;
     setStopPending(false);
     setFinalization(null);

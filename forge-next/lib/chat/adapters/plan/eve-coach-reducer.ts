@@ -3,6 +3,7 @@ import type {
   ActionResultStreamEvent,
   ActionsRequestedStreamEvent,
   EveAgentReducerEvent,
+  InputResponse,
 } from "eve/client";
 import type { EveCoachReducerData } from "@/lib/chat/session-types";
 import {
@@ -12,6 +13,7 @@ import {
   toForgeToolDisplayErrors,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 import { isUserAbortError } from "@/lib/chat/stream-completion";
+import { parseConfirmedChoice } from "@/lib/chat/confirmed-actions";
 
 type ForgeToolResult = Extract<
   ActionResultStreamEvent["data"]["result"],
@@ -151,7 +153,7 @@ function finalizeAssistantTurn(
 }
 
 export function createEveCoachReducer(
-  initial: Partial<EveCoachReducerData> = {},
+  initial: Partial<EveCoachReducerData> & { inputCardResponses?: readonly InputResponse[] } = {},
 ): EveAgentReducer<EveCoachReducerData> {
   return {
     initial: () => ({
@@ -171,13 +173,27 @@ export function createEveCoachReducer(
         case "input.requested": {
           // Eve has one pending input batch. A later batch replaces it; merging
           // keeps answered clarification cards alongside the next approval.
-          return { ...data, pendingInputRequests: [...event.data.requests] };
+          if (data.streamingAssistantText.trim()) data = finalizeAssistantTurn(data);
+          const messages = [...data.messages];
+          for (const request of event.data.requests) {
+            if (!messages.some((message) => message.inputCard?.request.requestId === request.requestId)) {
+              const response = initial.inputCardResponses?.find((response) => response.requestId === request.requestId);
+              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? "submitted" : "pending", selectedChoiceId: parseConfirmedChoice(response?.text)?.choiceId ?? response?.optionId } });
+            }
+          }
+          return { ...data, messages, pendingInputRequests: [...event.data.requests] };
         }
 
         case "client.input.responded":
           // Keep requests available for retry if delivery fails. The server's
           // action result removes them authoritatively, including on replay.
-          return { ...data, phase: "streaming", runStatus: "generating", errors: [] };
+          return { ...data, messages: data.messages.map((message) => {
+            if (!message.inputCard) return message;
+            const response = event.data.responses.find((response) => response.requestId === message.inputCard?.request.requestId);
+            if (!response) return message;
+            const choice = parseConfirmedChoice(response.text);
+            return { ...message, inputCard: { ...message.inputCard, status: "submitted" as const, selectedChoiceId: choice?.choiceId ?? response.optionId } };
+          }), phase: "streaming", runStatus: "generating", errors: [] };
 
         case "client.message.submitted": {
           const text = event.data.message.trim();
@@ -213,6 +229,8 @@ export function createEveCoachReducer(
         case "turn.started":
           return {
             ...data,
+            messages: data.messages.map((message) => message.inputCard && message.inputCard.request.display !== "confirmation" && ["pending", "submitted"].includes(message.inputCard.status)
+              ? { ...message, inputCard: { ...message.inputCard, status: "completed" as const } } : message),
             // Question answers are consumed before the next turn starts and
             // don't emit an action.result. Approval stays until its tool result.
             pendingInputRequests: (data.pendingInputRequests ?? []).filter(
@@ -230,8 +248,17 @@ export function createEveCoachReducer(
 
         case "action.result": {
           const { result } = event.data;
+          const output = "output" in result && result.output && typeof result.output === "object" ? result.output as Record<string, unknown> : {};
+          const receipt = output.confirmation && typeof output.confirmation === "object" ? output.confirmation as Record<string, unknown> : {};
           data = {
             ...data,
+            messages: data.messages.map((message) => {
+              const card = message.inputCard;
+              if (!card || card.request.action.callId !== result.callId) return message;
+              const selectedChoiceId = typeof receipt.choiceId === "string" ? receipt.choiceId : card.selectedChoiceId;
+              const status = event.data.status === "rejected" ? "cancelled" : event.data.status === "failed" || output.ok === false ? "failed" : "completed";
+              return { ...message, inputCard: { ...card, selectedChoiceId, status } };
+            }),
             pendingInputRequests: (data.pendingInputRequests ?? []).filter(
               (request) => request.action.callId !== result.callId,
             ),
@@ -287,6 +314,8 @@ export function createEveCoachReducer(
           // request ids cannot be submitted against a new conversation.
           return {
             ...data,
+            messages: data.messages.map((message) => message.inputCard && ["pending", "submitted"].includes(message.inputCard.status)
+              ? { ...message, inputCard: { ...message.inputCard, status: "failed" as const } } : message),
             pendingInputRequests: [],
             phase: "error",
             runStatus: "error",

@@ -10,6 +10,11 @@ export type ChatStatus =
   | "error";
 
 export type ChatMessage = {
+  inputCard?: {
+    request: InputRequest;
+    status: "pending" | "submitted" | "completed" | "cancelled" | "failed";
+    selectedChoiceId?: string;
+  };
   role: "user" | "assistant";
   content: string;
   /** Present on user messages sent with @ mention chips. */

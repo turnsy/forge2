@@ -22,6 +22,7 @@ import type {
 } from "@/lib/chat/types";
 
 function isRenderableMessage(message: ChatMessage): boolean {
+  if (message.inputCard) return true;
   if (message.role === "user") {
     return true;
   }
@@ -118,7 +119,11 @@ export function ChatThread({
         >
           {messages.filter(isRenderableMessage).map((message, index) => (
             <ChatBubble key={`${message.role}-${index}`} role={message.role}>
-              <ChatMessageBody message={message} />
+              {message.inputCard ? (
+                <ChatInputRequest request={message.inputCard.request} status={message.inputCard.status === "submitted" && phase === "error" ? "failed" : message.inputCard.status} savedChoiceId={message.inputCard.selectedChoiceId}
+                  disabled={turnInProgress || !pendingInputRequests.some((request) => request.requestId === message.inputCard?.request.requestId)}
+                  onRespond={onRespondToInput ?? (async () => {})} />
+              ) : <ChatMessageBody message={message} />}
             </ChatBubble>
           ))}
           {showStreaming ? (
@@ -133,7 +138,7 @@ export function ChatThread({
           ) : showTurnActivity && activityLabel ? (
             <TurnActivityIndicator label={activityLabel} />
           ) : null}
-          {pendingInputRequests.map((request) => (
+          {pendingInputRequests.filter((request) => !messages.some((message) => message.inputCard?.request.requestId === request.requestId)).map((request) => (
             <ChatBubble key={request.requestId} role="assistant">
               {onRespondToInput ? (
                 <ChatInputRequest request={request} disabled={turnInProgress} onRespond={onRespondToInput} />

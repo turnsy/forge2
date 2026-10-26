@@ -6,6 +6,7 @@ import {
 } from "eve/channels/auth";
 import { eveChannel } from "eve/channels/eve";
 import { isPromptBetaEnabled } from "@/lib/prompts/prompt-beta-access";
+import { confirmedChoicesFromBody } from "@/lib/chat/confirmed-actions";
 import {
   getAuthUserFromRequest,
   getForgeSessionIdFromRequest,
@@ -28,6 +29,10 @@ function forgeCoachAuth(): AuthFn<Request> {
 
     const forgeSessionId = getForgeSessionIdFromRequest(request);
     const cookieHeader = request.headers.get("cookie") ?? "";
+    let confirmedActions: ReturnType<typeof confirmedChoicesFromBody> = [];
+    if (request.method === "POST") {
+      try { confirmedActions = confirmedChoicesFromBody(await request.clone().json()); } catch { /* Invalid bodies are rejected by Eve's route parser. */ }
+    }
 
     return {
       principalId: user.id,
@@ -37,6 +42,7 @@ function forgeCoachAuth(): AuthFn<Request> {
         role: user.role,
         email: user.email ?? "",
         cookieHeader,
+        forgeConfirmedActions: JSON.stringify(confirmedActions),
         ...(forgeSessionId ? { forgeSessionId } : {}),
       },
     };

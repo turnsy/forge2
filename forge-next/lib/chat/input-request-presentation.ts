@@ -1,4 +1,5 @@
 import type { InputRequest } from "eve/client";
+import { getConfirmationProposal } from "./confirmed-actions";
 
 export const CANCEL_INPUT_REQUEST_TEXT = "Cancel this request. Do not carry out the proposed action.";
 
@@ -12,5 +13,5 @@ export function inputRequestPresentation(request: InputRequest) {
     reject_coach_link: { prompt: "Decline this athlete's request to connect with you?", confirmLabel: "Decline request" },
   };
   const action = actions[request.action.toolName] ?? { prompt: "Confirm the proposed action?", confirmLabel: "Confirm action" };
-  return { ...action, prompt: request.prompt.startsWith("Approve tool call:") ? action.prompt : request.prompt };
+  return { ...action, prompt: getConfirmationProposal(request)?.prompt ?? (request.prompt.startsWith("Approve tool call:") ? action.prompt : request.prompt) };
 }

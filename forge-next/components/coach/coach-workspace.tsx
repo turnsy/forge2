@@ -307,6 +307,7 @@ export function CoachWorkspace(
     void saveSessionSnapshot(
       props.initialSession.id,
       buildPersistedCoachSnapshot({
+        inputCardResponses: snapshot.inputCardResponses,
         forgeSessionId: props.initialSession.id,
         title: snapshot.title,
         session: toEveSessionState(eve, catchUp.events.length),
