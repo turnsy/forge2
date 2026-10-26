@@ -1,13 +1,10 @@
 "use server";
 
-import {
-  applySetActuals,
-  findNextDayAfter,
-} from "@/lib/athlete/plan/domain";
+import { findNextDayAfter } from "@/lib/athlete/plan/domain";
 import {
   completeDay,
   getAssignedPlanById,
-  savePlanActuals,
+  saveWorkoutSetActuals,
 } from "@/lib/athlete/plan/repository";
 import { requireRoleAuth } from "@/lib/errors/require-role-auth";
 import {
@@ -16,11 +13,7 @@ import {
   type ServiceResult,
 } from "@/lib/errors/service-error";
 import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
-import { getFlattenedExercise } from "@/lib/plans/day-blocks";
-import { estimateOneRepMax } from "@/lib/maxes/estimate-one-rep-max";
-import { insertAthleteMax, listAthleteMaxes } from "@/lib/maxes/mutations";
-import { resolveBestMax } from "@/lib/maxes/resolve-current-max";
-import { convertWeight } from "@/lib/maxes/units";
+import { revalidatePath } from "next/cache";
 
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
 
@@ -56,57 +49,22 @@ export async function saveSetActualsAction(
     );
   }
 
-  const updatedPlan = applySetActuals(
-    assignment.plan,
+  const saved = await saveWorkoutSetActuals({
+    assignmentId,
+    plan: assignment.plan,
     weekPos,
     dayPos,
     exercisePos,
     setPos,
     actual,
-  );
-
-  const saved = await savePlanActuals(assignmentId, updatedPlan);
-  if (saved.ok && actual?.reps !== undefined && actual.target?.type === "absolute") {
-    const day = updatedPlan.weeks[weekPos]?.days[dayPos];
-    const exercise = day ? getFlattenedExercise(day, exercisePos)?.exercise : null;
-    const exerciseId = exercise?.resolvedExerciseId;
-    const estimate = exerciseId
-      ? estimateOneRepMax(actual.target.value, actual.reps)
-      : null;
-    if (exerciseId && estimate !== null) {
-      try {
-        const rows = await listAthleteMaxes(auth.user.id, [exerciseId]);
-        const current = resolveBestMax(
-          rows.map((row) => ({
-            value: Number(row.value),
-            unit: row.unit,
-            loggedAt: row.logged_at,
-            source: row.source,
-          })),
-        );
-        const currentInLogUnit = current
-          ? convertWeight(current.value, current.unit, actual.target.unit)
-          : null;
-        const isImprovement =
-          currentInLogUnit === null || estimate > currentInLogUnit;
-        const withinSanityBound =
-          currentInLogUnit === null || estimate <= currentInLogUnit * 1.2;
-
-        if (isImprovement && withinSanityBound) {
-          await insertAthleteMax({
-            athleteId: auth.user.id,
-            exerciseId,
-            value: estimate,
-            unit: actual.target.unit,
-            source: "estimated_from_log",
-          });
-        }
-      } catch {
-        // Workout saving remains successful if max estimation is unavailable.
-      }
-    }
+  });
+  if (!saved.ok) return saved;
+  if (saved.maxChanged) {
+    revalidatePath("/athlete");
+    revalidatePath("/athlete/maxes");
+    revalidatePath(`/coach/athletes/${auth.user.id}`);
   }
-  return saved;
+  return { ok: true };
 }
 
 export async function completeDayAction(

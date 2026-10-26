@@ -7,19 +7,24 @@ export type AthleteMaxEntry = {
   value: number;
   unit: string;
   logged_at: string;
+  source?: string;
+  voided_at?: string | null;
+  entry_order?: number;
 };
 
 export type ExerciseMaxSummary = {
   exerciseId: string;
   exerciseName: string;
-  currentValue: number;
+  currentValue: number | null;
   currentUnit: string;
-  currentMaxId: string;
+  currentMaxId: string | null;
   loggedAt: string;
   history: AthleteMaxEntry[];
 };
 
-export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSummary[] {
+export function groupMaxesByExercise(
+  maxes: AthleteMaxEntry[],
+): ExerciseMaxSummary[] {
   const byExercise = new Map<string, AthleteMaxEntry[]>();
 
   for (const max of maxes) {
@@ -32,13 +37,18 @@ export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSumma
 
   for (const [exerciseId, history] of byExercise) {
     const sorted = [...history].sort(
-      (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
+      (a, b) =>
+        new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime() ||
+        (b.entry_order ?? 0) - (a.entry_order ?? 0),
     );
     const current = resolveCurrentMax(
       history.map((entry) => ({
+        ...entry,
         value: entry.value,
         unit: entry.unit,
         loggedAt: entry.logged_at,
+        voidedAt: entry.voided_at,
+        entryOrder: entry.entry_order,
       })),
     );
     const currentEntry = sorted[0];
@@ -46,10 +56,10 @@ export function groupMaxesByExercise(maxes: AthleteMaxEntry[]): ExerciseMaxSumma
     summaries.push({
       exerciseId,
       exerciseName: currentEntry.exercise_name,
-      currentValue: current?.value ?? currentEntry.value,
+      currentValue: current?.value ?? null,
       currentUnit: current?.unit ?? currentEntry.unit,
-      currentMaxId: currentEntry.id,
-      loggedAt: currentEntry.logged_at,
+      currentMaxId: current?.id ?? null,
+      loggedAt: current?.loggedAt ?? currentEntry.logged_at,
       history: sorted,
     });
   }

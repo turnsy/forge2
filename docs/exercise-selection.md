@@ -25,5 +25,5 @@ removes the unused semantic-search RPC. Existing catalog IDs, plan references,
 max histories and embedding data are preserved. The application no longer uses
 the embedding data. Do not merge or rename existing catalog records automatically.
 
-This simplification does not by itself resolve the max-update and relationship
-permission issues recorded in the PR 69 readiness review.
+Training-max updates and relationship permissions are described in
+[training-maxes.md](./training-maxes.md).

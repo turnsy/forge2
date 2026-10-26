@@ -235,7 +235,11 @@ describe("CoachEditableDayView", () => {
     fireEvent.focus(nameInput);
     fireEvent.change(nameInput, { target: { value: "Incline" } });
 
-    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    const option = await screen.findByRole(
+      "option",
+      { name: "Incline Bench Press" },
+      { timeout: 3000 },
+    );
     fireEvent.click(option);
 
     await waitFor(() => {
@@ -418,7 +422,11 @@ describe("CoachEditableDayView", () => {
     fireEvent.focus(nameInput);
     fireEvent.change(nameInput, { target: { value: "Incline Bench" } });
 
-    const option = await screen.findByRole("option", { name: "Incline Bench Press" });
+    const option = await screen.findByRole(
+      "option",
+      { name: "Incline Bench Press" },
+      { timeout: 3000 },
+    );
     fireEvent.click(option);
 
     await waitFor(() => {

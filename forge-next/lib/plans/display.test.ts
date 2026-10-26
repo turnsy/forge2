@@ -4,7 +4,6 @@ import {
   actualRepsMatchesPlanned,
   formatTarget,
   formatPercentageTarget,
-  formatResolvedPercentageTarget,
   formatReps,
   formatTargetInstruction,
   getDayTitle,
@@ -90,26 +89,6 @@ describe("formatTarget", () => {
         unit: "kg",
       }),
     ).toBe("70% (kg)");
-  });
-});
-
-describe("formatResolvedPercentageTarget", () => {
-  it("renders computed weight when a max exists", () => {
-    expect(
-      formatResolvedPercentageTarget(
-        { type: "percentage", value: 75, unit: "lb" },
-        { value: 200, unit: "lb" },
-      ),
-    ).toBe("150 lb (75%)");
-  });
-
-  it("falls back to percentage-only display without a max", () => {
-    expect(
-      formatResolvedPercentageTarget(
-        { type: "percentage", value: 75, unit: "kg" },
-        null,
-      ),
-    ).toBe("75% (kg)");
   });
 });
 

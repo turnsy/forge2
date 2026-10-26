@@ -22,6 +22,8 @@ export function buildMaxesByExerciseId(
         unit: row.unit,
         loggedAt: row.logged_at,
         source: row.source,
+        voidedAt: row.voided_at,
+        entryOrder: row.entry_order,
       })),
     );
 

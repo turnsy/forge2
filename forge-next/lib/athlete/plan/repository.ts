@@ -5,7 +5,8 @@ import {
   type ServiceResult,
 } from "@/lib/errors/service-error";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
-import type { WorkoutPlan } from "@/lib/plans/workout-plan";
+import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { applySetActuals } from "@/lib/athlete/plan/domain";
 import { getAthleteCoachLink } from "@/lib/links/repository";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -37,18 +38,80 @@ type AssignedPlanRow = {
 export type { AssignedPlan };
 export { mapAssignedPlanRow };
 
-export type ActiveAthletePlanResult = ServiceResult<{ plan: AssignedPlan | null }>;
-export type AssignedPlanByIdResult = ServiceResult<{ plan: AssignedPlan | null }>;
-export type ListAthleteAssignedPlansResult = ServiceResult<{ plans: AssignedPlan[] }>;
+export type ActiveAthletePlanResult = ServiceResult<{
+  plan: AssignedPlan | null;
+}>;
+export type AssignedPlanByIdResult = ServiceResult<{
+  plan: AssignedPlan | null;
+}>;
+export type ListAthleteAssignedPlansResult = ServiceResult<{
+  plans: AssignedPlan[];
+}>;
 export type ListMyPlanHistoryResult = ServiceResult<{ plans: AssignedPlan[] }>;
 export type SavePlanActualsResult = ServiceResult<Record<never, never>>;
+
+export async function saveWorkoutSetActuals(input: {
+  assignmentId: string;
+  plan: WorkoutPlan;
+  weekPos: number;
+  dayPos: number;
+  exercisePos: number;
+  setPos: number;
+  actual: ActualSet | null;
+}): Promise<ServiceResult<{ maxChanged: boolean }>> {
+  const positions = [
+    input.weekPos,
+    input.dayPos,
+    input.exercisePos,
+    input.setPos,
+  ];
+  if (
+    positions.some((position) => !Number.isInteger(position) || position < 0) ||
+    !loadWorkoutPlan(
+      applySetActuals(
+        input.plan,
+        input.weekPos,
+        input.dayPos,
+        input.exercisePos,
+        input.setPos,
+        input.actual,
+      ),
+    ).ok
+  ) {
+    return serviceError(
+      ServiceErrorCode.VALIDATION_ERROR,
+      "Invalid workout actuals",
+    );
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("save_workout_set_actuals", {
+    p_assignment_id: input.assignmentId,
+    p_week_pos: input.weekPos,
+    p_day_pos: input.dayPos,
+    p_exercise_pos: input.exercisePos,
+    p_set_pos: input.setPos,
+    p_actual: input.actual,
+  });
+  if (error)
+    return serviceError(
+      error.code === "P0002"
+        ? ServiceErrorCode.NOT_FOUND
+        : error.code === "22023"
+          ? ServiceErrorCode.VALIDATION_ERROR
+          : ServiceErrorCode.DB_ERROR,
+      error.message,
+    );
+  return { ok: true, maxChanged: Boolean(data) };
+}
 export type CompleteDayResult = ServiceResult<{
   allDaysDone: boolean;
   plan: WorkoutPlan;
   setStatuses: { setIndex: number; status: SetCompletionStatus }[];
 }>;
 
-async function resolveClient(client?: AthletePlanClient): Promise<AthletePlanClient> {
+async function resolveClient(
+  client?: AthletePlanClient,
+): Promise<AthletePlanClient> {
   return client ?? (await createClient());
 }
 

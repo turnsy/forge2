@@ -9,16 +9,19 @@ import { WEIGHT_UNITS, type WeightUnit } from "@/lib/maxes/units";
 export type MaxFormEntry = {
   exerciseName: string;
   exerciseId: string;
-  value: number;
+  value: number | null;
   unit: string;
 };
 
-function getInitialFormState(mode: "add" | "update", initialEntry: MaxFormEntry | null) {
+function getInitialFormState(
+  mode: "add" | "update",
+  initialEntry: MaxFormEntry | null,
+) {
   if (mode === "update" && initialEntry) {
     return {
       exerciseName: initialEntry.exerciseName,
       exerciseId: initialEntry.exerciseId,
-      value: String(initialEntry.value),
+      value: initialEntry.value === null ? "" : String(initialEntry.value),
       unit: initialEntry.unit as WeightUnit,
     };
   }
@@ -75,18 +78,20 @@ function CoachAthleteMaxFormFields({
       });
 
       if (!response.ok) {
-        setError(mode === "update" ? "Could not update max." : "Could not save max.");
+        setError(
+          mode === "update" ? "Could not update max." : "Could not save max.",
+        );
         return;
       }
 
       onSaved();
       onClose();
+    } catch {
+      setError("Could not save max. Check your connection and try again.");
     } finally {
       setIsSaving(false);
     }
   }
-
-  const saveLabel = mode === "update" ? "Save max" : "Save max";
 
   return (
     <>
@@ -136,7 +141,9 @@ function CoachAthleteMaxFormFields({
             ))}
           </Select>
         </div>
-        {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+        {error ? (
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        ) : null}
       </div>
       <div className="mt-6 flex justify-end gap-3">
         <Button type="button" variant="secondary" size="sm" onClick={onClose}>
@@ -145,10 +152,15 @@ function CoachAthleteMaxFormFields({
         <Button
           type="button"
           size="sm"
-          disabled={!value || isSaving || !exerciseId}
+          disabled={
+            !Number.isFinite(Number(value)) ||
+            Number(value) <= 0 ||
+            isSaving ||
+            !exerciseId
+          }
           onClick={() => void handleSave()}
         >
-          {isSaving ? "Saving…" : saveLabel}
+          {isSaving ? "Saving…" : "Save max"}
         </Button>
       </div>
     </>

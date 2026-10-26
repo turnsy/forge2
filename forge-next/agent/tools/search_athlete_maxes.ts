@@ -7,21 +7,29 @@ import { toToolNotFound } from "../lib/db-tool-errors";
 
 export default defineTool({
   description:
-    "Fuzzy-search an athlete's recorded maxes by exercise name. Returns current best values grouped by exercise, ranked by match quality. Use when a coach asks about an athlete's bench/squat/etc max without knowing the exact exercise id.",
+    "Search an actively linked athlete's recorded training maxes by exercise name. Returns the current max and history count per exercise.",
   inputSchema: z.object({
     athleteId: z.string().uuid().describe("Athlete profile id."),
     query: z
       .string()
       .trim()
       .min(1)
-      .describe("Exercise name or partial name to search, e.g. bench or squat."),
-    limit: z.number().int().min(1).max(20).optional().describe("Max results (default 10)."),
+      .describe(
+        "Exercise name or partial name to search, e.g. bench or squat.",
+      ),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(20)
+      .optional()
+      .describe("Max results (default 10)."),
   }),
   async execute({ athleteId, query, limit = 10 }, ctx) {
     getCoachId(ctx);
     const relationship = await getCoachAthleteRelationship(athleteId);
 
-    if (!relationship) {
+    if (!relationship || relationship.status !== "active") {
       return toToolNotFound("Athlete");
     }
 
@@ -34,12 +42,15 @@ export default defineTool({
       items: results.map((item) => ({
         exerciseId: item.exerciseId,
         exerciseName: item.exerciseName,
-        currentMax: {
-          id: item.currentMaxId,
-          value: item.currentValue,
-          unit: item.currentUnit,
-          loggedAt: item.loggedAt,
-        },
+        currentMax:
+          item.currentMaxId === null
+            ? null
+            : {
+                id: item.currentMaxId,
+                value: item.currentValue,
+                unit: item.currentUnit,
+                loggedAt: item.loggedAt,
+              },
         historyCount: item.history.length,
         matchScore: item.score,
       })),

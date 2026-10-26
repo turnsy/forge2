@@ -29,6 +29,22 @@ const entries = [
 ];
 
 describe("groupMaxesByExercise", () => {
+  it("retains invalidated history without using it as a current max", () => {
+    const result = groupMaxesByExercise([
+      {
+        id: "old",
+        exercise_id: "squat",
+        exercise_name: "Squat",
+        value: 150,
+        unit: "kg",
+        logged_at: "2026-01-01",
+        voided_at: "2026-01-02",
+      },
+    ]);
+    expect(result[0].currentValue).toBeNull();
+    expect(result[0].currentMaxId).toBeNull();
+    expect(result[0].history).toHaveLength(1);
+  });
   it("groups history and picks the most recent entry as current", () => {
     const summaries = groupMaxesByExercise(entries);
 

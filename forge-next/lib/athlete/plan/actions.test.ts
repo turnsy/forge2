@@ -12,14 +12,17 @@ vi.mock("@/lib/errors/require-role-auth", () => ({
 
 vi.mock("@/lib/athlete/plan/repository", () => ({
   getAssignedPlanById: (...args: unknown[]) => mockGetAssignedPlanById(...args),
-  savePlanActuals: (...args: unknown[]) => mockSavePlanActuals(...args),
+  saveWorkoutSetActuals: (...args: unknown[]) => mockSavePlanActuals(...args),
   completeDay: (...args: unknown[]) => mockCompleteDay(...args),
 }));
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
   completeDayAction,
   saveSetActualsAction,
 } from "@/lib/athlete/plan/actions";
+import { revalidatePath } from "next/cache";
 
 describe("athlete plan actions", () => {
   beforeEach(() => {
@@ -76,6 +79,16 @@ describe("athlete plan actions", () => {
       message: "Not authenticated",
     });
     expect(mockSavePlanActuals).not.toHaveBeenCalled();
+  });
+
+  it("refreshes prescription and history views only when the transaction changes a max", async () => {
+    mockSavePlanActuals.mockResolvedValueOnce({ ok: true, maxChanged: true });
+    await saveSetActualsAction("assignment-1", 0, 0, 0, 0, {
+      reps: 1,
+      target: { type: "absolute", value: 110, unit: "kg" },
+    });
+    expect(revalidatePath).toHaveBeenCalledWith("/athlete");
+    expect(revalidatePath).toHaveBeenCalledWith("/athlete/maxes");
   });
 
   it("returns not found when assignment is missing or owned by another athlete", async () => {

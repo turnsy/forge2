@@ -40,36 +40,15 @@ async function fetchMaxes(listUrl: string): Promise<AthleteMaxEntry[]> {
 
 function CoachAthleteMaxHistoryPanel({
   summary,
-  saveUrl,
   onBack,
   onUpdateMax,
-  onDeleted,
+  error,
 }: {
   summary: ExerciseMaxSummary;
-  saveUrl: string;
   onBack: () => void;
   onUpdateMax: () => void;
-  onDeleted: () => void;
+  error: string | null;
 }) {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleDelete(maxId: string) {
-    setError(null);
-    setDeletingId(maxId);
-
-    try {
-      const response = await fetch(`${saveUrl}/${maxId}`, { method: "DELETE" });
-      if (!response.ok) {
-        setError("Could not delete max entry.");
-        return;
-      }
-      onDeleted();
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -79,10 +58,19 @@ function CoachAthleteMaxHistoryPanel({
             {summary.exerciseName}
           </h2>
         </div>
-        <Button type="button" variant="secondary" size="sm" fullWidth={false} onClick={onUpdateMax}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onClick={onUpdateMax}
+        >
           Update max
         </Button>
       </div>
+      <p className="text-sm text-surface-muted">
+        Updates add a new history entry.
+      </p>
       {error ? <Message tone="error">{error}</Message> : null}
       <List>
         {summary.history.map((entry, index) => (
@@ -96,20 +84,30 @@ function CoachAthleteMaxHistoryPanel({
             }
             meta={
               <MetaGroup>
-                <MetaItem label="Recorded" value={formatDate(entry.logged_at)} />
+                <MetaItem
+                  label="Recorded"
+                  value={formatDate(entry.logged_at)}
+                />
+                <MetaItem
+                  label="Source"
+                  value={
+                    entry.source === "logged_single"
+                      ? "Logged single"
+                      : entry.source === "coach_entered"
+                        ? "Coach"
+                        : entry.source === "athlete_entered"
+                          ? "Athlete"
+                          : entry.source === "estimated_from_log"
+                            ? "Retired estimate"
+                            : "Tested"
+                  }
+                />
+                {entry.voided_at ? (
+                  <MetaItem label="Status" value="Invalidated" />
+                ) : entry.id === summary.currentMaxId ? (
+                  <MetaItem label="Status" value="Current" />
+                ) : null}
               </MetaGroup>
-            }
-            actions={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                fullWidth={false}
-                disabled={deletingId === entry.id}
-                onClick={() => void handleDelete(entry.id)}
-              >
-                {deletingId === entry.id ? "Deleting…" : "Delete"}
-              </Button>
             }
           />
         ))}
@@ -199,26 +197,17 @@ export function CoachAthleteMaxesTab({
     [summaries, query],
   );
   const selectedSummary =
-    summaries.find((summary) => summary.exerciseId === selectedExerciseId) ?? null;
+    summaries.find((summary) => summary.exerciseId === selectedExerciseId) ??
+    null;
 
   if (selectedSummary) {
     return (
       <>
         <CoachAthleteMaxHistoryPanel
           summary={selectedSummary}
-          saveUrl={saveUrl}
+          error={error}
           onBack={() => setSelectedExerciseId(null)}
           onUpdateMax={() => openUpdateModal(selectedSummary)}
-          onDeleted={() => {
-            void refreshMaxes().then((entries) => {
-              const stillHasExercise = entries.some(
-                (entry) => entry.exercise_id === selectedExerciseId,
-              );
-              if (!stillHasExercise) {
-                setSelectedExerciseId(null);
-              }
-            });
-          }}
         />
         <CoachAthleteMaxFormModal
           open={formOpen}
@@ -292,9 +281,16 @@ export function CoachAthleteMaxesTab({
                 <MetaGroup>
                   <MetaItem
                     label="Current max"
-                    value={`${summary.currentValue} ${summary.currentUnit}`}
+                    value={
+                      summary.currentValue === null
+                        ? "Not recorded"
+                        : `${summary.currentValue} ${summary.currentUnit}`
+                    }
                   />
-                  <MetaItem label="Updated" value={formatDate(summary.loggedAt)} />
+                  <MetaItem
+                    label="Updated"
+                    value={formatDate(summary.loggedAt)}
+                  />
                 </MetaGroup>
               }
             />

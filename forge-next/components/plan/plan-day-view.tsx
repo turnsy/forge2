@@ -247,21 +247,26 @@ function AthleteEditableDayContent({
     };
   }, []);
 
-  const applySavedActual = useCallback((location: SetLocation, actual: Set["actual"]) => {
-    setSavedDay((previous) =>
-      updateFlattenedSet(previous, location.exercisePos, location.setPos, (set) => ({
-        ...set,
-        actual,
-      })),
-    );
-  }, []);
+  const applySavedActual = useCallback(
+    (location: SetLocation, actual: Set["actual"]) => {
+      setSavedDay((previous) =>
+        updateFlattenedSet(
+          previous,
+          location.exercisePos,
+          location.setPos,
+          (set) => ({
+            ...set,
+            actual,
+          }),
+        ),
+      );
+    },
+    [],
+  );
 
   const runSave = useCallback(
     async (location: SetLocation, set: Set, reps: string, target: string) => {
       const resolution = resolveSaveActual(reps, target, set);
-      if (resolution.type === "skip") {
-        return;
-      }
 
       const { actual } = resolution;
       saveGeneration.current += 1;
@@ -365,7 +370,10 @@ function AthleteEditableDayContent({
     }
 
     const saves: Array<Promise<SaveSetActualsActionResult>> = [];
-    const savedUpdates: Array<{ location: SetLocation; actual: Set["actual"] }> = [];
+    const savedUpdates: Array<{
+      location: SetLocation;
+      actual: Set["actual"];
+    }> = [];
     getFlattenedExerciseRefs(day).forEach((ref, exercisePos) => {
       ref.exercise.sets.forEach((set, setPos) => {
         if (set.planned.type === "target") {
@@ -378,9 +386,6 @@ function AthleteEditableDayContent({
         }
 
         const resolution = resolveSaveActual(local.reps, local.target, set);
-        if (resolution.type === "skip") {
-          return;
-        }
 
         const { actual } = resolution;
         const location = { exercisePos, setPos };

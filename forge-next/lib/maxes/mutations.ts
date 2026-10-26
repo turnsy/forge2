@@ -4,7 +4,8 @@ export type MaxSource =
   | "tested"
   | "coach_entered"
   | "athlete_entered"
-  | "estimated_from_log";
+  | "estimated_from_log"
+  | "logged_single";
 
 export type AthleteMaxRecord = {
   id: string;
@@ -14,6 +15,8 @@ export type AthleteMaxRecord = {
   unit: string;
   source: MaxSource;
   logged_at: string;
+  entry_order?: number;
+  voided_at?: string | null;
 };
 
 export async function listAthleteMaxes(
@@ -46,12 +49,4 @@ export async function insertAthleteMax(input: {
   });
   if (error) throw error;
   return data as AthleteMaxRecord;
-}
-
-export async function deleteAthleteMax(maxId: string): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("delete_athlete_max", {
-    p_max_id: maxId,
-  });
-  if (error) throw error;
 }

@@ -105,10 +105,16 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Start local Supabase
         run: supabase db start
 
       - name: Verify generated database types
         run: bash scripts/generate-database-types.sh && git diff --exit-code -- forge-next/lib/database.types.ts
+
+      - name: Training max database regressions
+        run: node scripts/test-training-maxes.mjs supabase_db_xidptatroxjiqoyvhnzi
+
+      - name: Database type formatter regressions
+        run: node --test scripts/format-database-types.test.mjs
