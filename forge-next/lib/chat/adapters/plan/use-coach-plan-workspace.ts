@@ -26,7 +26,7 @@ import {
   createForgeEveClient,
   type ForgeEvePostResponse,
 } from "@/lib/chat/adapters/plan/forge-eve-client";
-import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
+import { prepareForgeClientSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
   resolveOutboundClientArtifact,
@@ -411,19 +411,16 @@ export function useCoachPlanWorkspace(options?: {
         localTitle: localArtifactTitleRef.current,
       });
 
-      return {
-        ...input,
-        clientContext: buildForgeClientContextForSend({
-          forgeSessionId,
-          clientArtifact: clientArtifact
-            ? {
-                plan: clientArtifact.plan,
-                planId: clientArtifact.planId,
-                title: clientArtifact.title,
-              }
-            : null,
-        }),
-      };
+      return prepareForgeClientSend(input, {
+        forgeSessionId,
+        clientArtifact: clientArtifact
+          ? {
+              plan: clientArtifact.plan,
+              planId: clientArtifact.planId,
+              title: clientArtifact.title,
+            }
+          : null,
+      });
     },
     onEvent: (event) => {
       handleAgentStreamEventRef.current(event);

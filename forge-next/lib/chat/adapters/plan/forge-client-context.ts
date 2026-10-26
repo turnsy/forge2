@@ -33,3 +33,16 @@ export function buildForgeClientContextForSend(
     JSON.stringify(buildForgeClientContext(input)),
   ) as NonNullable<SendTurnPayload["clientContext"]>;
 }
+
+export function prepareForgeClientSend(
+  input: SendTurnPayload,
+  context: Parameters<typeof buildForgeClientContext>[0],
+): SendTurnPayload {
+  if (input.inputResponses?.length && input.message === undefined) {
+    // Eve appends clientContext as a user message. AI SDK approval collection
+    // requires the approval response to remain the last tool message; a user
+    // message here skips execution and leaves a tool call without its output.
+    return { ...input, clientContext: undefined };
+  }
+  return { ...input, clientContext: buildForgeClientContextForSend(context) };
+}

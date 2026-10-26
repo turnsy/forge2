@@ -182,6 +182,7 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
       inputResponses: [{ requestId: request.requestId, optionId: "approve" }],
     }));
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
     expect(generateSessionTitleFromPrompt).not.toHaveBeenCalled();
   });
 
