@@ -220,6 +220,37 @@ export function PromptComposer({
     syncCaret();
   }
 
+  function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const editor = editorRef.current;
+    const text = event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n");
+    if (!editor || !text) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    const selectedRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const range = selectedRange &&
+      editor.contains(selectedRange.startContainer) &&
+      editor.contains(selectedRange.endContainer)
+      ? selectedRange
+      : document.createRange();
+    if (range !== selectedRange) {
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+
+    // Keep clipboard markup out of the mention-aware editor document.
+    range.deleteContents();
+    const node = document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    syncCaret();
+  }
+
   function selectMention(item: PromptMentionItem) {
     if (!editorRef.current || !activeQuery) {
       return;
@@ -302,12 +333,13 @@ export function PromptComposer({
           contentEditable
           suppressContentEditableWarning
           data-placeholder={placeholder}
-          className={`prompt-composer w-full bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
+          className={`prompt-composer w-full whitespace-pre-wrap break-words bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
             compact
               ? "min-h-[2.75rem] text-base md:text-sm"
               : "min-h-[4.5rem] text-base"
           }`}
           onInput={handleInput}
+          onPaste={handlePaste}
           onKeyDown={handleKeyDown}
           onKeyUp={() => {
             syncCaret();
