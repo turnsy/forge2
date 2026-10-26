@@ -169,9 +169,9 @@ export function createEveCoachReducer(
     reduce: (data, event: EveAgentReducerEvent) => {
       switch (event.type) {
         case "input.requested": {
-          const requests = new Map((data.pendingInputRequests ?? []).map((request) => [request.requestId, request]));
-          for (const request of event.data.requests) requests.set(request.requestId, request);
-          return { ...data, pendingInputRequests: [...requests.values()] };
+          // Eve has one pending input batch. A later batch replaces it; merging
+          // keeps answered clarification cards alongside the next approval.
+          return { ...data, pendingInputRequests: [...event.data.requests] };
         }
 
         case "client.input.responded":
@@ -211,7 +211,15 @@ export function createEveCoachReducer(
         }
 
         case "turn.started":
-          return { ...data, runStatus: "generating", phase: "streaming" };
+          return {
+            ...data,
+            // Question answers are consumed before the next turn starts and
+            // don't emit an action.result. Approval stays until its tool result.
+            pendingInputRequests: (data.pendingInputRequests ?? []).filter(
+              (request) => request.display === "confirmation",
+            ),
+            runStatus: "generating", phase: "streaming",
+          };
 
         case "actions.requested": {
           if (getRequestedToolNames(event).includes("submit_plan_code")) {
@@ -266,9 +274,20 @@ export function createEveCoachReducer(
 
         case "turn.failed":
         case "step.failed":
-        case "session.failed":
           return {
             ...data,
+            phase: "error",
+            runStatus: "error",
+            errors: [{ message: event.data.message }],
+            streamingAssistantText: "",
+          };
+
+        case "session.failed":
+          // Eve drops the continuation token on terminal failure. These old
+          // request ids cannot be submitted against a new conversation.
+          return {
+            ...data,
+            pendingInputRequests: [],
             phase: "error",
             runStatus: "error",
             errors: [{ message: event.data.message }],

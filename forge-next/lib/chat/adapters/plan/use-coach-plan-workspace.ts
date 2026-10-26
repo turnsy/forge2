@@ -719,6 +719,10 @@ export function useCoachPlanWorkspace(options?: {
   const inputResponsePendingRef = useRef(false);
   const respondToInput = useCallback(async (response: InputResponse) => {
     if (!canSendNow || inputResponsePendingRef.current) return;
+    if (!agent.session.sessionId || !agent.session.continuationToken) {
+      setSendFailure("This request's conversation has ended. Reset the conversation to continue.");
+      return;
+    }
     const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
     if (!request) return;
     if (response.optionId && !request.options?.some((option) => option.id === response.optionId)) return;

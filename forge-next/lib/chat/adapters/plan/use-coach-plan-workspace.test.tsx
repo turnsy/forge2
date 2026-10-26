@@ -155,7 +155,19 @@ vi.mock("eve/react", () => ({
 }));
 
 describe("useCoachPlanWorkspace", () => {
+  it("does not submit an approval after Eve has reset a failed session cursor", async () => {
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Yes" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.respondToInput({ requestId: "approval-1", optionId: "approve" });
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(result.current.state.errors[0].message).toContain("conversation has ended");
+  });
   it("resumes a pending assignment approval with inputResponses on the existing agent", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
     const request = {
       requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
       options: [{ id: "approve", label: "Approve" }, { id: "deny", label: "Deny" }],
@@ -174,6 +186,7 @@ describe("useCoachPlanWorkspace", () => {
   });
 
   it("does not treat ordinary chat text or invalid options as approval", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
     Object.assign(agentDataState.current, { pendingInputRequests: [{
       requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Approve" }],
     }] });
