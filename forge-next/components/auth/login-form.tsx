@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState, useCallback, useState } from "react";
+import { useActionState, useState } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Divider, Input, Message, SubmitButton } from "@/components/ui";
 import { loginFormAction, oauthFormAction } from "@/lib/auth/form-actions";
-import { addBrowserOrigin } from "@/lib/auth/browser-origin";
 import { canContinueLogin } from "@/lib/auth/form-validation";
 
 export function LoginForm({
@@ -18,9 +17,6 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const canContinue = canContinueLogin(email, password);
-  const oauthAction = useCallback((formData: FormData) => {
-    return oauthFormAction(addBrowserOrigin(formData));
-  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -29,7 +25,7 @@ export function LoginForm({
         <Message tone="error">{state.error}</Message>
       ) : null}
 
-      <form action={oauthAction}>
+      <form action={oauthFormAction}>
         <input type="hidden" name="provider" value="google" />
         <SubmitButton
           variant="ghost"

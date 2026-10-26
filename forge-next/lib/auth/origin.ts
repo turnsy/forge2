@@ -22,26 +22,7 @@ function vercelDeploymentOrigin(): string | null {
   return `${protocol}://${trimTrailingSlash(host)}`;
 }
 
-function browserOrigin(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.hostname !== "localhost") {
-      return null;
-    }
-
-    return url.origin;
-  } catch {
-    return null;
-  }
-}
-
-export async function getRequestOrigin(
-  fallbackOrigin?: string | null,
-): Promise<string> {
+export async function getRequestOrigin(): Promise<string> {
   const configured = configuredSiteUrl();
   if (configured) {
     return configured;
@@ -66,11 +47,6 @@ export async function getRequestOrigin(
   const vercelOrigin = vercelDeploymentOrigin();
   if (vercelOrigin) {
     return vercelOrigin;
-  }
-
-  const browserFallback = browserOrigin(fallbackOrigin);
-  if (browserFallback) {
-    return browserFallback;
   }
 
   return "http://localhost:3000";

@@ -41,7 +41,6 @@ export async function signupFormAction(
     password: String(formData.get("password") ?? ""),
     fullName: String(formData.get("fullName") ?? "").trim(),
     role: isUserRole(role) ? role : undefined,
-    origin: String(formData.get("origin") ?? ""),
   });
 
   if (result.ok) {
@@ -63,7 +62,6 @@ export async function oauthFormAction(formData: FormData): Promise<void> {
   const result = await signInWithOAuth({
     provider,
     role: signupRole,
-    origin: String(formData.get("origin") ?? ""),
   });
 
   if (!result.ok) {

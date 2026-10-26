@@ -45,17 +45,6 @@ describe("getRequestOrigin", () => {
     );
   });
 
-  it("uses the browser origin when the server action has no public request headers", async () => {
-    vi.doMock("next/headers", () => ({
-      headers: vi.fn(async () => ({ get: () => null })),
-    }));
-
-    const { getRequestOrigin } = await import("@/lib/auth/origin");
-    await expect(
-      getRequestOrigin("https://forge2-git-preview-turnsys-projects.vercel.app"),
-    ).resolves.toBe("https://forge2-git-preview-turnsys-projects.vercel.app");
-  });
-
   it("falls back to localhost in local dev", async () => {
     vi.doMock("next/headers", () => ({
       headers: vi.fn(async () => ({ get: () => null })),

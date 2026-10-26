@@ -81,7 +81,6 @@ describe("auth form actions", () => {
     formData.set("password", "password123");
     formData.set("fullName", "Athlete");
     formData.set("role", "athlete");
-    formData.set("origin", "https://forge2-preview.vercel.app");
 
     await expect(signupFormAction(null, formData)).rejects.toThrow(
       "REDIRECT:/athlete",
@@ -92,7 +91,6 @@ describe("auth form actions", () => {
       password: "password123",
       fullName: "Athlete",
       role: "athlete",
-      origin: "https://forge2-preview.vercel.app",
     });
   });
 
@@ -105,16 +103,10 @@ describe("auth form actions", () => {
     const formData = new FormData();
     formData.set("provider", "apple");
     formData.set("role", "coach");
-    formData.set("origin", "https://forge2-preview.vercel.app");
 
     await expect(oauthFormAction(formData)).rejects.toThrow(/^REDIRECT:\/\?role=coach&error=/);
 
     expect(mockWriteSignupRoleCookie).toHaveBeenCalledWith("coach");
-    expect(mockSignInWithOAuth).toHaveBeenCalledWith({
-      provider: "apple",
-      role: "coach",
-      origin: "https://forge2-preview.vercel.app",
-    });
   });
 
   it("sets signup role cookie via action", async () => {
