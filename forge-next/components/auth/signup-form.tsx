@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useCallback, useEffect, useState, useTransition } from "react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Divider, Input, Message, SubmitButton } from "@/components/ui";
 import { oauthFormAction, setSignupRoleCookieAction, signupFormAction } from "@/lib/auth/form-actions";
+import { addBrowserOrigin } from "@/lib/auth/browser-origin";
 import { canContinueSignup } from "@/lib/auth/form-validation";
 import type { UserRole } from "@/lib/auth/types";
 
@@ -22,6 +23,12 @@ export function SignupForm({
   const [password, setPassword] = useState("");
   const [, startTransition] = useTransition();
   const canContinue = canContinueSignup(fullName, email, password);
+  const oauthAction = useCallback((formData: FormData) => {
+    return oauthFormAction(addBrowserOrigin(formData));
+  }, []);
+  const signupAction = useCallback((formData: FormData) => {
+    return formAction(addBrowserOrigin(formData));
+  }, [formAction]);
 
   useEffect(() => {
     if (!active) {
@@ -39,7 +46,7 @@ export function SignupForm({
         <Message tone="error">{state.error}</Message>
       ) : null}
 
-      <form action={oauthFormAction}>
+      <form action={oauthAction}>
         <input type="hidden" name="provider" value="google" />
         <input type="hidden" name="role" value={role} />
         <SubmitButton
@@ -53,7 +60,7 @@ export function SignupForm({
 
       <Divider />
 
-      <form action={formAction} className="flex flex-col gap-3">
+      <form action={signupAction} className="flex flex-col gap-3">
         <input type="hidden" name="role" value={role} />
         <Input
           aria-label="Full name"

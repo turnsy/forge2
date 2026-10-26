@@ -30,6 +30,7 @@ export async function signUpWithEmail(input: {
   fullName: string;
   next?: string;
   role?: string;
+  origin?: string;
 }): Promise<AuthActionResult> {
   const cookieRole = await requireSignupRoleCookie();
   const role = isUserRole(input.role) ? input.role : cookieRole;
@@ -37,7 +38,7 @@ export async function signUpWithEmail(input: {
     return failure("Start signup from the home page.");
   }
 
-  const origin = await getRequestOrigin();
+  const origin = await getRequestOrigin(input.origin);
   const roleHome = getPostAuthRedirect(role);
   const next = input.next
     ? validateRedirectPath(input.next, roleHome)
@@ -118,12 +119,13 @@ export async function signInWithOAuth(input: {
   provider: AuthProvider;
   next?: string;
   role?: string;
+  origin?: string;
 }): Promise<AuthActionResult> {
   if (!isOAuthProviderEnabled(input.provider)) {
     return failure("Sign in with Apple is not available yet.");
   }
 
-  const origin = await getRequestOrigin();
+  const origin = await getRequestOrigin(input.origin);
   const contextRole = isUserRole(input.role) ? input.role : null;
   const roleHome = contextRole ? getPostAuthRedirect(contextRole) : "/";
   const next = input.next
