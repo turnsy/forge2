@@ -1,6 +1,8 @@
 "use client";
 
 import { ChatMessageBody } from "@/components/chat/chat-message-body";
+import { ChatInputRequest } from "@/components/chat/chat-input-request";
+import type { InputRequest, InputResponse } from "eve/client";
 import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator";
 import { ChatBubble } from "@/components/ui/chat-bubble";
 import { MarkdownContent } from "@/components/ui/markdown-content";
@@ -39,6 +41,8 @@ export function ChatThread({
   scrollPaddingTop,
   scrollPaddingBottom,
   scrollChromeReady = true,
+  pendingInputRequests = [],
+  onRespondToInput,
 }: {
   threadKey: string;
   messages: ChatMessage[];
@@ -51,6 +55,8 @@ export function ChatThread({
   scrollPaddingTop?: number;
   scrollPaddingBottom?: number;
   scrollChromeReady?: boolean;
+  pendingInputRequests?: InputRequest[];
+  onRespondToInput?: (response: InputResponse) => Promise<void>;
 }) {
   const { scrollRef, contentRef } = useChatThreadAutoScroll({
     threadKey,
@@ -75,7 +81,7 @@ export function ChatThread({
   const activityLabel = turnInProgress
     ? getTurnActivityLabel(phase, runStatus)
     : null;
-  const showTurnActivity = Boolean(activityLabel);
+  const showTurnActivity = Boolean(activityLabel) && pendingInputRequests.length === 0;
   const showErrors = errors.length > 0;
   const lanePadding = { scrollPaddingTop, scrollPaddingBottom };
   const lanePositioned = hasOverlayScrollLane(lanePadding);
@@ -127,6 +133,13 @@ export function ChatThread({
           ) : showTurnActivity && activityLabel ? (
             <TurnActivityIndicator label={activityLabel} />
           ) : null}
+          {pendingInputRequests.map((request) => (
+            <ChatBubble key={request.requestId} role="assistant">
+              {onRespondToInput ? (
+                <ChatInputRequest request={request} disabled={turnInProgress} onRespond={onRespondToInput} />
+              ) : <p>{request.prompt}</p>}
+            </ChatBubble>
+          ))}
           {showErrors ? (
             <ChatBubble role="assistant">
               <ul className="space-y-1 text-sm text-red-300/95" role="alert">

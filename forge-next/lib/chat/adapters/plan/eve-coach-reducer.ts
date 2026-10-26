@@ -155,6 +155,7 @@ export function createEveCoachReducer(
 ): EveAgentReducer<EveCoachReducerData> {
   return {
     initial: () => ({
+      pendingInputRequests: initial.pendingInputRequests ?? [],
       messages: initial.messages ?? [],
       currentArtifact: initial.currentArtifact ?? null,
       planId: initial.planId ?? null,
@@ -167,6 +168,17 @@ export function createEveCoachReducer(
     }),
     reduce: (data, event: EveAgentReducerEvent) => {
       switch (event.type) {
+        case "input.requested": {
+          const requests = new Map((data.pendingInputRequests ?? []).map((request) => [request.requestId, request]));
+          for (const request of event.data.requests) requests.set(request.requestId, request);
+          return { ...data, pendingInputRequests: [...requests.values()] };
+        }
+
+        case "client.input.responded":
+          // Keep requests available for retry if delivery fails. The server's
+          // action result removes them authoritatively, including on replay.
+          return { ...data, phase: "streaming", runStatus: "generating", errors: [] };
+
         case "client.message.submitted": {
           const text = event.data.message.trim();
           return {
@@ -210,6 +222,12 @@ export function createEveCoachReducer(
 
         case "action.result": {
           const { result } = event.data;
+          data = {
+            ...data,
+            pendingInputRequests: (data.pendingInputRequests ?? []).filter(
+              (request) => request.action.callId !== result.callId,
+            ),
+          };
           if (!isForgeToolResult(result)) {
             return data;
           }

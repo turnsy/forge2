@@ -1,4 +1,4 @@
-import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { HandleMessageStreamEvent, InputRequest, SessionState } from "eve/client";
 import type {
   ChatDisplayError,
   ChatMessage,
@@ -32,6 +32,7 @@ export type CoachWorkspaceSnapshot = {
 };
 
 export type EveCoachReducerData = {
+  pendingInputRequests?: InputRequest[];
   messages: ChatMessage[];
   currentArtifact: WorkoutPlan | null;
   planId: string | null;

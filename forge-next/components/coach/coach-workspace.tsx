@@ -450,6 +450,7 @@ function CoachWorkspaceInner({
     attachFiles,
     removeAttachment,
     sendMessage,
+    respondToInput,
     stopResponse,
     setArtifactTitle,
     setPlanId,
@@ -682,6 +683,7 @@ function CoachWorkspaceInner({
         onAttach={attachFiles}
         onRemoveAttachment={removeAttachment}
         onSend={handleSendMessage}
+        onRespondToInput={respondToInput}
         onStop={stopResponse}
         onReset={handleReset}
         promptEnabled={promptEnabled}
@@ -891,6 +893,7 @@ function CoachWorkspaceInner({
                   onAttach={attachFiles}
                   onRemoveAttachment={removeAttachment}
                   onSend={handleSendMessage}
+                  onRespondToInput={respondToInput}
                   onStop={stopResponse}
                   onReset={handleReset}
                   promptEnabled={promptEnabled}

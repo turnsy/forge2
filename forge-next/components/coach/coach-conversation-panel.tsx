@@ -20,6 +20,7 @@ export function CoachConversationPanel({
   onRemoveAttachment,
   onSend,
   onStop,
+  onRespondToInput,
   onReset,
   promptEnabled = true,
   composerHeader,
@@ -32,6 +33,7 @@ export function CoachConversationPanel({
   onRemoveAttachment?: (localId: string) => void;
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
   onStop?: () => void;
+  onRespondToInput?: Parameters<typeof ChatThread>[0]["onRespondToInput"];
   onReset?: () => void;
   promptEnabled?: boolean;
   composerHeader?: ReactNode;
@@ -87,6 +89,8 @@ export function CoachConversationPanel({
             runStatus={state.runStatus}
             errors={state.errors}
             phase={state.phase}
+            pendingInputRequests={state.pendingInputRequests}
+            onRespondToInput={onRespondToInput}
             className="absolute inset-0 z-0"
             scrollClassName={`${
               scrollPaddingTop === undefined

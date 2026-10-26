@@ -155,6 +155,36 @@ vi.mock("eve/react", () => ({
 }));
 
 describe("useCoachPlanWorkspace", () => {
+  it("resumes a pending assignment approval with inputResponses on the existing agent", async () => {
+    const request = {
+      requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
+      options: [{ id: "approve", label: "Approve" }, { id: "deny", label: "Deny" }],
+      action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+    };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    expect(result.current.state.pendingInputRequests).toEqual([request]);
+    await act(async () => {
+      await result.current.respondToInput({ requestId: request.requestId, optionId: "approve" });
+    });
+    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+      inputResponses: [{ requestId: request.requestId, optionId: "approve" }],
+    }));
+    expect(generateSessionTitleFromPrompt).not.toHaveBeenCalled();
+  });
+
+  it("does not treat ordinary chat text or invalid options as approval", async () => {
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Approve" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+      await result.current.respondToInput({ requestId: "approval-1", text: "yes" });
+      await result.current.respondToInput({ requestId: "approval-1", optionId: "unknown" });
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     capturedEveAgentOptions.current = undefined;

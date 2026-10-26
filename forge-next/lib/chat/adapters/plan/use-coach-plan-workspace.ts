@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
-import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { HandleMessageStreamEvent, InputResponse, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
@@ -595,6 +595,7 @@ export function useCoachPlanWorkspace(options?: {
     : workspaceData.errors;
 
   const state: PlanWorkspaceState = {
+    pendingInputRequests: workspaceData.pendingInputRequests ?? [],
     sessionId: forgeSessionId,
     hasStarted:
       workspaceData.messages.length > 0 ||
@@ -715,11 +716,34 @@ export function useCoachPlanWorkspace(options?: {
   const canSendNow =
     !resuming && !isInitializingThread && canSendInPhase(uiPhase);
 
+  const inputResponsePendingRef = useRef(false);
+  const respondToInput = useCallback(async (response: InputResponse) => {
+    if (!canSendNow || inputResponsePendingRef.current) return;
+    const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
+    if (!request) return;
+    if (response.optionId && !request.options?.some((option) => option.id === response.optionId)) return;
+    if (response.text && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && !request.options?.length))) return;
+    if (!response.optionId && !response.text?.trim()) return;
+    inputResponsePendingRef.current = true;
+    setSendFailure(null);
+    try {
+      await agent.send({ inputResponses: [response] });
+    } catch (error) {
+      setSendFailure(error instanceof Error ? error.message : "Couldn't send your response.");
+    } finally {
+      inputResponsePendingRef.current = false;
+    }
+  }, [agent, canSendNow, workspaceData.pendingInputRequests]);
+
   const sendMessage = useCallback(
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
       if (displayPrompt.length === 0 || !canSendNow) {
+        return;
+      }
+      if (workspaceData.pendingInputRequests?.length) {
+        setSendFailure("Answer the pending request below before sending another message.");
         return;
       }
 
@@ -748,7 +772,7 @@ export function useCoachPlanWorkspace(options?: {
         );
       }
     },
-    [agent, canSendNow, ensureSessionTitle],
+    [agent, canSendNow, ensureSessionTitle, workspaceData.pendingInputRequests],
   );
 
   const restart = useCallback(() => {
@@ -817,6 +841,7 @@ export function useCoachPlanWorkspace(options?: {
     attachFiles,
     removeAttachment,
     sendMessage,
+    respondToInput,
     stopResponse,
     restart,
     setArtifactTitle,
