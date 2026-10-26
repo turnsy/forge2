@@ -29,10 +29,13 @@ export function bindForgeEveSessionSend(
   const wrappedSend = async <TOutput = unknown>(
     input: SendTurnInput<TOutput>,
   ): Promise<MessageResponse<TOutput>> => {
+    const continuationToken = session.state?.continuationToken;
     const response = await originalSend(input);
     onPostResponse({
       sessionId: response.sessionId,
-      continuationToken: response.continuationToken,
+      // Eve's continue endpoint returns only the session id. Match the SDK's
+      // cursor advancement: an omitted token retains the previous token.
+      continuationToken: response.continuationToken ?? continuationToken,
     });
     return response;
   };

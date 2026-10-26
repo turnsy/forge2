@@ -6,5 +6,6 @@ const nextConfig: NextConfig = {
 };
 
 export default withEve(nextConfig, {
+  eveBuildCommand: "pnpm build:eve",
   devServerTimeoutMs: 300_000,
 });

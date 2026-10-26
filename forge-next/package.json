@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm build:eve && next build",
+    "build:eve": "node scripts/build-eve.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --project=unit",
