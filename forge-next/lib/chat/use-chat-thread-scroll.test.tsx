@@ -16,7 +16,7 @@ function TestThread({
   streamingAssistantText?: string;
   messages?: { role: "user" | "assistant"; content: string }[];
 }) {
-  const { scrollRef } = useChatThreadAutoScroll({
+  const { scrollRef, contentRef } = useChatThreadAutoScroll({
     threadKey: "thread-1",
     messages,
     streamingAssistantText,
@@ -38,12 +38,41 @@ function TestThread({
       }}
       data-scroll-height={1000}
     >
-      <div style={{ height: 1000 }} />
+      <div ref={contentRef} style={{ height: 1000 }} />
     </div>
   );
 }
 
 describe("useChatThreadAutoScroll", () => {
+  it("follows late content resizes without interrupting touch scrolling", () => {
+    let notifyResize = () => {};
+    const disconnect = vi.fn();
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(callback: () => void) { notifyResize = callback; }
+      observe = vi.fn();
+      disconnect = disconnect;
+    });
+    const viewport = mockViewport();
+    const { getByTestId, unmount } = render(<TestThread scrollChromeReady />);
+    const container = getByTestId("thread");
+    viewport.scrollTo.mockClear();
+    viewport.grow();
+    notifyResize();
+    expect(viewport.scrollTo).toHaveBeenLastCalledWith({ top: 900, behavior: "instant" });
+
+    viewport.scrollTo.mockClear();
+    fireEvent.touchStart(container);
+    viewport.grow();
+    notifyResize();
+    expect(viewport.scrollTo).not.toHaveBeenCalled();
+    container.scrollTop = 100;
+    fireEvent.scroll(container);
+    fireEvent.touchEnd(container);
+    notifyResize();
+    expect(viewport.scrollTo).not.toHaveBeenCalled();
+    unmount();
+    expect(disconnect).toHaveBeenCalledOnce();
+  });
   function mockViewport() {
     let height = 1000;
     vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(() => height);
@@ -103,6 +132,7 @@ describe("useChatThreadAutoScroll", () => {
   });
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("scrolls again when overlay chrome padding becomes ready on initial load", () => {

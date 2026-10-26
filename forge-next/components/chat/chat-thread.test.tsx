@@ -154,8 +154,8 @@ describe("ChatThread", () => {
       />,
     );
 
-    const scrollContainer = container.querySelector(".overflow-y-auto");
-    expect(scrollContainer).toHaveStyle({
+    const scrollContent = container.querySelector(".overflow-y-auto > div");
+    expect(scrollContent).toHaveStyle({
       paddingTop: "52px",
       paddingBottom: "180px",
     });

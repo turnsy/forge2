@@ -52,7 +52,7 @@ export function ChatThread({
   scrollPaddingBottom?: number;
   scrollChromeReady?: boolean;
 }) {
-  const { scrollRef } = useChatThreadAutoScroll({
+  const { scrollRef, contentRef } = useChatThreadAutoScroll({
     threadKey,
     messages,
     streamingAssistantText,
@@ -88,57 +88,62 @@ export function ChatThread({
         ref={scrollRef}
         className={
           lanePositioned
-            ? `${OVERLAY_SCROLL_LANE_CLASS} flex flex-col gap-4${scrollClassName ? ` ${scrollClassName}` : ""}`
-            : `flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0 py-3 md:py-0${scrollClassName ? ` ${scrollClassName}` : ""}`
-        }
-        style={
-          lanePositioned
-            ? overlayScrollLaneStyle(lanePadding)
-            : scrollPaddingTop !== undefined || scrollPaddingBottom !== undefined
-              ? {
-                  ...(scrollPaddingTop !== undefined
-                    ? { paddingTop: scrollPaddingTop }
-                    : {}),
-                  ...(scrollPaddingBottom !== undefined
-                    ? { paddingBottom: scrollPaddingBottom }
-                    : {}),
-                }
-              : undefined
+            ? OVERLAY_SCROLL_LANE_CLASS
+            : "min-h-0 flex-1 overflow-y-auto"
         }
       >
-        {messages.filter(isRenderableMessage).map((message, index) => (
-          <ChatBubble key={`${message.role}-${index}`} role={message.role}>
-            <ChatMessageBody message={message} />
-          </ChatBubble>
-        ))}
-        {showStreaming ? (
-          <div className="flex flex-col gap-2">
-            <ChatBubble role="assistant" isStreaming={turnInProgress}>
-              <MarkdownContent content={visibleStreamingText} />
+        <div
+          ref={contentRef}
+          className={`flex flex-col gap-4 ${lanePositioned ? "" : "px-0 py-3 md:py-0"}${scrollClassName ? ` ${scrollClassName}` : ""}`}
+          style={
+            lanePositioned
+              ? overlayScrollLaneStyle(lanePadding)
+              : scrollPaddingTop !== undefined || scrollPaddingBottom !== undefined
+                ? {
+                    ...(scrollPaddingTop !== undefined
+                      ? { paddingTop: scrollPaddingTop }
+                      : {}),
+                    ...(scrollPaddingBottom !== undefined
+                      ? { paddingBottom: scrollPaddingBottom }
+                      : {}),
+                  }
+                : undefined
+          }
+        >
+          {messages.filter(isRenderableMessage).map((message, index) => (
+            <ChatBubble key={`${message.role}-${index}`} role={message.role}>
+              <ChatMessageBody message={message} />
             </ChatBubble>
-            {showTurnActivity && activityLabel ? (
-              <TurnActivityIndicator label={activityLabel} />
-            ) : null}
-          </div>
-        ) : showTurnActivity && activityLabel ? (
-          <TurnActivityIndicator label={activityLabel} />
-        ) : null}
-        {showErrors ? (
-          <ChatBubble role="assistant">
-            <ul className="space-y-1 text-sm text-red-300/95" role="alert">
-              {errors.map((error, index) => (
-                <li key={`${error.message}-${index}`}>
-                  {error.path ? (
-                    <span className="font-mono text-xs text-red-200/80">
-                      {error.path}:{" "}
-                    </span>
-                  ) : null}
-                  {error.message}
-                </li>
-              ))}
-            </ul>
-          </ChatBubble>
-        ) : null}
+          ))}
+          {showStreaming ? (
+            <div className="flex flex-col gap-2">
+              <ChatBubble role="assistant" isStreaming={turnInProgress}>
+                <MarkdownContent content={visibleStreamingText} />
+              </ChatBubble>
+              {showTurnActivity && activityLabel ? (
+                <TurnActivityIndicator label={activityLabel} />
+              ) : null}
+            </div>
+          ) : showTurnActivity && activityLabel ? (
+            <TurnActivityIndicator label={activityLabel} />
+          ) : null}
+          {showErrors ? (
+            <ChatBubble role="assistant">
+              <ul className="space-y-1 text-sm text-red-300/95" role="alert">
+                {errors.map((error, index) => (
+                  <li key={`${error.message}-${index}`}>
+                    {error.path ? (
+                      <span className="font-mono text-xs text-red-200/80">
+                        {error.path}:{" "}
+                      </span>
+                    ) : null}
+                    {error.message}
+                  </li>
+                ))}
+              </ul>
+            </ChatBubble>
+          ) : null}
+        </div>
       </div>
     </div>
   );

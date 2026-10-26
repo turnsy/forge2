@@ -35,6 +35,7 @@ export function useChatThreadAutoScroll({
   scrollChromeReady?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(0);
   const previousThreadKeyRef = useRef(threadKey);
   const initialScrollPendingRef = useRef(false);
@@ -75,6 +76,22 @@ export function useChatThreadAutoScroll({
     scrollChatThreadToBottom(container, behavior);
     followingRef.current = true;
   }, []);
+
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    const content = contentRef.current;
+    if (!container || !content || typeof ResizeObserver === "undefined") return;
+    // Markdown, fonts, and measured composer clearance can change layout after
+    // the React commit. Keep the last activity row above the overlay then too.
+    const observer = new ResizeObserver(() => {
+      if (followingRef.current && !touchingRef.current) {
+        scrollToBottom("instant");
+      }
+    });
+    observer.observe(content);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [scrollToBottom, threadKey]);
 
   useLayoutEffect(() => {
     if (previousThreadKeyRef.current !== threadKey) {
@@ -134,5 +151,5 @@ export function useChatThreadAutoScroll({
     threadKey,
   ]);
 
-  return { scrollRef };
+  return { scrollRef, contentRef };
 }
