@@ -44,20 +44,16 @@ describe("ChatInputRequest", () => {
     expect(screen.getByRole("button", { name: "Assign plan" })).toBeEnabled();
   });
 
-  it("requires a selection and hides custom input even when the model allows it", async () => {
+  it("submits the selected candidate directly without a second confirm or custom textbox", async () => {
     const onRespond = vi.fn().mockResolvedValue(undefined);
     render(<ChatInputRequest request={{ ...request, display: "select", allowFreeform: true,
       options: [{ id: "jay-1", label: "Jay Turnsek", description: "Athlete" }, { id: "jay-2", label: "Jay T" }],
     }} disabled={false} onRespond={onRespond} />);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    const confirm = screen.getByRole("button", { name: "Confirm selection" });
-    expect(confirm).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Confirm selection" })).not.toBeInTheDocument();
     const candidate = screen.getByRole("radio", { name: "Jay Turnsek" });
     expect(candidate).toHaveAccessibleDescription("Athlete");
     fireEvent.click(candidate);
-    expect(confirm).toBeEnabled();
-    expect(onRespond).not.toHaveBeenCalled();
-    fireEvent.click(confirm);
     await waitFor(() => expect(onRespond).toHaveBeenCalledWith({ requestId: "approval-1", optionId: "jay-1" }));
   });
 
@@ -66,6 +62,16 @@ describe("ChatInputRequest", () => {
     render(<ChatInputRequest request={{ ...request, display: "select" }} disabled={false} onRespond={onRespond} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(onRespond).toHaveBeenCalledWith({ requestId: "approval-1", text: CANCEL_INPUT_REQUEST_TEXT }));
+  });
+
+  it("allows retrying the same selected candidate after a failed send", async () => {
+    const onRespond = vi.fn().mockRejectedValueOnce(new Error("network down")).mockResolvedValue(undefined);
+    render(<ChatInputRequest request={{ ...request, display: "select", options: [{ id: "jay-1", label: "Jay" }] }} disabled={false} onRespond={onRespond} />);
+    const candidate = screen.getByRole("radio", { name: "Jay" });
+    fireEvent.click(candidate);
+    await screen.findByRole("alert");
+    fireEvent.click(candidate);
+    await waitFor(() => expect(onRespond).toHaveBeenCalledTimes(2));
   });
 
   it("does not expose raw tool names in the confirmation", () => {

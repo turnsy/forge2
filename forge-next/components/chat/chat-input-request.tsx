@@ -39,8 +39,15 @@ export function ChatInputRequest({ request, disabled, onRespond }: {
       {options.length > 0 ? (
         <div role="radiogroup" aria-label={prompt} className="space-y-2">
           {options.map((option, index) => (
-            <label key={option.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 ${selectedOptionId === option.id ? "border-coach" : "border-glass-border"}`}>
-              <input type="radio" name={request.requestId} value={option.id} aria-label={option.label} aria-describedby={option.description ? `${fieldId}-${index}` : undefined} checked={selectedOptionId === option.id} disabled={busy} onChange={() => setSelectedOptionId(option.id)} />
+            <label key={option.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors focus-within:ring-2 focus-within:ring-white/20 ${selectedOptionId === option.id ? "border-glass-primary-border bg-glass-focus" : "border-glass-border hover:bg-glass"}`}>
+              <input type="radio" className="accent-white" name={request.requestId} value={option.id} aria-label={option.label} aria-describedby={option.description ? `${fieldId}-${index}` : undefined} checked={selectedOptionId === option.id} disabled={busy} onClick={() => {
+                // A failed send leaves the radio selected. Allow retrying that
+                // same candidate without choosing a different athlete first.
+                if (selectedOptionId === option.id) void respond({ requestId: request.requestId, optionId: option.id });
+              }} onChange={() => {
+                setSelectedOptionId(option.id);
+                void respond({ requestId: request.requestId, optionId: option.id });
+              }} />
               <span><span className="block">{option.label}</span>{option.description ? <span id={`${fieldId}-${index}`} className="block text-sm text-surface-muted">{option.description}</span> : null}</span>
             </label>
           ))}
@@ -48,10 +55,12 @@ export function ChatInputRequest({ request, disabled, onRespond }: {
       ) : null}
       {confirmation || options.length > 0 ? (
         <div className="flex items-center gap-2">
-          <Button type="button" fullWidth={false} size="sm" icon={<CheckmarkIcon />} disabled={busy || (!confirmation && !selectedOptionId)}
-            onClick={() => void respond({ requestId: request.requestId, optionId: confirmation ? "approve" : selectedOptionId! })}>
-            {confirmation ? confirmLabel : "Confirm selection"}
-          </Button>
+          {confirmation ? (
+            <Button type="button" fullWidth={false} size="sm" icon={<CheckmarkIcon />} disabled={busy}
+              onClick={() => void respond({ requestId: request.requestId, optionId: "approve" })}>
+              {confirmLabel}
+            </Button>
+          ) : null}
           <Button type="button" fullWidth={false} size="sm" variant="secondary" icon={<XIcon />} disabled={busy}
             onClick={() => void respond(confirmation ? { requestId: request.requestId, optionId: "deny" } : { requestId: request.requestId, text: CANCEL_INPUT_REQUEST_TEXT })}>
             Cancel
