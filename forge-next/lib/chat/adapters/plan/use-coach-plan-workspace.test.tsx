@@ -2,7 +2,8 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
-import { CANCEL_INPUT_REQUEST_TEXT } from "@/lib/chat/input-request-presentation";
+import { CANCEL_INPUT_REQUEST_TEXT, selectionResponse } from "@/lib/chat/input-selection";
+import type { InputRequest } from "eve/client";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 const mockPathname = vi.fn(() => "/coach");
@@ -182,6 +183,21 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockSend).not.toHaveBeenCalled();
     expect(result.current.state.errors[0].message).toContain("conversation has ended");
   });
+  it.each([false, true])("resumes a multiple-choice question in one response, cancellation=%s", async (cancelled) => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const request: InputRequest = {
+      requestId: "question-1", prompt: "Which athletes?", display: "select", allowFreeform: false,
+      options: [{ id: "athlete-1", label: "Jay" }, { id: "athlete-2", label: "Jane" }],
+      action: { kind: "tool-call", callId: "question-1", toolName: "ask_question", input: { selectionMode: "multiple" } },
+    };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    const response = selectionResponse(request, ["athlete-1", "athlete-2"], cancelled);
+    await act(async () => { await result.current.respondToInput(response); });
+    expect(mockSend).toHaveBeenCalledExactlyOnceWith({ inputResponses: [response] });
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
+  });
+
   it("resumes a pending assignment approval with inputResponses on the existing agent", async () => {
     agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
     const request = {

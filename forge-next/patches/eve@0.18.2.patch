@@ -1,5 +1,5 @@
 diff --git a/dist/src/client/ndjson.js b/dist/src/client/ndjson.js
-index 4ce60b0097e49f5fee42a641333bac2132eb8687..641c4f6e0f4aa8ee5d318541019e823fdfac292f 100644
+index 4ce60b0097e49f5fee42a641333bac2132eb8687..53f6c379595f6aedd60d25b107f557e5da9714ff 100644
 --- a/dist/src/client/ndjson.js
 +++ b/dist/src/client/ndjson.js
 @@ -1,3 +1,4 @@
@@ -9,3 +9,11 @@ index 4ce60b0097e49f5fee42a641333bac2132eb8687..641c4f6e0f4aa8ee5d318541019e823f
 -`)}}let e=r.trim();e.length>0&&(yield JSON.parse(e))}finally{i||await t.cancel().catch(()=>{}),t.releaseLock()}}export{isStreamDisconnectError,readNdjsonStream};
 \ No newline at end of file
 +`)}}let e=r.trim();e.length>0&&(yield JSON.parse(e))}finally{i||t.cancel().catch(()=>{}),t.releaseLock()}}export{isStreamDisconnectError,readNdjsonStream};
+diff --git a/dist/src/runtime/framework-tools/ask-question.js b/dist/src/runtime/framework-tools/ask-question.js
+index 637963ab9ee4a629ce79c6590fda00ff499ac49b..1ac96cf467bcac04125253bbdeb1b10dc28e35c4 100644
+--- a/dist/src/runtime/framework-tools/ask-question.js
++++ b/dist/src/runtime/framework-tools/ask-question.js
+@@ -1 +1 @@
+-import{z}from"#compiled/zod/index.js";import{inputRequestSchema}from"#runtime/input/types.js";const ASK_QUESTION_TOOL_NAME=`ask_question`,askQuestionToolInputSchema=inputRequestSchema.omit({action:!0,display:!0,requestId:!0}),{$schema:_jsonSchemaVersion,...askQuestionInputSchema}=z.toJSONSchema(askQuestionToolInputSchema),askQuestionToolOutputSchema=z.object({optionId:z.string().optional(),status:z.enum([`answered`,`ignored`]),text:z.string().optional()}).strict(),{$schema:_outputJsonSchemaVersion,...askQuestionOutputSchema}=z.toJSONSchema(askQuestionToolOutputSchema),ASK_QUESTION_INPUT_SCHEMA=askQuestionInputSchema,ASK_QUESTION_OUTPUT_SCHEMA=askQuestionOutputSchema,ASK_QUESTION_TOOL_DEFINITION={description:`Ask the user a question and wait for their response before continuing. Use this when you need clarification or a choice from the user.`,inputSchema:ASK_QUESTION_INPUT_SCHEMA,logicalPath:`eve:framework/ask-question`,name:ASK_QUESTION_TOOL_NAME,outputSchema:ASK_QUESTION_OUTPUT_SCHEMA,sourceId:`eve:ask-question-tool`,sourceKind:`module`};export{ASK_QUESTION_INPUT_SCHEMA,ASK_QUESTION_OUTPUT_SCHEMA,ASK_QUESTION_TOOL_DEFINITION,ASK_QUESTION_TOOL_NAME};
+\ No newline at end of file
++import{z}from"#compiled/zod/index.js";import{inputRequestSchema}from"#runtime/input/types.js";const ASK_QUESTION_TOOL_NAME=`ask_question`,askQuestionToolInputSchema=inputRequestSchema.omit({action:!0,display:!0,requestId:!0}).extend({selectionMode:z.enum([`single`,`multiple`]).describe(`Use multiple when the user may select several options together; otherwise single.`).optional()}),{$schema:_jsonSchemaVersion,...askQuestionInputSchema}=z.toJSONSchema(askQuestionToolInputSchema),askQuestionToolOutputSchema=z.object({optionId:z.string().optional(),status:z.enum([`answered`,`ignored`]),text:z.string().optional()}).strict(),{$schema:_outputJsonSchemaVersion,...askQuestionOutputSchema}=z.toJSONSchema(askQuestionToolOutputSchema),ASK_QUESTION_INPUT_SCHEMA=askQuestionInputSchema,ASK_QUESTION_OUTPUT_SCHEMA=askQuestionOutputSchema,ASK_QUESTION_TOOL_DEFINITION={description:`Ask the user a question and wait for their response before continuing. Use this when you need clarification or a choice from the user.`,inputSchema:ASK_QUESTION_INPUT_SCHEMA,logicalPath:`eve:framework/ask-question`,name:ASK_QUESTION_TOOL_NAME,outputSchema:ASK_QUESTION_OUTPUT_SCHEMA,sourceId:`eve:ask-question-tool`,sourceKind:`module`};export{ASK_QUESTION_INPUT_SCHEMA,ASK_QUESTION_OUTPUT_SCHEMA,ASK_QUESTION_TOOL_DEFINITION,ASK_QUESTION_TOOL_NAME};

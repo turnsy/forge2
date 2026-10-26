@@ -13,7 +13,7 @@ import {
   toForgeToolDisplayErrors,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 import { isUserAbortError } from "@/lib/chat/stream-completion";
-import { parseConfirmedChoice } from "@/lib/chat/confirmed-actions";
+import { isCancelledResponse, selectedResponseIds } from "@/lib/chat/input-selection";
 
 type ForgeToolResult = Extract<
   ActionResultStreamEvent["data"]["result"],
@@ -178,7 +178,7 @@ export function createEveCoachReducer(
           for (const request of event.data.requests) {
             if (!messages.some((message) => message.inputCard?.request.requestId === request.requestId)) {
               const response = initial.inputCardResponses?.find((response) => response.requestId === request.requestId);
-              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? "submitted" : "pending", selectedChoiceId: parseConfirmedChoice(response?.text)?.choiceId ?? response?.optionId } });
+              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
             }
           }
           return { ...data, messages, pendingInputRequests: [...event.data.requests] };
@@ -191,8 +191,7 @@ export function createEveCoachReducer(
             if (!message.inputCard) return message;
             const response = event.data.responses.find((response) => response.requestId === message.inputCard?.request.requestId);
             if (!response) return message;
-            const choice = parseConfirmedChoice(response.text);
-            return { ...message, inputCard: { ...message.inputCard, status: "submitted" as const, selectedChoiceId: choice?.choiceId ?? response.optionId } };
+            return { ...message, inputCard: { ...message.inputCard, status: isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, selectedChoiceIds: selectedResponseIds(response) } };
           }), phase: "streaming", runStatus: "generating", errors: [] };
 
         case "client.message.submitted": {
@@ -249,15 +248,13 @@ export function createEveCoachReducer(
         case "action.result": {
           const { result } = event.data;
           const output = "output" in result && result.output && typeof result.output === "object" ? result.output as Record<string, unknown> : {};
-          const receipt = output.confirmation && typeof output.confirmation === "object" ? output.confirmation as Record<string, unknown> : {};
           data = {
             ...data,
             messages: data.messages.map((message) => {
               const card = message.inputCard;
               if (!card || card.request.action.callId !== result.callId) return message;
-              const selectedChoiceId = typeof receipt.choiceId === "string" ? receipt.choiceId : card.selectedChoiceId;
               const status = event.data.status === "rejected" ? "cancelled" : event.data.status === "failed" || output.ok === false ? "failed" : "completed";
-              return { ...message, inputCard: { ...card, selectedChoiceId, status } };
+              return { ...message, inputCard: { ...card, status } };
             }),
             pendingInputRequests: (data.pendingInputRequests ?? []).filter(
               (request) => request.action.callId !== result.callId,

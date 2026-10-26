@@ -50,8 +50,7 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
-import { CANCEL_INPUT_REQUEST_TEXT } from "@/lib/chat/input-request-presentation";
-import { getConfirmationProposal, parseConfirmedChoice } from "@/lib/chat/confirmed-actions";
+import { isValidInputResponse } from "@/lib/chat/input-selection";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -736,13 +735,7 @@ export function useCoachPlanWorkspace(options?: {
     }
     const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
     if (!request) return;
-    if (response.optionId && !request.options?.some((option) => option.id === response.optionId)) return;
-    const proposal = getConfirmationProposal(request);
-    const choice = parseConfirmedChoice(response.text);
-    const confirmedChoice = (response.optionId === "approve" || response.optionId === "deny") && proposal && choice?.confirmationId === proposal.confirmationId && choice.toolName === request.action.toolName && proposal.choices.some((option) => option.id === choice.choiceId);
-    if (response.text && !confirmedChoice && !(request.allowFreeform || request.display === "text" || (request.display !== "confirmation" && (!request.options?.length || response.text === CANCEL_INPUT_REQUEST_TEXT)))) return;
-    if (proposal && response.optionId === "approve" && !confirmedChoice) return;
-    if (!response.optionId && !response.text?.trim()) return;
+    if (!isValidInputResponse(request, response)) return;
     inputResponsePendingRef.current = true;
     inputResponseToPersistRef.current = response;
     setSendFailure(null);

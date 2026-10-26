@@ -12,7 +12,7 @@ describe("ChatThread", () => {
         action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
       }]} />);
     expect(screen.getByRole("region", { name: "Approval needed" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Assign plan" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
   });

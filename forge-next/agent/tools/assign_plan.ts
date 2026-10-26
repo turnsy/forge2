@@ -1,11 +1,10 @@
-import { defineConfirmedForgeTool as defineTool } from "../lib/define-confirmed-forge-tool";
+import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
 import { z } from "zod";
 import { assignPlanToAthletes } from "@/lib/plans/mutations";
 import { getCoachId } from "../lib/coach-context";
 import { toToolError } from "../lib/db-tool-errors";
 
 export default defineTool({
-  toolName: "assign_plan",
   description:
     "Assign or reassign a plan to one or more actively linked athletes. Replaces any active assignment per athlete.",
   inputSchema: z.object({

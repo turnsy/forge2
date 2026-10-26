@@ -1,10 +1,9 @@
-import { defineConfirmedForgeTool as defineTool } from "../lib/define-confirmed-forge-tool";
+import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
 import { z } from "zod";
 import { rejectCoachLink } from "@/lib/links/repository";
 import { getCoachId } from "../lib/coach-context";
 
 export default defineTool({
-  toolName: "reject_coach_link",
   description:
     "Reject a pending athlete link request. This is a real mutation — confirm intent when ambiguous.",
   inputSchema: z.object({

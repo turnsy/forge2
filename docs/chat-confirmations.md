@@ -1,55 +1,73 @@
-# Chat action confirmations
+# Chat selections and confirmations
 
-Use `defineConfirmedForgeTool` for a mutation that needs a target selection and
-approval. It preserves Eve's native approval requirement while combining both
-interactions in one card.
-
-## Proposal and execution
-
-The tool's model-facing input is an envelope:
+All choices use Eve's `ask_question` tool. The agent sets `selectionMode` to
+`single` (the default) or `multiple`, supplies concrete options, and sets
+`allowFreeform: false`. Any future question can use this: athletes, plans,
+training days, exercise preferences, or other choices need no new UI wrapper.
 
 ```ts
 {
-  confirmationId: "a-new-uuid",
-  prompt: "Who should receive General Strength? This replaces their current plan.",
-  choices: [
-    { id: "candidate-1", label: "Jay", description: "Currently assigned Base",
-      input: { planId: "...", athleteIds: ["..."] } },
-    { id: "candidate-2", label: "Jay (Athlete)", description: "Currently assigned Strength",
-      input: { planId: "...", athleteIds: ["..."] } }
+  prompt: "Assign General Strength to which athletes? This replaces their current plans.",
+  selectionMode: "multiple",
+  allowFreeform: false,
+  options: [
+    { id: "athlete-1", label: "Jay", description: "Current plan: Base" },
+    { id: "athlete-2", label: "Jane", description: "Current plan: Strength" }
   ]
 }
 ```
 
-Each choice contains the complete action input, validated against the tool's
-original schema. The agent proposes all matching candidates in one tool call;
-it must not ask a separate clarification question for that action first.
+The pinned Eve package patch adds the optional `selectionMode` field to the
+framework question schema. Eve already preserves it in `request.action.input`,
+so no new transport fields or fork of its input lifecycle are needed. The patch
+also retains the independent stream-cleanup fix documented in eve-stream-cleanup.md.
 
-Selecting a row only updates local selection. Confirm sends one native Eve
-approval response with the proposal id, tool name, and choice id in `text`.
-Cancel sends a denial. Neither action adds a trailing Forge context message.
+## Interaction and model guidance
 
-The authenticated coach channel captures approved selections from the request
-body into runtime auth attributes. The tool resolves the selection against its
-original proposal and runs only that choice's validated input. Model-authored
-context and persisted UI snapshots cannot authorize an action. Native Eve
-approval and existing repository authorization remain enforced. Consumed
-confirmation ids cannot execute again in the session; retries require a new
-proposal and a new confirmation.
+Single choices use radio buttons; multiple choices use checkboxes. Selecting a
+row changes only local state. Confirm is enabled when at least one option is
+selected. Confirm and Cancel always remain in the same card; candidate lists
+do not include a custom textbox. Questions with no candidates can still request
+an open text answer.
+
+The standard Eve `InputResponse.text` contains:
+
+```json
+{
+  "status": "confirmed",
+  "selections": [
+    { "id": "athlete-1", "label": "Jay" },
+    { "id": "athlete-2", "label": "Jane" }
+  ]
+}
+```
+
+Cancel sends `status: "cancelled"`, retaining the selected rows for display.
+Single-choice responses also include Eve's `optionId` for compatibility.
+Input-only continuations do not append Forge client context to model history.
+
+`agent/instructions/user-choices.ts` tells the model to describe the proposed
+operation and consequences in the question, treat Confirm as sufficient
+direction, and proceed without another confirmation. It must acknowledge Cancel
+and not perform the proposed operation. Plan assignment already supports several
+athletes in one call; link operations accept one relationship per call.
+
+These are conversational instructions, not an exact-arguments authorization
+contract. The action tools use their ordinary schemas and authenticated database
+context. Coach authentication, role checks, linked-athlete permissions, input
+schemas, and repository/RLS checks remain enforced. Adding another action does
+not require a confirmation wrapper. Eve's generic native approvals remain
+renderable for capabilities that independently require them.
 
 ## Persistent card
 
-`input.requested` inserts a card into the message timeline at that event's
-position. Confirmation locks its controls while the action runs. The tool's
-result includes the selected choice id, letting replay reconstruct the same
-completed or failed card before subsequent assistant messages.
+`input.requested` inserts a card at that point in the timeline. Submitted cards
+remain in place with both buttons and all selections disabled. The next turn
+marks a question completed; cancellation stays cancelled. Completed refers to
+the question being answered, not a guarantee that a later mutation succeeded.
+Tool successes or failures are reported by the agent separately.
 
-Selections are also saved in `inputCardResponses` as soon as Eve acknowledges
-the POST. This retains the selected row during reloads before tool completion,
-and on cancellation or terminal failure. These fields are presentation data,
-not execution grants. Only a tool result can mark an action completed.
-
-Pending, submitted, completed, cancelled, and failed cards use the same
-component. All controls remain present and disabled after submission. A new
-conversation is required to use the new envelope for conversations compiled
-against the older mutation-tool schemas.
+Selections are saved in `inputCardResponses` when Eve acknowledges the POST,
+which restores all selected rows on reload, including cancellation and failures.
+Use a new conversation when testing this deployment: older sessions may still
+carry pending calls using the superseded proposal-envelope tool schemas.

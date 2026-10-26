@@ -120,7 +120,7 @@ export function ChatThread({
           {messages.filter(isRenderableMessage).map((message, index) => (
             <ChatBubble key={`${message.role}-${index}`} role={message.role}>
               {message.inputCard ? (
-                <ChatInputRequest request={message.inputCard.request} status={message.inputCard.status === "submitted" && phase === "error" ? "failed" : message.inputCard.status} savedChoiceId={message.inputCard.selectedChoiceId}
+                <ChatInputRequest request={message.inputCard.request} status={message.inputCard.status === "submitted" && phase === "error" ? "failed" : message.inputCard.status} savedChoiceIds={message.inputCard.selectedChoiceIds}
                   disabled={turnInProgress || !pendingInputRequests.some((request) => request.requestId === message.inputCard?.request.requestId)}
                   onRespond={onRespondToInput ?? (async () => {})} />
               ) : <ChatMessageBody message={message} />}
