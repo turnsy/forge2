@@ -19,6 +19,14 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("shared mobile app header", () => {
+  it.each(["/coach", "/athlete"])("shows only the Forge mark on %s home", (route) => {
+    pathname = route;
+    render(<MobileAppHeaderProvider><MobileAppHeader /></MobileAppHeaderProvider>);
+    expect(screen.getByRole("img", { name: "Forge" }).tagName).toBe("svg");
+    expect(screen.queryByText("Forge")).not.toBeInTheDocument();
+    pathname = "/coach/plans";
+  });
+
   it("preserves page state when switching between mobile and desktop", async () => {
     const user = userEvent.setup();
     function Page() {

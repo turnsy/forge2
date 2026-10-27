@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ForgeLogo } from "@/components/forge-logo";
 import { MobileSidebarDrawer } from "@/components/ui/mobile-sidebar-drawer";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { SessionHistorySidebar } from "@/components/coach/session-history-sidebar";
@@ -44,9 +45,7 @@ export function Sidebar({
         ].join(" ")}
       >
         {collapsed ? null : (
-          <span className="truncate px-2 text-lg font-semibold tracking-tight text-surface-foreground">
-            Forge
-          </span>
+          <ForgeLogo variant="horizontal" size="sidebar" className="ml-2" />
         )}
         {isMobile ? null : (
           <IconButton

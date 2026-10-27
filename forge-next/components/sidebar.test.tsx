@@ -76,7 +76,7 @@ describe("Sidebar", () => {
       email: "coach@example.com",
     });
 
-    expect(screen.getByText("Forge")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Forge" })).toHaveAttribute("src", "/forge-logo.svg");
     expect(screen.getByText("Coach User")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Plans" })).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe("Sidebar", () => {
       screen.getByRole("button", { name: /Collapse sidebar/i }),
     );
 
-    expect(screen.queryByText("Forge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Forge" })).not.toBeInTheDocument();
     expect(screen.queryByText("Coach User")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Plans" })).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe("Sidebar", () => {
     );
     await user.click(screen.getByRole("button", { name: /Expand sidebar/i }));
 
-    expect(screen.getByText("Forge")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Forge" })).toHaveAttribute("src", "/forge-logo.svg");
     expect(screen.getByText("Coach User")).toBeInTheDocument();
   });
 
