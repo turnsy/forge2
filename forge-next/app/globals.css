@@ -254,7 +254,7 @@ body {
 .mobile-header-actions :is(button, a) { font-size: 0 !important; gap: 0 !important; }
 .mobile-header-actions :is(button, a) > span { display: contents; }
 .mobile-header-button svg,
-.mobile-header-actions :is(button, a) svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+.mobile-header-actions :is(button, a) svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 
 .mobile-header-title:has([data-mobile-title]) > [data-mobile-fallback],
 .mobile-header-slot:has([data-mobile-priority="view"]) > [data-mobile-priority="page"] { display: none; }
