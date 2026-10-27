@@ -37,7 +37,7 @@ export function CoachPlanDetailView({
           }
         />
       }
-      scrollClassName="flex flex-col gap-6"
+      scrollClassName="flex flex-col gap-6 max-md:pt-4"
     >
       {showHistory ? (
         <PlanVersionHistory versions={versions} />

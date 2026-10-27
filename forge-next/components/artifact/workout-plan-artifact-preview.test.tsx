@@ -22,7 +22,7 @@ describe("WorkoutPlanArtifactPreview", () => {
     expect(screen.getByLabelText("Exercise")).toHaveValue("Back Squat");
   });
 
-  it("reserves scroll space under the mobile bottom nav", () => {
+  it("keeps safe-area scroll spacing without reserving bottom navigation space", () => {
     const { container } = render(
       <WorkoutPlanArtifactPreview
         plan={minimalWorkoutPlan}
@@ -34,7 +34,7 @@ describe("WorkoutPlanArtifactPreview", () => {
 
     const scrollContainer = container.firstElementChild;
     expect(scrollContainer?.className).toContain("overflow-y-auto");
-    expect(scrollContainer?.className).toContain("max-md:pb-[calc(4.5rem");
+    expect(scrollContainer?.className).toContain("max-md:pb-[max(1rem");
   });
 
   it("locks artifact scroll while a turn is in progress", () => {
