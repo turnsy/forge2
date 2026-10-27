@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!query) return NextResponse.json({ exercises: [] });
 
   try {
-    const exercises = await searchExercisesByText(query, link.coachId, 5);
+    const exercises = await searchExercisesByText(query, link.coachId, 5, false);
     return NextResponse.json({ exercises });
   } catch {
     return NextResponse.json({ error: "Could not search exercises" }, { status: 500 });

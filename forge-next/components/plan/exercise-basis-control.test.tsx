@@ -93,12 +93,7 @@ describe("ExerciseBasisControl", () => {
 
   it("updates basis when a different exercise is selected", async () => {
     const user = userEvent.setup();
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ exercises: [{ id: "bench-1", name: "Bench Press" }] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => String(url).includes("/search") ? Response.json({ exercises: [{ id: "bench-1", name: "Bench Press" }] }) : Response.json({ exercise: { id: "bench-1", name: "Bench Press" } }));
 
     const onChange = vi.fn();
 
@@ -116,11 +111,11 @@ describe("ExerciseBasisControl", () => {
 
     fireEvent.click(await screen.findByRole("option", { name: "Bench Press" }));
 
-    expect(onChange).toHaveBeenCalledWith(
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         basisRaw: "Bench Press",
         resolvedBasisExerciseId: "bench-1",
       }),
-    );
+    ));
   });
 });

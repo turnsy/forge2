@@ -41,12 +41,10 @@ async function fetchMaxes(listUrl: string): Promise<AthleteMaxEntry[]> {
 function CoachAthleteMaxHistoryPanel({
   summary,
   onBack,
-  onUpdateMax,
   error,
 }: {
   summary: ExerciseMaxSummary;
   onBack: () => void;
-  onUpdateMax: () => void;
   error: string | null;
 }) {
   return (
@@ -58,19 +56,7 @@ function CoachAthleteMaxHistoryPanel({
             {summary.exerciseName}
           </h2>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          onClick={onUpdateMax}
-        >
-          Update max
-        </Button>
       </div>
-      <p className="text-sm text-surface-muted">
-        Updates add a new history entry.
-      </p>
       {error ? <Message tone="error">{error}</Message> : null}
       <List>
         {summary.history.map((entry, index) => (
@@ -207,7 +193,6 @@ export function CoachAthleteMaxesTab({
           summary={selectedSummary}
           error={error}
           onBack={() => setSelectedExerciseId(null)}
-          onUpdateMax={() => openUpdateModal(selectedSummary)}
         />
         <CoachAthleteMaxFormModal
           open={formOpen}
@@ -266,6 +251,7 @@ export function CoachAthleteMaxesTab({
             <ListRow
               key={summary.exerciseId}
               appearIndex={index}
+              actions={<Button type="button" variant="secondary" size="sm" onClick={() => openUpdateModal(summary)}>Update max</Button>}
               leading={
                 <button
                   type="button"

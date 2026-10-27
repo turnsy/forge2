@@ -7,7 +7,7 @@ import { findExactExercise, createCoachExercise } from "./repository";
 import { getAccessibleExercise } from "./confirm-selection";
 import { preparePlanExerciseResolution } from "./prepare-plan";
 
-const record = (id: string, name: string) => ({ id, name, normalized_name: name.toLowerCase(), owner_coach_id: null });
+const record = (id: string, name: string) => ({ id, name, normalized_name: name.toLowerCase(), owner_coach_id: "coach" });
 const makePlan = () => structuredClone(minimalWorkoutPlan);
 
 describe("preparePlanExerciseResolution", () => {

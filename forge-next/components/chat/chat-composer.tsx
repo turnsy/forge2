@@ -73,6 +73,7 @@ export function ChatComposer({
       key={composerKey}
       compact={compact}
       placeholder="Ask Forge to build or update a plan..."
+      onSubmit={handleSend}
       onDocumentChange={(segments, isEmpty) => {
         latestSegmentsRef.current = segments;
         setDocumentEmpty(isEmpty);

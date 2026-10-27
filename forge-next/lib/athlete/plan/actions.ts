@@ -30,6 +30,7 @@ export async function saveSetActualsAction(
   exercisePos: number,
   setPos: number,
   actual: ActualSet | null,
+  identity: { exerciseId: string; setId: string; catalogId: string | null },
 ): Promise<SaveSetActualsActionResult> {
   const auth = await requireRoleAuth("athlete");
   if (!auth.ok) {
@@ -57,13 +58,9 @@ export async function saveSetActualsAction(
     exercisePos,
     setPos,
     actual,
+    identity,
   });
   if (!saved.ok) return saved;
-  if (saved.maxChanged) {
-    revalidatePath("/athlete");
-    revalidatePath("/athlete/maxes");
-    revalidatePath(`/coach/athletes/${auth.user.id}`);
-  }
   return { ok: true };
 }
 
@@ -92,7 +89,6 @@ export async function completeDayAction(
 
   const completeResult = await completeDay(
     assignmentId,
-    assignment.plan,
     weekPos,
     dayPos,
   );
@@ -102,6 +98,9 @@ export async function completeDayAction(
   }
 
   const { allDaysDone, plan } = completeResult;
+  revalidatePath("/athlete");
+  revalidatePath("/athlete/maxes");
+  revalidatePath(`/coach/athletes/${auth.user.id}`);
 
   if (allDaysDone) {
     return { ok: true, nextDayPos: null, allDaysDone: true, plan };

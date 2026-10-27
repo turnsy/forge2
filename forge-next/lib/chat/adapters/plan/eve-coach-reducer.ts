@@ -178,7 +178,7 @@ export function createEveCoachReducer(
           for (const request of event.data.requests) {
             if (!messages.some((message) => message.inputCard?.request.requestId === request.requestId)) {
               const response = initial.inputCardResponses?.find((response) => response.requestId === request.requestId);
-              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
+              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", responseText: response?.text, selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
             }
           }
           return { ...data, messages, pendingInputRequests: [...event.data.requests] };
@@ -191,7 +191,7 @@ export function createEveCoachReducer(
             if (!message.inputCard) return message;
             const response = event.data.responses.find((response) => response.requestId === message.inputCard?.request.requestId);
             if (!response) return message;
-            return { ...message, inputCard: { ...message.inputCard, status: isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, selectedChoiceIds: selectedResponseIds(response) } };
+            return { ...message, inputCard: { ...message.inputCard, status: isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, responseText: response.text, selectedChoiceIds: selectedResponseIds(response) } };
           }), phase: "streaming", runStatus: "generating", errors: [] };
 
         case "client.message.submitted": {

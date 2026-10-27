@@ -22,7 +22,7 @@ it("rejects athlete-created exercises before invoking catalog creation", async (
 it("confirms existing exercise IDs using the active coach catalog", async () => {
   vi.mocked(confirmExerciseSelection).mockResolvedValue({ id: "exercise", name: "Back Squat", normalized_name: "back squat", owner_coach_id: null });
   expect((await POST(request({ exerciseId: "exercise", name: "Ignored name" }))).status).toBe(200);
-  expect(confirmExerciseSelection).toHaveBeenCalledWith({ exerciseId: "exercise" }, "coach");
+  expect(confirmExerciseSelection).toHaveBeenCalledWith({ exerciseId: "exercise" }, "coach", false);
 });
 
 it("rejects selection while a coach link is pending", async () => {

@@ -1,7 +1,9 @@
 # Exercise selection
 
-Coaches select an existing global or coach-owned exercise from text search, or
-explicitly create a coach-owned exercise. Athletes select existing exercises only.
+Global exercises are autocomplete templates. Selecting one creates or reuses a
+coach-owned exercise. Search prefers the coach's entry and hides the matching
+global template, including after the owned entry is renamed. Athletes select
+existing entries from their active coach's library and cannot create exercises.
 
 Names are compared using case and whitespace normalization only. Equipment,
 variation, punctuation and parenthetical qualifiers remain part of the identity.
@@ -19,11 +21,23 @@ are displayed as errors.
 
 ## Rollout
 
-Apply `20261026023414_simplify_exercise_matching.sql` with the PR migrations before
-testing the updated app. It rebuilds normalized name keys from stored names and
-removes the unused semantic-search RPC. Existing catalog IDs, plan references,
-max histories and embedding data are preserved. The application no longer uses
-the embedding data. Do not merge or rename existing catalog records automatically.
+The coach's Exercises page lists only their active exercises, with inline rename
+and a delete dialog showing usage in current templates and unfinished assignments.
+Used exercises require another owned exercise as a replacement (autocomplete may
+claim a global template for that purpose). Deletion archives the original; it
+does not transfer max history to a different exercise.
+
+Renames/replacements append template versions and update only unlogged sets in
+active assignments. Partly logged exercises split into historical and future
+rows so recorded actuals and source set IDs remain unchanged. Completed
+assignments and old template versions remain intact. New template/assignment
+writes reject archived, global, and foreign catalog references.
+Athlete draft saves also bind to the displayed exercise, catalog, and set IDs;
+a stale screen cannot apply a weight to a different set after a replacement.
+
+Apply `20261027023553_coach_exercise_library.sql` after the earlier PR migrations.
+It adopts previously used globals into coach libraries, preserving recorded max
+values, ordering, and source provenance. Embeddings remain unused.
 
 Training-max updates and relationship permissions are described in
 [training-maxes.md](./training-maxes.md).

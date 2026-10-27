@@ -6,6 +6,7 @@ describe("roleNavItems", () => {
     expect(roleNavItems.coach.map((item) => item.label)).toEqual([
       "Home",
       "Plans",
+      "Exercises",
       "Athletes",
     ]);
     expect(roleNavItems.coach[0]?.exact).toBe(true);

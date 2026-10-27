@@ -39,10 +39,12 @@ type SuppressedMentionRange = {
 export function PromptComposer({
   placeholder,
   onDocumentChange,
+  onSubmit,
   compact = false,
 }: {
   placeholder: string;
   onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
+  onSubmit?: () => void;
   compact?: boolean;
 }) {
   const menuId = useId();
@@ -301,7 +303,7 @@ export function PromptComposer({
         return;
       }
 
-      if (event.key === "Tab") {
+      if (event.key === "Tab" || (event.key === "Enter" && !event.shiftKey && onSubmit)) {
         event.preventDefault();
         const item = menuItems[activeHighlightedIndex];
         if (item) {
@@ -332,7 +334,8 @@ export function PromptComposer({
 
     if (event.key === "Enter") {
       event.preventDefault();
-      insertText("\n");
+      if (!isMobile && !event.shiftKey && onSubmit) onSubmit();
+      else insertText("\n");
     }
   }
 

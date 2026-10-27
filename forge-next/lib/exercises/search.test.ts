@@ -16,4 +16,7 @@ describe("mergeExerciseSearchOptions", () => {
       { id: "2", name: "Incline Bench Press" },
     ]);
   });
+  it("hides a global duplicate when an owned entry already has the same normalized name", () => {
+    expect(mergeExerciseSearchOptions([[{ id: "owned", name: "Bench Press" }], [{ id: "global", name: " bench  press " }]])).toEqual([{ id: "owned", name: "Bench Press" }]);
+  });
 });

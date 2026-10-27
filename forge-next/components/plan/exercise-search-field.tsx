@@ -140,10 +140,16 @@ export function ExerciseSearchField({
     setIsSearching(false);
   }
 
-  function handleSelect(candidate: ExerciseSearchCandidate) {
-    closeDropdown();
-    setDraft(candidate.name);
-    onResolved({ name: candidate.name, exerciseId: candidate.id });
+  async function handleSelect(candidate: ExerciseSearchCandidate) {
+    if (isCreating) return;
+    setIsCreating(true); setError(null);
+    try {
+      const confirmed = await confirmExerciseCandidate({ exerciseId: candidate.id }, confirmUrl);
+      if (!confirmed) throw new Error("Exercise selection failed");
+      closeDropdown(); setDraft(confirmed.name);
+      onResolved({ name: confirmed.name, exerciseId: confirmed.id });
+    } catch { setError("Could not select exercise. Try again."); }
+    finally { setIsCreating(false); }
   }
 
   async function handleCreateCustom() {
@@ -225,6 +231,7 @@ export function ExerciseSearchField({
           }
         }}
       />
+      {isCreating ? <p role="status" className="mt-1 text-sm text-surface-muted">Saving exercise…</p> : null}
       {error ? <p role="alert" className="mt-1 text-sm text-surface-muted">{error}</p> : null}
       {showResults ? (
         <div
@@ -245,7 +252,8 @@ export function ExerciseSearchField({
                     aria-selected={false}
                     className="flex w-full px-4 py-2.5 text-left text-sm font-medium text-surface-foreground transition hover:bg-glass"
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => handleSelect(candidate)}
+                    disabled={isCreating}
+                    onClick={() => void handleSelect(candidate)}
                   >
                     {candidate.name}
                   </button>

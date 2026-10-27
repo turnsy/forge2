@@ -1,19 +1,11 @@
 import { unstable_noStore as noStore } from "next/cache";
-import {
-  ServiceErrorCode,
-  serviceError,
-  type ServiceResult,
-} from "@/lib/errors/service-error";
+import { ServiceErrorCode, serviceError, type ServiceResult } from "@/lib/errors/service-error";
 import { loadWorkoutPlan } from "@/lib/plans/validate";
 import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
 import { applySetActuals } from "@/lib/athlete/plan/domain";
 import { getAthleteCoachLink } from "@/lib/links/repository";
 import { createClient } from "@/utils/supabase/server";
-import {
-  areAllDaysComplete,
-  completeDayInPlan,
-  type SetCompletionStatus,
-} from "@/lib/athlete/plan/domain";
+import { type SetCompletionStatus } from "@/lib/athlete/plan/domain";
 import {
   ASSIGNED_PLAN_COLUMNS,
   mapAssignedPlanRow,
@@ -58,13 +50,9 @@ export async function saveWorkoutSetActuals(input: {
   exercisePos: number;
   setPos: number;
   actual: ActualSet | null;
-}): Promise<ServiceResult<{ maxChanged: boolean }>> {
-  const positions = [
-    input.weekPos,
-    input.dayPos,
-    input.exercisePos,
-    input.setPos,
-  ];
+  identity: { exerciseId: string; setId: string; catalogId: string | null };
+}): Promise<SavePlanActualsResult> {
+  const positions = [input.weekPos, input.dayPos, input.exercisePos, input.setPos];
   if (
     positions.some((position) => !Number.isInteger(position) || position < 0) ||
     !loadWorkoutPlan(
@@ -78,19 +66,19 @@ export async function saveWorkoutSetActuals(input: {
       ),
     ).ok
   ) {
-    return serviceError(
-      ServiceErrorCode.VALIDATION_ERROR,
-      "Invalid workout actuals",
-    );
+    return serviceError(ServiceErrorCode.VALIDATION_ERROR, "Invalid workout actuals");
   }
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("save_workout_set_actuals", {
+  const { error } = await supabase.rpc("save_workout_set_actuals", {
     p_assignment_id: input.assignmentId,
     p_week_pos: input.weekPos,
     p_day_pos: input.dayPos,
     p_exercise_pos: input.exercisePos,
     p_set_pos: input.setPos,
     p_actual: input.actual,
+    p_expected_exercise_id: input.identity.exerciseId,
+    p_expected_set_id: input.identity.setId,
+    p_expected_catalog_id: input.identity.catalogId,
   });
   if (error)
     return serviceError(
@@ -101,17 +89,16 @@ export async function saveWorkoutSetActuals(input: {
           : ServiceErrorCode.DB_ERROR,
       error.message,
     );
-  return { ok: true, maxChanged: Boolean(data) };
+  return { ok: true };
 }
 export type CompleteDayResult = ServiceResult<{
+  maxChanged: boolean;
   allDaysDone: boolean;
   plan: WorkoutPlan;
   setStatuses: { setIndex: number; status: SetCompletionStatus }[];
 }>;
 
-async function resolveClient(
-  client?: AthletePlanClient,
-): Promise<AthletePlanClient> {
+async function resolveClient(client?: AthletePlanClient): Promise<AthletePlanClient> {
   return client ?? (await createClient());
 }
 
@@ -211,37 +198,39 @@ export async function savePlanActuals(
 
 export async function completeDay(
   assignmentId: string,
-  planData: WorkoutPlan,
   weekPos: number,
   dayPos: number,
   client?: AthletePlanClient,
 ): Promise<CompleteDayResult> {
-  const { plan, setStatuses } = completeDayInPlan(planData, weekPos, dayPos);
-  const allDaysDone = areAllDaysComplete(plan);
-  const completedAt = allDaysDone ? new Date().toISOString() : null;
-
-  const validation = loadWorkoutPlan(plan);
-  if (!validation.ok) {
-    return serviceError(ServiceErrorCode.VALIDATION_ERROR, "Invalid plan data");
-  }
-
   const supabase = await resolveClient(client);
-  const { error } = await supabase
-    .from("assigned_plans")
-    .update({
-      plan_data: validation.plan as unknown as Record<string, unknown>,
-      ...(allDaysDone
-        ? {
-            status: "completed" as const,
-            completed_at: completedAt,
-          }
-        : {}),
-    })
-    .eq("id", assignmentId);
-
-  if (error) {
-    return serviceError(ServiceErrorCode.DB_ERROR, error.message);
-  }
-
-  return { ok: true, allDaysDone, plan: validation.plan, setStatuses };
+  const { data, error } = await supabase.rpc("complete_workout_day", {
+    p_assignment_id: assignmentId,
+    p_week_pos: weekPos,
+    p_day_pos: dayPos,
+  });
+  if (error)
+    return serviceError(
+      error.code === "P0002"
+        ? ServiceErrorCode.NOT_FOUND
+        : error.code === "22023"
+          ? ServiceErrorCode.VALIDATION_ERROR
+          : ServiceErrorCode.DB_ERROR,
+      error.message,
+    );
+  const result = data as {
+    plan: unknown;
+    allDaysDone: boolean;
+    maxChanged: boolean;
+    setStatuses: { setIndex: number; status: SetCompletionStatus }[];
+  } | null;
+  const validation = loadWorkoutPlan(result?.plan);
+  if (!result || !validation.ok)
+    return serviceError(ServiceErrorCode.DB_ERROR, "Completed workout data failed validation");
+  return {
+    ok: true,
+    allDaysDone: result.allDaysDone,
+    plan: validation.plan,
+    setStatuses: result.setStatuses,
+    maxChanged: result.maxChanged,
+  };
 }

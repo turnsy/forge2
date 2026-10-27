@@ -280,6 +280,7 @@ function AthleteEditableDayContent({
         location.exercisePos,
         location.setPos,
         actual,
+        { exerciseId: getFlattenedExerciseRefs(day)[location.exercisePos].exercise.id, setId: set.id, catalogId: getFlattenedExerciseRefs(day)[location.exercisePos].exercise.resolvedExerciseId ?? null },
       );
 
       if (!result.ok) {
@@ -295,7 +296,7 @@ function AthleteEditableDayContent({
         setSaveStatus("saved");
       }
     },
-    [applySavedActual, assignmentId, dayPos, weekPos],
+    [applySavedActual, assignmentId, day, dayPos, weekPos],
   );
 
   async function flushSaveQueue(): Promise<void> {
@@ -398,6 +399,7 @@ function AthleteEditableDayContent({
             exercisePos,
             setPos,
             actual,
+            { exerciseId: ref.exercise.id, setId: set.id, catalogId: ref.exercise.resolvedExerciseId ?? null },
           ),
         );
       });

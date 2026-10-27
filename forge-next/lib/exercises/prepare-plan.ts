@@ -16,7 +16,7 @@ export async function preparePlanExerciseResolution(
     if (selectedId) {
       const selected = await getAccessibleExercise(selectedId, coachId);
       if (!selected) throw new Error("Selected exercise is not accessible");
-      if (normalizeExercise(selected.name) === normalized) return selected.id;
+      if (normalizeExercise(selected.name) === normalized && selected.owner_coach_id === coachId) return selected.id;
       // An agent may rename an exercise without clearing its old catalog ID.
     }
     const cached = cache.get(normalized);

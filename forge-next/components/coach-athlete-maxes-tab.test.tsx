@@ -114,7 +114,7 @@ describe("CoachAthleteMaxesTab", () => {
     expect(screen.getAllByText("225 lb").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("does not show update max on the list view", async () => {
+  it("shows update max on each exercise list row", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -141,10 +141,10 @@ describe("CoachAthleteMaxesTab", () => {
     );
 
     expect(await screen.findByText("Bench Press")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Update max" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Update max" })).toBeInTheDocument();
   });
 
-  it("opens the update modal from the exercise detail view", async () => {
+  it("opens the update modal from the exercise list row", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
@@ -171,10 +171,7 @@ describe("CoachAthleteMaxesTab", () => {
       />,
     );
 
-    await user.click(
-      await screen.findByRole("button", { name: "Bench Press" }),
-    );
-    await user.click(screen.getByRole("button", { name: "Update max" }));
+    await user.click(await screen.findByRole("button", { name: "Update max" }));
 
     expect(
       screen.getByRole("dialog", { name: "Update max" }),
@@ -209,7 +206,7 @@ describe("CoachAthleteMaxesTab", () => {
       screen.queryByRole("button", { name: "Delete" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText("Updates add a new history entry."),
-    ).toBeInTheDocument();
+      screen.queryByText("Updates add a new history entry."),
+    ).not.toBeInTheDocument();
   });
 });

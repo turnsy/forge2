@@ -31,7 +31,8 @@ function mockCoachExerciseFetch(
 
   if (url.includes("/api/coach/exercises/confirm")) {
     const body = init?.body ? JSON.parse(String(init.body)) : {};
-    const name = typeof body.name === "string" ? body.name : "Confirmed Exercise";
+    const names: Record<string, string> = { "incline-bench-id": "Incline Bench Press", "bench-press-id": "Bench Press" };
+    const name = typeof body.name === "string" ? body.name : names[String(body.exerciseId)] ?? "Confirmed Exercise";
     const exerciseId =
       typeof body.exerciseId === "string" ? body.exerciseId : "mock-exercise-id";
 

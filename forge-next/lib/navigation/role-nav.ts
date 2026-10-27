@@ -19,6 +19,7 @@ export const roleNavItems: Record<UserRole, RoleNavItem[]> = {
   coach: [
     { href: "/coach", label: "Home", icon: "home", exact: true },
     { href: "/coach/plans", label: "Plans", icon: "plans" },
+    { href: "/coach/exercises", label: "Exercises", icon: "maxes" },
     { href: "/coach/athletes", label: "Athletes", icon: "athletes" },
   ],
   athlete: [

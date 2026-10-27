@@ -61,6 +61,9 @@ jobs:
       - name: Verify generated plan types
         run: pnpm generate:check
 
+      - name: Verify optional question input schema
+        run: node ../scripts/check-question-schema.mjs
+
   production-build:
     name: Production build
     runs-on: ubuntu-latest

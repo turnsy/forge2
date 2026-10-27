@@ -20,9 +20,8 @@ export async function findExactExercise(
     .from("exercises")
     .select("id,name,normalized_name,owner_coach_id")
     .eq("normalized_name", normalizeExercise(raw))
-    .or(`owner_coach_id.eq.${coachId},owner_coach_id.is.null`)
-    .order("owner_coach_id", { ascending: false, nullsFirst: false })
-    .limit(1)
+    .eq("owner_coach_id", coachId)
+    .is("archived_at", null)
     .maybeSingle();
   if (error) throw error;
   return data as ExerciseRecord | null;
@@ -35,17 +34,8 @@ export async function createCoachExercise(
 ): Promise<ExerciseRecord> {
   const supabase = client ?? (await createClient());
   if (!name.trim()) throw new Error("Exercise name is required");
-  const { data, error } = await supabase
-    .from("exercises")
-    .insert({ name: name.trim(), normalized_name: normalizeExercise(name), owner_coach_id: coachId })
-    .select("id,name,normalized_name,owner_coach_id")
-    .single();
-  if (error) {
-    if (error.code === "23505") {
-      const existing = await findExactExercise(name, coachId, supabase);
-      if (existing) return existing;
-    }
-    throw error;
-  }
+  const { data, error } = await supabase.rpc("claim_coach_exercise", { p_name: name.trim() });
+  if (error) throw error;
+  if (data.owner_coach_id !== coachId) throw new Error("Exercise owner does not match the coach");
   return data as ExerciseRecord;
 }

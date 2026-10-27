@@ -274,26 +274,32 @@ export type Database = {
       }
       exercises: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           name: string
           normalized_name: string
           owner_coach_id: string | null
+          template_exercise_id: string | null
         }
         ComputedFields: never
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name: string
           normalized_name: string
           owner_coach_id?: string | null
+          template_exercise_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name?: string
           normalized_name?: string
           owner_coach_id?: string | null
+          template_exercise_id?: string | null
         }
         Relationships: [
           {
@@ -301,6 +307,13 @@ export type Database = {
             columns: ["owner_coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercises_template_exercise_id_fkey"
+            columns: ["template_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
             referencedColumns: ["id"]
           },
         ]
@@ -436,12 +449,35 @@ export type Database = {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      claim_coach_exercise: {
+        Args: { p_exercise_id?: string; p_name?: string }
+        Returns: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          normalized_name: string
+          owner_coach_id: string | null
+          template_exercise_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      coach_exercise_usage: { Args: { p_exercise_id: string }; Returns: Json }
       complete_profile_role: {
         Args: {
           target_full_name?: string
           target_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: undefined
+      }
+      complete_workout_day: {
+        Args: { p_assignment_id: string; p_day_pos: number; p_week_pos: number }
+        Returns: Json
       }
       count_coach_pending_invites: {
         Args: Record<PropertyKey, never>
@@ -580,12 +616,39 @@ export type Database = {
           version_id: string
         }[]
       }
+      manage_coach_exercise: {
+        Args: {
+          p_archive?: boolean
+          p_exercise_id: string
+          p_name?: string
+          p_replacement_id?: string
+        }
+        Returns: undefined
+      }
       normalize_invite_code: { Args: { p_code: string }; Returns: string }
+      plan_uses_exercise: {
+        Args: { p_id: string; p_plan: Json }
+        Returns: boolean
+      }
       reject_coach_link: {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      replace_plan_exercise: {
+        Args: {
+          p_name: string
+          p_new: string
+          p_old: string
+          p_plan: Json
+          p_preserve_logged: boolean
+        }
+        Returns: Json
+      }
       request_coach_link: { Args: { p_invite_code: string }; Returns: string }
+      rewrite_coach_exercise_references: {
+        Args: { p_coach: string; p_name: string; p_new: string; p_old: string }
+        Returns: undefined
+      }
       save_coach_plan_version: {
         Args: {
           p_change_summary?: string
@@ -602,10 +665,25 @@ export type Database = {
           p_assignment_id: string
           p_day_pos: number
           p_exercise_pos: number
+          p_expected_catalog_id: string
+          p_expected_exercise_id: string
+          p_expected_set_id: string
           p_set_pos: number
           p_week_pos: number
         }
         Returns: boolean
+      }
+      search_coach_exercises: {
+        Args: {
+          p_coach_id: string
+          p_include_templates?: boolean
+          p_limit?: number
+          p_query: string
+        }
+        Returns: {
+          id: string
+          name: string
+        }[]
       }
       unlink_coach_athlete: {
         Args: { p_relationship_id: string }

@@ -23,14 +23,14 @@ describe("ExerciseSearchField", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("selects an existing result without creating an exercise", async () => {
+  it("confirms a search selection and uses the coach-owned ID returned by the server", async () => {
     const onResolved = vi.fn();
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ exercises: [{ id: "squat", name: "Back Squat" }] }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => String(url).includes("/search") ? Response.json({ exercises: [{ id: "global-squat", name: "Back Squat" }] }) : Response.json({ exercise: { id: "squat", name: "Back Squat" } }));
     render(<ExerciseSearchField label="Exercise" value="" disabled={false} onResolved={onResolved} />);
     fireEvent.change(screen.getByLabelText("Exercise"), { target: { value: "squat" } });
     fireEvent.click(await screen.findByRole("option", { name: "Back Squat" }));
-    expect(onResolved).toHaveBeenCalledWith({ name: "Back Squat", exerciseId: "squat" });
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onResolved).toHaveBeenCalledWith({ name: "Back Squat", exerciseId: "squat" }));
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it("does not offer creation for athletes", async () => {

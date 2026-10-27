@@ -25,6 +25,7 @@ import {
   mapAssignedPlanRow,
   savePlanActuals,
   saveWorkoutSetActuals,
+  completeDay,
 } from "@/lib/athlete/plan/repository";
 
 function mockAssignedPlanQuery(result: { data: unknown; error: unknown }) {
@@ -154,6 +155,7 @@ describe("athlete plan repository", () => {
 
   it("rejects invalid actuals before calling the database", async () => {
     const result = await saveWorkoutSetActuals({
+      identity: { exerciseId: "exercise", setId: "set", catalogId: null },
       assignmentId: "assignment-1",
       plan: minimalWorkoutPlan,
       weekPos: 0,
@@ -166,6 +168,19 @@ describe("athlete plan repository", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
+  it("completes the latest stored workout through the atomic RPC", async () => {
+    mockRpc.mockResolvedValue({ data: { plan: minimalWorkoutPlan, allDaysDone: false, maxChanged: true, setStatuses: [{ setIndex: 0, status: "completed" }] }, error: null });
+    const result = await completeDay("assignment-1", 0, 1);
+    expect(mockRpc).toHaveBeenCalledWith("complete_workout_day", { p_assignment_id: "assignment-1", p_week_pos: 0, p_day_pos: 1 });
+    expect(result).toMatchObject({ ok: true, plan: minimalWorkoutPlan, maxChanged: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid completion result instead of trusting unvalidated plan JSON", async () => {
+    mockRpc.mockResolvedValue({ data: { plan: { broken: true } }, error: null });
+    expect(await completeDay("assignment-1", 0, 0)).toMatchObject({ ok: false, code: "db_error" });
+  });
+
   it.each([
     ["P0002", "not_found"],
     ["22023", "validation_error"],
@@ -176,6 +191,7 @@ describe("athlete plan repository", () => {
       error: { code, message: "Save rejected" },
     });
     const result = await saveWorkoutSetActuals({
+      identity: { exerciseId: "exercise", setId: "set", catalogId: null },
       assignmentId: "assignment-1",
       plan: minimalWorkoutPlan,
       weekPos: 0,

@@ -5,6 +5,7 @@ const mockRequireRoleAuth = vi.fn();
 const mockGetAssignedPlanById = vi.fn();
 const mockSavePlanActuals = vi.fn();
 const mockCompleteDay = vi.fn();
+const identity = { exerciseId: "exercise", setId: "set", catalogId: null };
 
 vi.mock("@/lib/errors/require-role-auth", () => ({
   requireRoleAuth: (...args: unknown[]) => mockRequireRoleAuth(...args),
@@ -58,7 +59,7 @@ describe("athlete plan actions", () => {
     const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, {
       reps: 8,
       target: { type: "absolute", value: 60, unit: "kg" },
-    });
+    }, identity);
 
     expect(result).toEqual({ ok: true });
     expect(mockSavePlanActuals).toHaveBeenCalled();
@@ -71,7 +72,7 @@ describe("athlete plan actions", () => {
       message: "Not authenticated",
     });
 
-    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null, identity);
 
     expect(result).toEqual({
       ok: false,
@@ -81,20 +82,19 @@ describe("athlete plan actions", () => {
     expect(mockSavePlanActuals).not.toHaveBeenCalled();
   });
 
-  it("refreshes prescription and history views only when the transaction changes a max", async () => {
-    mockSavePlanActuals.mockResolvedValueOnce({ ok: true, maxChanged: true });
+  it("does not refresh or promote maxes when saving draft actuals", async () => {
+    mockSavePlanActuals.mockResolvedValueOnce({ ok: true, maxChanged: false });
     await saveSetActualsAction("assignment-1", 0, 0, 0, 0, {
       reps: 1,
       target: { type: "absolute", value: 110, unit: "kg" },
-    });
-    expect(revalidatePath).toHaveBeenCalledWith("/athlete");
-    expect(revalidatePath).toHaveBeenCalledWith("/athlete/maxes");
+    }, identity);
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns not found when assignment is missing or owned by another athlete", async () => {
     mockGetAssignedPlanById.mockResolvedValue({ ok: true, plan: null });
 
-    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null, identity);
 
     expect(result).toEqual({
       ok: false,
@@ -110,7 +110,7 @@ describe("athlete plan actions", () => {
       message: "save failed",
     });
 
-    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null);
+    const result = await saveSetActualsAction("assignment-1", 0, 0, 0, 0, null, identity);
 
     expect(result).toEqual({
       ok: false,
@@ -127,6 +127,7 @@ describe("athlete plan actions", () => {
       expect(result.allDaysDone).toBe(false);
       expect(result.nextDayPos).toBe(0);
       expect(result.plan).toEqual(minimalWorkoutPlan);
+      expect(revalidatePath).toHaveBeenCalledWith("/athlete/maxes");
     }
   });
 

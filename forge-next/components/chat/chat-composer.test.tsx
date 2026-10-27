@@ -5,7 +5,25 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 
 describe("ChatComposer", () => {
-  it.each(["Enter", "Shift+Enter", "insertParagraph", "insertLineBreak"])(
+  it("sends on desktop Enter", async () => {
+    const onSend = vi.fn(); const user = userEvent.setup();
+    render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="desktop-enter" onAttach={vi.fn()} onSend={onSend} />);
+    await user.click(screen.getByRole("textbox")); await user.type(screen.getByRole("textbox"), "Hello");
+    await user.keyboard("{Enter}");
+    expect(onSend).toHaveBeenCalledExactlyOnceWith([{ type: "text", value: "Hello" }]);
+  });
+  it("keeps mobile Enter as a newline", async () => {
+    const original = window.matchMedia("(max-width: 767px)");
+    const previousMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn(() => ({ ...original, matches: true }));
+    try {
+      const onSend = vi.fn(); const user = userEvent.setup();
+      render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="mobile-enter" onAttach={vi.fn()} onSend={onSend} />);
+      await user.click(screen.getByRole("textbox")); await user.type(screen.getByRole("textbox"), "Hello"); await user.keyboard("{Enter}");
+      expect(onSend).not.toHaveBeenCalled(); expect(screen.getByRole("textbox").textContent).toBe("Hello\n");
+    } finally { window.matchMedia = previousMatchMedia; }
+  });
+  it.each(["Shift+Enter", "insertParagraph", "insertLineBreak"])(
     "%s inserts a new line and only the Send button sends the full message",
     async (action) => {
       const user = userEvent.setup();

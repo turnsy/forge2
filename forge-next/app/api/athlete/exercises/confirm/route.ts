@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         exerciseId: typeof body.exerciseId === "string" ? body.exerciseId : undefined,
       },
       link.coachId,
+      false,
     );
     return NextResponse.json({ exercise });
   } catch (error) {

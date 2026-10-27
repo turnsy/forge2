@@ -24,18 +24,24 @@ try {
     create table auth.users(id uuid primary key, email text);
     create table profiles(id uuid primary key, role text not null, deleted_at timestamptz, full_name text);
     create table coach_athletes(coach_id uuid, athlete_id uuid, status text, unlinked_at timestamptz, linked_at timestamptz default now());
-    create table assigned_plans(id uuid primary key, athlete_id uuid, coach_id uuid, status assignment_status, plan_data jsonb, plan_id uuid);
+    create table assigned_plans(id uuid primary key, athlete_id uuid, coach_id uuid, status assignment_status, plan_data jsonb, plan_id uuid, completed_at timestamptz);
+    create table plans(id uuid primary key default gen_random_uuid(), coach_id uuid, active_version_id uuid, updated_at timestamptz default now());
+    create table plan_versions(id uuid primary key default gen_random_uuid(), plan_id uuid, plan_data jsonb, change_summary text, created_by uuid, created_at timestamptz default now());
+    grant select on plans, plan_versions, assigned_plans to authenticated;
     grant select on profiles, coach_athletes to authenticated;`;
   const migrations = readdirSync("supabase/migrations")
     .filter((name) =>
-      /exercise_resolution_and_maxes|seed_global_exercises|max_delete_and_exercise_rls|simplify_exercise_matching|append_only_training_maxes|block_plan_completion|restrict_training_max_rpc_access/.test(
+      /exercise_resolution_and_maxes|seed_global_exercises|max_delete_and_exercise_rls|simplify_exercise_matching|append_only_training_maxes|block_plan_completion|restrict_training_max_rpc_access|coach_exercise_library|complete_workout_training_maxes|guard_workout_set_identity/.test(
         name,
       ),
     )
     .sort()
-    .map((name) => readFileSync(`supabase/migrations/${name}`, "utf8"))
+    .map((name) => {
+      const sql = readFileSync(`supabase/migrations/${name}`, "utf8");
+      return name.includes("coach_exercise_library") ? readFileSync("supabase/tests/exercise-ownership-before.sql", "utf8") + sql + readFileSync("supabase/tests/exercise-ownership-after.sql", "utf8") : sql;
+    })
     .join("\n");
-  const tests = readFileSync("supabase/tests/training-maxes.sql", "utf8");
+  const tests = readFileSync("supabase/tests/training-maxes.sql", "utf8") + readFileSync("supabase/tests/exercise-library.sql", "utf8");
   process.stdout.write(
     run(
       ["psql", "-U", "postgres", "-d", database, "-v", "ON_ERROR_STOP=1"],
