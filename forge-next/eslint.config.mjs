@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".eve/**",
+    ".output/**",
     "out/**",
     "build/**",
     "storybook-static/**",

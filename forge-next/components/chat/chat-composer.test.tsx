@@ -1,10 +1,81 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 
 describe("ChatComposer", () => {
+  it.each(["Enter", "Shift+Enter", "insertParagraph", "insertLineBreak"])(
+    "%s inserts a new line and only the Send button sends the full message",
+    async (action) => {
+      const user = userEvent.setup();
+      const onSend = vi.fn();
+      render(
+        <ChatComposer
+          state={createInitialChatWorkspaceState()}
+          composerKey="newline-test"
+          onAttach={vi.fn()}
+          onSend={onSend}
+        />,
+      );
+      const editor = screen.getByRole("textbox");
+      await user.click(editor);
+      await user.type(editor, "First line");
+      if (action === "Enter" || action === "Shift+Enter") {
+        await user.keyboard(action === "Enter" ? "{Enter}" : "{Shift>}{Enter}{/Shift}");
+      } else {
+        fireEvent(editor, new InputEvent("beforeinput", {
+          inputType: action, bubbles: true, cancelable: true,
+        }));
+      }
+      await user.type(editor, "Second line");
+      expect(editor.textContent).toBe("First line\nSecond line");
+      expect(onSend).not.toHaveBeenCalled();
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      expect(onSend).toHaveBeenCalledExactlyOnceWith([
+        { type: "text", value: "First line\nSecond line" },
+      ]);
+    },
+  );
+
+  it.each(["", "Please use: "])(
+    "sends pasted text in full after the prefix %j",
+    async (prefix) => {
+      const user = userEvent.setup();
+      const onSend = vi.fn();
+      render(
+        <ChatComposer
+          state={createInitialChatWorkspaceState()}
+          composerKey="paste-test"
+          onAttach={vi.fn()}
+          onSend={onSend}
+        />,
+      );
+      const editor = screen.getByRole("textbox");
+      await user.click(editor);
+      if (prefix) await user.type(editor, prefix);
+
+      fireEvent.paste(editor, {
+        clipboardData: {
+          getData: (format: string) =>
+            format === "text/plain"
+              ? "Week 1\r\nSquat 3 × 5\n\nRest 2 minutes"
+              : "<p>Week 1</p><p>Squat 3 × 5</p><p>Rest 2 minutes</p>",
+        },
+      });
+
+      expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+      expect(editor.textContent).toBe(
+        `${prefix}Week 1\nSquat 3 × 5\n\nRest 2 minutes`,
+      );
+      expect(editor.querySelector("p")).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      expect(onSend).toHaveBeenCalledExactlyOnceWith([
+        { type: "text", value: `${prefix}Week 1\nSquat 3 × 5\n\nRest 2 minutes` },
+      ]);
+    },
+  );
+
   it("shows a stop button while streaming", async () => {
     const user = userEvent.setup();
     const onStop = vi.fn();

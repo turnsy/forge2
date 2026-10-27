@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, startTransition } from "react";
-import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { HandleMessageStreamEvent, InputResponse, SessionState } from "eve/client";
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
@@ -26,7 +26,7 @@ import {
   createForgeEveClient,
   type ForgeEvePostResponse,
 } from "@/lib/chat/adapters/plan/forge-eve-client";
-import { buildForgeClientContextForSend } from "@/lib/chat/adapters/plan/forge-client-context";
+import { prepareForgeClientSend } from "@/lib/chat/adapters/plan/forge-client-context";
 import {
   resolveEffectiveClientArtifact,
   resolveOutboundClientArtifact,
@@ -50,6 +50,7 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
+import { isValidInputResponse } from "@/lib/chat/input-selection";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -165,16 +166,20 @@ export function useCoachPlanWorkspace(options?: {
   );
 
   const reducerSeedMessages = useMemo(() => [], []);
+  const initialInputCardResponses = normalizedSnapshot?.inputCardResponses;
+  const inputCardResponsesRef = useRef<InputResponse[]>([...initialInputCardResponses ?? []]);
+  const inputResponseToPersistRef = useRef<InputResponse | null>(null);
 
   const eveReducer = useMemo(
     () =>
       createEveCoachReducer({
+        inputCardResponses: initialInputCardResponses,
         messages: reducerSeedMessages,
         currentArtifact: null,
         planId: null,
         artifactTitle: "",
       }),
-    [reducerSeedMessages],
+    [reducerSeedMessages, initialInputCardResponses],
   );
 
   const sessionTitleRef = useRef<string | null>(
@@ -258,6 +263,7 @@ export function useCoachPlanWorkspace(options?: {
       createCoachEvePersister({
         forgeSessionId,
         getTitle: () => sessionTitleRef.current,
+        getInputCardResponses: () => inputCardResponsesRef.current,
         saveSnapshot: async (input) => {
           const result = await saveSessionSnapshot(
             forgeSessionId,
@@ -317,6 +323,13 @@ export function useCoachPlanWorkspace(options?: {
       continuationToken: response.continuationToken,
       streamIndex: latestAgentEventsRef.current.length,
     };
+    const inputResponse = inputResponseToPersistRef.current;
+    if (inputResponse) {
+      // Persist the selected row as soon as Eve acknowledges receipt, before
+      // waiting for model/tool events. A reload must not reopen the same form.
+      inputCardResponsesRef.current = [...inputCardResponsesRef.current.filter((item) => item.requestId !== inputResponse.requestId), inputResponse];
+      void persisterRef.current.flush(latestAgentSessionRef.current, latestAgentEventsRef.current).catch(() => false);
+    }
   }, []);
 
   const handleAgentStreamEventRef = useRef<
@@ -411,19 +424,16 @@ export function useCoachPlanWorkspace(options?: {
         localTitle: localArtifactTitleRef.current,
       });
 
-      return {
-        ...input,
-        clientContext: buildForgeClientContextForSend({
-          forgeSessionId,
-          clientArtifact: clientArtifact
-            ? {
-                plan: clientArtifact.plan,
-                planId: clientArtifact.planId,
-                title: clientArtifact.title,
-              }
-            : null,
-        }),
-      };
+      return prepareForgeClientSend(input, {
+        forgeSessionId,
+        clientArtifact: clientArtifact
+          ? {
+              plan: clientArtifact.plan,
+              planId: clientArtifact.planId,
+              title: clientArtifact.title,
+            }
+          : null,
+      });
     },
     onEvent: (event) => {
       handleAgentStreamEventRef.current(event);
@@ -595,6 +605,7 @@ export function useCoachPlanWorkspace(options?: {
     : workspaceData.errors;
 
   const state: PlanWorkspaceState = {
+    pendingInputRequests: workspaceData.pendingInputRequests ?? [],
     sessionId: forgeSessionId,
     hasStarted:
       workspaceData.messages.length > 0 ||
@@ -715,11 +726,38 @@ export function useCoachPlanWorkspace(options?: {
   const canSendNow =
     !resuming && !isInitializingThread && canSendInPhase(uiPhase);
 
+  const inputResponsePendingRef = useRef(false);
+  const respondToInput = useCallback(async (response: InputResponse) => {
+    if (!canSendNow || inputResponsePendingRef.current) return;
+    if (!agent.session.sessionId || !agent.session.continuationToken) {
+      setSendFailure("This request's conversation has ended. Reset the conversation to continue.");
+      return;
+    }
+    const request = workspaceData.pendingInputRequests?.find((request) => request.requestId === response.requestId);
+    if (!request) return;
+    if (!isValidInputResponse(request, response)) return;
+    inputResponsePendingRef.current = true;
+    inputResponseToPersistRef.current = response;
+    setSendFailure(null);
+    try {
+      await agent.send({ inputResponses: [response] });
+    } catch (error) {
+      setSendFailure(error instanceof Error ? error.message : "Couldn't send your response.");
+    } finally {
+      inputResponsePendingRef.current = false;
+      inputResponseToPersistRef.current = null;
+    }
+  }, [agent, canSendNow, workspaceData.pendingInputRequests]);
+
   const sendMessage = useCallback(
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
       if (displayPrompt.length === 0 || !canSendNow) {
+        return;
+      }
+      if (workspaceData.pendingInputRequests?.length) {
+        setSendFailure("Answer the pending request below before sending another message.");
         return;
       }
 
@@ -748,10 +786,12 @@ export function useCoachPlanWorkspace(options?: {
         );
       }
     },
-    [agent, canSendNow, ensureSessionTitle],
+    [agent, canSendNow, ensureSessionTitle, workspaceData.pendingInputRequests],
   );
 
   const restart = useCallback(() => {
+    inputCardResponsesRef.current = [];
+    inputResponseToPersistRef.current = null;
     stopPendingRef.current = false;
     setStopPending(false);
     setFinalization(null);
@@ -817,6 +857,7 @@ export function useCoachPlanWorkspace(options?: {
     attachFiles,
     removeAttachment,
     sendMessage,
+    respondToInput,
     stopResponse,
     restart,
     setArtifactTitle,

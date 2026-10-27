@@ -1,5 +1,4 @@
 import { defineForgeTool as defineTool } from "../lib/define-forge-tool";
-import { always } from "eve/tools/approval";
 import { z } from "zod";
 import { assignPlanToAthletes } from "@/lib/plans/mutations";
 import { getCoachId } from "../lib/coach-context";
@@ -15,7 +14,6 @@ export default defineTool({
       .min(1)
       .describe("Athlete profile ids."),
   }),
-  approval: always(),
   async execute({ planId, athleteIds }, ctx) {
     getCoachId(ctx);
     const result = await assignPlanToAthletes(planId, athleteIds);

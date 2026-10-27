@@ -307,6 +307,7 @@ export function CoachWorkspace(
     void saveSessionSnapshot(
       props.initialSession.id,
       buildPersistedCoachSnapshot({
+        inputCardResponses: snapshot.inputCardResponses,
         forgeSessionId: props.initialSession.id,
         title: snapshot.title,
         session: toEveSessionState(eve, catchUp.events.length),
@@ -450,6 +451,7 @@ function CoachWorkspaceInner({
     attachFiles,
     removeAttachment,
     sendMessage,
+    respondToInput,
     stopResponse,
     setArtifactTitle,
     setPlanId,
@@ -682,6 +684,7 @@ function CoachWorkspaceInner({
         onAttach={attachFiles}
         onRemoveAttachment={removeAttachment}
         onSend={handleSendMessage}
+        onRespondToInput={respondToInput}
         onStop={stopResponse}
         onReset={handleReset}
         promptEnabled={promptEnabled}
@@ -891,6 +894,7 @@ function CoachWorkspaceInner({
                   onAttach={attachFiles}
                   onRemoveAttachment={removeAttachment}
                   onSend={handleSendMessage}
+                  onRespondToInput={respondToInput}
                   onStop={stopResponse}
                   onReset={handleReset}
                   promptEnabled={promptEnabled}

@@ -2,6 +2,8 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
+import { CANCEL_INPUT_REQUEST_TEXT, selectionResponse } from "@/lib/chat/input-selection";
+import type { InputRequest } from "eve/client";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
 const mockPathname = vi.fn(() => "/coach");
@@ -155,6 +157,80 @@ vi.mock("eve/react", () => ({
 }));
 
 describe("useCoachPlanWorkspace", () => {
+  it("can cancel a selection-only question without submitting a candidate", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "question-1", display: "select", allowFreeform: false,
+      options: [{ id: "jay-1", label: "Jay" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.respondToInput({ requestId: "question-1", text: CANCEL_INPUT_REQUEST_TEXT });
+    });
+    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+      inputResponses: [{ requestId: "question-1", text: CANCEL_INPUT_REQUEST_TEXT }],
+    }));
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
+  });
+  it("does not submit an approval after Eve has reset a failed session cursor", async () => {
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Yes" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.respondToInput({ requestId: "approval-1", optionId: "approve" });
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(result.current.state.errors[0].message).toContain("conversation has ended");
+  });
+  it.each([false, true])("resumes a multiple-choice question in one response, cancellation=%s", async (cancelled) => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const request: InputRequest = {
+      requestId: "question-1", prompt: "Which athletes?", display: "select", allowFreeform: false,
+      options: [{ id: "athlete-1", label: "Jay" }, { id: "athlete-2", label: "Jane" }],
+      action: { kind: "tool-call", callId: "question-1", toolName: "ask_question", input: { selectionMode: "multiple" } },
+    };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    const response = selectionResponse(request, ["athlete-1", "athlete-2"], cancelled);
+    await act(async () => { await result.current.respondToInput(response); });
+    expect(mockSend).toHaveBeenCalledExactlyOnceWith({ inputResponses: [response] });
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
+  });
+
+  it("resumes a pending assignment approval with inputResponses on the existing agent", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const request = {
+      requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
+      options: [{ id: "approve", label: "Approve" }, { id: "deny", label: "Deny" }],
+      action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+    };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    expect(result.current.state.pendingInputRequests).toEqual([request]);
+    await act(async () => {
+      await result.current.respondToInput({ requestId: request.requestId, optionId: "approve" });
+    });
+    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+      inputResponses: [{ requestId: request.requestId, optionId: "approve" }],
+    }));
+    expect(mockSend.mock.calls[0][0].clientContext).toBeUndefined();
+    expect(generateSessionTitleFromPrompt).not.toHaveBeenCalled();
+  });
+
+  it("does not treat ordinary chat text or invalid options as approval", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    Object.assign(agentDataState.current, { pendingInputRequests: [{
+      requestId: "approval-1", display: "confirmation", options: [{ id: "approve", label: "Approve" }],
+    }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => {
+      await result.current.sendMessage([{ type: "text", value: "Hello" }]);
+      await result.current.respondToInput({ requestId: "approval-1", text: "yes" });
+      await result.current.respondToInput({ requestId: "approval-1", optionId: "unknown" });
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     capturedEveAgentOptions.current = undefined;

@@ -3,6 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
 
 describe("ChatThread", () => {
+  it("renders approval controls instead of a spinner for a parked assignment", () => {
+    render(<ChatThread threadKey="thread-1" messages={[{ role: "user", content: "Assign Jay" }]}
+      streamingAssistantText="" runStatus="done" errors={[]} phase="idle" onRespondToInput={vi.fn()}
+      pendingInputRequests={[{
+        requestId: "approval-1", prompt: "Assign this plan to Jay?", display: "confirmation",
+        options: [{ id: "approve", label: "Approve" }, { id: "deny", label: "Deny" }],
+        action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+      }]} />);
+    expect(screen.getByRole("region", { name: "Approval needed" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
+  });
   it("shows the turn activity indicator while a turn is in progress", () => {
     render(
       <ChatThread
@@ -154,8 +167,8 @@ describe("ChatThread", () => {
       />,
     );
 
-    const scrollContainer = container.querySelector(".overflow-y-auto");
-    expect(scrollContainer).toHaveStyle({
+    const scrollContent = container.querySelector(".overflow-y-auto > div");
+    expect(scrollContent).toHaveStyle({
       paddingTop: "52px",
       paddingBottom: "180px",
     });

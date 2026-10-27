@@ -3,6 +3,7 @@ import type {
   ActionResultStreamEvent,
   ActionsRequestedStreamEvent,
   EveAgentReducerEvent,
+  InputResponse,
 } from "eve/client";
 import type { EveCoachReducerData } from "@/lib/chat/session-types";
 import {
@@ -12,6 +13,7 @@ import {
   toForgeToolDisplayErrors,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 import { isUserAbortError } from "@/lib/chat/stream-completion";
+import { isCancelledResponse, selectedResponseIds } from "@/lib/chat/input-selection";
 
 type ForgeToolResult = Extract<
   ActionResultStreamEvent["data"]["result"],
@@ -151,10 +153,11 @@ function finalizeAssistantTurn(
 }
 
 export function createEveCoachReducer(
-  initial: Partial<EveCoachReducerData> = {},
+  initial: Partial<EveCoachReducerData> & { inputCardResponses?: readonly InputResponse[] } = {},
 ): EveAgentReducer<EveCoachReducerData> {
   return {
     initial: () => ({
+      pendingInputRequests: initial.pendingInputRequests ?? [],
       messages: initial.messages ?? [],
       currentArtifact: initial.currentArtifact ?? null,
       planId: initial.planId ?? null,
@@ -167,6 +170,30 @@ export function createEveCoachReducer(
     }),
     reduce: (data, event: EveAgentReducerEvent) => {
       switch (event.type) {
+        case "input.requested": {
+          // Eve has one pending input batch. A later batch replaces it; merging
+          // keeps answered clarification cards alongside the next approval.
+          if (data.streamingAssistantText.trim()) data = finalizeAssistantTurn(data);
+          const messages = [...data.messages];
+          for (const request of event.data.requests) {
+            if (!messages.some((message) => message.inputCard?.request.requestId === request.requestId)) {
+              const response = initial.inputCardResponses?.find((response) => response.requestId === request.requestId);
+              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
+            }
+          }
+          return { ...data, messages, pendingInputRequests: [...event.data.requests] };
+        }
+
+        case "client.input.responded":
+          // Keep requests available for retry if delivery fails. The server's
+          // action result removes them authoritatively, including on replay.
+          return { ...data, messages: data.messages.map((message) => {
+            if (!message.inputCard) return message;
+            const response = event.data.responses.find((response) => response.requestId === message.inputCard?.request.requestId);
+            if (!response) return message;
+            return { ...message, inputCard: { ...message.inputCard, status: isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, selectedChoiceIds: selectedResponseIds(response) } };
+          }), phase: "streaming", runStatus: "generating", errors: [] };
+
         case "client.message.submitted": {
           const text = event.data.message.trim();
           return {
@@ -199,7 +226,17 @@ export function createEveCoachReducer(
         }
 
         case "turn.started":
-          return { ...data, runStatus: "generating", phase: "streaming" };
+          return {
+            ...data,
+            messages: data.messages.map((message) => message.inputCard && message.inputCard.request.display !== "confirmation" && ["pending", "submitted"].includes(message.inputCard.status)
+              ? { ...message, inputCard: { ...message.inputCard, status: "completed" as const } } : message),
+            // Question answers are consumed before the next turn starts and
+            // don't emit an action.result. Approval stays until its tool result.
+            pendingInputRequests: (data.pendingInputRequests ?? []).filter(
+              (request) => request.display === "confirmation",
+            ),
+            runStatus: "generating", phase: "streaming",
+          };
 
         case "actions.requested": {
           if (getRequestedToolNames(event).includes("submit_plan_code")) {
@@ -210,6 +247,19 @@ export function createEveCoachReducer(
 
         case "action.result": {
           const { result } = event.data;
+          const output = "output" in result && result.output && typeof result.output === "object" ? result.output as Record<string, unknown> : {};
+          data = {
+            ...data,
+            messages: data.messages.map((message) => {
+              const card = message.inputCard;
+              if (!card || card.request.action.callId !== result.callId) return message;
+              const status = event.data.status === "rejected" ? "cancelled" : event.data.status === "failed" || output.ok === false ? "failed" : "completed";
+              return { ...message, inputCard: { ...card, status } };
+            }),
+            pendingInputRequests: (data.pendingInputRequests ?? []).filter(
+              (request) => request.action.callId !== result.callId,
+            ),
+          };
           if (!isForgeToolResult(result)) {
             return data;
           }
@@ -248,9 +298,22 @@ export function createEveCoachReducer(
 
         case "turn.failed":
         case "step.failed":
-        case "session.failed":
           return {
             ...data,
+            phase: "error",
+            runStatus: "error",
+            errors: [{ message: event.data.message }],
+            streamingAssistantText: "",
+          };
+
+        case "session.failed":
+          // Eve drops the continuation token on terminal failure. These old
+          // request ids cannot be submitted against a new conversation.
+          return {
+            ...data,
+            messages: data.messages.map((message) => message.inputCard && ["pending", "submitted"].includes(message.inputCard.status)
+              ? { ...message, inputCard: { ...message.inputCard, status: "failed" as const } } : message),
+            pendingInputRequests: [],
             phase: "error",
             runStatus: "error",
             errors: [{ message: event.data.message }],

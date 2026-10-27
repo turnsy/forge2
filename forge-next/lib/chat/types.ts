@@ -1,4 +1,5 @@
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
+import type { InputRequest } from "eve/client";
 
 export type ChatStatus =
   | "parsing"
@@ -9,6 +10,11 @@ export type ChatStatus =
   | "error";
 
 export type ChatMessage = {
+  inputCard?: {
+    request: InputRequest;
+    status: "pending" | "submitted" | "completed" | "cancelled" | "failed";
+    selectedChoiceIds?: string[];
+  };
   role: "user" | "assistant";
   content: string;
   /** Present on user messages sent with @ mention chips. */
@@ -41,6 +47,7 @@ export type ChatAttachment = {
 };
 
 export type ChatWorkspaceState<TArtifact = unknown> = {
+  pendingInputRequests?: InputRequest[];
   sessionId: string;
   hasStarted: boolean;
   sessionTitle: string | null;

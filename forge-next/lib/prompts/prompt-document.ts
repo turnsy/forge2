@@ -55,6 +55,7 @@ export function getActiveMentionQuery(
     }
 
     const query = textBeforeCaret.slice(atIndex + 1);
+    if (/[\r\n]/.test(query)) return null;
     const charBeforeAt = atIndex > 0 ? textBeforeCaret[atIndex - 1] : "";
 
     if (charBeforeAt && /[^\s]/.test(charBeforeAt)) {

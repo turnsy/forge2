@@ -1,5 +1,5 @@
 import { isCurrentTurnBoundaryEvent } from "eve/client";
-import type { HandleMessageStreamEvent, SessionState } from "eve/client";
+import type { HandleMessageStreamEvent, InputResponse, SessionState } from "eve/client";
 import {
   buildCoachWorkspaceSnapshot,
   toForgeEvePointer,
@@ -9,6 +9,7 @@ import {
 const MID_TURN_PERSIST_DEBOUNCE_MS = 2_000;
 
 export type CoachEvePersistSnapshot = {
+  inputCardResponses?: readonly InputResponse[];
   forgeSessionId: string;
   title: string | null;
   session: SessionState;
@@ -46,6 +47,7 @@ function shouldPersistImmediately(
 export function createCoachEvePersister(options: {
   forgeSessionId: string;
   getTitle: () => string | null;
+  getInputCardResponses?: () => readonly InputResponse[];
   saveSnapshot: (snapshot: CoachEvePersistSnapshot) => Promise<boolean>;
 }): CoachEvePersister {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,6 +97,7 @@ export function createCoachEvePersister(options: {
         options.saveSnapshot({
           forgeSessionId: options.forgeSessionId,
           title: options.getTitle(),
+          ...(options.getInputCardResponses ? { inputCardResponses: options.getInputCardResponses() } : {}),
           session,
           events,
           lastTurn,
@@ -174,6 +177,7 @@ export function buildPersistedCoachSnapshot(
   }
 
   return buildCoachWorkspaceSnapshot({
+    inputCardResponses: input.inputCardResponses,
     forgeSessionId: input.forgeSessionId,
     title: input.title,
     eve: pointer,

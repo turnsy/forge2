@@ -1,8 +1,63 @@
 import { describe, expect, it } from "vitest";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
+import type { HandleMessageStreamEvent, InputRequest } from "eve/client";
 
 describe("createEveCoachReducer", () => {
   const reducer = createEveCoachReducer();
+
+  it("clears stale approvals when a Gateway failure terminates the session", () => {
+    const request: InputRequest = {
+      requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
+      action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+    };
+    const state = reducer.reduce({ ...reducer.initial(), pendingInputRequests: [request] }, {
+      type: "session.failed", data: { code: "MODEL_CALL_FAILED", sessionId: "eve-1", message: "AI Gateway rejected the model request before the agent produced a response." },
+    });
+    expect(state.pendingInputRequests).toEqual([]);
+    expect(state.phase).toBe("error");
+    expect(state.errors[0].message).toContain("AI Gateway rejected");
+  });
+
+  it("replaces an answered question with the next approval batch during replay", () => {
+    const question: InputRequest = {
+      requestId: "question-1", prompt: "Which Jay?", display: "select",
+      action: { kind: "tool-call", callId: "question-1", toolName: "ask_question", input: {} },
+    };
+    const approval: InputRequest = {
+      requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
+      action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+    };
+    let state: ReturnType<typeof reducer.initial> = { ...reducer.initial(), pendingInputRequests: [question] };
+    state = reducer.reduce(state, { type: "turn.started", data: { turnId: "turn-2", sequence: 2 } });
+    expect(state.pendingInputRequests).toEqual([]);
+    state = reducer.reduce(state, { type: "input.requested", data: { turnId: "turn-2", sequence: 2, stepIndex: 0, requests: [approval] } });
+    expect(state.pendingInputRequests).toEqual([approval]);
+  });
+
+  it("restores pending approval on replay and clears it only when its tool resolves", () => {
+    const request: InputRequest = {
+      requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
+      options: [{ id: "approve", label: "Approve" }, { id: "deny", label: "Deny" }],
+      action: { kind: "tool-call", callId: "call-1", toolName: "assign_plan", input: {} },
+    };
+    const events: HandleMessageStreamEvent[] = [
+      { type: "input.requested", data: { requests: [request], sequence: 1, stepIndex: 0, turnId: "turn-1" } },
+      { type: "session.waiting", data: { wait: "next-user-message" } },
+    ];
+    let state = events.reduce(reducer.reduce, reducer.initial());
+    expect(state.pendingInputRequests).toEqual([request]);
+    expect(state.phase).toBe("idle");
+    state = reducer.reduce(state, { type: "client.input.responded", data: {
+      createdAt: 1, responses: [{ requestId: request.requestId, optionId: "approve" }],
+    } });
+    expect(state.pendingInputRequests).toEqual([request]);
+    expect(state.phase).toBe("streaming");
+    state = reducer.reduce(state, { type: "action.result", data: {
+      sequence: 1, stepIndex: 0, turnId: "turn-1", status: "completed",
+      result: { kind: "tool-result", callId: "call-1", toolName: "assign_plan", output: { ok: true } },
+    } });
+    expect(state.pendingInputRequests).toEqual([]);
+  });
 
   it("adds an optimistic user message on client.message.submitted", () => {
     const next = reducer.reduce(reducer.initial(), {

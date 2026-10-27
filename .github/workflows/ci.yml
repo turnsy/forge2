@@ -67,6 +67,9 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-build-placeholder-key
+      # Eve needs a model with current AI Gateway context-window metadata.
+      # CI has no deployment-level PLAN_CHAT_MODEL override.
+      PLAN_CHAT_MODEL: openai/gpt-6.1-sol
     defaults:
       run:
         working-directory: forge-next
@@ -86,14 +89,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Next.js production build
+      - name: Eve and Next.js production build
         run: pnpm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_example
-
-      - name: Eve agent production build
-        run: npx eve build
 
   db-types:
     name: Database types

@@ -77,12 +77,6 @@ export function ChatComposer({
         latestSegmentsRef.current = segments;
         setDocumentEmpty(isEmpty);
       }}
-      onSend={(segments) => {
-        if (sendAllowed) {
-          onSend(segments);
-          setDocumentEmpty(true);
-        }
-      }}
     />
   );
 

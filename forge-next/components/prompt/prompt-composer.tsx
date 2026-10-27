@@ -39,12 +39,10 @@ type SuppressedMentionRange = {
 export function PromptComposer({
   placeholder,
   onDocumentChange,
-  onSend,
   compact = false,
 }: {
   placeholder: string;
   onDocumentChange?: (segments: PromptSegment[], isEmpty: boolean) => void;
-  onSend?: (segments: PromptSegment[]) => void;
   compact?: boolean;
 }) {
   const menuId = useId();
@@ -220,6 +218,55 @@ export function PromptComposer({
     syncCaret();
   }
 
+  const insertText = useCallback((text: string) => {
+    const editor = editorRef.current;
+    if (!editor || !text) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    const selectedRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const range = selectedRange &&
+      editor.contains(selectedRange.startContainer) &&
+      editor.contains(selectedRange.endContainer)
+      ? selectedRange
+      : document.createRange();
+    if (range !== selectedRange) {
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+
+    // Keep text flat so line breaks and pasted content remain in the document.
+    range.deleteContents();
+    const node = document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    syncCaret();
+  }, [syncCaret]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    // Mobile keyboards can insert a paragraph without firing a keydown.
+    function handleBeforeInput(event: InputEvent) {
+      if (!event.isComposing && event.cancelable &&
+        (event.inputType === "insertParagraph" || event.inputType === "insertLineBreak")) {
+        event.preventDefault();
+        insertText("\n");
+      }
+    }
+    editor.addEventListener("beforeinput", handleBeforeInput);
+    return () => editor.removeEventListener("beforeinput", handleBeforeInput);
+  }, [insertText]);
+
+  function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    insertText(event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n"));
+  }
+
   function selectMention(item: PromptMentionItem) {
     if (!editorRef.current || !activeQuery) {
       return;
@@ -238,6 +285,7 @@ export function PromptComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     if (menuVisible && !mentionLoading && menuItems.length > 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
@@ -253,7 +301,7 @@ export function PromptComposer({
         return;
       }
 
-      if (event.key === "Enter" || event.key === "Tab") {
+      if (event.key === "Tab") {
         event.preventDefault();
         const item = menuItems[activeHighlightedIndex];
         if (item) {
@@ -282,9 +330,9 @@ export function PromptComposer({
       }
     }
 
-    if (event.key === "Enter" && !event.shiftKey && !menuVisible) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      onSend?.(readSegmentsFromEditor());
+      insertText("\n");
     }
   }
 
@@ -302,12 +350,13 @@ export function PromptComposer({
           contentEditable
           suppressContentEditableWarning
           data-placeholder={placeholder}
-          className={`prompt-composer w-full bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
+          className={`prompt-composer w-full whitespace-pre-wrap break-words bg-transparent px-1 py-1 text-surface-foreground outline-none empty:before:text-surface-muted empty:before:content-[attr(data-placeholder)] ${
             compact
               ? "min-h-[2.75rem] text-base md:text-sm"
               : "min-h-[4.5rem] text-base"
           }`}
           onInput={handleInput}
+          onPaste={handlePaste}
           onKeyDown={handleKeyDown}
           onKeyUp={() => {
             syncCaret();

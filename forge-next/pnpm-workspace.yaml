@@ -17,3 +17,6 @@ minimumReleaseAgeExclude:
   - nitro
   - rolldown
   - workflow
+
+patchedDependencies:
+  eve@0.18.2: patches/eve@0.18.2.patch
