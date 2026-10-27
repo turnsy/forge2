@@ -11,7 +11,9 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
-import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
+import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
+import { XIcon } from "@/components/icons/x-icon";
+import { FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_COLUMN_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
@@ -178,7 +180,6 @@ function ArtifactPanel({
             saveStatus={saveStatus}
             onTitleChange={onTitleChange}
             onSave={onSave}
-            onClose={mobileOverlay ? onClose : undefined}
           />
         </div>
       </div>
@@ -209,6 +210,7 @@ function ArtifactPanel({
       key={artifactFadeKey}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
+      {mobileOverlay ? <MobileHeaderContent title={state.artifactTitle} actions={<button type="button" aria-label="Close artifact" onClick={onClose}><XIcon /></button>} /> : null}
       <OverlayScrollChrome
         topChrome={toolbar}
         footerInsetClassName={
@@ -636,6 +638,8 @@ function CoachWorkspaceInner({
     composerHeader?: ReactNode,
     options?: { showAttachmentsAboveComposer?: boolean },
   ) => (
+    <>
+    <MobileHeaderContent title={state.sessionTitle || "Forge"} actions={state.currentArtifact ? <button type="button" aria-label="View artifact" onClick={() => setShowArtifact(true)}><EyeIcon /></button> : undefined} />
     <CoachConversationPanel
       state={state}
       onAttach={attachFiles}
@@ -649,6 +653,7 @@ function CoachWorkspaceInner({
       composerHeader={composerHeader}
       showAttachmentsAboveComposer={options?.showAttachmentsAboveComposer}
     />
+    </>
   );
 
   if (!state.hasStarted) {
@@ -737,19 +742,6 @@ function CoachWorkspaceInner({
               <MobileComposerToolbar
                 attachments={state.attachments}
                 onRemoveAttachment={removeAttachment}
-                trailing={
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    fullWidth={false}
-                    icon={<EyeIcon />}
-                    aria-label="View artifact"
-                    onClick={() => setShowArtifact(true)}
-                  >
-                    View
-                  </Button>
-                }
               />,
               { showAttachmentsAboveComposer: false },
             )}

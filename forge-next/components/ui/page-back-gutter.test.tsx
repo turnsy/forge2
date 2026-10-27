@@ -23,7 +23,7 @@ describe("PageBackGutter", () => {
     );
   });
 
-  it("reserves header space for the mobile back link without shifting body content", () => {
+  it("removes mobile back slots and header indents without shifting body content", () => {
     render(
       <PageBackGutter back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
         <PageHeader title="1-Week Bench Press Plan" />
@@ -39,8 +39,8 @@ describe("PageBackGutter", () => {
     const header = document.querySelector("[data-page-header]");
     const body = screen.getByTestId("body");
 
-    expect(mobileBackSlot).toHaveClass("absolute", "left-0", "top-0", "z-30", "md:hidden");
-    expect(shell?.className).toContain("[&_[data-page-header]]:max-md:pl-12");
+    expect(mobileBackSlot).toBeUndefined();
+    expect(shell?.className).not.toContain("max-md:pl-12");
     expect(header).toBeTruthy();
     expect(body.className).not.toContain("pl-12");
     expect(body.parentElement?.className ?? "").not.toContain("flex");
@@ -50,8 +50,7 @@ describe("PageBackGutter", () => {
     render(
       <PageBackGutter
         back={{ href: "/athlete", ariaLabel: "Back to home" }}
-        showMobileBack={false}
-      >
+        >
         <PageHeader title="History" />
       </PageBackGutter>,
     );

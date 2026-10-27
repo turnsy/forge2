@@ -26,6 +26,7 @@ function insetContentClassName(contentInsetClassName: string): string {
 export function OverlayScrollChrome({
   topChrome,
   topContainerClassName = "",
+  topChromeClassName = "",
   preFooter,
   footer,
   footerInsetClassName = "",
@@ -34,6 +35,7 @@ export function OverlayScrollChrome({
 }: {
   topChrome?: ReactNode;
   topContainerClassName?: string;
+  topChromeClassName?: string;
   preFooter?: ReactNode;
   footer?: ReactNode;
   footerInsetClassName?: string;
@@ -58,7 +60,7 @@ export function OverlayScrollChrome({
         <div
           className={`${OVERLAY_TOP_CONTAINER_CLASS}${topContainerClassName ? ` ${topContainerClassName}` : ""}`}
         >
-          <div ref={topChromeRef} className={OVERLAY_TOP_CHROME_CLASS}>
+          <div ref={topChromeRef} className={`${OVERLAY_TOP_CHROME_CLASS} ${topChromeClassName}`}>
             <ProgressiveBlur
               direction="top"
               className="pointer-events-none absolute inset-0 z-0"

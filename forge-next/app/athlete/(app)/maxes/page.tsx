@@ -1,12 +1,12 @@
 import { CoachAthleteMaxesTab } from "@/components/coach-athlete-maxes-tab";
-import { PageShell } from "@/components/ui";
+import { PageHeader, PageShell } from "@/components/ui";
 import { requireRole } from "@/lib/auth/session";
 
 export default async function AthleteMaxesPage() {
   await requireRole("athlete");
   return (
-    <PageShell>
-      <main className="mx-auto w-full max-w-3xl p-4 md:p-8">
+    <PageShell header={<PageHeader title="Maxes" />}>
+      <div className="mx-auto w-full max-w-3xl">
         <CoachAthleteMaxesTab
           listUrl="/api/athlete/maxes"
           saveUrl="/api/athlete/maxes"
@@ -14,7 +14,7 @@ export default async function AthleteMaxesPage() {
           confirmUrl="/api/athlete/exercises/confirm"
           allowCreate={false}
         />
-      </main>
+      </div>
     </PageShell>
   );
 }

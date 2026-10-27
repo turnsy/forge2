@@ -41,7 +41,6 @@ export function PageShell({
   header,
   preFooter,
   footer,
-  showMobileBack = true,
   scrollable = true,
 }: {
   back?: PageBackConfig;
@@ -50,7 +49,6 @@ export function PageShell({
   header?: ReactNode;
   preFooter?: ReactNode;
   footer?: ReactNode;
-  showMobileBack?: boolean;
   scrollable?: boolean;
 }) {
   if (!scrollable) {
@@ -70,7 +68,7 @@ export function PageShell({
     return (
       <div className={`${mainClassName}${className ? ` ${className}` : ""}`}>
         <div className="relative">
-          <div className={showMobileBack ? "mb-4 md:mb-0" : "mb-4 hidden md:mb-0 md:block"}>
+          <div className="hidden md:block">
             <PageBackLink
               href={back.href}
               ariaLabel={back.ariaLabel}
@@ -98,7 +96,7 @@ export function PageShell({
   }
 
   return (
-    <PageBackProvider back={back} showMobileBack={showMobileBack}>
+    <PageBackProvider back={back}>
       {body}
     </PageBackProvider>
   );

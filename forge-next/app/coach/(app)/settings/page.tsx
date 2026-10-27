@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/ui";
+import { PageContent, PageHeader } from "@/components/ui";
 
 export default function CoachSettingsPage() {
-  return <PagePlaceholder title="Settings Page" />;
+  return <PageContent header={<PageHeader title="Settings" />}>{null}</PageContent>;
 }

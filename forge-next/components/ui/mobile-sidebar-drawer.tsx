@@ -1,14 +1,32 @@
 "use client";
 
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
+import {
+  MOBILE_HEADER_BUTTON_CLASS,
+  useMobileAppHeader,
+} from "./mobile-app-header";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 
-const CloseMobileSidebarContext = createContext<(() => void) | undefined>(undefined);
-export function useCloseMobileSidebar() { return useContext(CloseMobileSidebarContext); }
+const CloseMobileSidebarContext = createContext<(() => void) | undefined>(
+  undefined,
+);
+export function useCloseMobileSidebar() {
+  return useContext(CloseMobileSidebarContext);
+}
 
 /** Mobile shell for the same navigation used on desktop. Native dialog traps focus. */
 export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
+  const header = useMobileAppHeader();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -29,17 +47,24 @@ export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open]);
 
   useEffect(() => {
     let start: { x: number; y: number; opening: boolean } | null = null;
     function onStart(event: TouchEvent) {
-      if (event.touches.length !== 1) { start = null; return; }
+      if (event.touches.length !== 1) {
+        start = null;
+        return;
+      }
       const touch = event.touches[0];
       const opening = !dialogRef.current?.open;
-      start = !opening || touch.clientX <= 24
-        ? { x: touch.clientX, y: touch.clientY, opening } : null;
+      start =
+        !opening || touch.clientX <= 24
+          ? { x: touch.clientX, y: touch.clientY, opening }
+          : null;
     }
     function onEnd(event: TouchEvent) {
       if (!start || !event.changedTouches.length) return;
@@ -56,7 +81,9 @@ export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
       }
       start = null;
     }
-    function onCancel() { start = null; }
+    function onCancel() {
+      start = null;
+    }
     document.addEventListener("touchstart", onStart, { passive: true });
     document.addEventListener("touchend", onEnd, { passive: true });
     document.addEventListener("touchcancel", onCancel, { passive: true });
@@ -67,25 +94,35 @@ export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const trigger = (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-label="Open sidebar"
+      aria-controls={id}
+      aria-expanded={open}
+      className={MOBILE_HEADER_BUTTON_CLASS}
+      onClick={() => {
+        dialogRef.current?.showModal();
+        setOpen(true);
+      }}
+    >
+      <SidebarToggleIcon />
+    </button>
+  );
+
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="Open sidebar"
-        aria-controls={id}
-        aria-expanded={open}
-        className="fixed left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-40 flex h-10 w-10 items-center justify-center rounded-xl border border-glass-border bg-surface/90 text-surface-foreground shadow-sm backdrop-blur-md focus-visible:outline-2 focus-visible:outline-offset-2"
-        onClick={() => { dialogRef.current?.showModal(); setOpen(true); }}
-      >
-        <SidebarToggleIcon />
-      </button>
+      {header?.navigation ? createPortal(trigger, header.navigation) : trigger}
       <dialog
         ref={dialogRef}
         id={id}
         aria-label="Main navigation"
         className="dark fixed inset-y-0 left-0 m-0 h-dvh max-h-none max-w-none overflow-visible border-0 bg-surface p-0 text-surface-foreground backdrop:bg-black/50 open:flex starting:-translate-x-full transition-transform duration-200 ease-out motion-reduce:transition-none"
-        onClose={() => { setOpen(false); triggerRef.current?.focus(); }}
+        onClose={() => {
+          setOpen(false);
+          triggerRef.current?.focus();
+        }}
         onClick={(event) => {
           const target = event.target as HTMLElement;
           if (target === event.currentTarget || target.closest("a[href]")) {
@@ -93,7 +130,9 @@ export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
           }
         }}
       >
-        <CloseMobileSidebarContext.Provider value={() => dialogRef.current?.close()}>
+        <CloseMobileSidebarContext.Provider
+          value={() => dialogRef.current?.close()}
+        >
           {children}
         </CloseMobileSidebarContext.Provider>
         <button

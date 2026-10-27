@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MobileAppHeader, MobileAppHeaderProvider } from "@/components/ui/mobile-app-header";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -81,7 +82,7 @@ function renderCoachWorkspace(
 ) {
   return render(
     <SessionNavigationProvider>
-      <CoachWorkspace {...props} />
+      {mockUseIsMobile() ? <MobileAppHeaderProvider><MobileAppHeader /><CoachWorkspace {...props} /></MobileAppHeaderProvider> : <CoachWorkspace {...props} />}
     </SessionNavigationProvider>,
   );
 }
@@ -367,7 +368,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows View above the composer on mobile when an artifact exists", async () => {
+  it("shows the artifact toggle in the shared mobile header", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);
     mockUseCoachPlanWorkspace.mockReturnValue(
@@ -396,7 +397,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("places the mobile artifact close control beside save", async () => {
+  it("places the mobile artifact close control in the shared header", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);
     mockUseCoachPlanWorkspace.mockReturnValue(
@@ -415,7 +416,8 @@ describe("CoachWorkspace layout", () => {
 
     const saveButton = screen.getByRole("button", { name: "Save" });
     const closeButton = screen.getByRole("button", { name: "Close artifact" });
-    expect(saveButton.parentElement).toBe(closeButton.parentElement);
+    expect(closeButton.closest("[data-mobile-app-header]")).toBeInTheDocument();
+    expect(saveButton.closest("[data-mobile-app-header]")).toBeNull();
   });
 
   it("returns to chat when the mobile artifact close button is pressed", async () => {
