@@ -5,7 +5,6 @@ import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { usePageBack } from "@/components/ui/page-back-context";
 import type { PageBackConfig } from "@/components/ui/page-back-gutter";
 import { PageBackLink } from "@/components/ui/page-back-link";
-import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
   hasOverlayScrollLane,
   OVERLAY_SCROLL_LANE_CLASS,
@@ -18,7 +17,6 @@ import {
   PAGE_CONTENT_INSET_BOTTOM_CLASS,
   PAGE_CONTENT_INSET_X_CLASS,
 } from "@/lib/layout/page-layout";
-import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 function buildTopChrome({
   back,
@@ -37,7 +35,7 @@ function buildTopChrome({
 
   if (!header && !subHeader) {
     return back ? (
-      <div className={showMobileBack ? undefined : "hidden md:block"}>
+      <div className={showMobileBack ? "max-md:pl-12" : "hidden md:block"}>
         <PageBackLink
           href={back.href}
           ariaLabel={back.ariaLabel}
@@ -48,7 +46,7 @@ function buildTopChrome({
   }
 
   return (
-    <div className={OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}>
+    <div className={`max-md:pl-12 ${OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}`}>
       {header || back ? (
         <div className="flex items-start gap-2">
           {back ? (
@@ -94,14 +92,13 @@ export function ScrollPage({
   back?: PageBackConfig;
   showMobileBack?: boolean;
 }) {
-  const isMobile = useIsMobile();
   const { back: contextBack, showMobileBack: contextShowMobileBack } = usePageBack();
   const back = backProp ?? contextBack;
   const showMobileBack = showMobileBackProp ?? contextShowMobileBack;
   const topChrome = buildTopChrome({ back, showMobileBack, header, subHeader });
   const resolvedFooterInset =
     footerInsetClassName ??
-    (isMobile ? MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS : PAGE_CONTENT_INSET_BOTTOM_CLASS);
+    PAGE_CONTENT_INSET_BOTTOM_CLASS;
 
   return (
     <div

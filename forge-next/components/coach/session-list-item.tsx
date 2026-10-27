@@ -23,15 +23,12 @@ export function SessionListItem({
   onOpen,
   onRenamed,
   onDeleted,
-  variant = "compact",
 }: {
   session: SessionListItemData;
   isActive?: boolean;
   onOpen: (sessionId: string) => void;
   onRenamed: (sessionId: string, title: string) => void;
   onDeleted: (sessionId: string) => void;
-  variant?: "compact" | "mobile";
-  appearIndex?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -101,9 +98,7 @@ export function SessionListItem({
 
   const rowClassName = [
     "group w-full text-sm transition",
-    variant === "mobile"
-      ? "flex items-center gap-1 rounded-[calc(var(--radius-card)-0.25rem)] py-1 pl-1 pr-0"
-      : `${sidebarItemClassName} !gap-1 !pr-2`,
+    `${sidebarItemClassName} !gap-1 !pr-2`,
     isActive ? sidebarItemActiveClassName : sidebarItemInactiveClassName,
     isRenaming ? "" : "cursor-pointer",
   ].join(" ");
@@ -173,7 +168,7 @@ export function SessionListItem({
             <span className="min-w-0 flex-1 truncate">{session.title}</span>
             <Dropdown
               menuLabel="Conversation actions"
-              side={variant === "mobile" ? "bottom" : "top"}
+              side="top"
               trigger={({ toggle, menuId, open }) => (
                 <IconButton
                   variant="plain"
@@ -185,10 +180,10 @@ export function SessionListItem({
                   aria-controls={menuId}
                   className={[
                     "shrink-0 transition",
-                    variant === "compact" ? "!h-7 !w-7 -mr-1" : "",
-                    variant === "mobile" || open
+                    "!h-7 !w-7 -mr-1",
+                    open
                       ? "opacity-100"
-                      : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      : "max-md:opacity-100 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
                   ].join(" ")}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -208,11 +203,5 @@ export function SessionListItem({
       </div>
   );
 
-  return variant === "mobile" ? (
-    <article className="rounded-card border border-glass-border bg-glass px-2 py-1.5 shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md">
-      {row}
-    </article>
-  ) : (
-    row
-  );
+  return row;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCloseMobileSidebar } from "@/components/ui/mobile-sidebar-drawer";
 import { HistoryIcon } from "@/components/icons/history-icon";
 import { SessionHistoryList } from "@/components/coach/session-history-list";
 
@@ -11,6 +12,7 @@ export function SessionHistorySidebar({
   expanded: boolean;
   onExpand: () => void;
 }) {
+  const closeMobileSidebar = useCloseMobileSidebar();
   return (
     <section
       className={[
@@ -24,7 +26,7 @@ export function SessionHistorySidebar({
         <HistoryIcon className="h-4 w-4 shrink-0" />
         <span>History</span>
       </div>
-      <SessionHistoryList onExpand={onExpand} />
+      <SessionHistoryList onExpand={onExpand} onSessionOpen={closeMobileSidebar} />
     </section>
   );
 }

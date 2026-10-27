@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Sidebar } from "@/components/sidebar";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -31,9 +30,6 @@ export function AppShell({
       >
         {children}
       </div>
-      {isMobile ? (
-        <MobileBottomNav role={role} fullName={fullName} email={email} />
-      ) : null}
     </div>
   );
 }

@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArtifactPreview } from "@/components/artifact/artifact-preview";
 import { ArtifactToolbar } from "@/components/artifact/artifact-toolbar";
-import { SessionHistoryMobileToggle } from "@/components/coach/session-history-mobile";
-import { SessionHistoryMobilePanel } from "@/components/coach/session-history-mobile-panel";
 import { CoachConversationPanel } from "@/components/coach/coach-conversation-panel";
 import { MobileComposerToolbar } from "@/components/coach/mobile-composer-toolbar";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
@@ -26,9 +24,7 @@ import {
   DESKTOP_WORKSPACE_HEIGHT_CLASS,
 } from "@/lib/coach/desktop-workspace-layout";
 import {
-  MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS,
-  MOBILE_HISTORY_OVERLAY_CLASS,
-  MOBILE_WORKSPACE_X_PADDING_CLASS,
+  MOBILE_COMPOSER_INSET_CLASS,
 } from "@/lib/coach/mobile-workspace-layout";
 import { artifactStructureKey } from "@/lib/coach/artifact-scroll";
 import { useScrollTopOnKey } from "@/lib/hooks/use-scroll-top-on-key";
@@ -216,7 +212,7 @@ function ArtifactPanel({
       <OverlayScrollChrome
         topChrome={toolbar}
         footerInsetClassName={
-          mobileOverlay ? MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS : undefined
+          mobileOverlay ? MOBILE_COMPOSER_INSET_CLASS : undefined
         }
         contentInsetClassName={contentInsetClassName}
       >
@@ -399,7 +395,6 @@ function CoachWorkspaceInner({
   const [showArtifact, setShowArtifact] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
-  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
     initialPlanId ?? null,
   );
@@ -633,109 +628,54 @@ function CoachWorkspaceInner({
     navigateToCoachHome(router);
   }, [activePlanId, backlinkPlanId, router, state]);
 
-  const handleActiveSessionDeleted = useCallback(() => {
-    setMobileHistoryOpen(false);
-    if (!initialSession) {
-      restart();
-    }
-  }, [initialSession, restart]);
-
-  const toggleMobileHistory = useCallback(() => {
-    setMobileHistoryOpen((current) => !current);
-  }, []);
-
-  const closeMobileHistory = useCallback(() => {
-    setMobileHistoryOpen(false);
-  }, []);
-
   const handleReset = useCallback(() => {
     handleClose();
   }, [handleClose]);
 
-  const mobileHistoryToggle = isMobile ? (
-    <SessionHistoryMobileToggle
-      open={mobileHistoryOpen}
-      onToggle={toggleMobileHistory}
-    />
-  ) : null;
-
-  const mobileHistoryPanel = isMobile ? (
-    <SessionHistoryMobilePanel
-      onActiveSessionDeleted={handleActiveSessionDeleted}
-      onClose={closeMobileHistory}
-    />
-  ) : null;
-
-  const mobileChatHeaderClass =
-    "flex shrink-0 items-center justify-between pb-2";
-
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
     options?: { showAttachmentsAboveComposer?: boolean },
-  ) =>
-    mobileHistoryOpen ? (
-      <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
-        {mobileHistoryPanel}
-      </div>
-    ) : (
-      <CoachConversationPanel
-        topChrome={mobileHistoryToggle}
-        state={state}
-        onAttach={attachFiles}
-        onRemoveAttachment={removeAttachment}
-        onSend={handleSendMessage}
-        onRespondToInput={respondToInput}
-        onStop={stopResponse}
-        onReset={handleReset}
-        promptEnabled={promptEnabled}
-        composerClassName={MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}
-        composerHeader={composerHeader}
-        showAttachmentsAboveComposer={options?.showAttachmentsAboveComposer}
-      />
-    );
+  ) => (
+    <CoachConversationPanel
+      state={state}
+      onAttach={attachFiles}
+      onRemoveAttachment={removeAttachment}
+      onSend={handleSendMessage}
+      onRespondToInput={respondToInput}
+      onStop={stopResponse}
+      onReset={handleReset}
+      promptEnabled={promptEnabled}
+      composerClassName={MOBILE_COMPOSER_INSET_CLASS}
+      composerHeader={composerHeader}
+      showAttachmentsAboveComposer={options?.showAttachmentsAboveComposer}
+    />
+  );
 
   if (!state.hasStarted) {
     if (isMobile) {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className={`${mobileChatHeaderClass} ${MOBILE_WORKSPACE_X_PADDING_CLASS}`}>
-            {mobileHistoryToggle}
-          </div>
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            {mobileHistoryOpen ? (
-              <div className={MOBILE_HISTORY_OVERLAY_CLASS}>
-                <SessionHistoryMobilePanel
-                  onActiveSessionDeleted={handleActiveSessionDeleted}
-                  onClose={closeMobileHistory}
-                  className="px-3"
-                />
-              </div>
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
-                <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
-                  Welcome back,{" "}
-                  <span className={roleLinkClass(role)}>{firstName}</span>
-                </h1>
-              </div>
-            )}
-          </div>
-          {!mobileHistoryOpen ? (
-            <div
-              className={`shrink-0 px-4 pt-2 ${MOBILE_BOTTOM_NAV_COMPOSER_INSET_CLASS}`}
-            >
-              <ChatComposer
-                overlayChrome
-                compact
-                state={state}
-                composerKey={`${state.sessionId}-${state.messages.length}`}
-                onAttach={attachFiles}
-                onRemoveAttachment={removeAttachment}
-                onSend={handleSendMessage}
-                onStop={stopResponse}
-                promptEnabled={promptEnabled}
-              />
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
+              <h1 className="text-3xl font-semibold tracking-tight text-surface-foreground">
+                Welcome back,{" "}
+                <span className={roleLinkClass(role)}>{firstName}</span>
+              </h1>
             </div>
-          ) : null}
+          </div>
+          <div className={`shrink-0 px-4 pt-2 ${MOBILE_COMPOSER_INSET_CLASS}`}>
+            <ChatComposer
+              overlayChrome
+              compact
+              state={state}
+              composerKey={`${state.sessionId}-${state.messages.length}`}
+              onAttach={attachFiles}
+              onRemoveAttachment={removeAttachment}
+              onSend={handleSendMessage}
+              onStop={stopResponse}
+              promptEnabled={promptEnabled}
+            />
+          </div>
         </div>
       );
     }

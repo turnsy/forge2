@@ -66,6 +66,7 @@ export function Dropdown({
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const [portalContainer, setPortalContainer] = useState<Element | null>(null);
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
 
@@ -149,7 +150,7 @@ export function Dropdown({
         >
           {children}
         </div>,
-        document.body,
+        portalContainer ?? document.body,
       )
     ) : null;
 
@@ -160,7 +161,10 @@ export function Dropdown({
         <div ref={triggerRef} className="inline-flex">
           {trigger({
             open,
-            toggle: () => setOpen((current) => !current),
+            toggle: () => {
+              setPortalContainer(triggerRef.current?.closest("dialog") ?? null);
+              setOpen((current) => !current);
+            },
             menuId,
             triggerRef,
           })}

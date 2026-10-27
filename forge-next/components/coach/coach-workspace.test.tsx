@@ -320,7 +320,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
-    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+    expect(container.innerHTML).toContain("pb-[max(1rem");
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeVisible();
   });
 
@@ -340,7 +340,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
-    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+    expect(container.innerHTML).toContain("pb-[max(1rem");
   });
 
   it("opens the artifact editor on mobile when a draft plan is provided", () => {
@@ -442,27 +442,12 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the composer while mobile history is open", async () => {
-    const user = userEvent.setup();
+  it("uses the shared sidebar instead of a separate mobile history control", () => {
     mockUseIsMobile.mockReturnValue(true);
-    mockUseCoachPlanWorkspace.mockReturnValue(
-      mockWorkspaceReturn(
-        mockWorkspaceState({
-          hasStarted: true,
-          messages: [{ role: "user", content: "Hello" }],
-        }),
-      ),
-    );
-
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState({ hasStarted: true })));
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
-
     expect(screen.getByRole("textbox")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
-
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Attach" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Conversation history" })).not.toBeInTheDocument();
   });
 
   it("navigates to plan detail on close when a saved plan is loaded", async () => {

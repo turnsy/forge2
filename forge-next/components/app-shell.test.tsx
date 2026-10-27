@@ -16,10 +16,6 @@ vi.mock("@/components/sidebar", () => ({
   Sidebar: () => <aside data-testid="sidebar" />,
 }));
 
-vi.mock("@/components/mobile-bottom-nav", () => ({
-  MobileBottomNav: () => <nav data-testid="mobile-bottom-nav" />,
-}));
-
 import { AppShell } from "@/components/app-shell";
 
 describe("AppShell", () => {
@@ -28,7 +24,7 @@ describe("AppShell", () => {
     mockUsePathname.mockReturnValue("/coach/plans");
   });
 
-  it("lets page content scroll under the bottom nav by default", () => {
+  it("does not reserve space for mobile navigation", () => {
     const { container } = render(
       <AppShell role="coach" fullName="Coach" email="coach@example.com">
         <div>Page</div>

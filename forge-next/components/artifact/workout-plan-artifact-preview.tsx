@@ -1,6 +1,6 @@
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
 import { TurnActivityIndicator } from "@/components/chat/turn-activity-indicator";
-import { MOBILE_BOTTOM_NAV_SCROLL_END_CLASS } from "@/lib/coach/mobile-workspace-layout";
+import { MOBILE_SCROLL_END_CLASS } from "@/lib/coach/mobile-workspace-layout";
 import { isTurnInProgress, getTurnActivityLabel } from "@/lib/chat/turn-activity";
 import type { ChatStatus, ChatWorkspacePhase } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
@@ -34,7 +34,7 @@ export function WorkoutPlanArtifactPreview({
   return (
     <div
       className={`relative flex min-h-0 min-w-0 flex-col ${scrollClass}${
-        embeddedScroll ? "" : ` ${MOBILE_BOTTOM_NAV_SCROLL_END_CLASS}`
+        embeddedScroll ? "" : ` ${MOBILE_SCROLL_END_CLASS}`
       }`}
     >
       {activityLabel ? (

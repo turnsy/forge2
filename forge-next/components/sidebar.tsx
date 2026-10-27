@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MobileSidebarDrawer } from "@/components/ui/mobile-sidebar-drawer";
 import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { SessionHistorySidebar } from "@/components/coach/session-history-sidebar";
 import { CoachHomeNavLink } from "@/components/coach/coach-home-nav-link";
@@ -22,20 +23,18 @@ export function Sidebar({
   email: string | undefined;
 }) {
   const isMobile = useIsMobile();
-  const [collapsed, setCollapsed] = useState(false);
+  const [desktopCollapsed, setCollapsed] = useState(false);
+  const collapsed = !isMobile && desktopCollapsed;
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const navItems = roleNavItems[role];
   const showHistory = role === "coach";
 
-  if (isMobile) {
-    return null;
-  }
-
-  return (
+  const content = (
     <aside
       className={[
         "flex shrink-0 flex-col border-r border-surface-divider bg-surface text-surface-foreground transition-[width] duration-200",
-        collapsed ? "w-14" : "w-60",
+        isMobile ? "w-[min(20rem,85vw)]" : collapsed ? "w-14" : "w-60",
+        isMobile ? "h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" : "",
       ].join(" ")}
     >
       <div
@@ -49,20 +48,22 @@ export function Sidebar({
             Forge
           </span>
         )}
-        <IconButton
+        {isMobile ? null : (
+          <IconButton
           variant="plain"
           size="sm"
           icon={<SidebarToggleIcon />}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!collapsed}
           onClick={() => setCollapsed((current) => !current)}
-        />
+          />
+        )}
       </div>
 
       <div
         className={[
           "flex min-h-0 flex-1 flex-col",
-          historyExpanded ? "overflow-y-auto" : "",
+          isMobile || historyExpanded ? "overflow-y-auto" : "",
         ].join(" ")}
       >
         <nav
@@ -119,4 +120,6 @@ export function Sidebar({
       </div>
     </aside>
   );
+
+  return isMobile ? <MobileSidebarDrawer>{content}</MobileSidebarDrawer> : content;
 }
