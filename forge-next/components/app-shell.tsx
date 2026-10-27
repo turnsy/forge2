@@ -1,11 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import {
+  MobileAppHeader,
+  MobileAppHeaderProvider,
+} from "@/components/ui/mobile-app-header";
 import { Sidebar } from "@/components/sidebar";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
-import { SAFE_AREA_TOP_CLASS, SAFE_AREA_X_CLASS } from "@/lib/viewport/safe-area";
+import {
+  SAFE_AREA_TOP_CLASS,
+  SAFE_AREA_X_CLASS,
+} from "@/lib/viewport/safe-area";
 
 export function AppShell({
   role,
@@ -21,19 +27,19 @@ export function AppShell({
   const isMobile = useIsMobile();
 
   return (
-    <div className="dark fixed inset-0 flex min-h-0 bg-surface text-surface-foreground">
-      <Sidebar role={role} fullName={fullName} email={email} />
-      <div
-        className={[
-          "flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden",
-          isMobile ? `${SAFE_AREA_TOP_CLASS} ${SAFE_AREA_X_CLASS}` : "",
-        ].join(" ")}
-      >
-        {children}
+    <MobileAppHeaderProvider enabled={isMobile}>
+      <div className="dark fixed inset-0 flex min-h-0 bg-surface text-surface-foreground">
+        <Sidebar role={role} fullName={fullName} email={email} />
+        <div
+          className={[
+            "flex min-h-0 flex-1 flex-col overflow-x-visible overflow-y-hidden",
+            isMobile ? `${SAFE_AREA_TOP_CLASS} ${SAFE_AREA_X_CLASS}` : "",
+          ].join(" ")}
+        >
+          <MobileAppHeader />
+          {children}
+        </div>
       </div>
-      {isMobile ? (
-        <MobileBottomNav role={role} fullName={fullName} email={email} />
-      ) : null}
-    </div>
+    </MobileAppHeaderProvider>
   );
 }

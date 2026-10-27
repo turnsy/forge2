@@ -1,5 +1,7 @@
 "use client";
 
+import { useMobileAppHeader } from "@/components/ui/mobile-app-header";
+
 import { useMemo, useState } from "react";
 import { PlanDayView } from "@/components/plan/plan-day-view";
 import { PlanMobileDayPicker } from "@/components/plan/plan-mobile-day-picker";
@@ -77,6 +79,7 @@ export function PlanDayNavigator({
   canEditDay,
   maxesByExerciseId = {},
 }: PlanDayNavigatorProps) {
+  const mobileHeader = useMobileAppHeader();
   const defaultSelection = useMemo(
     () => getInitialDaySelection(plan, view, initialDay),
     [plan, view, initialDay],
@@ -146,12 +149,14 @@ export function PlanDayNavigator({
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      {view === "athlete" && !readOnly ? (
+      {view === "athlete" && !readOnly && !mobileHeader ? (
         <PageHeader
           title={plan.name}
           actions={<SaveIndicator status={saveStatus} />}
         />
       ) : null}
+
+      {view === "athlete" && !readOnly && mobileHeader && saveStatus !== "idle" ? <div className="md:hidden"><SaveIndicator status={saveStatus} /></div> : null}
 
       <div className="space-y-3">
         <div className="hidden md:flex md:flex-col md:gap-3">

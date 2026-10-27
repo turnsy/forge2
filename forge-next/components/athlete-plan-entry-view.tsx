@@ -1,5 +1,6 @@
 "use client";
 
+import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
 import { useState } from "react";
 import { AthletePlanMilestoneView } from "@/components/athlete-plan-milestone-view";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
@@ -72,6 +73,7 @@ export function AthletePlanEntryView({
 
   return (
     <ScrollPage scrollClassName="flex flex-col gap-6">
+      <MobileHeaderContent title={plan.name} />
       <PlanDayNavigator
         key={
           navigateToDay

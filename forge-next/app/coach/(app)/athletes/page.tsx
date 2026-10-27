@@ -54,13 +54,11 @@ export default async function CoachAthletesPage({
     <PageContent
       listLayout
       header={<AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />}
-      subHeader={
-        <ListSearchField
-          pathname="/coach/athletes"
-          defaultValue={params.q ?? ""}
-        />
-      }
     >
+      <ListSearchField
+        pathname="/coach/athletes"
+        defaultValue={params.q ?? ""}
+      />
       <Suspense
         key={`${query.q ?? ""}-${query.page}`}
         fallback={<ListSectionSpinner />}

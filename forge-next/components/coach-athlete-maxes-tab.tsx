@@ -1,5 +1,8 @@
 "use client";
 
+import { MobileHeaderContent, useMobileAppHeader } from "@/components/ui/mobile-app-header";
+import { PlusIcon } from "@/components/icons/plus-icon";
+import { XIcon } from "@/components/icons/x-icon";
 import { useEffect, useMemo, useState } from "react";
 import {
   CoachAthleteMaxFormModal,
@@ -49,6 +52,7 @@ function CoachAthleteMaxHistoryPanel({
 }) {
   return (
     <div className="space-y-4">
+      <MobileHeaderContent title={summary.exerciseName} actions={<button type="button" aria-label="Close max history" onClick={onBack}><XIcon /></button>} />
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <PageBackButton ariaLabel="Back to maxes" onClick={onBack} />
@@ -115,6 +119,7 @@ export function CoachAthleteMaxesTab({
   confirmUrl?: string;
   allowCreate?: boolean;
 }) {
+  const mobileHeader = useMobileAppHeader();
   const [maxes, setMaxes] = useState<AthleteMaxEntry[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +216,7 @@ export function CoachAthleteMaxesTab({
 
   return (
     <div className="space-y-4">
+      <MobileHeaderContent actions={<Button type="button" aria-label="Add max" icon={<PlusIcon />} onClick={openAddModal}>Add max</Button>} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
           type="search"
@@ -220,7 +226,7 @@ export function CoachAthleteMaxesTab({
           className="min-w-0 flex-1"
           onChange={(event) => setQuery(event.target.value)}
         />
-        <Button type="button" fullWidth={false} onClick={openAddModal}>
+        <Button type="button" className={mobileHeader ? "hidden md:inline-flex" : undefined} fullWidth={false} onClick={openAddModal}>
           Add max
         </Button>
       </div>

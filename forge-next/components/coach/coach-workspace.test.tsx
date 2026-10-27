@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MobileAppHeader, MobileAppHeaderProvider } from "@/components/ui/mobile-app-header";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -81,7 +82,7 @@ function renderCoachWorkspace(
 ) {
   return render(
     <SessionNavigationProvider>
-      <CoachWorkspace {...props} />
+      {mockUseIsMobile() ? <MobileAppHeaderProvider><MobileAppHeader /><CoachWorkspace {...props} /></MobileAppHeaderProvider> : <CoachWorkspace {...props} />}
     </SessionNavigationProvider>,
   );
 }
@@ -320,7 +321,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
-    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+    expect(container.innerHTML).toContain("pb-[max(1rem");
     expect(screen.getByRole("button", { name: "Reset conversation" })).toBeVisible();
   });
 
@@ -340,7 +341,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.innerHTML).toContain("px-4");
-    expect(container.innerHTML).toContain("pb-[calc(4.5rem");
+    expect(container.innerHTML).toContain("pb-[max(1rem");
   });
 
   it("opens the artifact editor on mobile when a draft plan is provided", () => {
@@ -367,7 +368,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows View above the composer on mobile when an artifact exists", async () => {
+  it("shows the artifact toggle in the shared mobile header", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);
     mockUseCoachPlanWorkspace.mockReturnValue(
@@ -396,7 +397,7 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("places the mobile artifact close control beside save", async () => {
+  it("places the mobile artifact close control in the shared header", async () => {
     const user = userEvent.setup();
     mockUseIsMobile.mockReturnValue(true);
     mockUseCoachPlanWorkspace.mockReturnValue(
@@ -415,7 +416,8 @@ describe("CoachWorkspace layout", () => {
 
     const saveButton = screen.getByRole("button", { name: "Save" });
     const closeButton = screen.getByRole("button", { name: "Close artifact" });
-    expect(saveButton.parentElement).toBe(closeButton.parentElement);
+    expect(closeButton.closest("[data-mobile-app-header]")).toBeInTheDocument();
+    expect(saveButton.closest("[data-mobile-app-header]")).toBeNull();
   });
 
   it("returns to chat when the mobile artifact close button is pressed", async () => {
@@ -442,27 +444,12 @@ describe("CoachWorkspace layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the composer while mobile history is open", async () => {
-    const user = userEvent.setup();
+  it("uses the shared sidebar instead of a separate mobile history control", () => {
     mockUseIsMobile.mockReturnValue(true);
-    mockUseCoachPlanWorkspace.mockReturnValue(
-      mockWorkspaceReturn(
-        mockWorkspaceState({
-          hasStarted: true,
-          messages: [{ role: "user", content: "Hello" }],
-        }),
-      ),
-    );
-
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(mockWorkspaceState({ hasStarted: true })));
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
-
     expect(screen.getByRole("textbox")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Conversation history" }));
-
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Attach" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Conversation history" })).not.toBeInTheDocument();
   });
 
   it("navigates to plan detail on close when a saved plan is loaded", async () => {

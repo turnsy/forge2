@@ -152,16 +152,11 @@ describe("Sidebar", () => {
     expect(screen.getByText("Coach User")).toBeInTheDocument();
   });
 
-  it("does not render on mobile", () => {
+  it("renders only a floating toggle when mobile navigation is closed", () => {
     mockUseIsMobile.mockReturnValue(true);
     usePathname.mockReturnValue("/coach");
-
-    const { container } = renderSidebar({
-      role: "coach",
-      fullName: "Coach User",
-      email: "coach@example.com",
-    });
-
-    expect(container).toBeEmptyDOMElement();
+    renderSidebar({ role: "coach", fullName: "Coach User", email: "coach@example.com" });
+    expect(screen.getByRole("button", { name: "Open sidebar" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Plans" })).not.toBeInTheDocument();
   });
 });

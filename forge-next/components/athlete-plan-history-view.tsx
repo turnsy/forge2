@@ -1,5 +1,7 @@
 "use client";
 
+import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
+import { XIcon } from "@/components/icons/x-icon";
 import { useState } from "react";
 import { CompletionProgressRing } from "@/components/completion-progress-ring";
 import { PlanDayNavigator } from "@/components/plan/plan-day-navigator";
@@ -51,6 +53,7 @@ function AthleteAssignedPlanPanel({
 
   return (
     <div className="space-y-6">
+      {onBack ? <MobileHeaderContent title={plan.name} actions={<button type="button" aria-label="Close plan history" onClick={onBack}><XIcon /></button>} /> : null}
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-2">

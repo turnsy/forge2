@@ -4,7 +4,6 @@ import {
   milestoneTitle,
   type AthletePlanMilestone,
 } from "@/lib/athlete/plan/milestones";
-import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 export function AthletePlanMilestoneView({
   milestone,
@@ -15,7 +14,7 @@ export function AthletePlanMilestoneView({
 }) {
   return (
     <div
-      className={`flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center ${MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS}`}
+      className={`flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center`}
     >
       <PageHeader
         title={milestoneTitle(milestone)}

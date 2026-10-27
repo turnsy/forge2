@@ -236,3 +236,25 @@ body {
     background-size: 100% 100%;
   }
 }
+
+/* Shared compact mobile header controls. Labels stay in the accessibility tree. */
+.mobile-header-button,
+.mobile-header-actions :is(button, a) {
+  @apply inline-flex shrink-0 items-center justify-center rounded-xl border border-glass-border bg-surface/80 p-0 text-surface-foreground shadow-none;
+  height: 2.75rem !important;
+  width: 2.75rem !important;
+  min-width: 2.75rem !important;
+  padding: 0 !important;
+  border-radius: 0.75rem !important;
+}
+.mobile-header-button:hover,
+.mobile-header-actions :is(button, a):hover { @apply bg-glass; }
+.mobile-header-button:focus-visible,
+.mobile-header-actions :is(button, a):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.mobile-header-actions :is(button, a) { font-size: 0 !important; gap: 0 !important; }
+.mobile-header-actions :is(button, a) > span { display: contents; }
+.mobile-header-button svg,
+.mobile-header-actions :is(button, a) svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+
+.mobile-header-title:has([data-mobile-title]) > [data-mobile-fallback],
+.mobile-header-slot:has([data-mobile-priority="view"]) > [data-mobile-priority="page"] { display: none; }

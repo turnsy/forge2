@@ -17,7 +17,7 @@ export function PageBackButton({
       type="button"
       aria-label={ariaLabel}
       onClick={onClick}
-      className={`${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
+      className={`max-md:!hidden ${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
     >
       <ArrowRightIcon className="h-6 w-6 rotate-180" />
     </button>
@@ -43,7 +43,7 @@ export function PageBackLink({
       href={href}
       aria-label={ariaLabel}
       onClick={onClick}
-      className={`${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
+      className={`max-md:!hidden ${pageBackLinkClass()}${className ? ` ${className}` : ""}`}
     >
       <ArrowRightIcon className="h-6 w-6 rotate-180" />
     </Link>

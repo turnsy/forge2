@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { SessionListItem } from "@/components/coach/session-list-item";
-import { Button, List, Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import { useSessionNavigation } from "@/lib/chat/session-navigation-context";
 import {
   navigateToCoachHome,
@@ -14,7 +14,6 @@ import {
   readWindowWorkspaceSessionId,
   useCoachWorkspaceSessionId,
 } from "@/lib/chat/use-coach-workspace-url";
-import { staggerDelayMs } from "@/lib/motion/stagger";
 
 const INITIAL_VISIBLE_COUNT = 5;
 
@@ -35,13 +34,11 @@ export function SessionHistoryList({
   onActiveSessionDeleted,
   onExpand,
   onSessionOpen,
-  variant = "compact",
   className = "",
 }: {
   onActiveSessionDeleted?: () => void;
   onExpand?: () => void;
   onSessionOpen?: (sessionId: string) => void;
-  variant?: "compact" | "mobile";
   className?: string;
 }) {
   const router = useRouter();
@@ -116,16 +113,10 @@ export function SessionHistoryList({
     );
   }
 
-  const visibleSessions =
-    variant === "mobile" || showAll
-      ? sessions
-      : sessions.slice(0, INITIAL_VISIBLE_COUNT);
-  const canShowMore =
-    variant !== "mobile" &&
-    !showAll &&
-    sessions.length > INITIAL_VISIBLE_COUNT;
+  const visibleSessions = showAll ? sessions : sessions.slice(0, INITIAL_VISIBLE_COUNT);
+  const canShowMore = !showAll && sessions.length > INITIAL_VISIBLE_COUNT;
 
-  const listItems = visibleSessions.map((session, index) => (
+  const listItems = visibleSessions.map((session) => (
     <SessionListItem
       key={session.id}
       session={session}
@@ -133,36 +124,8 @@ export function SessionHistoryList({
       onOpen={handleOpen}
       onRenamed={handleRenamed}
       onDeleted={handleDeleted}
-      variant={variant}
-      appearIndex={variant === "mobile" ? index : undefined}
     />
   ));
-
-  if (variant === "mobile") {
-    return (
-      <List className={`gap-2${className ? ` ${className}` : ""}`}>
-        {listItems.map((item, index) => (
-          <li
-            key={visibleSessions[index].id}
-            className="list-none animate-fade-in"
-            style={{ animationDelay: `${staggerDelayMs(index)}ms` }}
-          >
-            {item}
-          </li>
-        ))}
-        {canShowMore ? (
-          <li className="list-none">
-            <ShowMoreButton
-              onClick={() => {
-                onExpand?.();
-                setShowAll(true);
-              }}
-            />
-          </li>
-        ) : null}
-      </List>
-    );
-  }
 
   return (
     <div className={`flex flex-col gap-1 ${className}`.trim()}>

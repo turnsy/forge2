@@ -151,7 +151,6 @@ describe("SessionListItem", () => {
     render(
       <SessionListItem
         session={session}
-        variant="mobile"
         onOpen={vi.fn()}
         onRenamed={vi.fn()}
         onDeleted={vi.fn()}

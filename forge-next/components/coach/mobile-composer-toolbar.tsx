@@ -16,8 +16,10 @@ export function MobileComposerToolbar({
 }: {
   attachments: ChatAttachment[];
   onRemoveAttachment?: (localId: string) => void;
-  trailing: ReactNode;
+  trailing?: ReactNode;
 }) {
+  if (!attachments.length && !trailing) return null;
+
   return (
     <div className={MOBILE_COMPOSER_TOOLBAR_ROW_CLASS}>
       {attachments.length > 0 ? (
@@ -26,11 +28,11 @@ export function MobileComposerToolbar({
             attachments={attachments}
             onRemove={onRemoveAttachment}
             wrap={false}
-            className={`min-w-min items-center pr-[5.75rem]`}
+            className={`min-w-min items-center${trailing ? " pr-[5.75rem]" : ""}`}
           />
         </div>
       ) : null}
-      <div className={MOBILE_COMPOSER_VIEW_CONTROL_CLASS}>{trailing}</div>
+      {trailing ? <div className={MOBILE_COMPOSER_VIEW_CONTROL_CLASS}>{trailing}</div> : null}
     </div>
   );
 }

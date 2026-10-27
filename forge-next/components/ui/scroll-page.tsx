@@ -1,33 +1,28 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { MobilePageHeaderScope } from "./mobile-app-header";
 import { OverlayScrollChrome } from "@/components/ui/overlay-scroll-chrome";
 import { usePageBack } from "@/components/ui/page-back-context";
 import type { PageBackConfig } from "@/components/ui/page-back-gutter";
 import { PageBackLink } from "@/components/ui/page-back-link";
-import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import {
   hasOverlayScrollLane,
   OVERLAY_SCROLL_LANE_CLASS,
   overlayScrollLaneStyle,
 } from "@/lib/layout/overlay-scroll-lane";
-import {
-  OVERLAY_TOP_CHROME_HEADER_STACK_CLASS,
-} from "@/lib/layout/overlay-scroll-chrome-layout";
+import { OVERLAY_TOP_CHROME_HEADER_STACK_CLASS } from "@/lib/layout/overlay-scroll-chrome-layout";
 import {
   PAGE_CONTENT_INSET_BOTTOM_CLASS,
   PAGE_CONTENT_INSET_X_CLASS,
 } from "@/lib/layout/page-layout";
-import { MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS } from "@/lib/navigation/mobile-bottom-nav-layout";
 
 function buildTopChrome({
   back,
-  showMobileBack,
   header,
   subHeader,
 }: {
   back?: PageBackConfig;
-  showMobileBack: boolean;
   header?: ReactNode;
   subHeader?: ReactNode;
 }): ReactNode | undefined {
@@ -37,7 +32,7 @@ function buildTopChrome({
 
   if (!header && !subHeader) {
     return back ? (
-      <div className={showMobileBack ? undefined : "hidden md:block"}>
+      <div className={"hidden md:block"}>
         <PageBackLink
           href={back.href}
           ariaLabel={back.ariaLabel}
@@ -48,11 +43,11 @@ function buildTopChrome({
   }
 
   return (
-    <div className={OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}>
+    <div className={`max-md:gap-0 ${OVERLAY_TOP_CHROME_HEADER_STACK_CLASS}`}>
       {header || back ? (
-        <div className="flex items-start gap-2">
+        <div className="max-md:contents md:flex md:items-start md:gap-2">
           {back ? (
-            <div className={showMobileBack ? "shrink-0" : "hidden shrink-0 md:block"}>
+            <div className={"hidden shrink-0 md:block"}>
               <PageBackLink
                 href={back.href}
                 ariaLabel={back.ariaLabel}
@@ -60,10 +55,16 @@ function buildTopChrome({
               />
             </div>
           ) : null}
-          {header ? <div className="min-w-0 flex-1">{header}</div> : null}
+          {header ? (
+            <div className="max-md:contents md:min-w-0 md:flex-1">
+              <MobilePageHeaderScope value={true}>
+                {header}
+              </MobilePageHeaderScope>
+            </div>
+          ) : null}
         </div>
       ) : null}
-      {subHeader}
+      {subHeader ? <div className="py-3 md:py-0">{subHeader}</div> : null}
     </div>
   );
 }
@@ -79,7 +80,6 @@ export function ScrollPage({
   footerInsetClassName,
   scrollClassName = "",
   back: backProp,
-  showMobileBack: showMobileBackProp,
 }: {
   header?: ReactNode;
   /** When using tabs with a page back link, pass TabList here so tabs align with body content. */
@@ -92,16 +92,12 @@ export function ScrollPage({
   footerInsetClassName?: string;
   scrollClassName?: string;
   back?: PageBackConfig;
-  showMobileBack?: boolean;
 }) {
-  const isMobile = useIsMobile();
-  const { back: contextBack, showMobileBack: contextShowMobileBack } = usePageBack();
+  const { back: contextBack } = usePageBack();
   const back = backProp ?? contextBack;
-  const showMobileBack = showMobileBackProp ?? contextShowMobileBack;
-  const topChrome = buildTopChrome({ back, showMobileBack, header, subHeader });
+  const topChrome = buildTopChrome({ back, header, subHeader });
   const resolvedFooterInset =
-    footerInsetClassName ??
-    (isMobile ? MOBILE_ONLY_BOTTOM_NAV_OFFSET_CLASS : PAGE_CONTENT_INSET_BOTTOM_CLASS);
+    footerInsetClassName ?? PAGE_CONTENT_INSET_BOTTOM_CLASS;
 
   return (
     <div
@@ -109,6 +105,7 @@ export function ScrollPage({
     >
       <OverlayScrollChrome
         topChrome={topChrome}
+        topChromeClassName="max-md:pt-0 max-md:pb-0"
         preFooter={preFooter}
         footer={footer}
         footerInsetClassName={resolvedFooterInset}
@@ -119,12 +116,14 @@ export function ScrollPage({
           const lanePositioned = hasOverlayScrollLane(lanePadding);
 
           return (
-          <div
-            className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"} ${contentClassName}${scrollClassName ? ` ${scrollClassName}` : ""}`}
-            style={lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined}
-          >
-            {children}
-          </div>
+            <div
+              className={`${lanePositioned ? OVERLAY_SCROLL_LANE_CLASS : "absolute inset-0 z-0 overflow-y-auto"} ${contentClassName}${scrollClassName ? ` ${scrollClassName}` : ""}`}
+              style={
+                lanePositioned ? overlayScrollLaneStyle(lanePadding) : undefined
+              }
+            >
+              {children}
+            </div>
           );
         }}
       </OverlayScrollChrome>

@@ -11,7 +11,6 @@ export default async function AthleteSettingsPage() {
   return (
     <PageShell
       back={{ href: "/athlete", ariaLabel: "Back to home" }}
-      showMobileBack={false}
       header={
         <div className="hidden md:block">
           <PageHeader title="Settings" />

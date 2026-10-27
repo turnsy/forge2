@@ -68,8 +68,7 @@ export default async function CoachHomePage({
       const isDev = process.env.NODE_ENV === "development";
 
       return (
-        <PageShell back={{ href: "/coach/plans", ariaLabel: "Back to plans" }}>
-          <PageHeader title="Plan" />
+        <PageShell back={{ href: "/coach/plans", ariaLabel: "Back to plans" }} header={<PageHeader title="Plan" />}>
           <ErrorState
             title="Plan validation failed"
             description={
