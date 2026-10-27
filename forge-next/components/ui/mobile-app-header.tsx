@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { ForgeLogo } from "@/components/forge-logo";
 import { ProgressiveBlur } from "./progressive-blur";
 
 // Used by both the sidebar toggle and every mobile header action.
@@ -85,9 +86,11 @@ export function MobileAppHeader() {
         >
           <h1
             data-mobile-fallback
-            className="truncate text-base font-semibold leading-tight"
+            className="flex justify-center truncate text-base font-semibold leading-tight"
           >
-            {defaultTitle(pathname)}
+            {pathname === "/coach" || pathname === "/athlete" ? (
+              <ForgeLogo variant="mark" size="sidebar" />
+            ) : defaultTitle(pathname)}
           </h1>
         </div>
         <div

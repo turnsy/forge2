@@ -1,0 +1,5 @@
+Forge wordmark lettering: URW Gothic Demi, converted to vector artwork.
+Copyright 2015 URW Software; 2013, 2014 (URW)++ Design & Development.
+Font source: https://github.com/ArtifexSoftware/urw-base35-fonts
+The source font is distributed under AGPL-3 with the URW font exception.
+No font software is bundled with these SVG assets.

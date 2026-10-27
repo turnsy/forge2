@@ -639,7 +639,7 @@ function CoachWorkspaceInner({
     options?: { showAttachmentsAboveComposer?: boolean },
   ) => (
     <>
-    <MobileHeaderContent title={state.sessionTitle || "Forge"} actions={state.currentArtifact ? <button type="button" aria-label="View artifact" onClick={() => setShowArtifact(true)}><EyeIcon /></button> : undefined} />
+    <MobileHeaderContent title={state.sessionTitle || undefined} actions={state.currentArtifact ? <button type="button" aria-label="View artifact" onClick={() => setShowArtifact(true)}><EyeIcon /></button> : undefined} />
     <CoachConversationPanel
       state={state}
       onAttach={attachFiles}
