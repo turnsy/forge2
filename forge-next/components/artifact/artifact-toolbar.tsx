@@ -39,7 +39,6 @@ export function ArtifactToolbar({
       <div className="flex items-center justify-between gap-3">
         <Input
           type="text"
-          size="sm"
           value={title}
           placeholder="Title"
           aria-label="Artifact title"

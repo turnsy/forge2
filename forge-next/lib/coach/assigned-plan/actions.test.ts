@@ -4,6 +4,7 @@ import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 const mockRequireRoleAuth = vi.fn();
 const mockGetAssignedPlanById = vi.fn();
 const mockSavePlanActuals = vi.fn();
+const mockPreparePlanExerciseResolution = vi.fn();
 
 vi.mock("@/lib/errors/require-role-auth", () => ({
   requireRoleAuth: (...args: unknown[]) => mockRequireRoleAuth(...args),
@@ -12,6 +13,11 @@ vi.mock("@/lib/errors/require-role-auth", () => ({
 vi.mock("@/lib/athlete/plan/repository", () => ({
   getAssignedPlanById: (...args: unknown[]) => mockGetAssignedPlanById(...args),
   savePlanActuals: (...args: unknown[]) => mockSavePlanActuals(...args),
+}));
+
+vi.mock("@/lib/exercises/prepare-plan", () => ({
+  preparePlanExerciseResolution: (...args: unknown[]) =>
+    mockPreparePlanExerciseResolution(...args),
 }));
 
 import { saveAssignedPlanAction } from "@/lib/coach/assigned-plan/actions";
@@ -37,6 +43,7 @@ describe("saveAssignedPlanAction", () => {
         plan: minimalWorkoutPlan,
       },
     });
+    mockPreparePlanExerciseResolution.mockResolvedValue(minimalWorkoutPlan);
     mockSavePlanActuals.mockResolvedValue({ ok: true });
   });
 
@@ -44,6 +51,10 @@ describe("saveAssignedPlanAction", () => {
     const result = await saveAssignedPlanAction("assignment-1", minimalWorkoutPlan);
 
     expect(result).toEqual({ ok: true });
+    expect(mockPreparePlanExerciseResolution).toHaveBeenCalledWith(
+      minimalWorkoutPlan,
+      "coach-1",
+    );
     expect(mockSavePlanActuals).toHaveBeenCalledWith("assignment-1", minimalWorkoutPlan);
   });
 

@@ -9,7 +9,7 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 }));
 
 const samplePlan: WorkoutPlan = {
-  schemaVersion: "3.0.0",
+  schemaVersion: "3.1.0",
   name: "Strength",
   weeks: [],
 };
@@ -55,7 +55,7 @@ describe("ArtifactPreview", () => {
       />,
     );
     expect(screen.getByLabelText("Week")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
+    expect(screen.getByLabelText("Exercise")).toHaveValue("Back Squat");
   });
 
   it("shows a spinner overlay during sandbox when an artifact exists", () => {

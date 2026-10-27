@@ -1,6 +1,7 @@
 import type {
   AbsoluteLoad,
   ActualSet,
+  Exercise,
   SetTarget,
   PercentageLoad,
   PlannedSet,
@@ -9,6 +10,38 @@ import type {
   Week,
   Day,
 } from "@/lib/plans/workout-plan";
+
+export function getEffectiveExerciseBasis(exercise: Exercise): string {
+  const customBasis = exercise.basisRaw?.trim();
+  if (
+    customBasis &&
+    customBasis.toLowerCase() !== exercise.name.trim().toLowerCase()
+  ) {
+    return customBasis;
+  }
+
+  return exercise.name.trim();
+}
+
+export function getExerciseBasisLabel(exercise: Exercise): string {
+  return getEffectiveExerciseBasis(exercise);
+}
+
+export function hasCustomBasis(exercise: Exercise): boolean {
+  const customBasis = exercise.basisRaw?.trim();
+  if (!customBasis) return false;
+  return customBasis.toLowerCase() !== exercise.name.trim().toLowerCase();
+}
+
+export function exerciseHasPercentageSets(exercise: Exercise): boolean {
+  return exercise.sets.some((set) => {
+    if (set.planned.type === "exact") {
+      return set.planned.target.type === "percentage";
+    }
+
+    return set.planned.target?.type === "percentage";
+  });
+}
 
 export function formatReps(reps: RepsValue): string {
   return String(reps);

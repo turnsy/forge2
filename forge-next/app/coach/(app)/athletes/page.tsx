@@ -52,14 +52,13 @@ export default async function CoachAthletesPage({
 
   return (
     <PageContent
-      header={
-        <>
-          <AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />
-          <ListSearchField
-            pathname="/coach/athletes"
-            defaultValue={params.q ?? ""}
-          />
-        </>
+      listLayout
+      header={<AthletesPageHeader inviteCode={inviteCode} pendingCount={pendingCount} />}
+      subHeader={
+        <ListSearchField
+          pathname="/coach/athletes"
+          defaultValue={params.q ?? ""}
+        />
       }
     >
       <Suspense

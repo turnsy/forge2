@@ -65,6 +65,7 @@ describe("CoachAthleteDetailPage", () => {
 
     const ui = await CoachAthleteDetailPage({
       params: Promise.resolve({ athleteId: "athlete-1" }),
+      searchParams: Promise.resolve({}),
     });
     render(ui);
 

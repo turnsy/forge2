@@ -1,4 +1,5 @@
 /* AUTO-GENERATED — do not edit */
+
 export type Json =
   | string
   | number
@@ -42,19 +43,20 @@ export type Database = {
           coach_id: string
           completed_at: string | null
           id: string
-          plan_data: Json
+          plan_data: NonNullable<Json>
           plan_id: string | null
           plan_version_id: string | null
           status: Database["public"]["Enums"]["assignment_status"]
           unassigned_at: string | null
         }
+        ComputedFields: never
         Insert: {
           assigned_at?: string
           athlete_id: string
           coach_id: string
           completed_at?: string | null
           id?: string
-          plan_data: Json
+          plan_data: NonNullable<Json>
           plan_id?: string | null
           plan_version_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status"]
@@ -66,7 +68,7 @@ export type Database = {
           coach_id?: string
           completed_at?: string | null
           id?: string
-          plan_data?: Json
+          plan_data?: NonNullable<Json>
           plan_id?: string | null
           plan_version_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status"]
@@ -103,26 +105,85 @@ export type Database = {
           },
         ]
       }
+      athlete_maxes: {
+        Row: {
+          athlete_id: string
+          entry_order: number
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          source_assignment_id: string | null
+          source_set_key: string | null
+          unit: string
+          value: number
+          voided_at: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          athlete_id: string
+          entry_order?: never
+          exercise_id: string
+          id?: string
+          logged_at?: string
+          source: string
+          source_assignment_id?: string | null
+          source_set_key?: string | null
+          unit: string
+          value: number
+          voided_at?: string | null
+        }
+        Update: {
+          athlete_id?: string
+          entry_order?: never
+          exercise_id?: string
+          id?: string
+          logged_at?: string
+          source?: string
+          source_assignment_id?: string | null
+          source_set_key?: string | null
+          unit?: string
+          value?: number
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_maxes_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_maxes_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_sessions: {
         Row: {
           coach_id: string
           created_at: string
           id: string
-          snapshot: Json
+          snapshot: NonNullable<Json>
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           coach_id: string
           created_at?: string
           id?: string
-          snapshot?: Json
+          snapshot?: NonNullable<Json>
           updated_at?: string
         }
         Update: {
           coach_id?: string
           created_at?: string
           id?: string
-          snapshot?: Json
+          snapshot?: NonNullable<Json>
           updated_at?: string
         }
         Relationships: [
@@ -145,6 +206,7 @@ export type Database = {
           status: Database["public"]["Enums"]["coach_link_status"]
           unlinked_at: string | null
         }
+        ComputedFields: never
         Insert: {
           athlete_id: string
           coach_id: string
@@ -180,21 +242,98 @@ export type Database = {
           },
         ]
       }
+      exercise_embeddings: {
+        Row: {
+          created_at: string
+          embedding: string
+          exercise_id: string
+          source_text: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          embedding: string
+          exercise_id: string
+          source_text: string
+        }
+        Update: {
+          created_at?: string
+          embedding?: string
+          exercise_id?: string
+          source_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_embeddings_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: true
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          normalized_name: string
+          owner_coach_id: string | null
+          template_exercise_id: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          normalized_name: string
+          owner_coach_id?: string | null
+          template_exercise_id?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          normalized_name?: string
+          owner_coach_id?: string | null
+          template_exercise_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_owner_coach_id_fkey"
+            columns: ["owner_coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercises_template_exercise_id_fkey"
+            columns: ["template_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_versions: {
         Row: {
           change_summary: string | null
           created_at: string
           created_by: string
           id: string
-          plan_data: Json
+          plan_data: NonNullable<Json>
           plan_id: string
         }
+        ComputedFields: never
         Insert: {
           change_summary?: string | null
           created_at?: string
           created_by: string
           id?: string
-          plan_data: Json
+          plan_data: NonNullable<Json>
           plan_id: string
         }
         Update: {
@@ -202,7 +341,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
-          plan_data?: Json
+          plan_data?: NonNullable<Json>
           plan_id?: string
         }
         Relationships: [
@@ -230,6 +369,7 @@ export type Database = {
           id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           active_version_id?: string | null
           coach_id: string
@@ -263,7 +403,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          contact_info: Json
+          contact_info: NonNullable<Json>
           created_at: string
           deleted_at: string | null
           full_name: string | null
@@ -271,8 +411,9 @@ export type Database = {
           invite_code: string | null
           role: Database["public"]["Enums"]["user_role"] | null
         }
+        ComputedFields: never
         Insert: {
-          contact_info?: Json
+          contact_info?: NonNullable<Json>
           created_at?: string
           deleted_at?: string | null
           full_name?: string | null
@@ -281,7 +422,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
         }
         Update: {
-          contact_info?: Json
+          contact_info?: NonNullable<Json>
           created_at?: string
           deleted_at?: string | null
           full_name?: string | null
@@ -308,6 +449,25 @@ export type Database = {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      claim_coach_exercise: {
+        Args: { p_exercise_id?: string; p_name?: string }
+        Returns: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          normalized_name: string
+          owner_coach_id: string | null
+          template_exercise_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      coach_exercise_usage: { Args: { p_exercise_id: string }; Returns: Json }
       complete_profile_role: {
         Args: {
           target_full_name?: string
@@ -315,7 +475,14 @@ export type Database = {
         }
         Returns: undefined
       }
-      count_coach_pending_invites: { Args: never; Returns: number }
+      complete_workout_day: {
+        Args: { p_assignment_id: string; p_day_pos: number; p_week_pos: number }
+        Returns: Json
+      }
+      count_coach_pending_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       create_coach_plan: {
         Args: { p_change_summary?: string; p_plan_data: Json }
         Returns: {
@@ -325,7 +492,7 @@ export type Database = {
       }
       delete_coach_plan: { Args: { p_plan_id: string }; Returns: undefined }
       get_athlete_coach_link: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           coach_id: string
           coach_name: string
@@ -363,7 +530,7 @@ export type Database = {
         }[]
       }
       get_coach_pending_invites: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           athlete_email: string
           athlete_id: string
@@ -389,6 +556,56 @@ export type Database = {
           week_count: number
         }[]
       }
+      insert_athlete_max: {
+        Args: {
+          p_athlete_id: string
+          p_exercise_id: string
+          p_source: string
+          p_unit: string
+          p_value: number
+        }
+        Returns: {
+          athlete_id: string
+          entry_order: number
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          source_assignment_id: string | null
+          source_set_key: string | null
+          unit: string
+          value: number
+          voided_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "athlete_maxes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      list_athlete_maxes: {
+        Args: { p_athlete_id: string; p_exercise_ids?: string[] }
+        Returns: {
+          athlete_id: string
+          entry_order: number
+          exercise_id: string
+          id: string
+          logged_at: string
+          source: string
+          source_assignment_id: string | null
+          source_set_key: string | null
+          unit: string
+          value: number
+          voided_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "athlete_maxes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_coach_plan_versions: {
         Args: { p_plan_id: string }
         Returns: {
@@ -399,12 +616,39 @@ export type Database = {
           version_id: string
         }[]
       }
+      manage_coach_exercise: {
+        Args: {
+          p_archive?: boolean
+          p_exercise_id: string
+          p_name?: string
+          p_replacement_id?: string
+        }
+        Returns: undefined
+      }
       normalize_invite_code: { Args: { p_code: string }; Returns: string }
+      plan_uses_exercise: {
+        Args: { p_id: string; p_plan: Json }
+        Returns: boolean
+      }
       reject_coach_link: {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      replace_plan_exercise: {
+        Args: {
+          p_name: string
+          p_new: string
+          p_old: string
+          p_plan: Json
+          p_preserve_logged: boolean
+        }
+        Returns: Json
+      }
       request_coach_link: { Args: { p_invite_code: string }; Returns: string }
+      rewrite_coach_exercise_references: {
+        Args: { p_coach: string; p_name: string; p_new: string; p_old: string }
+        Returns: undefined
+      }
       save_coach_plan_version: {
         Args: {
           p_change_summary?: string
@@ -413,6 +657,32 @@ export type Database = {
         }
         Returns: {
           version_id: string
+        }[]
+      }
+      save_workout_set_actuals: {
+        Args: {
+          p_actual: Json
+          p_assignment_id: string
+          p_day_pos: number
+          p_exercise_pos: number
+          p_expected_catalog_id: string
+          p_expected_exercise_id: string
+          p_expected_set_id: string
+          p_set_pos: number
+          p_week_pos: number
+        }
+        Returns: boolean
+      }
+      search_coach_exercises: {
+        Args: {
+          p_coach_id: string
+          p_include_templates?: boolean
+          p_limit?: number
+          p_query: string
+        }
+        Returns: {
+          id: string
+          name: string
         }[]
       }
       unlink_coach_athlete: {

@@ -4,6 +4,7 @@ import { minimalWorkoutPlan } from "@/lib/plans/__tests__/fixtures";
 const mockRequireApiRole = vi.fn();
 const mockCreateCoachPlan = vi.fn();
 const mockPreparePlanForSave = vi.fn();
+const mockPreparePlanExerciseResolution = vi.fn();
 
 vi.mock("@/lib/auth/api", () => ({
   requireApiRole: (...args: unknown[]) => mockRequireApiRole(...args),
@@ -16,6 +17,10 @@ vi.mock("@/lib/plans/mutations", () => ({
 vi.mock("@/lib/plans/utils", () => ({
   preparePlanForSave: (...args: unknown[]) => mockPreparePlanForSave(...args),
 }));
+vi.mock("@/lib/exercises/prepare-plan", () => ({
+  preparePlanExerciseResolution: (...args: unknown[]) =>
+    mockPreparePlanExerciseResolution(...args),
+}));
 
 import { POST } from "@/app/api/coach/plans/route";
 
@@ -24,10 +29,12 @@ describe("POST /api/coach/plans", () => {
     mockRequireApiRole.mockReset();
     mockCreateCoachPlan.mockReset();
     mockPreparePlanForSave.mockReset();
+    mockPreparePlanExerciseResolution.mockReset();
     mockPreparePlanForSave.mockReturnValue({
       ok: true,
       plan: minimalWorkoutPlan,
     });
+    mockPreparePlanExerciseResolution.mockResolvedValue(minimalWorkoutPlan);
     mockCreateCoachPlan.mockResolvedValue({
       ok: true,
       planId: "plan-1",

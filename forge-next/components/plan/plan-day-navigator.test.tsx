@@ -13,7 +13,7 @@ vi.mock("@/lib/hooks/use-is-mobile", () => ({
 
 function makeMultiWeekPlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Strength Block",
     weeks: [
       {
@@ -103,7 +103,7 @@ function makeMultiWeekPlan(): WorkoutPlan {
 
 function makeSingleDayPlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Single Day",
     weeks: [
       {

@@ -8,9 +8,10 @@ OUTPUT="forge-next/lib/database.types.ts"
 PROJECT_ID="xidptatroxjiqoyvhnzi"
 
 if docker info >/dev/null 2>&1; then
-  npx supabase@latest db start
-  npx supabase@latest gen types typescript --local \
+  npx supabase@2.122.0 db start
+  npx supabase@2.122.0 gen types typescript --local \
     | node scripts/format-database-types.mjs "$OUTPUT"
+  npx --yes prettier@3.6.2 --write --no-semi "$OUTPUT"
   exit 0
 fi
 
@@ -20,5 +21,6 @@ if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   exit 1
 fi
 
-npx supabase@latest gen types typescript --project-id "$PROJECT_ID" \
+npx supabase@2.122.0 gen types typescript --project-id "$PROJECT_ID" \
   | node scripts/format-database-types.mjs "$OUTPUT"
+npx --yes prettier@3.6.2 --write --no-semi "$OUTPUT"

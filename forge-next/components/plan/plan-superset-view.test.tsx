@@ -16,6 +16,28 @@ describe("PlanSupersetView", () => {
     expect(screen.getByText("15 kg")).toBeInTheDocument();
   });
 
+  it("shows percentage basis in coach superset rows", () => {
+    const block = makeSupersetBlock();
+    block.exercises[0] = {
+      ...block.exercises[0],
+      basisRaw: "Barbell Curl",
+      sets: block.exercises[0].sets.map((set) => ({
+        ...set,
+        planned:
+          set.planned.type === "exact"
+            ? {
+                ...set.planned,
+                target: { type: "percentage" as const, value: 75, unit: "kg" },
+              }
+            : set.planned,
+      })),
+    };
+
+    render(<PlanSupersetView block={block} view="coach" />);
+
+    expect(screen.getAllByText("Basis: Barbell Curl")).toHaveLength(2);
+  });
+
   it("renders athlete read-only view as round cards with exercise set rows", () => {
     render(<PlanSupersetView block={makeSupersetBlock()} view="athlete" />);
 

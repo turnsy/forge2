@@ -19,7 +19,7 @@ describe("WorkoutPlanArtifactPreview", () => {
     );
 
     expect(screen.getByLabelText("Week")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Back Squat")).toBeInTheDocument();
+    expect(screen.getByLabelText("Exercise")).toHaveValue("Back Squat");
   });
 
   it("reserves scroll space under the mobile bottom nav", () => {

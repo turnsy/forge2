@@ -71,3 +71,23 @@ Selections are saved in `inputCardResponses` when Eve acknowledges the POST,
 which restores all selected rows on reload, including cancellation and failures.
 Use a new conversation when testing this deployment: older sessions may still
 carry pending calls using the superseded proposal-envelope tool schemas.
+
+## Optional max inputs before assignment
+
+The agent checks `check_plan_maxes` for the selected athletes before assignment.
+Only percentage prescriptions need coverage, using the explicit basis exercise
+when present. Missing maxes produce `maxInputs` that can be passed directly into
+`ask_question`; they render numeric kg/lb inputs in the same confirmation card.
+The field contract is `forge-next/schemas/training-max-fields.schema.json`, embedded
+in the pinned Eve question schema and checked by `scripts/check-question-schema.mjs`.
+
+Every value is optional. Confirm with blank values means continue without them;
+Cancel means neither record values nor assign. Filled values are returned in the
+standard `InputResponse.text` JSON as `maxes`, each with the checked athlete and
+exercise IDs. This is steering, not an assignment gate or an authorization grant.
+The agent records supplied values with `set_athlete_max` (append-only coach entries)
+and then assigns without a second confirmation. Existing values are not judged by
+age or plausibility. Input values and units restore on disabled answered cards.
+
+Desktop Enter sends chat; Shift+Enter inserts a newline. Mobile Enter inserts a
+newline, and IME composition never submits a message.

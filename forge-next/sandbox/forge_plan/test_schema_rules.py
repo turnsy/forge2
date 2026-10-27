@@ -16,7 +16,7 @@ class SchemaRulesTests(unittest.TestCase):
 
     def test_cheat_sheet_mentions_schema_version(self) -> None:
         text = validation_rules_cheat_sheet()
-        self.assertIn("3.0.0", text)
+        self.assertIn("3.1.0", text)
         self.assertIn("w1d1", text)
 
 

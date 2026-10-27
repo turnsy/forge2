@@ -1,13 +1,10 @@
 "use server";
 
-import {
-  applySetActuals,
-  findNextDayAfter,
-} from "@/lib/athlete/plan/domain";
+import { findNextDayAfter } from "@/lib/athlete/plan/domain";
 import {
   completeDay,
   getAssignedPlanById,
-  savePlanActuals,
+  saveWorkoutSetActuals,
 } from "@/lib/athlete/plan/repository";
 import { requireRoleAuth } from "@/lib/errors/require-role-auth";
 import {
@@ -16,6 +13,7 @@ import {
   type ServiceResult,
 } from "@/lib/errors/service-error";
 import type { ActualSet, WorkoutPlan } from "@/lib/plans/workout-plan";
+import { revalidatePath } from "next/cache";
 
 export type SaveSetActualsActionResult = ServiceResult<Record<never, never>>;
 
@@ -32,6 +30,7 @@ export async function saveSetActualsAction(
   exercisePos: number,
   setPos: number,
   actual: ActualSet | null,
+  identity: { exerciseId: string; setId: string; catalogId: string | null },
 ): Promise<SaveSetActualsActionResult> {
   const auth = await requireRoleAuth("athlete");
   if (!auth.ok) {
@@ -51,16 +50,18 @@ export async function saveSetActualsAction(
     );
   }
 
-  const updatedPlan = applySetActuals(
-    assignment.plan,
+  const saved = await saveWorkoutSetActuals({
+    assignmentId,
+    plan: assignment.plan,
     weekPos,
     dayPos,
     exercisePos,
     setPos,
     actual,
-  );
-
-  return savePlanActuals(assignmentId, updatedPlan);
+    identity,
+  });
+  if (!saved.ok) return saved;
+  return { ok: true };
 }
 
 export async function completeDayAction(
@@ -88,7 +89,6 @@ export async function completeDayAction(
 
   const completeResult = await completeDay(
     assignmentId,
-    assignment.plan,
     weekPos,
     dayPos,
   );
@@ -98,6 +98,9 @@ export async function completeDayAction(
   }
 
   const { allDaysDone, plan } = completeResult;
+  revalidatePath("/athlete");
+  revalidatePath("/athlete/maxes");
+  revalidatePath(`/coach/athletes/${auth.user.id}`);
 
   if (allDaysDone) {
     return { ok: true, nextDayPos: null, allDaysDone: true, plan };

@@ -23,7 +23,9 @@ import {
   TabPanel,
   Tabs,
 } from "@/components/ui";
+import { CoachAthleteMaxesTab } from "@/components/coach-athlete-maxes-tab";
 import { formatDate } from "@/lib/format/date";
+import type { CoachAthleteDetailTab } from "@/lib/coach/athlete-detail-tabs";
 import { computePlanCompletionPercent } from "@/lib/athlete/plan/domain";
 import { getAssignedPlanHistoryMeta } from "@/lib/athlete/plan/display";
 import { useSaveAssignedPlan } from "@/lib/coach/assigned-plan/use-save-assigned-plan";
@@ -252,23 +254,29 @@ export function CoachAthleteDetailView({
   relationship,
   activePlan,
   previousPlans,
+  initialTab = "current-plan",
 }: {
   relationship: CoachAthleteRelationship;
   activePlan: AssignedPlan | null;
   previousPlans: AssignedPlan[];
+  initialTab?: CoachAthleteDetailTab;
 }) {
-  return (
-    <ScrollPage
-      header={<PageHeader title={relationship.athleteName} />}
-      scrollClassName="flex flex-col gap-6"
-    >
-      <Tabs defaultTab="current-plan">
-        <TabList>
-          <Tab id="current-plan">Current plan</Tab>
-          <Tab id="previous-plans">History</Tab>
-          <Tab id="info">Profile</Tab>
-        </TabList>
+  const maxesListUrl = `/api/coach/athletes/${relationship.athleteId}/maxes`;
 
+  return (
+    <Tabs defaultTab={initialTab}>
+      <ScrollPage
+        header={<PageHeader title={relationship.athleteName} />}
+        subHeader={
+          <TabList>
+            <Tab id="current-plan">Current plan</Tab>
+            <Tab id="previous-plans">History</Tab>
+            <Tab id="maxes">Maxes</Tab>
+            <Tab id="info">Profile</Tab>
+          </TabList>
+        }
+        scrollClassName="flex flex-col gap-6"
+      >
         <TabPanel id="current-plan">
           {!activePlan ? (
             <EmptyState
@@ -285,6 +293,10 @@ export function CoachAthleteDetailView({
           <PreviousPlansTab previousPlans={previousPlans} />
         </TabPanel>
 
+        <TabPanel id="maxes">
+          <CoachAthleteMaxesTab listUrl={maxesListUrl} saveUrl={maxesListUrl} />
+        </TabPanel>
+
         <TabPanel id="info">
           <div className="space-y-6">
             <MetaGroup>
@@ -299,7 +311,7 @@ export function CoachAthleteDetailView({
             <CoachAthleteDetailActions relationship={relationship} />
           </div>
         </TabPanel>
-      </Tabs>
-    </ScrollPage>
+      </ScrollPage>
+    </Tabs>
   );
 }

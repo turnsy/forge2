@@ -298,20 +298,24 @@ export function mergeSavedActual(
   };
 }
 
-export type ResolveSaveActualResult =
-  | { type: "save"; actual: ActualSet | null }
-  | { type: "skip" };
+export type ResolveSaveActualResult = {
+  type: "save";
+  actual: ActualSet | null;
+};
 
 export function resolveSaveActual(
   repsInput: string,
   targetInput: string,
   set: Set,
 ): ResolveSaveActualResult {
-  if (!repsInput.trim() && !targetInput.trim() && set.actual !== null) {
-    return { type: "skip" };
+  if (!repsInput.trim() && !targetInput.trim()) {
+    return { type: "save", actual: null };
   }
 
-  return { type: "save", actual: buildActualForSave(repsInput, targetInput, set) };
+  return {
+    type: "save",
+    actual: buildActualForSave(repsInput, targetInput, set),
+  };
 }
 
 export function applySetActuals(
@@ -365,7 +369,10 @@ export function completeDayInPlan(
   plan: WorkoutPlan,
   weekPos: number,
   dayPos: number,
-): { plan: WorkoutPlan; setStatuses: { setIndex: number; status: SetCompletionStatus }[] } {
+): {
+  plan: WorkoutPlan;
+  setStatuses: { setIndex: number; status: SetCompletionStatus }[];
+} {
   const completedAt = new Date().toISOString();
   const setStatuses: { setIndex: number; status: SetCompletionStatus }[] = [];
 

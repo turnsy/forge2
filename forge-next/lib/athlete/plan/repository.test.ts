@@ -9,10 +9,12 @@ const mockOrder = vi.fn();
 const mockLimit = vi.fn();
 const mockMaybeSingle = vi.fn();
 const mockUpdate = vi.fn();
+const mockRpc = vi.fn();
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }));
 
@@ -22,6 +24,8 @@ import {
   listMyPlanHistory,
   mapAssignedPlanRow,
   savePlanActuals,
+  saveWorkoutSetActuals,
+  completeDay,
 } from "@/lib/athlete/plan/repository";
 
 function mockAssignedPlanQuery(result: { data: unknown; error: unknown }) {
@@ -140,11 +144,67 @@ describe("athlete plan repository", () => {
       update: vi.fn().mockReturnValue({ eq: updateEq }),
     });
 
-    await expect(savePlanActuals("assignment-1", minimalWorkoutPlan)).resolves.toEqual({
+    await expect(
+      savePlanActuals("assignment-1", minimalWorkoutPlan),
+    ).resolves.toEqual({
       ok: true,
     });
 
     expect(updateEq).toHaveBeenCalledWith("id", "assignment-1");
+  });
+
+  it("rejects invalid actuals before calling the database", async () => {
+    const result = await saveWorkoutSetActuals({
+      identity: { exerciseId: "exercise", setId: "set", catalogId: null },
+      assignmentId: "assignment-1",
+      plan: minimalWorkoutPlan,
+      weekPos: 0,
+      dayPos: 0,
+      exercisePos: 0,
+      setPos: 0,
+      actual: { reps: 1, target: { type: "absolute", value: -5, unit: "kg" } },
+    });
+    expect(result.ok).toBe(false);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("completes the latest stored workout through the atomic RPC", async () => {
+    mockRpc.mockResolvedValue({ data: { plan: minimalWorkoutPlan, allDaysDone: false, maxChanged: true, setStatuses: [{ setIndex: 0, status: "completed" }] }, error: null });
+    const result = await completeDay("assignment-1", 0, 1);
+    expect(mockRpc).toHaveBeenCalledWith("complete_workout_day", { p_assignment_id: "assignment-1", p_week_pos: 0, p_day_pos: 1 });
+    expect(result).toMatchObject({ ok: true, plan: minimalWorkoutPlan, maxChanged: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid completion result instead of trusting unvalidated plan JSON", async () => {
+    mockRpc.mockResolvedValue({ data: { plan: { broken: true } }, error: null });
+    expect(await completeDay("assignment-1", 0, 0)).toMatchObject({ ok: false, code: "db_error" });
+  });
+
+  it.each([
+    ["P0002", "not_found"],
+    ["22023", "validation_error"],
+    ["XX000", "db_error"],
+  ])("maps atomic save error %s to %s", async (code, expected) => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { code, message: "Save rejected" },
+    });
+    const result = await saveWorkoutSetActuals({
+      identity: { exerciseId: "exercise", setId: "set", catalogId: null },
+      assignmentId: "assignment-1",
+      plan: minimalWorkoutPlan,
+      weekPos: 0,
+      dayPos: 0,
+      exercisePos: 0,
+      setPos: 0,
+      actual: null,
+    });
+    expect(result).toEqual({
+      ok: false,
+      code: expected,
+      message: "Save rejected",
+    });
   });
 
   it("lists non-active assigned plans for an athlete and coach", async () => {

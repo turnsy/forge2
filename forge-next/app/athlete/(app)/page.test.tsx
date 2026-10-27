@@ -18,6 +18,10 @@ vi.mock("@/lib/links/repository", () => ({
   getAthleteCoachLink: vi.fn(),
 }));
 
+vi.mock("@/lib/maxes/mutations", () => ({
+  listAthleteMaxes: vi.fn(async () => []),
+}));
+
 vi.mock("@/components/athlete-link-form", () => ({
   AthleteLinkForm: () => <div>Link form</div>,
 }));

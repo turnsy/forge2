@@ -7,8 +7,64 @@ import {
   formatReps,
   formatTargetInstruction,
   getDayTitle,
+  exerciseHasPercentageSets,
+  getExerciseBasisLabel,
   getWeekTitle,
+  hasCustomBasis,
 } from "@/lib/plans/display";
+
+import { makeExercise } from "@/lib/plans/__tests__/fixtures";
+
+describe("getExerciseBasisLabel", () => {
+  it("returns the custom basis name when it differs from the exercise name", () => {
+    expect(
+      getExerciseBasisLabel(
+        makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" }),
+      ),
+    ).toBe("Bench Press");
+  });
+
+  it("returns the exercise name when basis is missing or matches the exercise", () => {
+    expect(getExerciseBasisLabel(makeExercise({ name: "Bench Press" }))).toBe("Bench Press");
+    expect(
+      getExerciseBasisLabel(makeExercise({ name: "Bench Press", basisRaw: "Bench Press" })),
+    ).toBe("Bench Press");
+  });
+
+  it("hasCustomBasis is true only when basis differs from exercise name", () => {
+    expect(
+      hasCustomBasis(makeExercise({ name: "Close Grip Bench", basisRaw: "Bench Press" })),
+    ).toBe(true);
+    expect(hasCustomBasis(makeExercise({ name: "Bench Press" }))).toBe(false);
+    expect(
+      hasCustomBasis(makeExercise({ name: "Bench Press", basisRaw: "Bench Press" })),
+    ).toBe(false);
+  });
+
+  it("exerciseHasPercentageSets detects percentage targets", () => {
+    expect(exerciseHasPercentageSets(makeExercise({ name: "Back Squat" }))).toBe(false);
+    expect(
+      exerciseHasPercentageSets(
+        makeExercise({
+          name: "Back Squat",
+          sets: [
+            {
+              id: "set-1",
+              planned: {
+                type: "exact",
+                reps: 5,
+                target: { type: "percentage", value: 75, unit: "lb" },
+              },
+              actual: null,
+              status: "planned",
+              locked: false,
+            },
+          ],
+        }),
+      ),
+    ).toBe(true);
+  });
+});
 
 describe("formatReps", () => {
   it("formats integer reps", () => {

@@ -31,24 +31,22 @@ const graphqlPublic = `  graphql_public: {
 function formatDatabaseTypes(rawInput) {
   let output = rawInput.replace(/\r\n/g, "\n");
 
-  output = output.replace(
-    /\n\s*__InternalSupabase:\s*\{[\s\S]*?\}\n/,
-    "\n",
-  );
+  output = output.replace(/\n\s*__InternalSupabase:\s*\{[\s\S]*?\}\n/, "\n");
 
   output = output.replace(
     /export type Database = \{\n(?:\s*\/\/.*\n)+/,
     "export type Database = {\n",
   );
 
-  if (!output.includes("graphql_public:")) {
+  if (!/["']?graphql_public["']?\s*:/.test(output)) {
     output = output.replace(
       "export type Database = {",
       `export type Database = {\n${graphqlPublic}`,
     );
   }
 
-  if (!output.includes("graphql_public: {\n    Enums: {}")) {
+  const constants = output.slice(output.indexOf("export const Constants"));
+  if (!/["']?graphql_public["']?\s*:/.test(constants)) {
     output = output.replace(
       "export const Constants = {\n  public:",
       "export const Constants = {\n  graphql_public: {\n    Enums: {},\n  },\n  public:",

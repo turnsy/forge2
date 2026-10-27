@@ -14,6 +14,7 @@ export type ChatMessage = {
     request: InputRequest;
     status: "pending" | "submitted" | "completed" | "cancelled" | "failed";
     selectedChoiceIds?: string[];
+    responseText?: string;
   };
   role: "user" | "assistant";
   content: string;

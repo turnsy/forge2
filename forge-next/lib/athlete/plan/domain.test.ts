@@ -31,7 +31,7 @@ import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 
 function makePlan(): WorkoutPlan {
   return {
-    schemaVersion: "3.0.0",
+    schemaVersion: "3.1.0",
     name: "Test Plan",
     weeks: [
       {
@@ -226,7 +226,7 @@ describe("athlete plan domain", () => {
     });
   });
 
-  it("skips wiping persisted actuals when both inputs are empty", () => {
+  it("clears persisted actuals when both inputs are empty", () => {
     const plan = makePlan();
     const savedSet = {
       ...plan.weeks[0].days[0].blocks[0].exercises[0].sets[0],
@@ -236,7 +236,10 @@ describe("athlete plan domain", () => {
       },
     };
 
-    expect(resolveSaveActual("", "", savedSet)).toEqual({ type: "skip" });
+    expect(resolveSaveActual("", "", savedSet)).toEqual({
+      type: "save",
+      actual: null,
+    });
     expect(resolveSaveActual("", "65", savedSet)).toEqual({
       type: "save",
       actual: {
