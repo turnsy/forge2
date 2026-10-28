@@ -137,6 +137,13 @@ export function ChatComposer({
 
   return (
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
+      {!state.hasStarted && state.attachments.length > 0 ? (
+        <ChatAttachmentList
+          attachments={state.attachments}
+          onRemove={onRemoveAttachment}
+          className={compact ? "mb-2" : "mb-3"}
+        />
+      ) : null}
       <div>
         <div
           className={`flex flex-col transition ${
@@ -204,13 +211,7 @@ export function ChatComposer({
           )}
         </div>
       </div>
-      {!state.hasStarted && state.attachments.length > 0 ? (
-        <ChatAttachmentList
-          attachments={state.attachments}
-          onRemove={onRemoveAttachment}
-          className={compact ? "mt-2" : "mt-3"}
-        />
-      ) : null}
+
     </FadeIn>
   );
 }

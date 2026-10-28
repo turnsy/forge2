@@ -611,7 +611,8 @@ export function useCoachPlanWorkspace(options?: {
       let userMessageIndex = 0;
       return workspaceData.messages.map((message) => {
         if (message.role !== "user") return message;
-        const record = messageAttachments.find((item) => item.userMessageIndex === userMessageIndex++);
+        const messageIndex = userMessageIndex++;
+        const record = messageAttachments.find((item) => item.userMessageIndex === messageIndex);
         return record ? { ...message, attachments: record.attachments } : message;
       });
     })(),

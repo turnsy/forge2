@@ -223,7 +223,7 @@ describe("ChatComposer", () => {
     expect(onReset).toHaveBeenCalledOnce();
   });
 
-  it("renders attachments below the composer before the thread starts", () => {
+  it("renders attachments above the composer before the thread starts", () => {
     const { container } = render(
       <ChatComposer
         state={{
@@ -246,7 +246,7 @@ describe("ChatComposer", () => {
     const prompt = screen.getByRole("textbox");
     const chip = screen.getByText("my plan.csv");
     expect(
-      prompt.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING,
+      chip.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
   });

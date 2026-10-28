@@ -845,6 +845,37 @@ describe("useCoachPlanWorkspace", () => {
     expect(listSessionAttachments).not.toHaveBeenCalled();
   });
 
+  it.each([[0, 1], [1, 3]])("keeps attachments on user turns %i and %i across renders and reload", (firstTurn, secondTurn) => {
+    const attachment = (name: string) => ({ localId: name, status: "uploaded" as const, displayLabel: name, contextFileIds: [`coach/session/${name}`] });
+    const first = attachment("first.png");
+    const second = attachment("second.png");
+    agentDataState.current.messages = Array.from({ length: 4 }, (_, index) => [
+      { role: "user" as const, content: `Question ${index}` },
+      { role: "assistant" as const, content: `Answer ${index}` },
+    ]).flat();
+    const options = { initialSession: { id: "session-1", snapshot: {
+      title: "Images", forgeSessionId: "session-1", eve: null,
+      messageAttachments: [
+        { userMessageIndex: firstTurn, attachments: [first] },
+        { userMessageIndex: secondTurn, attachments: [second] },
+      ],
+    } } };
+    const assertAttachments = (messages: ReturnType<typeof useCoachPlanWorkspace>["state"]["messages"]) => {
+      messages.forEach((message, index) => {
+        const expected = index === firstTurn * 2 ? [first] : index === secondTurn * 2 ? [second] : undefined;
+        expect(message.attachments).toEqual(expected);
+      });
+    };
+    const initial = renderHook(() => useCoachPlanWorkspace(options));
+    assertAttachments(initial.result.current.state.messages);
+    initial.rerender();
+    assertAttachments(initial.result.current.state.messages);
+    initial.unmount();
+    const restored = renderHook(() => useCoachPlanWorkspace(options));
+    assertAttachments(restored.result.current.state.messages);
+    expect(restored.result.current.state.attachments).toEqual([]);
+  });
+
   it("only removes an unsent attachment, without reintroducing sent bucket files", async () => {
     uploadContextFile.mockResolvedValue({ ok: true, contextFileIds: ["coach/session/new.txt"] });
     removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [{ localId: "old", status: "uploaded", displayLabel: "sent file" }] });
