@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { InputRequest, InputResponse } from "eve/client";
 import { Button, Input, Select } from "@/components/ui";
 import { trainingMaxFields, type TrainingMaxAnswer } from "@/lib/chat/training-max-inputs";
@@ -20,6 +20,7 @@ export function ChatInputRequest({
   status = "pending",
   savedChoiceIds,
   savedResponseText,
+  onDraftChange,
 }: {
   request: InputRequest;
   disabled: boolean;
@@ -27,13 +28,17 @@ export function ChatInputRequest({
   status?: NonNullable<ChatMessage["inputCard"]>["status"];
   savedChoiceIds?: string[];
   savedResponseText?: string;
+  onDraftChange?: (response: InputResponse) => void;
 }) {
   const fields = trainingMaxFields(request);
   const [maxValues, setMaxValues] = useState<Record<string, { value: string; unit: "kg" | "lb" }>>(
     {},
   );
-  const savedMaxes = parseSelectionAnswer(savedResponseText)?.maxes;
+  const savedAnswer = status === "pending" ? null : parseSelectionAnswer(savedResponseText);
+  const savedMaxes = savedAnswer?.maxes;
   const fieldValue = (field: (typeof fields)[number]) => {
+    const raw = savedAnswer?.fieldValues?.find((item) => item.id === field.id);
+    if (raw) return { value: raw.value, unit: raw.unit };
     const saved = savedMaxes?.find((item) => item.id === field.id);
     return savedMaxes
       ? { value: saved ? String(saved.value) : "", unit: saved?.unit ?? field.unit }
@@ -63,12 +68,33 @@ export function ChatInputRequest({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const settled = ["completed", "cancelled", "failed"].includes(status);
+  const settled = ["completed", "cancelled", "failed", "replied"].includes(status);
   const busy = disabled || submitting || settled || status === "submitted";
-  const selected = savedChoiceIds ?? selectedOptionIds;
+  const selected = busy ? savedChoiceIds ?? selectedOptionIds : selectedOptionIds;
   const prompt = request.prompt.startsWith("Approve tool call:")
     ? "Confirm the proposed action?"
     : request.prompt;
+  useEffect(() => {
+    if (status !== "pending" || !onDraftChange) return;
+    const draftFields = trainingMaxFields(request);
+    if (request.options?.length || draftFields.length) {
+      const values = draftFields.map((field) => ({
+        ...field,
+        ...(maxValues[field.id] ?? { value: field.value === undefined ? "" : String(field.value), unit: field.unit }),
+      }));
+      const response = selectionResponse(request, selectedOptionIds, false,
+        values.flatMap((field) => field.value.trim() && Number.isFinite(Number(field.value)) && Number(field.value) > 0
+          ? [{ ...field, value: Number(field.value) }] : []),
+      );
+      onDraftChange({ ...response, text: JSON.stringify({
+        ...parseSelectionAnswer(response.text),
+        ...(values.length ? { fieldValues: values.map(({ id, label, value, unit }) => ({ id, label, value, unit })) } : {}),
+      }) });
+    } else {
+      onDraftChange({ requestId: request.requestId, text });
+    }
+  }, [request, selectedOptionIds, maxValues, text, status, onDraftChange]);
+
   async function respond(response: InputResponse) {
     if (busy) return;
     setSubmitting(true);
@@ -223,7 +249,7 @@ export function ChatInputRequest({
         >
           <textarea
             aria-label="Your response"
-            value={text}
+            value={savedAnswer?.draftText ?? text}
             disabled={busy}
             className="w-full rounded-md border border-glass-border bg-transparent p-2"
             onChange={(event) => setText(event.target.value)}
@@ -233,7 +259,7 @@ export function ChatInputRequest({
           </Button>
         </form>
       )}
-      {status !== "pending" ? (
+      {status !== "pending" && status !== "replied" ? (
         <p role="status" className="text-sm text-surface-muted">
           {status === "completed"
             ? "Completed"

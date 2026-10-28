@@ -1,9 +1,39 @@
 import { describe, expect, it } from "vitest";
+import { chatInputResponse, selectionResponse } from "@/lib/chat/input-selection";
 import { createEveCoachReducer } from "@/lib/chat/adapters/plan/eve-coach-reducer";
 import type { HandleMessageStreamEvent, InputRequest } from "eve/client";
 
 describe("createEveCoachReducer", () => {
   const reducer = createEveCoachReducer();
+
+  it("keeps chat-resolved cards neutral through continuation and replay", () => {
+    const request: InputRequest = { requestId: "q", prompt: "Which day?", display: "select", options: [{ id: "mon", label: "Monday" }], action: { kind: "tool-call", callId: "q", toolName: "ask_question", input: {} } };
+    const response = chatInputResponse(request, "Friday instead", selectionResponse(request, ["mon"]));
+    const requested = { type: "input.requested" as const, data: { requests: [request], sequence: 1, stepIndex: 0, turnId: "turn-1" } };
+    const answered = reducer.reduce(reducer.reduce(reducer.initial(), requested), { type: "client.input.responded", data: { createdAt: 0, responses: [response] } });
+    expect(answered.messages[0].inputCard).toMatchObject({ status: "replied", selectedChoiceIds: ["mon"] });
+    const continued = reducer.reduce(answered, { type: "turn.started", data: { turnId: "turn-2", sequence: 2 } });
+    expect(continued.pendingInputRequests).toEqual([]);
+    expect(continued.messages[0].inputCard?.status).toBe("replied");
+    const replay = createEveCoachReducer({ inputCardResponses: [response] });
+    const restored = replay.reduce(replay.initial(), requested);
+    expect(restored.messages[0].inputCard).toMatchObject({ status: "replied", selectedChoiceIds: ["mon"], responseText: response.text });
+  });
+
+  it("only requests showing the artifact for a successful explicit show tool", () => {
+    const event = (toolName: string, output: { ok: boolean } | { ok: boolean; plan: { name: string } }): HandleMessageStreamEvent => ({
+      type: "action.result", data: { sequence: 1, turnId: "turn", stepIndex: 0, status: "completed", result: { kind: "tool-result", toolName, callId: "call", output } },
+    });
+    let state = reducer.initial();
+    state = reducer.reduce(state, event("set_current_artifact", { ok: true, plan: { name: "Plan" } }));
+    expect(state.artifactShowRequest ?? 0).toBe(0);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: false }));
+    expect(state.artifactShowRequest ?? 0).toBe(0);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: true }));
+    expect(state.artifactShowRequest).toBe(1);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: true }));
+    expect(state.artifactShowRequest).toBe(2);
+  });
 
   it("clears stale approvals when a Gateway failure terminates the session", () => {
     const request: InputRequest = {

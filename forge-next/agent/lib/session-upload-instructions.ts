@@ -6,7 +6,7 @@ export function buildSessionUploadsPresentInstructions(paths: string[]): string 
   const pathLines = paths.map((path) => `- ${path}`).join("\n");
 
   return [
-    "The coach has attached file(s) to this conversation. Normalized source text is available at:",
+    "The coach has attached file(s) to this conversation. Source files (normalized text or original images) are available at:",
     pathLines,
     "",
     'When they ask to build, create, or generate a plan from an attachment, spreadsheet, or vague phrases like "from this", "from the file", "using the upload", or "based on what I attached":',

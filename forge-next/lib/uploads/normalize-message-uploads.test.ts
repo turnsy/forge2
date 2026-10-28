@@ -4,8 +4,10 @@ import { UPLOAD_CSV_MAX_ROWS } from "@/lib/uploads/parse-upload";
 import { makeCsvBuffer, makeXlsxBuffer } from "@/lib/uploads/__tests__/fixtures";
 
 const mockSaveUploadContext = vi.fn();
+const mockSaveUploadImage = vi.fn();
 
 vi.mock("@/lib/uploads/context-storage", () => ({
+  saveUploadImage: (...args: unknown[]) => mockSaveUploadImage(...args),
   saveUploadContext: (...args: unknown[]) => mockSaveUploadContext(...args),
 }));
 
@@ -18,6 +20,21 @@ describe("normalizeMessageUploads", () => {
       ok: true,
       contextFileId: "coach-1/session-1/stored.txt",
     });
+  });
+
+  it("stores images intact without normalizing them to text", async () => {
+    const buffer = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=", "base64");
+    mockSaveUploadImage.mockResolvedValue({ ok: true, contextFileId: "coach-1/session-1/photo.png" });
+    const result = await normalizeMessageUploads({ coachId: "coach-1", sessionId: "session-1", files: [{ filename: "photo.png", buffer }] });
+    expect(result).toEqual({ ok: true, contextFileIds: ["coach-1/session-1/photo.png"] });
+    expect(mockSaveUploadImage).toHaveBeenCalledWith({ coachId: "coach-1", sessionId: "session-1", filename: "photo.png", buffer, mediaType: "image/png" });
+    expect(mockSaveUploadContext).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-image renamed to png before storage", async () => {
+    const result = await normalizeMessageUploads({ coachId: "c", sessionId: "s", files: [{ filename: "fake.png", buffer: Buffer.from("not an image") }] });
+    expect(result).toMatchObject({ ok: false, error: "PARSE_FAILED" });
+    expect(mockSaveUploadContext).not.toHaveBeenCalled();
   });
 
   it("normalizes CSV and persists to storage", async () => {

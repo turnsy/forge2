@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ChatAttachmentList } from "@/components/chat/chat-attachment";
+import { UPLOAD_ALLOWED_EXTENSIONS } from "@/lib/uploads/limits";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { RotateIcon } from "@/components/icons/rotate-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
@@ -101,7 +102,7 @@ export function ChatComposer({
             variant="ghost"
             size="sm"
             icon={<RotateIcon />}
-            aria-label="Reset conversation"
+            aria-label="New conversation"
             onClick={onReset}
           />
         ) : null}
@@ -136,6 +137,13 @@ export function ChatComposer({
 
   return (
     <FadeIn index={0} className={`relative w-full text-left ${className}`}>
+      {!state.hasStarted && state.attachments.length > 0 ? (
+        <ChatAttachmentList
+          attachments={state.attachments}
+          onRemove={onRemoveAttachment}
+          className={compact ? "mb-2" : "mb-3"}
+        />
+      ) : null}
       <div>
         <div
           className={`flex flex-col transition ${
@@ -153,6 +161,13 @@ export function ChatComposer({
                     : "border-glass-border"
                 }`
           }`}
+          onPaste={(event) => {
+            const files = Array.from(event.clipboardData.files ?? []);
+            if (files.length) {
+              event.preventDefault();
+              addFiles(files);
+            }
+          }}
           onDragEnter={(event) => {
             event.preventDefault();
             setDragDepth((current) => current + 1);
@@ -173,7 +188,7 @@ export function ChatComposer({
             type="file"
             className="sr-only"
             multiple
-            accept=".csv,.xlsx,.xls,.pdf"
+            accept={UPLOAD_ALLOWED_EXTENSIONS.join(",")}
             onChange={(event) => {
               addFiles(Array.from(event.target.files ?? []));
               event.target.value = "";
@@ -196,13 +211,7 @@ export function ChatComposer({
           )}
         </div>
       </div>
-      {!state.hasStarted && state.attachments.length > 0 ? (
-        <ChatAttachmentList
-          attachments={state.attachments}
-          onRemove={onRemoveAttachment}
-          className={compact ? "mt-2" : "mt-3"}
-        />
-      ) : null}
+
     </FadeIn>
   );
 }

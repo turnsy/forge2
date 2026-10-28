@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Ajv from "ajv";
-import { parseSelectionAnswer, selectionResponse } from "@/lib/chat/input-selection";
+import { chatInputResponse, parseSelectionAnswer, selectionResponse } from "@/lib/chat/input-selection";
 
 // Exercise the installed Eve implementation, including our small schema extension.
 async function eveModule(path: string) {
@@ -10,6 +10,28 @@ async function eveModule(path: string) {
 }
 
 describe("native Eve question continuation", () => {
+  it("resolves several questions with one message and preserves their draft context for the model", async () => {
+    const { extractQuestionInputRequests } = await eveModule("harness/input-extraction.js");
+    const { setPendingInputBatch, resolvePendingInput, getApprovedTools } = await eveModule("harness/input-requests.js");
+    const requests = extractQuestionInputRequests({ toolCalls: ["days", "athletes"].map((id) => ({ toolName: "ask_question", toolCallId: id, input: {
+      prompt: `Which ${id}?`, allowFreeform: false, selectionMode: "multiple", options: [{ id: "a", label: "First" }, { id: "b", label: "Second" }],
+    } })), excludedCallIds: new Set() });
+    const message = "Also the second, but change the plan first";
+    const responses = requests.map((request: Parameters<typeof chatInputResponse>[0]) => chatInputResponse(request, message, selectionResponse(request, ["a"])));
+    const session = setPendingInputBatch({ session: { history: [] }, requests, responseMessages: [] });
+    const resumed = resolvePendingInput({ session, stepInput: { message, inputResponses: responses } });
+    expect(resumed.outcome).toBe("resolved");
+    expect(resumed.consumedMessage).not.toBe(true);
+    expect(resumed.deferredMessage).not.toBe(true);
+    expect([...getApprovedTools(resumed.session)]).toEqual([]);
+    expect(resumed.messages[0].content).toHaveLength(2);
+    for (const part of resumed.messages[0].content) {
+      expect(part.type).toBe("tool-result");
+      expect(part.output.value.status).toBe("answered");
+      expect(parseSelectionAnswer(part.output.value.text)).toEqual({ status: "replied", message, selections: [{ id: "a", label: "First" }] });
+    }
+  });
+
   it.each([false, true])("passes all selected IDs and labels to the model, cancellation=%s", async (cancelled) => {
     const { ASK_QUESTION_INPUT_SCHEMA } = await eveModule("runtime/framework-tools/ask-question.js");
     const { extractQuestionInputRequests } = await eveModule("harness/input-extraction.js");

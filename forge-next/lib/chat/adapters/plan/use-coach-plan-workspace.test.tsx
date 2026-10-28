@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
-import { CANCEL_INPUT_REQUEST_TEXT, selectionResponse } from "@/lib/chat/input-selection";
+import { CANCEL_INPUT_REQUEST_TEXT, chatInputResponse, parseSelectionAnswer, selectionResponse } from "@/lib/chat/input-selection";
 import type { InputRequest } from "eve/client";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
@@ -19,6 +19,8 @@ const {
   listSessionAttachments,
   removeSessionAttachments,
   mockSend,
+  skipPostAcknowledgement,
+  uploadContextFile,
   mockReset,
   mockStop,
   capturedEveAgentOptions,
@@ -33,6 +35,8 @@ const {
   listSessionAttachments: vi.fn(),
   removeSessionAttachments: vi.fn(),
   mockSend: vi.fn(),
+  skipPostAcknowledgement: { current: false },
+  uploadContextFile: vi.fn(),
   mockReset: vi.fn(),
   mockStop: vi.fn(),
   capturedEveAgentOptions: {
@@ -107,6 +111,8 @@ vi.mock("@/lib/chat/adapters/plan/forge-eve-client", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/chat/adapters/plan/upload-context-client", () => ({ uploadContextFile }));
+
 vi.mock("eve/react", () => ({
   useEveAgent: (options?: {
     prepareSend?: (input: { message: string }) => {
@@ -136,7 +142,7 @@ vi.mock("eve/react", () => ({
       },
       send: async (input: { message: string }) => {
         const prepared = options?.prepareSend?.(input) ?? input;
-        capturedOnPostResponse.current?.({
+        if (!skipPostAcknowledgement.current) capturedOnPostResponse.current?.({
           sessionId: "eve-session",
           continuationToken: "token",
         });
@@ -229,10 +235,11 @@ describe("useCoachPlanWorkspace", () => {
       await result.current.respondToInput({ requestId: "approval-1", text: "yes" });
       await result.current.respondToInput({ requestId: "approval-1", optionId: "unknown" });
     });
-    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockSend).toHaveBeenCalledExactlyOnceWith({ message: "Hello", inputResponses: [{ requestId: "approval-1", optionId: "deny", text: JSON.stringify({ status: "replied", message: "Hello", selections: [] }) }], clientContext: undefined });
   });
   beforeEach(() => {
     vi.clearAllMocks();
+    skipPostAcknowledgement.current = false;
     capturedEveAgentOptions.current = undefined;
     capturedOnPostResponse.current = undefined;
     agentSessionState.current = {
@@ -261,6 +268,44 @@ describe("useCoachPlanWorkspace", () => {
     generateSessionTitleFromPrompt.mockResolvedValue("Strength block");
     listSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
     removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
+  });
+
+  it("sends a written answer with every pending card's draft and persists all responses on acknowledgement", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const requests: InputRequest[] = ["first", "second"].map((id) => ({
+      requestId: id, prompt: `Choose ${id}`, display: "select", allowFreeform: false,
+      options: [{ id: "a", label: "First" }, { id: "b", label: "Second" }],
+      action: { kind: "tool-call", callId: id, toolName: "ask_question", input: { selectionMode: "multiple" } },
+    }));
+    Object.assign(agentDataState.current, { pendingInputRequests: requests });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    act(() => { result.current.updateInputDraft(selectionResponse(requests[0], ["a"])); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Also the second, but change the plan first" }]); });
+    expect(mockSend).toHaveBeenCalledOnce();
+    const payload = mockSend.mock.calls[0][0];
+    expect(payload.message).toBe("Also the second, but change the plan first");
+    expect(payload.inputResponses).toHaveLength(2);
+    expect(parseSelectionAnswer(payload.inputResponses[0].text)).toMatchObject({ status: "replied", message: payload.message, selections: [{ id: "a", label: "First" }] });
+    expect(parseSelectionAnswer(payload.inputResponses[1].text)).toMatchObject({ status: "replied", selections: [] });
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ inputCardResponses: payload.inputResponses }));
+  });
+
+  it("releases the send guard after a delivery failure so the reply can be retried", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const request: InputRequest = { requestId: "question", prompt: "Which day?", display: "select", options: [{ id: "mon", label: "Monday" }], action: { kind: "tool-call", callId: "question", toolName: "ask_question", input: {} } };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    generateSessionTitleFromPrompt.mockRejectedValueOnce(new Error("network down"));
+    // The title helper handles generation failure; the message can still send.
+    skipPostAcknowledgement.current = true;
+    mockSend.mockRejectedValueOnce(new Error("Delivery failed"));
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Friday instead" }]); });
+    expect(result.current.state.errors[0].message).toContain("Delivery failed");
+    expect(saveSessionSnapshot.mock.calls.every(([, snapshot]) => snapshot.inputCardResponses.length === 0)).toBe(true);
+    skipPostAcknowledgement.current = false;
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Friday instead" }]); });
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(mockSend.mock.calls[1][0].inputResponses[0]).toEqual(chatInputResponse(request, "Friday instead"));
   });
 
   it("initializes with a draft plan when initialPlan is provided without planId", () => {
@@ -828,95 +873,101 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockStop).not.toHaveBeenCalled();
   });
 
-  it("restores session attachments when loading a historical conversation", async () => {
-    listSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
-      ],
-    });
-
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({
-        initialSession: {
-          id: "session-1",
-          snapshot: {
-            title: "Bench block",
-            forgeSessionId: "session-1",
-            eve: null,
-          },
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(listSessionAttachments).toHaveBeenCalledWith("session-1");
-    });
-
-    await waitFor(() => {
-      expect(result.current.state.attachments).toEqual([
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
-      ]);
-    });
-
-    expect(result.current.state.contextFileIds).toEqual([
-      "coach-1/session-1/my-plan.txt",
-    ]);
+  it("restores sent attachments on their message, leaving the composer empty", () => {
+    agentDataState.current.messages = [{ role: "user", content: "Use this" }];
+    const attachment = { localId: "sent", status: "uploaded" as const, displayLabel: "plan.png", contextFileIds: ["coach/session/plan.png"] };
+    const { result } = renderHook(() => useCoachPlanWorkspace({ initialSession: {
+      id: "session-1", snapshot: { title: "Plan", forgeSessionId: "session-1", eve: null,
+        messageAttachments: [{ userMessageIndex: 0, attachments: [attachment] }],
+      },
+    } }));
+    expect(result.current.state.messages[0].attachments).toEqual([attachment]);
+    expect(result.current.state.attachments).toEqual([]);
+    expect(listSessionAttachments).not.toHaveBeenCalled();
   });
 
-  it("removes a restored attachment via storage and syncs the composer", async () => {
-    listSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
+  it.each([[0, 1], [1, 3]])("keeps attachments on user turns %i and %i across renders and reload", (firstTurn, secondTurn) => {
+    const attachment = (name: string) => ({ localId: name, status: "uploaded" as const, displayLabel: name, contextFileIds: [`coach/session/${name}`] });
+    const first = attachment("first.png");
+    const second = attachment("second.png");
+    agentDataState.current.messages = Array.from({ length: 4 }, (_, index) => [
+      { role: "user" as const, content: `Question ${index}` },
+      { role: "assistant" as const, content: `Answer ${index}` },
+    ]).flat();
+    const options = { initialSession: { id: "session-1", snapshot: {
+      title: "Images", forgeSessionId: "session-1", eve: null,
+      messageAttachments: [
+        { userMessageIndex: firstTurn, attachments: [first] },
+        { userMessageIndex: secondTurn, attachments: [second] },
       ],
-    });
-    removeSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [],
-    });
+    } } };
+    const assertAttachments = (messages: ReturnType<typeof useCoachPlanWorkspace>["state"]["messages"]) => {
+      messages.forEach((message, index) => {
+        const expected = index === firstTurn * 2 ? [first] : index === secondTurn * 2 ? [second] : undefined;
+        expect(message.attachments).toEqual(expected);
+      });
+    };
+    const initial = renderHook(() => useCoachPlanWorkspace(options));
+    assertAttachments(initial.result.current.state.messages);
+    initial.rerender();
+    assertAttachments(initial.result.current.state.messages);
+    initial.unmount();
+    const restored = renderHook(() => useCoachPlanWorkspace(options));
+    assertAttachments(restored.result.current.state.messages);
+    expect(restored.result.current.state.attachments).toEqual([]);
+  });
 
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({
-        initialSession: {
-          id: "session-1",
-          snapshot: {
-            title: "Bench block",
-            forgeSessionId: "session-1",
-            eve: null,
-          },
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(result.current.state.attachments).toHaveLength(1);
-    });
-
-    await act(async () => {
-      await result.current.removeAttachment("restored-1");
-    });
-
-    expect(removeSessionAttachments).toHaveBeenCalledWith("session-1", [
-      "coach-1/session-1/my-plan.txt",
-    ]);
+  it("only removes an unsent attachment, without reintroducing sent bucket files", async () => {
+    uploadContextFile.mockResolvedValue({ ok: true, contextFileIds: ["coach/session/new.txt"] });
+    removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [{ localId: "old", status: "uploaded", displayLabel: "sent file" }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => { await result.current.attachFiles([new File(["a,b"], "new.csv")]); });
+    const localId = result.current.state.attachments[0].localId;
+    await act(async () => { await result.current.removeAttachment(localId); });
+    expect(removeSessionAttachments).toHaveBeenCalledWith(expect.any(String), ["coach/session/new.txt"]);
     expect(result.current.state.attachments).toEqual([]);
-    expect(result.current.state.contextFileIds).toEqual([]);
+  });
+
+  it("blocks send during upload, then drops failures and binds successful files to the message", async () => {
+    let completeUpload: ((result: unknown) => void) | undefined;
+    uploadContextFile.mockImplementationOnce(() => new Promise((resolve) => { completeUpload = resolve; }));
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
+    let upload: Promise<void>;
+    act(() => { upload = result.current.attachFiles([new File(["x"], "first.csv")]); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Use this" }]); });
+    expect(mockSend).not.toHaveBeenCalled();
+    await act(async () => { completeUpload?.({ ok: true, contextFileIds: ["coach/session/first.txt"] }); await upload; });
+    uploadContextFile.mockResolvedValueOnce({ ok: false, error: "STORAGE_FAILED", message: "Upload failed" });
+    await act(async () => { await result.current.attachFiles([new File(["x"], "failed.csv")]); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Use this" }]); });
+    expect(result.current.state.attachments).toEqual([]);
+    agentDataState.current.messages = [{ role: "user", content: "Use this" }, { role: "assistant", content: "Done" }, { role: "user", content: "Next" }];
+    rerender();
+    expect(result.current.state.messages[0].attachments?.map((item) => item.displayLabel)).toEqual(["first.csv"]);
+    expect(result.current.state.messages[2].attachments).toBeUndefined();
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ messageAttachments: [expect.objectContaining({ userMessageIndex: 0, attachments: [expect.objectContaining({ displayLabel: "first.csv" })] })] }));
+  });
+
+  it("continues persisting the old thread after unmount without redirecting back", async () => {
+    const onSessionUrlNavigate = vi.fn();
+    let finishSend: (() => void) | undefined;
+    mockSend.mockImplementationOnce(() => new Promise<void>((resolve) => { finishSend = resolve; }));
+    const { result, unmount } = renderHook(() => useCoachPlanWorkspace({ onSessionUrlNavigate }));
+    let pending: Promise<void>;
+    act(() => { pending = result.current.sendMessage([{ type: "text", value: "Make a plan" }]); });
+    await waitFor(() => expect(mockSend).toHaveBeenCalled());
+    const callbacks = capturedEveAgentOptions.current;
+    unmount();
+    onSessionUrlNavigate.mockClear();
+    await act(async () => {
+      await callbacks?.onFinish?.({ session: { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 }, events: [{ type: "message.received" }, { type: "session.waiting" }] });
+      finishSend?.();
+      await pending;
+    });
+    expect(mockStop).not.toHaveBeenCalled();
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(onSessionUrlNavigate).not.toHaveBeenCalled();
+    expect(saveSessionSnapshot).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ eveEvents: [{ type: "message.received" }, { type: "session.waiting" }] }));
   });
 
   it("persists and redirects again after restart on the home workspace", async () => {

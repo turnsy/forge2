@@ -50,6 +50,8 @@ export function chatWorkspaceReducer<TArtifact>(
       return { ...state, planId: action.planId };
     case "SET_ARTIFACT":
       return { ...state, currentArtifact: action.artifact };
+    case "CLEAR_COMPOSER_ATTACHMENTS":
+      return { ...state, attachments: [], contextFileIds: [], phase: "idle" };
     case "ATTACH_FILES":
       return {
         ...state,

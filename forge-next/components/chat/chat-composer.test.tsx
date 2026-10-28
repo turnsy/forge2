@@ -5,6 +5,28 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 
 describe("ChatComposer", () => {
+  it("attaches a pasted image while still requiring text to send", () => {
+    const onAttach = vi.fn();
+    const onSend = vi.fn();
+    render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="image-paste" onAttach={onAttach} onSend={onSend} />);
+    const file = new File(["image"], "screenshot.png", { type: "image/png" });
+    fireEvent.paste(screen.getByRole("textbox"), { clipboardData: { files: [file], getData: () => "" } });
+    expect(onAttach).toHaveBeenCalledWith([file]);
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it("allows a normal message while a card is waiting for an answer", async () => {
+    const onSend = vi.fn();
+    const user = userEvent.setup();
+    render(<ChatComposer state={{ ...createInitialChatWorkspaceState(), pendingInputRequests: [{ requestId: "q", prompt: "Which day?", action: { kind: "tool-call", callId: "q", toolName: "ask_question", input: {} } }] }} composerKey="pending-question" onAttach={vi.fn()} onSend={onSend} />);
+    await user.click(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "Something else instead");
+    expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(onSend).toHaveBeenCalledWith([{ type: "text", value: "Something else instead" }]);
+  });
+
   it("sends on desktop Enter", async () => {
     const onSend = vi.fn(); const user = userEvent.setup();
     render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="desktop-enter" onAttach={vi.fn()} onSend={onSend} />);
@@ -205,14 +227,14 @@ describe("ChatComposer", () => {
       />,
     );
 
-    const resetButton = screen.getByRole("button", { name: "Reset conversation" });
+    const resetButton = screen.getByRole("button", { name: "New conversation" });
     expect(resetButton).toBeInTheDocument();
 
     await user.click(resetButton);
     expect(onReset).toHaveBeenCalledOnce();
   });
 
-  it("renders attachments below the composer before the thread starts", () => {
+  it("renders attachments above the composer before the thread starts", () => {
     const { container } = render(
       <ChatComposer
         state={{
@@ -235,7 +257,7 @@ describe("ChatComposer", () => {
     const prompt = screen.getByRole("textbox");
     const chip = screen.getByText("my plan.csv");
     expect(
-      prompt.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING,
+      chip.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(container.querySelectorAll(".flex.flex-wrap.gap-2")).toHaveLength(1);
   });
@@ -261,7 +283,7 @@ describe("ChatComposer", () => {
     expect(scoped.getByRole("textbox")).toBeInTheDocument();
     expect(scoped.getByRole("button", { name: "Attach" })).toBeInTheDocument();
     expect(
-      scoped.getByRole("button", { name: "Reset conversation" }),
+      scoped.getByRole("button", { name: "New conversation" }),
     ).toBeInTheDocument();
     expect(scoped.getByRole("button", { name: "Send" })).toBeInTheDocument();
   });

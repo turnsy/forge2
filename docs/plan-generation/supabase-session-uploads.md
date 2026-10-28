@@ -1,6 +1,6 @@
 # Supabase Storage — ephemeral session uploads
 
-Coach chat sessions store **normalized upload text** in Supabase Storage. Objects are ephemeral (deleted after a run or by TTL janitor).
+Coach chat sessions store **normalized document text and original images** in the private `session-uploads` bucket. Files remain available across turns in the same conversation.
 
 ## Bucket
 
@@ -25,12 +25,14 @@ Declared in `supabase/config.toml` (`[storage.buckets."session-uploads"]`). Poli
 ## Object key layout
 
 ```text
-session-uploads/{coachId}/{sessionId}/{slug}.txt
+session-uploads/{coachId}/{sessionId}/{slug}-{uploadId}.txt
+session-uploads/{coachId}/{sessionId}/{slug}-{uploadId}.{png|jpg|jpeg|webp|gif}
 ```
 
 - `coachId` — authenticated coach user id
 - `sessionId` — client workspace / conversation id (**required** on upload + plan-chat APIs)
 - `slug` — see below
+- `uploadId` — unique object identifier; repeated filenames never overwrite earlier messages
 
 ### Slugs
 
@@ -53,10 +55,13 @@ Coach-scoped policies in the migration: read/write/delete only under `{auth.uid(
 
 ## Lifecycle
 
-- **Write:** `POST /api/coach/upload-context` — multipart `sessionId` + files
+- **Write:** `POST /api/coach/upload-context` — multipart `sessionId` + files, uploaded when attached to the composer.
+- **Message ownership:** successful attachments are recorded under `messageAttachments` in the chat snapshot when the message is sent. The composer clears on send; failed uploads are dropped. Send waits for pending uploads and still requires text.
+- **Images:** PNG, JPEG, WebP, and GIF, up to 10 MiB each (25 MiB total / five files per message). Original bytes and MIME types are stored; no upload-time text extraction. `read_session_file` reads images with vision on demand, since Eve 0.18 custom tools only support text/JSON outputs.
+- **Remove:** only unsent composer attachments can be removed. Sent attachments stay with their message. Historical snapshots without message metadata retain bucket access for the agent; no message association is inferred.
 - **List / read:** plan-chat tools (`list_session_files`, `read_session_file`)
 - **Never** copied into Vercel Sandbox
-- **Delete:** after plan-chat run or TTL janitor (TBD)
+- **Retention:** no automatic per-turn deletion; TTL cleanup remains TBD.
 
 ## Related code
 

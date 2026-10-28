@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatMessageBody } from "@/components/chat/chat-message-body";
 import { ChatInputRequest } from "@/components/chat/chat-input-request";
 import type { InputRequest, InputResponse } from "eve/client";
@@ -44,6 +45,7 @@ export function ChatThread({
   scrollChromeReady = true,
   pendingInputRequests = [],
   onRespondToInput,
+  onInputDraftChange,
 }: {
   threadKey: string;
   messages: ChatMessage[];
@@ -58,6 +60,7 @@ export function ChatThread({
   scrollChromeReady?: boolean;
   pendingInputRequests?: InputRequest[];
   onRespondToInput?: (response: InputResponse) => Promise<void>;
+  onInputDraftChange?: (response: InputResponse) => void;
 }) {
   const { scrollRef, contentRef } = useChatThreadAutoScroll({
     threadKey,
@@ -120,10 +123,25 @@ export function ChatThread({
           {messages.filter(isRenderableMessage).map((message, index) => (
             <ChatBubble key={`${message.role}-${index}`} role={message.role}>
               {message.inputCard ? (
-                <ChatInputRequest request={message.inputCard.request} status={message.inputCard.status === "submitted" && phase === "error" ? "failed" : message.inputCard.status} savedChoiceIds={message.inputCard.selectedChoiceIds} savedResponseText={message.inputCard.responseText}
+                <ChatInputRequest
+                  request={message.inputCard.request}
+                  status={
+                    ["submitted", "replied"].includes(message.inputCard.status) &&
+                    phase === "error" &&
+                    pendingInputRequests.some((request) => request.requestId === message.inputCard?.request.requestId)
+                      ? "pending"
+                      : message.inputCard.status
+                  }
+                  savedChoiceIds={message.inputCard.selectedChoiceIds}
+                  savedResponseText={message.inputCard.responseText}
                   disabled={turnInProgress || !pendingInputRequests.some((request) => request.requestId === message.inputCard?.request.requestId)}
-                  onRespond={onRespondToInput ?? (async () => {})} />
-              ) : <ChatMessageBody message={message} />}
+                  onRespond={onRespondToInput ?? (async () => {})}
+                  onDraftChange={onInputDraftChange}
+                />
+              ) : <>
+                <ChatMessageBody message={message} />
+                {message.attachments?.length ? <ChatAttachmentList attachments={message.attachments} className="mt-2" /> : null}
+              </>}
             </ChatBubble>
           ))}
           {showStreaming ? (
@@ -141,7 +159,7 @@ export function ChatThread({
           {pendingInputRequests.filter((request) => !messages.some((message) => message.inputCard?.request.requestId === request.requestId)).map((request) => (
             <ChatBubble key={request.requestId} role="assistant">
               {onRespondToInput ? (
-                <ChatInputRequest request={request} disabled={turnInProgress} onRespond={onRespondToInput} />
+                <ChatInputRequest request={request} disabled={turnInProgress} onRespond={onRespondToInput} onDraftChange={onInputDraftChange} />
               ) : <p>{request.prompt}</p>}
             </ChatBubble>
           ))}

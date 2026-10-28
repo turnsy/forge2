@@ -11,7 +11,6 @@ export function hasUploadingAttachments<TArtifact>(
 }
 
 export function canSendChat<TArtifact>(state: ChatWorkspaceState<TArtifact>): boolean {
-  if (state.pendingInputRequests?.length) return false;
   if (
     state.phase === "initializing" ||
     state.phase === "streaming" ||

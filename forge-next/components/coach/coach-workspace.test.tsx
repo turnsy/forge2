@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileAppHeader, MobileAppHeaderProvider } from "@/components/ui/mobile-app-header";
+import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
 import { CoachWorkspace } from "@/components/coach/coach-workspace";
 import { SessionNavigationProvider } from "@/lib/chat/session-navigation-context";
 import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
@@ -71,11 +72,7 @@ vi.mock("@/components/artifact/artifact-preview", () => ({
   ),
 }));
 
-const samplePlan = {
-  schemaVersion: "3.1.0" as const,
-  name: "Test Plan",
-  weeks: [],
-};
+const samplePlan = createEmptyWorkoutPlan("Test Plan");
 
 function renderCoachWorkspace(
   props: React.ComponentProps<typeof CoachWorkspace>,
@@ -93,6 +90,8 @@ function mockWorkspaceState(
   return {
     sessionId: "session-1",
     hasStarted: false,
+    sessionTitle: null,
+    artifactShowRequest: overrides.currentArtifact && !mockUseIsMobile() ? 1 : 0,
     artifactTitle: "",
     planId: null,
     messages: [],
@@ -114,6 +113,7 @@ function mockWorkspaceReturn(state: PlanWorkspaceState) {
     attachFiles: vi.fn(),
     sendMessage: vi.fn(),
     stopResponse: vi.fn(),
+    leaveConversation: vi.fn(),
     setArtifactTitle: vi.fn(),
     setPlanId: mockSetPlanId,
     setArtifact: vi.fn(),
@@ -134,7 +134,7 @@ describe("CoachWorkspace layout", () => {
 
     expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Reset conversation" }),
+      screen.queryByRole("button", { name: "New conversation" }),
     ).not.toBeInTheDocument();
   });
 
@@ -166,7 +166,7 @@ describe("CoachWorkspace layout", () => {
     expect(container.querySelector(".md\\:pt-14")).toBeNull();
     expect(container.innerHTML).toContain("p-4");
     expect(container.innerHTML).not.toContain("md:p-8");
-    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New conversation" })).toBeInTheDocument();
   });
 
   it("shows centered chat without split when started but no artifact", () => {
@@ -182,7 +182,7 @@ describe("CoachWorkspace layout", () => {
     const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
     expect(container.querySelector(".max-w-3xl")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New conversation" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
   });
 
@@ -219,13 +219,81 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
 
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New conversation" })).toBeInTheDocument();
     expect(container.querySelector(".md\\:pb-3")).toBeNull();
     expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_COLUMN_CLASS);
     expect(container.innerHTML).toContain(DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS);
+  });
+
+  it("hides and reopens the desktop artifact without navigating or clearing it", async () => {
+    const user = userEvent.setup();
+    const workspace = mockWorkspaceReturn(mockWorkspaceState({ hasStarted: true, currentArtifact: samplePlan }));
+    mockUseCoachPlanWorkspace.mockReturnValue(workspace);
+    renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
+    const toggle = screen.getByRole("button", { name: "Show plan" });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle).toHaveClass("glass-button-primary", "mr-auto");
+    expect(toggle.compareDocumentPosition(screen.getByRole("button", { name: "Collapse chat" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Close artifact" })).not.toBeInTheDocument();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(toggle).toHaveClass("glass-button-ghost");
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(workspace.setArtifact).not.toHaveBeenCalled();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
+  });
+
+  it("keeps the preview hidden on updates until the agent explicitly shows it", async () => {
+    const state = mockWorkspaceState({ hasStarted: true, currentArtifact: samplePlan, artifactShowRequest: 0 });
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(state));
+    const { rerender } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn({ ...state, currentArtifact: { ...samplePlan, name: "Updated" } }));
+    rerender(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn({ ...state, artifactShowRequest: 1 }));
+    rerender(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
+  });
+
+  it.each([false, true])("opens a restored conversation in chat despite historical show requests (mobile: %s)", async (isMobile) => {
+    mockUseIsMobile.mockReturnValue(isMobile);
+    const user = userEvent.setup();
+    const state = mockWorkspaceState({ hasStarted: true, currentArtifact: samplePlan, artifactShowRequest: 3 });
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(state));
+    const props = { firstName: "Alex", role: "coach" as const, initialSession: {
+      id: "session-1", snapshot: { title: "Saved chat", forgeSessionId: "session-1", eve: null }, createdAt: "", updatedAt: "",
+    } };
+    const view = renderCoachWorkspace(props);
+    expect(screen.getByRole("textbox")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    const viewButton = screen.getByRole("button", { name: isMobile ? "View artifact" : "Show plan" });
+    if (!isMobile) expect(viewButton).toHaveAttribute("aria-pressed", "false");
+    await user.click(viewButton);
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
+    view.unmount();
+    renderCoachWorkspace(props);
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+  });
+
+  it("ignores replayed show requests but honors new agent requests in the restored thread", () => {
+    const state = mockWorkspaceState({ hasStarted: true, currentArtifact: samplePlan, artifactShowRequest: 3 });
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn(state));
+    const { rerender } = render(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn({ ...state, currentArtifact: { ...samplePlan, name: "Updated" } }));
+    rerender(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    mockUseCoachPlanWorkspace.mockReturnValue(mockWorkspaceReturn({ ...state, artifactShowRequest: 4 }));
+    rerender(<CoachWorkspace firstName="Alex" role="coach" />);
+    expect(screen.getByRole("button", { name: "Show plan" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
   });
 
   it("navigates to coach home on reset", async () => {
@@ -240,7 +308,7 @@ describe("CoachWorkspace layout", () => {
     );
 
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
-    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
+    await user.click(screen.getByRole("button", { name: "New conversation" }));
 
     expect(mockPush).toHaveBeenCalledWith("/coach");
     expect(mockRefresh).toHaveBeenCalledOnce();
@@ -262,7 +330,7 @@ describe("CoachWorkspace layout", () => {
 
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
 
-    const resetButton = screen.getByRole("button", { name: "Reset conversation" });
+    const resetButton = screen.getByRole("button", { name: "New conversation" });
     expect(resetButton).toBeEnabled();
 
     await user.click(resetButton);
@@ -282,7 +350,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
+    renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
 
     const backLink = screen.getByRole("link", { name: "Back to plan" });
     expect(backLink).toBeVisible();
@@ -322,7 +390,7 @@ describe("CoachWorkspace layout", () => {
 
     expect(container.innerHTML).toContain("px-4");
     expect(container.innerHTML).toContain("pb-[max(1rem");
-    expect(screen.getByRole("button", { name: "Reset conversation" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "New conversation" })).toBeVisible();
   });
 
   it("adds mobile chat padding and composer inset when chatting with an artifact", () => {
@@ -452,7 +520,7 @@ describe("CoachWorkspace layout", () => {
     expect(screen.queryByRole("button", { name: "Conversation history" })).not.toBeInTheDocument();
   });
 
-  it("navigates to plan detail on close when a saved plan is loaded", async () => {
+  it("starts a fresh conversation when a saved plan is loaded", async () => {
     const user = userEvent.setup();
     mockUseCoachPlanWorkspace.mockReturnValue(
       mockWorkspaceReturn(
@@ -466,9 +534,9 @@ describe("CoachWorkspace layout", () => {
     );
 
     renderCoachWorkspace({ firstName: "Alex", role: "coach" });
-    await user.click(screen.getByRole("button", { name: "Reset conversation" }));
+    await user.click(screen.getByRole("button", { name: "New conversation" }));
 
-    expect(mockPush).toHaveBeenCalledWith("/coach/plans/plan-1");
+    expect(mockPush).toHaveBeenCalledWith("/coach");
     expect(mockRestart).not.toHaveBeenCalled();
   });
 
@@ -485,7 +553,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
+    renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
     await user.click(screen.getByRole("button", { name: "Edit plan" }));
 
     expect(mockResetSaveStatus).toHaveBeenCalled();
@@ -502,7 +570,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    renderCoachWorkspace({ firstName: "Alex", role: "coach" });
+    renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
 
     expect(screen.getByRole("button", { name: "Collapse chat" })).toBeVisible();
   });
@@ -519,7 +587,7 @@ describe("CoachWorkspace layout", () => {
       ),
     );
 
-    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach" });
+    const { container } = renderCoachWorkspace({ firstName: "Alex", role: "coach", initialPlan: samplePlan });
     await user.click(screen.getByRole("button", { name: "Collapse chat" }));
 
     expect(screen.getByRole("button", { name: "Expand chat" })).toBeVisible();

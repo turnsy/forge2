@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { InputRequest } from "eve/client";
 import { ChatInputRequest } from "./chat-input-request";
-import { selectionResponse } from "@/lib/chat/input-selection";
+import { chatInputResponse, parseSelectionAnswer, selectionResponse } from "@/lib/chat/input-selection";
 
 const request: InputRequest = {
   requestId: "question-1", prompt: "Assign Strength to which athletes? This replaces their current plan.", display: "select",
@@ -37,6 +37,28 @@ describe("ChatInputRequest", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(onRespond).toHaveBeenCalledOnce();
+  });
+
+  it("publishes current selections as drafts without submitting the card", () => {
+    const onRespond = vi.fn();
+    const onDraftChange = vi.fn();
+    render(<ChatInputRequest request={request} disabled={false} onRespond={onRespond} onDraftChange={onDraftChange} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Jay" }));
+    expect(parseSelectionAnswer(onDraftChange.mock.lastCall![0].text)?.selections).toEqual([{ id: "jay-1", label: "Jay" }]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Jay (Athlete)" }));
+    expect(parseSelectionAnswer(onDraftChange.mock.lastCall![0].text)?.selections).toHaveLength(2);
+    expect(onRespond).not.toHaveBeenCalled();
+  });
+
+  it("quietly greys a chat-resolved card and restores its draft choices", () => {
+    const response = chatInputResponse(request, "Also Jane", selectionResponse(request, ["jay-1"]));
+    render(<ChatInputRequest request={request} disabled={false} status="replied" savedChoiceIds={["jay-1"]} savedResponseText={response.text} onRespond={vi.fn()} />);
+    expect(screen.getByRole("region", { name: "Response summary" })).toHaveClass("opacity-75");
+    expect(screen.getByRole("checkbox", { name: "Jay" })).toBeChecked();
+    for (const input of screen.getAllByRole("checkbox")) expect(input).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("disables Confirm again when every checkbox is deselected", () => {

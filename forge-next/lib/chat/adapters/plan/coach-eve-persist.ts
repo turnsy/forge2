@@ -4,11 +4,13 @@ import {
   buildCoachWorkspaceSnapshot,
   toForgeEvePointer,
   type CoachTurnMarker,
+  type MessageAttachmentRecord,
 } from "@/lib/chat/session-types";
 
 const MID_TURN_PERSIST_DEBOUNCE_MS = 2_000;
 
 export type CoachEvePersistSnapshot = {
+  messageAttachments?: readonly MessageAttachmentRecord[];
   inputCardResponses?: readonly InputResponse[];
   forgeSessionId: string;
   title: string | null;
@@ -47,6 +49,7 @@ function shouldPersistImmediately(
 export function createCoachEvePersister(options: {
   forgeSessionId: string;
   getTitle: () => string | null;
+  getMessageAttachments?: () => readonly MessageAttachmentRecord[];
   getInputCardResponses?: () => readonly InputResponse[];
   saveSnapshot: (snapshot: CoachEvePersistSnapshot) => Promise<boolean>;
 }): CoachEvePersister {
@@ -97,6 +100,7 @@ export function createCoachEvePersister(options: {
         options.saveSnapshot({
           forgeSessionId: options.forgeSessionId,
           title: options.getTitle(),
+          ...(options.getMessageAttachments ? { messageAttachments: options.getMessageAttachments() } : {}),
           ...(options.getInputCardResponses ? { inputCardResponses: options.getInputCardResponses() } : {}),
           session,
           events,
@@ -177,6 +181,7 @@ export function buildPersistedCoachSnapshot(
   }
 
   return buildCoachWorkspaceSnapshot({
+    messageAttachments: input.messageAttachments,
     inputCardResponses: input.inputCardResponses,
     forgeSessionId: input.forgeSessionId,
     title: input.title,

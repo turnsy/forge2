@@ -13,7 +13,7 @@ import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
 import { XIcon } from "@/components/icons/x-icon";
-import { FadeIn, IconButton, PageBackLink } from "@/components/ui";
+import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_COLUMN_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
@@ -62,7 +62,6 @@ import {
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -305,6 +304,7 @@ export function CoachWorkspace(
     void saveSessionSnapshot(
       props.initialSession.id,
       buildPersistedCoachSnapshot({
+        messageAttachments: snapshot.messageAttachments,
         inputCardResponses: snapshot.inputCardResponses,
         forgeSessionId: props.initialSession.id,
         title: snapshot.title,
@@ -394,9 +394,8 @@ function CoachWorkspaceInner({
   const router = useRouter();
   const isMobile = useIsMobile();
   const sessionNavigation = useOptionalSessionNavigation();
-  const [showArtifact, setShowArtifact] = useState(false);
+  const [showArtifact, setShowArtifact] = useState(Boolean(initialPlan));
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-  const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
     initialPlanId ?? null,
   );
@@ -426,7 +425,7 @@ function CoachWorkspaceInner({
 
   const handleSessionUrlNavigate = useCallback((sessionId: string) => {
     // Keep the live Eve stream on the current workspace instance. A hard
-    // router navigation would remount, abort the turn, and replay from DB.
+    // router navigation would remount and replay the live stream from storage.
     syncCoachSessionUrl(sessionId);
   }, []);
 
@@ -449,11 +448,12 @@ function CoachWorkspaceInner({
     removeAttachment,
     sendMessage,
     respondToInput,
+    updateInputDraft,
     stopResponse,
+    leaveConversation,
     setArtifactTitle,
     setPlanId,
     setArtifact,
-    restart,
   } = useCoachPlanWorkspace(
     initialPlan
       ? {
@@ -486,30 +486,14 @@ function CoachWorkspaceInner({
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
 
-  const workspaceSessionId = useCoachWorkspaceSessionId();
-  const previousWorkspaceSessionIdRef = useRef(workspaceSessionId);
-
-  useEffect(() => {
-    const previousWorkspaceSessionId = previousWorkspaceSessionIdRef.current;
-    previousWorkspaceSessionIdRef.current = workspaceSessionId;
-
-    if (initialSession || !previousWorkspaceSessionId || workspaceSessionId) {
-      return;
-    }
-
-    if (state.hasStarted) {
-      restart();
-    }
-  }, [initialSession, restart, state.hasStarted, workspaceSessionId]);
-
-  useEffect(() => {
-    if (!openArtifactOnMobileRef.current || !isMobile) {
-      return;
-    }
-
-    setShowArtifact(true);
-    openArtifactOnMobileRef.current = false;
-  }, [isMobile]);
+  // Replayed show requests establish the initial baseline. Opening a saved
+  // conversation starts in chat; only a new request may open its plan pane.
+  const artifactShowRequest = state.artifactShowRequest ?? 0;
+  const [lastArtifactShowRequest, setLastArtifactShowRequest] = useState(artifactShowRequest);
+  if (artifactShowRequest !== lastArtifactShowRequest) {
+    setLastArtifactShowRequest(artifactShowRequest);
+    if (artifactShowRequest > lastArtifactShowRequest) setShowArtifact(true);
+  }
 
   const activePlanId = state.planId;
   const resolvedBackPlanId = backlinkPlanId ?? activePlanId;
@@ -522,7 +506,7 @@ function CoachWorkspaceInner({
       initialStatus: initialSavedSnapshot ? "saved" : undefined,
     });
 
-  const showSplitPane = Boolean(state.currentArtifact);
+  const showSplitPane = Boolean(state.currentArtifact) && showArtifact;
   const chatCollapsed = showSplitPane && isChatCollapsed;
   const artifactFadeKey = activePlanId ?? state.sessionId;
   const artifactScrollResetKey = state.currentArtifact
@@ -608,31 +592,10 @@ function CoachWorkspaceInner({
     [state.artifactTitle, state.currentArtifact],
   );
 
-  const handleClose = useCallback(() => {
-    if (
-      savedSnapshotRef.current &&
-      hasUnsavedPlanChanges(
-        { plan: state.currentArtifact, title: state.artifactTitle },
-        savedSnapshotRef.current,
-      ) &&
-      !window.confirm("You have unsaved changes. Leave without saving?")
-    ) {
-      return;
-    }
-
-    if (backlinkPlanId ?? activePlanId) {
-      router.push(`/coach/plans/${backlinkPlanId ?? activePlanId}`);
-      return;
-    }
-
-    savedSnapshotRef.current = null;
-    setShowArtifact(false);
-    navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, router, state]);
-
   const handleReset = useCallback(() => {
-    handleClose();
-  }, [handleClose]);
+    leaveConversation();
+    navigateToCoachHome(router);
+  }, [leaveConversation, router]);
 
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
@@ -646,6 +609,7 @@ function CoachWorkspaceInner({
       onRemoveAttachment={removeAttachment}
       onSend={handleSendMessage}
       onRespondToInput={respondToInput}
+      onInputDraftChange={updateInputDraft}
       onStop={stopResponse}
       onReset={handleReset}
       promptEnabled={promptEnabled}
@@ -817,8 +781,24 @@ function CoachWorkspaceInner({
             desktopChatToggle
           ) : (
             <>
-              {desktopChatToggle ? (
-                <div className={DESKTOP_CHAT_TOGGLE_ROW_CLASS}>{desktopChatToggle}</div>
+              {desktopChatToggle || state.currentArtifact ? (
+                <div className={`${DESKTOP_CHAT_TOGGLE_ROW_CLASS} gap-2`}>
+                  {state.currentArtifact ? (
+                    <Button
+                      type="button"
+                      variant={showArtifact ? "primary" : "ghost"}
+                      size="sm"
+                      fullWidth={false}
+                      className="mr-auto"
+                      icon={<EyeIcon />}
+                      aria-pressed={showArtifact}
+                      onClick={() => setShowArtifact((visible) => !visible)}
+                    >
+                      Show plan
+                    </Button>
+                  ) : null}
+                  {desktopChatToggle}
+                </div>
               ) : null}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 <CoachConversationPanel
@@ -827,6 +807,7 @@ function CoachWorkspaceInner({
                   onRemoveAttachment={removeAttachment}
                   onSend={handleSendMessage}
                   onRespondToInput={respondToInput}
+                  onInputDraftChange={updateInputDraft}
                   onStop={stopResponse}
                   onReset={handleReset}
                   promptEnabled={promptEnabled}

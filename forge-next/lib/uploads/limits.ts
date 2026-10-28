@@ -10,6 +10,8 @@ export const UPLOAD_MAX_TOTAL_BYTES = 25 * 1024 * 1024;
 
 export const UPLOAD_CSV_MAX_BYTES = 2 * 1024 * 1024;
 export const UPLOAD_XLSX_MAX_BYTES = 5 * 1024 * 1024;
+export const UPLOAD_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
 export const UPLOAD_PDF_MAX_BYTES = 10 * 1024 * 1024;
 
 export const UPLOAD_ALLOWED_EXTENSIONS = [
@@ -17,11 +19,21 @@ export const UPLOAD_ALLOWED_EXTENSIONS = [
   ".xlsx",
   ".xls",
   ".pdf",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
 ] as const;
 
 export type UploadAllowedExtension = (typeof UPLOAD_ALLOWED_EXTENSIONS)[number];
 
 const EXTENSION_TO_MAX_BYTES: Record<UploadAllowedExtension, number> = {
+  ".png": UPLOAD_IMAGE_MAX_BYTES,
+  ".jpg": UPLOAD_IMAGE_MAX_BYTES,
+  ".jpeg": UPLOAD_IMAGE_MAX_BYTES,
+  ".webp": UPLOAD_IMAGE_MAX_BYTES,
+  ".gif": UPLOAD_IMAGE_MAX_BYTES,
   ".csv": UPLOAD_CSV_MAX_BYTES,
   ".xlsx": UPLOAD_XLSX_MAX_BYTES,
   ".xls": UPLOAD_XLSX_MAX_BYTES,
