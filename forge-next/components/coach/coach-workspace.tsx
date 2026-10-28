@@ -13,7 +13,7 @@ import { SidebarToggleIcon } from "@/components/icons/sidebar-toggle-icon";
 import { CoachSessionLoadingView } from "@/components/coach/coach-session-loading-view";
 import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
 import { XIcon } from "@/components/icons/x-icon";
-import { FadeIn, IconButton, PageBackLink } from "@/components/ui";
+import { Button, FadeIn, IconButton, PageBackLink } from "@/components/ui";
 import {
   DESKTOP_ARTIFACT_COLUMN_CLASS,
   DESKTOP_ARTIFACT_SPLIT_WIDTH_CLASS,
@@ -179,7 +179,6 @@ function ArtifactPanel({
             saveStatus={saveStatus}
             onTitleChange={onTitleChange}
             onSave={onSave}
-            onClose={mobileOverlay ? undefined : onClose}
           />
         </div>
       </div>
@@ -396,7 +395,6 @@ function CoachWorkspaceInner({
   const isMobile = useIsMobile();
   const sessionNavigation = useOptionalSessionNavigation();
   const [showArtifact, setShowArtifact] = useState(Boolean(initialPlan));
-  const [lastArtifactShowRequest, setLastArtifactShowRequest] = useState(0);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
     initialPlanId ?? null,
@@ -487,8 +485,10 @@ function CoachWorkspaceInner({
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
 
-  // Only an explicit agent show request may reopen a hidden preview.
+  // Replayed show requests establish the initial baseline. Opening a saved
+  // conversation starts in chat; only a new request may open its plan pane.
   const artifactShowRequest = state.artifactShowRequest ?? 0;
+  const [lastArtifactShowRequest, setLastArtifactShowRequest] = useState(artifactShowRequest);
   if (artifactShowRequest !== lastArtifactShowRequest) {
     setLastArtifactShowRequest(artifactShowRequest);
     if (artifactShowRequest > lastArtifactShowRequest) setShowArtifact(true);
@@ -761,7 +761,6 @@ function CoachWorkspaceInner({
                   onSave={handleSave}
                   disabled={isChatRunning(state)}
                   onPlanChange={handlePlanChange}
-                  onClose={() => setShowArtifact(false)}
                 />
             </div>
           ) : null}
@@ -781,11 +780,22 @@ function CoachWorkspaceInner({
           ) : (
             <>
               {desktopChatToggle || state.currentArtifact ? (
-                <div className={`${DESKTOP_CHAT_TOGGLE_ROW_CLASS} flex items-center justify-between`}>
-                  {desktopChatToggle}
-                  {state.currentArtifact && !showArtifact ? (
-                    <IconButton variant="plain" size="sm" icon={<EyeIcon />} aria-label="View artifact" onClick={() => setShowArtifact(true)} />
+                <div className={`${DESKTOP_CHAT_TOGGLE_ROW_CLASS} gap-2`}>
+                  {state.currentArtifact ? (
+                    <Button
+                      type="button"
+                      variant={showArtifact ? "primary" : "ghost"}
+                      size="sm"
+                      fullWidth={false}
+                      className="mr-auto"
+                      icon={<EyeIcon />}
+                      aria-pressed={showArtifact}
+                      onClick={() => setShowArtifact((visible) => !visible)}
+                    >
+                      Show plan
+                    </Button>
                   ) : null}
+                  {desktopChatToggle}
                 </div>
               ) : null}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
