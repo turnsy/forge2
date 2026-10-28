@@ -19,6 +19,7 @@ const {
   listSessionAttachments,
   removeSessionAttachments,
   mockSend,
+  uploadContextFile,
   mockReset,
   mockStop,
   capturedEveAgentOptions,
@@ -33,6 +34,7 @@ const {
   listSessionAttachments: vi.fn(),
   removeSessionAttachments: vi.fn(),
   mockSend: vi.fn(),
+  uploadContextFile: vi.fn(),
   mockReset: vi.fn(),
   mockStop: vi.fn(),
   capturedEveAgentOptions: {
@@ -106,6 +108,8 @@ vi.mock("@/lib/chat/adapters/plan/forge-eve-client", async (importOriginal) => {
     }),
   };
 });
+
+vi.mock("@/lib/chat/adapters/plan/upload-context-client", () => ({ uploadContextFile }));
 
 vi.mock("eve/react", () => ({
   useEveAgent: (options?: {
@@ -828,95 +832,70 @@ describe("useCoachPlanWorkspace", () => {
     expect(mockStop).not.toHaveBeenCalled();
   });
 
-  it("restores session attachments when loading a historical conversation", async () => {
-    listSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
-      ],
-    });
-
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({
-        initialSession: {
-          id: "session-1",
-          snapshot: {
-            title: "Bench block",
-            forgeSessionId: "session-1",
-            eve: null,
-          },
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(listSessionAttachments).toHaveBeenCalledWith("session-1");
-    });
-
-    await waitFor(() => {
-      expect(result.current.state.attachments).toEqual([
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
-      ]);
-    });
-
-    expect(result.current.state.contextFileIds).toEqual([
-      "coach-1/session-1/my-plan.txt",
-    ]);
+  it("restores sent attachments on their message, leaving the composer empty", () => {
+    agentDataState.current.messages = [{ role: "user", content: "Use this" }];
+    const attachment = { localId: "sent", status: "uploaded" as const, displayLabel: "plan.png", contextFileIds: ["coach/session/plan.png"] };
+    const { result } = renderHook(() => useCoachPlanWorkspace({ initialSession: {
+      id: "session-1", snapshot: { title: "Plan", forgeSessionId: "session-1", eve: null,
+        messageAttachments: [{ userMessageIndex: 0, attachments: [attachment] }],
+      },
+    } }));
+    expect(result.current.state.messages[0].attachments).toEqual([attachment]);
+    expect(result.current.state.attachments).toEqual([]);
+    expect(listSessionAttachments).not.toHaveBeenCalled();
   });
 
-  it("removes a restored attachment via storage and syncs the composer", async () => {
-    listSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [
-        {
-          localId: "restored-1",
-          status: "uploaded",
-          displayLabel: "my plan",
-          contextFileIds: ["coach-1/session-1/my-plan.txt"],
-        },
-      ],
-    });
-    removeSessionAttachments.mockResolvedValue({
-      ok: true,
-      attachments: [],
-    });
-
-    const { result } = renderHook(() =>
-      useCoachPlanWorkspace({
-        initialSession: {
-          id: "session-1",
-          snapshot: {
-            title: "Bench block",
-            forgeSessionId: "session-1",
-            eve: null,
-          },
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(result.current.state.attachments).toHaveLength(1);
-    });
-
-    await act(async () => {
-      await result.current.removeAttachment("restored-1");
-    });
-
-    expect(removeSessionAttachments).toHaveBeenCalledWith("session-1", [
-      "coach-1/session-1/my-plan.txt",
-    ]);
+  it("only removes an unsent attachment, without reintroducing sent bucket files", async () => {
+    uploadContextFile.mockResolvedValue({ ok: true, contextFileIds: ["coach/session/new.txt"] });
+    removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [{ localId: "old", status: "uploaded", displayLabel: "sent file" }] });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => { await result.current.attachFiles([new File(["a,b"], "new.csv")]); });
+    const localId = result.current.state.attachments[0].localId;
+    await act(async () => { await result.current.removeAttachment(localId); });
+    expect(removeSessionAttachments).toHaveBeenCalledWith(expect.any(String), ["coach/session/new.txt"]);
     expect(result.current.state.attachments).toEqual([]);
-    expect(result.current.state.contextFileIds).toEqual([]);
+  });
+
+  it("blocks send during upload, then drops failures and binds successful files to the message", async () => {
+    let completeUpload: ((result: unknown) => void) | undefined;
+    uploadContextFile.mockImplementationOnce(() => new Promise((resolve) => { completeUpload = resolve; }));
+    const { result, rerender } = renderHook(() => useCoachPlanWorkspace());
+    let upload: Promise<void>;
+    act(() => { upload = result.current.attachFiles([new File(["x"], "first.csv")]); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Use this" }]); });
+    expect(mockSend).not.toHaveBeenCalled();
+    await act(async () => { completeUpload?.({ ok: true, contextFileIds: ["coach/session/first.txt"] }); await upload; });
+    uploadContextFile.mockResolvedValueOnce({ ok: false, error: "STORAGE_FAILED", message: "Upload failed" });
+    await act(async () => { await result.current.attachFiles([new File(["x"], "failed.csv")]); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Use this" }]); });
+    expect(result.current.state.attachments).toEqual([]);
+    agentDataState.current.messages = [{ role: "user", content: "Use this" }, { role: "assistant", content: "Done" }, { role: "user", content: "Next" }];
+    rerender();
+    expect(result.current.state.messages[0].attachments?.map((item) => item.displayLabel)).toEqual(["first.csv"]);
+    expect(result.current.state.messages[2].attachments).toBeUndefined();
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ messageAttachments: [expect.objectContaining({ userMessageIndex: 0, attachments: [expect.objectContaining({ displayLabel: "first.csv" })] })] }));
+  });
+
+  it("continues persisting the old thread after unmount without redirecting back", async () => {
+    const onSessionUrlNavigate = vi.fn();
+    let finishSend: (() => void) | undefined;
+    mockSend.mockImplementationOnce(() => new Promise<void>((resolve) => { finishSend = resolve; }));
+    const { result, unmount } = renderHook(() => useCoachPlanWorkspace({ onSessionUrlNavigate }));
+    let pending: Promise<void>;
+    act(() => { pending = result.current.sendMessage([{ type: "text", value: "Make a plan" }]); });
+    await waitFor(() => expect(mockSend).toHaveBeenCalled());
+    const callbacks = capturedEveAgentOptions.current;
+    unmount();
+    onSessionUrlNavigate.mockClear();
+    await act(async () => {
+      await callbacks?.onFinish?.({ session: { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 }, events: [{ type: "message.received" }, { type: "session.waiting" }] });
+      finishSend?.();
+      await pending;
+    });
+    expect(mockStop).not.toHaveBeenCalled();
+    expect(mockReset).not.toHaveBeenCalled();
+    expect(onSessionUrlNavigate).not.toHaveBeenCalled();
+    expect(saveSessionSnapshot).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ eveEvents: [{ type: "message.received" }, { type: "session.waiting" }] }));
   });
 
   it("persists and redirects again after restart on the home workspace", async () => {

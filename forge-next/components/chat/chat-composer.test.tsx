@@ -5,6 +5,17 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { createInitialChatWorkspaceState } from "@/lib/chat/initial-state";
 
 describe("ChatComposer", () => {
+  it("attaches a pasted image while still requiring text to send", () => {
+    const onAttach = vi.fn();
+    const onSend = vi.fn();
+    render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="image-paste" onAttach={onAttach} onSend={onSend} />);
+    const file = new File(["image"], "screenshot.png", { type: "image/png" });
+    fireEvent.paste(screen.getByRole("textbox"), { clipboardData: { files: [file], getData: () => "" } });
+    expect(onAttach).toHaveBeenCalledWith([file]);
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
   it("sends on desktop Enter", async () => {
     const onSend = vi.fn(); const user = userEvent.setup();
     render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="desktop-enter" onAttach={vi.fn()} onSend={onSend} />);
@@ -205,7 +216,7 @@ describe("ChatComposer", () => {
       />,
     );
 
-    const resetButton = screen.getByRole("button", { name: "Reset conversation" });
+    const resetButton = screen.getByRole("button", { name: "New conversation" });
     expect(resetButton).toBeInTheDocument();
 
     await user.click(resetButton);
@@ -261,7 +272,7 @@ describe("ChatComposer", () => {
     expect(scoped.getByRole("textbox")).toBeInTheDocument();
     expect(scoped.getByRole("button", { name: "Attach" })).toBeInTheDocument();
     expect(
-      scoped.getByRole("button", { name: "Reset conversation" }),
+      scoped.getByRole("button", { name: "New conversation" }),
     ).toBeInTheDocument();
     expect(scoped.getByRole("button", { name: "Send" })).toBeInTheDocument();
   });

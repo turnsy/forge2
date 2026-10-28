@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
 
 describe("ChatThread", () => {
+  it("renders sent attachments on their message without a remove control", () => {
+    render(<ChatThread threadKey="thread" messages={[
+      { role: "user", content: "Use this image", attachments: [{ localId: "file", status: "uploaded", displayLabel: "plan.png" }] },
+      { role: "assistant", content: "Done" },
+      { role: "user", content: "Next question" },
+    ]} streamingAssistantText="" runStatus="done" errors={[]} phase="idle" />);
+    expect(screen.getByText("plan.png")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove plan.png" })).not.toBeInTheDocument();
+  });
+
   it("renders approval controls instead of a spinner for a parked assignment", () => {
     render(<ChatThread threadKey="thread-1" messages={[{ role: "user", content: "Assign Jay" }]}
       streamingAssistantText="" runStatus="done" errors={[]} phase="idle" onRespondToInput={vi.fn()}

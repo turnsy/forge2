@@ -10,6 +10,7 @@ export type ChatStatus =
   | "error";
 
 export type ChatMessage = {
+  attachments?: ChatAttachment[];
   inputCard?: {
     request: InputRequest;
     status: "pending" | "submitted" | "completed" | "cancelled" | "failed";
@@ -48,6 +49,7 @@ export type ChatAttachment = {
 };
 
 export type ChatWorkspaceState<TArtifact = unknown> = {
+  artifactShowRequest?: number;
   pendingInputRequests?: InputRequest[];
   sessionId: string;
   hasStarted: boolean;
@@ -119,6 +121,7 @@ export type ChatWorkspaceAction<TArtifact = unknown> =
   | { type: "SET_ARTIFACT_TITLE"; artifactTitle: string }
   | { type: "SET_PLAN_ID"; planId: string }
   | { type: "SET_ARTIFACT"; artifact: TArtifact }
+  | { type: "CLEAR_COMPOSER_ATTACHMENTS" }
   | { type: "ATTACH_FILES"; attachments: ChatAttachment[] }
   | { type: "ATTACH_UPLOAD_START"; localIds: string[] }
   | {

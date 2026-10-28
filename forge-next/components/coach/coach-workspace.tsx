@@ -62,7 +62,6 @@ import {
   syncCoachWorkspaceUrl,
 } from "@/lib/chat/session-url";
 import { useOptionalSessionNavigation } from "@/lib/chat/session-navigation-context";
-import { useCoachWorkspaceSessionId } from "@/lib/chat/use-coach-workspace-url";
 import type { UserRole } from "@/lib/auth/types";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { useSavePlan } from "@/lib/plans/use-save-plan";
@@ -180,6 +179,7 @@ function ArtifactPanel({
             saveStatus={saveStatus}
             onTitleChange={onTitleChange}
             onSave={onSave}
+            onClose={mobileOverlay ? undefined : onClose}
           />
         </div>
       </div>
@@ -305,6 +305,7 @@ export function CoachWorkspace(
     void saveSessionSnapshot(
       props.initialSession.id,
       buildPersistedCoachSnapshot({
+        messageAttachments: snapshot.messageAttachments,
         inputCardResponses: snapshot.inputCardResponses,
         forgeSessionId: props.initialSession.id,
         title: snapshot.title,
@@ -394,9 +395,9 @@ function CoachWorkspaceInner({
   const router = useRouter();
   const isMobile = useIsMobile();
   const sessionNavigation = useOptionalSessionNavigation();
-  const [showArtifact, setShowArtifact] = useState(false);
+  const [showArtifact, setShowArtifact] = useState(Boolean(initialPlan));
+  const [lastArtifactShowRequest, setLastArtifactShowRequest] = useState(0);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-  const openArtifactOnMobileRef = useRef(Boolean(initialPlan));
   const [backlinkPlanId, setBacklinkPlanId] = useState<string | null>(
     initialPlanId ?? null,
   );
@@ -426,7 +427,7 @@ function CoachWorkspaceInner({
 
   const handleSessionUrlNavigate = useCallback((sessionId: string) => {
     // Keep the live Eve stream on the current workspace instance. A hard
-    // router navigation would remount, abort the turn, and replay from DB.
+    // router navigation would remount and replay the live stream from storage.
     syncCoachSessionUrl(sessionId);
   }, []);
 
@@ -450,10 +451,10 @@ function CoachWorkspaceInner({
     sendMessage,
     respondToInput,
     stopResponse,
+    leaveConversation,
     setArtifactTitle,
     setPlanId,
     setArtifact,
-    restart,
   } = useCoachPlanWorkspace(
     initialPlan
       ? {
@@ -486,30 +487,12 @@ function CoachWorkspaceInner({
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
 
-  const workspaceSessionId = useCoachWorkspaceSessionId();
-  const previousWorkspaceSessionIdRef = useRef(workspaceSessionId);
-
-  useEffect(() => {
-    const previousWorkspaceSessionId = previousWorkspaceSessionIdRef.current;
-    previousWorkspaceSessionIdRef.current = workspaceSessionId;
-
-    if (initialSession || !previousWorkspaceSessionId || workspaceSessionId) {
-      return;
-    }
-
-    if (state.hasStarted) {
-      restart();
-    }
-  }, [initialSession, restart, state.hasStarted, workspaceSessionId]);
-
-  useEffect(() => {
-    if (!openArtifactOnMobileRef.current || !isMobile) {
-      return;
-    }
-
-    setShowArtifact(true);
-    openArtifactOnMobileRef.current = false;
-  }, [isMobile]);
+  // Only an explicit agent show request may reopen a hidden preview.
+  const artifactShowRequest = state.artifactShowRequest ?? 0;
+  if (artifactShowRequest !== lastArtifactShowRequest) {
+    setLastArtifactShowRequest(artifactShowRequest);
+    if (artifactShowRequest > lastArtifactShowRequest) setShowArtifact(true);
+  }
 
   const activePlanId = state.planId;
   const resolvedBackPlanId = backlinkPlanId ?? activePlanId;
@@ -522,7 +505,7 @@ function CoachWorkspaceInner({
       initialStatus: initialSavedSnapshot ? "saved" : undefined,
     });
 
-  const showSplitPane = Boolean(state.currentArtifact);
+  const showSplitPane = Boolean(state.currentArtifact) && showArtifact;
   const chatCollapsed = showSplitPane && isChatCollapsed;
   const artifactFadeKey = activePlanId ?? state.sessionId;
   const artifactScrollResetKey = state.currentArtifact
@@ -608,31 +591,10 @@ function CoachWorkspaceInner({
     [state.artifactTitle, state.currentArtifact],
   );
 
-  const handleClose = useCallback(() => {
-    if (
-      savedSnapshotRef.current &&
-      hasUnsavedPlanChanges(
-        { plan: state.currentArtifact, title: state.artifactTitle },
-        savedSnapshotRef.current,
-      ) &&
-      !window.confirm("You have unsaved changes. Leave without saving?")
-    ) {
-      return;
-    }
-
-    if (backlinkPlanId ?? activePlanId) {
-      router.push(`/coach/plans/${backlinkPlanId ?? activePlanId}`);
-      return;
-    }
-
-    savedSnapshotRef.current = null;
-    setShowArtifact(false);
-    navigateToCoachHome(router);
-  }, [activePlanId, backlinkPlanId, router, state]);
-
   const handleReset = useCallback(() => {
-    handleClose();
-  }, [handleClose]);
+    leaveConversation();
+    navigateToCoachHome(router);
+  }, [leaveConversation, router]);
 
   const renderMobileChatBody = (
     composerHeader?: ReactNode,
@@ -799,6 +761,7 @@ function CoachWorkspaceInner({
                   onSave={handleSave}
                   disabled={isChatRunning(state)}
                   onPlanChange={handlePlanChange}
+                  onClose={() => setShowArtifact(false)}
                 />
             </div>
           ) : null}
@@ -817,8 +780,13 @@ function CoachWorkspaceInner({
             desktopChatToggle
           ) : (
             <>
-              {desktopChatToggle ? (
-                <div className={DESKTOP_CHAT_TOGGLE_ROW_CLASS}>{desktopChatToggle}</div>
+              {desktopChatToggle || state.currentArtifact ? (
+                <div className={`${DESKTOP_CHAT_TOGGLE_ROW_CLASS} flex items-center justify-between`}>
+                  {desktopChatToggle}
+                  {state.currentArtifact && !showArtifact ? (
+                    <IconButton variant="plain" size="sm" icon={<EyeIcon />} aria-label="View artifact" onClick={() => setShowArtifact(true)} />
+                  ) : null}
+                </div>
               ) : null}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 <CoachConversationPanel

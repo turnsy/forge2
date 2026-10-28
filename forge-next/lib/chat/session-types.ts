@@ -1,5 +1,6 @@
 import type { HandleMessageStreamEvent, InputRequest, InputResponse, SessionState } from "eve/client";
 import type {
+  ChatAttachment,
   ChatDisplayError,
   ChatMessage,
   ChatStatus,
@@ -21,7 +22,13 @@ export type CoachTurnMarker = {
   eventCount: number;
 };
 
+export type MessageAttachmentRecord = {
+  userMessageIndex: number;
+  attachments: ChatAttachment[];
+};
+
 export type CoachWorkspaceSnapshot = {
+  messageAttachments?: readonly MessageAttachmentRecord[];
   inputCardResponses?: readonly InputResponse[];
   title: string | null;
   forgeSessionId: string;
@@ -33,6 +40,7 @@ export type CoachWorkspaceSnapshot = {
 };
 
 export type EveCoachReducerData = {
+  artifactShowRequest?: number;
   pendingInputRequests?: InputRequest[];
   messages: ChatMessage[];
   currentArtifact: WorkoutPlan | null;
@@ -53,6 +61,7 @@ export function withForgeSessionId(
 }
 
 export function buildCoachWorkspaceSnapshot(input: {
+  messageAttachments?: readonly MessageAttachmentRecord[];
   inputCardResponses?: readonly InputResponse[];
   forgeSessionId: string;
   title: string | null;
@@ -61,6 +70,7 @@ export function buildCoachWorkspaceSnapshot(input: {
   lastTurn?: CoachTurnMarker | null;
 }): CoachWorkspaceSnapshot {
   return {
+    ...(input.messageAttachments ? { messageAttachments: input.messageAttachments } : {}),
     ...(input.inputCardResponses ? { inputCardResponses: input.inputCardResponses } : {}),
     title: input.title,
     forgeSessionId: input.forgeSessionId,

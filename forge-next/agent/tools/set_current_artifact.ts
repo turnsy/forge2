@@ -10,7 +10,7 @@ import type {
 
 export default defineTool({
   description:
-    "Load a saved plan into the preview for editing. Use only when the user wants to edit a saved plan that is not already in preview (e.g. \"edit Summer Block\", \"add a week to this plan\"). Does not return full plan JSON.",
+    "Select a saved plan for editing. This does not open the preview; call show_current_artifact when you want to show it. Use only when the user wants to edit a saved plan that is not already in preview (e.g. \"edit Summer Block\", \"add a week to this plan\"). Does not return full plan JSON.",
   inputSchema: z.object({
     planId: z.string().uuid().describe("Saved plan id."),
   }),

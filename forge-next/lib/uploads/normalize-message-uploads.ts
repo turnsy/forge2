@@ -1,3 +1,4 @@
+import { imageMediaType, matchesImageType } from "@/lib/uploads/image-types";
 import { uploadFileSlug } from "@/lib/uploads/file-utils";
 import {
   normalizedUploadToText,
@@ -6,6 +7,7 @@ import {
 import { validateMessageUploadBatch } from "@/lib/uploads/validate-batch";
 import {
   saveUploadContext,
+  saveUploadImage,
   type ContextFileId,
 } from "@/lib/uploads/context-storage";
 import type {
@@ -37,6 +39,18 @@ export async function normalizeMessageUploads(
   const warnings: UploadWarning[] = [];
 
   for (const file of input.files) {
+    const mediaType = imageMediaType(file.filename);
+    if (mediaType) {
+      if (!matchesImageType(file.buffer, mediaType)) return { ok: false, error: "PARSE_FAILED", message: `${file.filename} is not a valid ${mediaType} image.` };
+      if (input.persist === false) {
+        contextFileIds.push(`${input.coachId}/${input.sessionId}/${file.filename}`);
+        continue;
+      }
+      const stored = await saveUploadImage({ coachId: input.coachId, sessionId: input.sessionId, filename: file.filename, buffer: file.buffer, mediaType });
+      if (!stored.ok) return { ok: false, error: "STORAGE_FAILED", message: stored.message };
+      contextFileIds.push(stored.contextFileId);
+      continue;
+    }
     const parsedList = await parseUploadFile({
       filename: file.filename,
       buffer: file.buffer,

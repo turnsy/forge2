@@ -40,6 +40,10 @@ function applyArtifactFromTool(
   toolName: string,
   output: unknown,
 ): EveCoachReducerData {
+  if (toolName === "show_current_artifact" && output && typeof output === "object" && "ok" in output && output.ok === true) {
+    return { ...data, artifactShowRequest: (data.artifactShowRequest ?? 0) + 1 };
+  }
+
   if (toolName === "clear_current_artifact") {
     return {
       ...data,

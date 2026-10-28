@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatAttachmentList } from "@/components/chat/chat-attachment";
 import { ChatMessageBody } from "@/components/chat/chat-message-body";
 import { ChatInputRequest } from "@/components/chat/chat-input-request";
 import type { InputRequest, InputResponse } from "eve/client";
@@ -123,7 +124,10 @@ export function ChatThread({
                 <ChatInputRequest request={message.inputCard.request} status={message.inputCard.status === "submitted" && phase === "error" ? "failed" : message.inputCard.status} savedChoiceIds={message.inputCard.selectedChoiceIds} savedResponseText={message.inputCard.responseText}
                   disabled={turnInProgress || !pendingInputRequests.some((request) => request.requestId === message.inputCard?.request.requestId)}
                   onRespond={onRespondToInput ?? (async () => {})} />
-              ) : <ChatMessageBody message={message} />}
+              ) : <>
+                <ChatMessageBody message={message} />
+                {message.attachments?.length ? <ChatAttachmentList attachments={message.attachments} className="mt-2" /> : null}
+              </>}
             </ChatBubble>
           ))}
           {showStreaming ? (

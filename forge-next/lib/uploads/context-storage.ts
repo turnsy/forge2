@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { filenameToSlug } from "@/lib/uploads/file-utils";
 import { createClient } from "@/utils/supabase/data-client";
 import {
   SESSION_UPLOADS_BUCKET,
@@ -37,7 +39,7 @@ export async function saveUploadContext(
   const objectPath = sessionUploadObjectPath(
     input.coachId,
     input.sessionId,
-    input.slug,
+    `${input.slug}-${randomUUID()}`,
   );
 
   const body = Buffer.from(input.normalizedText, "utf8");
@@ -45,7 +47,7 @@ export async function saveUploadContext(
     .from(SESSION_UPLOADS_BUCKET)
     .upload(objectPath, body, {
       contentType: "text/plain; charset=utf-8",
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {
@@ -102,4 +104,25 @@ export async function deleteUploadContext(
   }
 
   return { ok: true };
+}
+
+/** Store images intact in the same private, thread-scoped bucket as text. */
+export async function saveUploadImage(
+  input: { coachId: string; sessionId: string; filename: string; buffer: Buffer; mediaType: string },
+  client?: StorageSupabaseClient,
+): Promise<SaveUploadContextResult> {
+  const supabase = client ?? (await createClient());
+  const extension = input.filename.slice(input.filename.lastIndexOf(".")).toLowerCase();
+  const objectPath = `${input.coachId}/${input.sessionId}/${filenameToSlug(input.filename)}-${randomUUID()}${extension}`;
+  const { error } = await supabase.storage.from(SESSION_UPLOADS_BUCKET).upload(objectPath, input.buffer, {
+    contentType: input.mediaType, upsert: false,
+  });
+  return error ? { ok: false, code: "STORAGE_FAILED", message: error.message } : { ok: true, contextFileId: objectPath };
+}
+
+export async function loadUploadImageById(path: string, coachId: string, client?: StorageSupabaseClient): Promise<Blob | null> {
+  if (!assertCoachOwnsContextPath(coachId, path)) return null;
+  const supabase = client ?? (await createClient());
+  const { data, error } = await supabase.storage.from(SESSION_UPLOADS_BUCKET).download(path);
+  return error ? null : data;
 }

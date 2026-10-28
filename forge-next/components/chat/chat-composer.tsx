@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ChatAttachmentList } from "@/components/chat/chat-attachment";
+import { UPLOAD_ALLOWED_EXTENSIONS } from "@/lib/uploads/limits";
 import { PaperclipIcon } from "@/components/icons/paperclip-icon";
 import { RotateIcon } from "@/components/icons/rotate-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
@@ -101,7 +102,7 @@ export function ChatComposer({
             variant="ghost"
             size="sm"
             icon={<RotateIcon />}
-            aria-label="Reset conversation"
+            aria-label="New conversation"
             onClick={onReset}
           />
         ) : null}
@@ -153,6 +154,13 @@ export function ChatComposer({
                     : "border-glass-border"
                 }`
           }`}
+          onPaste={(event) => {
+            const files = Array.from(event.clipboardData.files ?? []);
+            if (files.length) {
+              event.preventDefault();
+              addFiles(files);
+            }
+          }}
           onDragEnter={(event) => {
             event.preventDefault();
             setDragDepth((current) => current + 1);
@@ -173,7 +181,7 @@ export function ChatComposer({
             type="file"
             className="sr-only"
             multiple
-            accept=".csv,.xlsx,.xls,.pdf"
+            accept={UPLOAD_ALLOWED_EXTENSIONS.join(",")}
             onChange={(event) => {
               addFiles(Array.from(event.target.files ?? []));
               event.target.value = "";

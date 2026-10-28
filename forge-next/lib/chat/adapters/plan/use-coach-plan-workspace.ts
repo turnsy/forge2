@@ -5,7 +5,6 @@ import type { HandleMessageStreamEvent, InputResponse, SessionState } from "eve/
 import { useEveAgent } from "eve/react";
 import {
   generateSessionTitleFromPrompt,
-  listSessionAttachments,
   removeSessionAttachments,
   saveSessionSnapshot,
 } from "@/lib/chat/actions";
@@ -43,6 +42,7 @@ import {
   withForgeSessionId,
   type CoachWorkspaceSnapshot,
   type ForgeEvePointer,
+  type MessageAttachmentRecord,
 } from "@/lib/chat/session-types";
 import { snapshotHasConversation } from "@/lib/chat/snapshot-messages";
 import { createSessionId, formatAttachmentDisplayLabel } from "@/lib/chat/utils";
@@ -169,6 +169,14 @@ export function useCoachPlanWorkspace(options?: {
   const initialInputCardResponses = normalizedSnapshot?.inputCardResponses;
   const inputCardResponsesRef = useRef<InputResponse[]>([...initialInputCardResponses ?? []]);
   const inputResponseToPersistRef = useRef<InputResponse | null>(null);
+  const messageAttachmentsRef = useRef<MessageAttachmentRecord[]>([...normalizedSnapshot?.messageAttachments ?? []]);
+  const [messageAttachments, setMessageAttachments] = useState<MessageAttachmentRecord[]>(() => [...normalizedSnapshot?.messageAttachments ?? []]);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
 
   const eveReducer = useMemo(
     () =>
@@ -263,6 +271,7 @@ export function useCoachPlanWorkspace(options?: {
       createCoachEvePersister({
         forgeSessionId,
         getTitle: () => sessionTitleRef.current,
+        getMessageAttachments: () => messageAttachmentsRef.current,
         getInputCardResponses: () => inputCardResponsesRef.current,
         saveSnapshot: async (input) => {
           const result = await saveSessionSnapshot(
@@ -305,7 +314,7 @@ export function useCoachPlanWorkspace(options?: {
       sessionId: forgeSessionId,
       title: sessionTitleRef.current,
     });
-    onSessionUrlNavigate?.(forgeSessionId);
+    if (mountedRef.current) onSessionUrlNavigate?.(forgeSessionId);
   }, [
     forgeSessionId,
     initialSession,
@@ -328,8 +337,9 @@ export function useCoachPlanWorkspace(options?: {
       // Persist the selected row as soon as Eve acknowledges receipt, before
       // waiting for model/tool events. A reload must not reopen the same form.
       inputCardResponsesRef.current = [...inputCardResponsesRef.current.filter((item) => item.requestId !== inputResponse.requestId), inputResponse];
-      void persisterRef.current.flush(latestAgentSessionRef.current, latestAgentEventsRef.current).catch(() => false);
     }
+    // Store the durable cursor even if the user immediately starts a new chat.
+    void persisterRef.current.flush(latestAgentSessionRef.current, latestAgentEventsRef.current).catch(() => false);
   }, []);
 
   const handleAgentStreamEventRef = useRef<
@@ -482,32 +492,11 @@ export function useCoachPlanWorkspace(options?: {
     createAttachmentState(),
   );
   const attachmentStateRef = useRef(attachmentState);
-  const restoredAttachmentsRef = useRef(false);
   const [isInitializingThread, setIsInitializingThread] = useState(false);
 
   useEffect(() => {
     attachmentStateRef.current = attachmentState;
   }, [attachmentState]);
-
-  useEffect(() => {
-    if (!initialSession || restoredAttachmentsRef.current) {
-      return;
-    }
-
-    restoredAttachmentsRef.current = true;
-
-    void (async () => {
-      const result = await listSessionAttachments(forgeSessionId);
-      if (!result?.ok) {
-        return;
-      }
-
-      dispatchAttachments({
-        type: "SYNC_ATTACHMENTS",
-        attachments: result.attachments,
-      });
-    })();
-  }, [forgeSessionId, initialSession]);
 
   // While the catch-up layer tails a live turn, its growing event log (not
   // the frozen agent store) is the projection source. The workspace remounts
@@ -618,7 +607,15 @@ export function useCoachPlanWorkspace(options?: {
     sessionTitle,
     artifactTitle: displayedArtifactTitle,
     planId: displayedPlanId,
-    messages: workspaceData.messages,
+    messages: (() => {
+      let userMessageIndex = 0;
+      return workspaceData.messages.map((message) => {
+        if (message.role !== "user") return message;
+        const record = messageAttachments.find((item) => item.userMessageIndex === userMessageIndex++);
+        return record ? { ...message, attachments: record.attachments } : message;
+      });
+    })(),
+    artifactShowRequest: workspaceData.artifactShowRequest,
     currentArtifact: displayedArtifact,
     contextFileIds: attachmentState.contextFileIds,
     attachments: attachmentState.attachments,
@@ -639,11 +636,16 @@ export function useCoachPlanWorkspace(options?: {
 
   const attachFiles = useCallback(
     async (files: File[]) => {
-      const validation = validateClientFiles(files);
+      const validation = validateClientFiles([
+        ...attachmentStateRef.current.attachments.flatMap((item) => item.file ? [item.file] : []),
+        ...files,
+      ]);
       if (!validation.ok) {
+        setSendFailure(validation.message);
         return;
       }
 
+      setSendFailure(null);
       const attachments = files.map((file) => ({
         localId: crypto.randomUUID(),
         file,
@@ -715,16 +717,14 @@ export function useCoachPlanWorkspace(options?: {
         return;
       }
 
-      dispatchAttachments({
-        type: "SYNC_ATTACHMENTS",
-        attachments: result.attachments,
-      });
+      dispatchAttachments({ type: "REMOVE_ATTACHMENT", localId });
     },
     [forgeSessionId],
   );
 
   const canSendNow =
-    !resuming && !isInitializingThread && canSendInPhase(uiPhase);
+    !resuming && !isInitializingThread && canSendInPhase(uiPhase) &&
+    !attachmentState.attachments.some((item) => item.status === "pending" || item.status === "uploading");
 
   const inputResponsePendingRef = useRef(false);
   const respondToInput = useCallback(async (response: InputResponse) => {
@@ -778,6 +778,16 @@ export function useCoachPlanWorkspace(options?: {
       setStopPending(false);
       setSendFailure(null);
 
+      const sentAttachments = attachmentStateRef.current.attachments
+        .filter((item) => item.status === "uploaded")
+        .map(({ localId, status, displayLabel, contextFileIds }) => ({ localId, status, displayLabel, contextFileIds }));
+      const userMessageIndex = workspaceData.messages.filter((message) => message.role === "user").length;
+      if (sentAttachments.length) {
+        messageAttachmentsRef.current = [...messageAttachmentsRef.current, { userMessageIndex, attachments: sentAttachments }];
+        setMessageAttachments(messageAttachmentsRef.current);
+      }
+      dispatchAttachments({ type: "CLEAR_COMPOSER_ATTACHMENTS" });
+
       try {
         await agent.send({ message: agentPrompt });
       } catch (error) {
@@ -786,10 +796,17 @@ export function useCoachPlanWorkspace(options?: {
         );
       }
     },
-    [agent, canSendNow, ensureSessionTitle, workspaceData.pendingInputRequests],
+    [agent, canSendNow, ensureSessionTitle, workspaceData.pendingInputRequests, workspaceData.messages],
   );
 
+  // Navigation leaves the durable turn and its persistence callbacks running.
+  const leaveConversation = useCallback(() => {
+    mountedRef.current = false;
+  }, []);
+
   const restart = useCallback(() => {
+    messageAttachmentsRef.current = [];
+    setMessageAttachments([]);
     inputCardResponsesRef.current = [];
     inputResponseToPersistRef.current = null;
     stopPendingRef.current = false;
@@ -859,6 +876,7 @@ export function useCoachPlanWorkspace(options?: {
     sendMessage,
     respondToInput,
     stopResponse,
+    leaveConversation,
     restart,
     setArtifactTitle,
     setPlanId,

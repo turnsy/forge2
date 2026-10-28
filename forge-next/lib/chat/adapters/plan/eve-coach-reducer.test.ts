@@ -5,6 +5,21 @@ import type { HandleMessageStreamEvent, InputRequest } from "eve/client";
 describe("createEveCoachReducer", () => {
   const reducer = createEveCoachReducer();
 
+  it("only requests showing the artifact for a successful explicit show tool", () => {
+    const event = (toolName: string, output: { ok: boolean } | { ok: boolean; plan: { name: string } }): HandleMessageStreamEvent => ({
+      type: "action.result", data: { sequence: 1, turnId: "turn", stepIndex: 0, status: "completed", result: { kind: "tool-result", toolName, callId: "call", output } },
+    });
+    let state = reducer.initial();
+    state = reducer.reduce(state, event("set_current_artifact", { ok: true, plan: { name: "Plan" } }));
+    expect(state.artifactShowRequest ?? 0).toBe(0);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: false }));
+    expect(state.artifactShowRequest ?? 0).toBe(0);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: true }));
+    expect(state.artifactShowRequest).toBe(1);
+    state = reducer.reduce(state, event("show_current_artifact", { ok: true }));
+    expect(state.artifactShowRequest).toBe(2);
+  });
+
   it("clears stale approvals when a Gateway failure terminates the session", () => {
     const request: InputRequest = {
       requestId: "approval-1", prompt: "Assign this plan?", display: "confirmation",
