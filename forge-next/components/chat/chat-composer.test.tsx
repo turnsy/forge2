@@ -16,6 +16,17 @@ describe("ChatComposer", () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
+  it("allows a normal message while a card is waiting for an answer", async () => {
+    const onSend = vi.fn();
+    const user = userEvent.setup();
+    render(<ChatComposer state={{ ...createInitialChatWorkspaceState(), pendingInputRequests: [{ requestId: "q", prompt: "Which day?", action: { kind: "tool-call", callId: "q", toolName: "ask_question", input: {} } }] }} composerKey="pending-question" onAttach={vi.fn()} onSend={onSend} />);
+    await user.click(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "Something else instead");
+    expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(onSend).toHaveBeenCalledWith([{ type: "text", value: "Something else instead" }]);
+  });
+
   it("sends on desktop Enter", async () => {
     const onSend = vi.fn(); const user = userEvent.setup();
     render(<ChatComposer state={createInitialChatWorkspaceState()} composerKey="desktop-enter" onAttach={vi.fn()} onSend={onSend} />);

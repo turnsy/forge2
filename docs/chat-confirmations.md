@@ -2,7 +2,8 @@
 
 All choices use Eve's `ask_question` tool. The agent sets `selectionMode` to
 `single` (the default) or `multiple`, supplies concrete options, and sets
-`allowFreeform: false`. Any future question can use this: athletes, plans,
+`allowFreeform: false`. This controls the choices on the card; the chat composer
+is always an alternative response path. Any future question can use this: athletes, plans,
 training days, exercise preferences, or other choices need no new UI wrapper.
 
 ```ts
@@ -58,6 +59,37 @@ context. Coach authentication, role checks, linked-athlete permissions, input
 schemas, and repository/RLS checks remain enforced. Adding another action does
 not require a confirmation wrapper. Eve's generic native approvals remain
 renderable for capabilities that independently require them.
+
+## Replies through chat
+
+While input is pending, the coach can send a normal chat message instead of
+pressing Confirm or Cancel. The same Eve continuation carries that visible
+message and an `inputResponses` entry for every pending request. Each entry's
+`text` contains `status: "replied"`, the written `message`, current `selections`,
+any valid numeric `maxes`, raw numeric `fieldValues`, and `draftText` when an
+open text field had a draft. Draft values are context, not confirmation; the
+written message takes precedence. No client-side intent classifier runs.
+
+The agent instructions explain how to interpret direct answers, additions to
+checked choices, clear approvals, revisions, and changes of direction. Resolve
+only the remaining ambiguity; do not require a card click, announce a
+cancellation, or produce an intermediate cancellation response. A single
+message resolves the current batch, with missing answers handled by a new
+question if needed.
+
+A chat-resolved card stays in the timeline, greyed out with draft values
+preserved and no accepted/cancelled/completed label. Responses are persisted
+only after POST acknowledgement and restore this neutral presentation on reload.
+Failed deliveries retain pending requests so the coach can retry through either
+path. Explicit UI Confirm/Cancel responses keep their existing behavior.
+
+Eve's native tool approvals are distinct from conversational `ask_question`
+cards. A typed revision resolves the native approval without executing its old
+arguments, then Eve delivers the message for reconsideration. It must not be
+classified into an authorization grant by the UI. The normal native approval
+requirements remain enforced. Input-only and native-approval continuations omit
+Forge client context to preserve AI SDK tool-response ordering; combined
+conversational replies can carry the current client artifact as usual.
 
 ## Persistent card
 

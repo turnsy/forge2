@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatThread } from "@/components/chat/chat-thread";
 
 describe("ChatThread", () => {
+  it("makes a chat-resolved pending card editable again after delivery failure", () => {
+    const request = { requestId: "q", prompt: "Which athlete?", display: "select" as const, options: [{ id: "jay", label: "Jay" }, { id: "jane", label: "Jane" }], action: { kind: "tool-call" as const, callId: "q", toolName: "ask_question", input: {} } };
+    const onDraftChange = vi.fn();
+    render(<ChatThread threadKey="thread" messages={[{ role: "assistant", content: "", inputCard: { request, status: "replied", selectedChoiceIds: ["jay"] } }]} streamingAssistantText="" runStatus="error" errors={[{ message: "Network down" }]} phase="error" pendingInputRequests={[request]} onRespondToInput={vi.fn()} onInputDraftChange={onDraftChange} />);
+    expect(screen.getByRole("radio", { name: "Jay" })).toBeEnabled();
+    expect(screen.getByRole("radio", { name: "Jay" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("renders sent attachments on their message without a remove control", () => {
     render(<ChatThread threadKey="thread" messages={[
       { role: "user", content: "Use this image", attachments: [{ localId: "file", status: "uploaded", displayLabel: "plan.png" }] },

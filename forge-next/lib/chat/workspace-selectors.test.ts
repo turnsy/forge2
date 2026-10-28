@@ -8,6 +8,9 @@ import {
 } from "@/lib/chat/workspace-selectors";
 
 describe("workspace selectors", () => {
+  it("allows a chat message to answer a pending input card", () => {
+    expect(canSendChat({ ...createInitialChatWorkspaceState(), pendingInputRequests: [{ requestId: "question", prompt: "Which plan?", action: { kind: "tool-call", callId: "question", toolName: "ask_question", input: {} } }] })).toBe(true);
+  });
   it("blocks send while initializing", () => {
     const state = {
       ...createInitialChatWorkspaceState(),

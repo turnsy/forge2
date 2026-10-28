@@ -50,7 +50,7 @@ import type { PlanWorkspaceState } from "@/lib/chat/adapters/plan/types";
 import type { ChatWorkspaceAction, ChatWorkspaceState } from "@/lib/chat/types";
 import type { WorkoutPlan } from "@/lib/plans/workout-plan";
 import type { PromptSegment } from "@/lib/prompts/mentions/types";
-import { isValidInputResponse } from "@/lib/chat/input-selection";
+import { chatInputResponse, isValidInputResponse } from "@/lib/chat/input-selection";
 import {
   serializePromptDocument,
   serializePromptForAgent,
@@ -168,7 +168,11 @@ export function useCoachPlanWorkspace(options?: {
   const reducerSeedMessages = useMemo(() => [], []);
   const initialInputCardResponses = normalizedSnapshot?.inputCardResponses;
   const inputCardResponsesRef = useRef<InputResponse[]>([...initialInputCardResponses ?? []]);
-  const inputResponseToPersistRef = useRef<InputResponse | null>(null);
+  const inputResponsesToPersistRef = useRef<readonly InputResponse[]>([]);
+  const inputDraftsRef = useRef(new Map<string, InputResponse>());
+  const updateInputDraft = useCallback((response: InputResponse) => {
+    inputDraftsRef.current.set(response.requestId, response);
+  }, []);
   const messageAttachmentsRef = useRef<MessageAttachmentRecord[]>([...normalizedSnapshot?.messageAttachments ?? []]);
   const [messageAttachments, setMessageAttachments] = useState<MessageAttachmentRecord[]>(() => [...normalizedSnapshot?.messageAttachments ?? []]);
   const mountedRef = useRef(true);
@@ -262,7 +266,7 @@ export function useCoachPlanWorkspace(options?: {
 
       return titlePromiseRef.current;
     },
-    [],
+    [setSessionTitle],
   );
 
   /* eslint-disable react-hooks/refs -- persistence and Eve callbacks read refs at event time */
@@ -332,11 +336,13 @@ export function useCoachPlanWorkspace(options?: {
       continuationToken: response.continuationToken,
       streamIndex: latestAgentEventsRef.current.length,
     };
-    const inputResponse = inputResponseToPersistRef.current;
-    if (inputResponse) {
+    const inputResponses = inputResponsesToPersistRef.current;
+    if (inputResponses.length) {
       // Persist the selected row as soon as Eve acknowledges receipt, before
       // waiting for model/tool events. A reload must not reopen the same form.
-      inputCardResponsesRef.current = [...inputCardResponsesRef.current.filter((item) => item.requestId !== inputResponse.requestId), inputResponse];
+      const responsesById = new Map(inputCardResponsesRef.current.map((response) => [response.requestId, response]));
+      for (const response of inputResponses) responsesById.set(response.requestId, response);
+      inputCardResponsesRef.current = [...responsesById.values()];
     }
     // Store the durable cursor even if the user immediately starts a new chat.
     void persisterRef.current.flush(latestAgentSessionRef.current, latestAgentEventsRef.current).catch(() => false);
@@ -738,7 +744,7 @@ export function useCoachPlanWorkspace(options?: {
     if (!request) return;
     if (!isValidInputResponse(request, response)) return;
     inputResponsePendingRef.current = true;
-    inputResponseToPersistRef.current = response;
+    inputResponsesToPersistRef.current = [response];
     setSendFailure(null);
     try {
       await agent.send({ inputResponses: [response] });
@@ -746,7 +752,7 @@ export function useCoachPlanWorkspace(options?: {
       setSendFailure(error instanceof Error ? error.message : "Couldn't send your response.");
     } finally {
       inputResponsePendingRef.current = false;
-      inputResponseToPersistRef.current = null;
+      inputResponsesToPersistRef.current = [];
     }
   }, [agent, canSendNow, workspaceData.pendingInputRequests]);
 
@@ -754,14 +760,15 @@ export function useCoachPlanWorkspace(options?: {
     async (segments: PromptSegment[]) => {
       const displayPrompt = serializePromptDocument(segments).trim();
       const agentPrompt = serializePromptForAgent(segments).trim();
-      if (displayPrompt.length === 0 || !canSendNow) {
+      if (displayPrompt.length === 0 || !canSendNow || inputResponsePendingRef.current) {
         return;
       }
-      if (workspaceData.pendingInputRequests?.length) {
-        setSendFailure("Answer the pending request below before sending another message.");
+      const pendingRequests = workspaceData.pendingInputRequests ?? [];
+      if (pendingRequests.length && (!agent.session.sessionId || !agent.session.continuationToken)) {
+        setSendFailure("This request's conversation has ended. Reset the conversation to continue.");
         return;
       }
-
+      inputResponsePendingRef.current = true;
       setIsInitializingThread(true);
       try {
         const titled = await ensureSessionTitle(
@@ -769,8 +776,13 @@ export function useCoachPlanWorkspace(options?: {
           displayPrompt,
         );
         if (!titled) {
+          inputResponsePendingRef.current = false;
           return;
         }
+      } catch (error) {
+        inputResponsePendingRef.current = false;
+        setSendFailure(error instanceof Error ? error.message : "Couldn't start your message.");
+        return;
       } finally {
         setIsInitializingThread(false);
       }
@@ -789,12 +801,17 @@ export function useCoachPlanWorkspace(options?: {
       }
       dispatchAttachments({ type: "CLEAR_COMPOSER_ATTACHMENTS" });
 
+      const responses = pendingRequests.map((request) => chatInputResponse(request, displayPrompt, inputDraftsRef.current.get(request.requestId)));
+      inputResponsesToPersistRef.current = responses;
       try {
-        await agent.send({ message: agentPrompt });
+        await agent.send({ message: agentPrompt, ...(responses.length ? { inputResponses: responses } : {}) });
       } catch (error) {
         setSendFailure(
           error instanceof Error ? error.message : "Couldn't send message.",
         );
+      } finally {
+        inputResponsePendingRef.current = false;
+        inputResponsesToPersistRef.current = [];
       }
     },
     [agent, canSendNow, ensureSessionTitle, workspaceData.pendingInputRequests, workspaceData.messages],
@@ -808,8 +825,9 @@ export function useCoachPlanWorkspace(options?: {
   const restart = useCallback(() => {
     messageAttachmentsRef.current = [];
     setMessageAttachments([]);
+    inputDraftsRef.current.clear();
     inputCardResponsesRef.current = [];
-    inputResponseToPersistRef.current = null;
+    inputResponsesToPersistRef.current = [];
     stopPendingRef.current = false;
     setStopPending(false);
     setFinalization(null);
@@ -876,6 +894,7 @@ export function useCoachPlanWorkspace(options?: {
     removeAttachment,
     sendMessage,
     respondToInput,
+    updateInputDraft,
     stopResponse,
     leaveConversation,
     restart,

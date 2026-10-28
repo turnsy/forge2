@@ -21,6 +21,7 @@ export function CoachConversationPanel({
   onSend,
   onStop,
   onRespondToInput,
+  onInputDraftChange,
   onReset,
   promptEnabled = true,
   composerHeader,
@@ -34,6 +35,7 @@ export function CoachConversationPanel({
   onSend: Parameters<typeof ChatComposer>[0]["onSend"];
   onStop?: () => void;
   onRespondToInput?: Parameters<typeof ChatThread>[0]["onRespondToInput"];
+  onInputDraftChange?: Parameters<typeof ChatThread>[0]["onInputDraftChange"];
   onReset?: () => void;
   promptEnabled?: boolean;
   composerHeader?: ReactNode;
@@ -91,6 +93,7 @@ export function CoachConversationPanel({
             phase={state.phase}
             pendingInputRequests={state.pendingInputRequests}
             onRespondToInput={onRespondToInput}
+            onInputDraftChange={onInputDraftChange}
             className="absolute inset-0 z-0"
             scrollClassName={`${
               scrollPaddingTop === undefined

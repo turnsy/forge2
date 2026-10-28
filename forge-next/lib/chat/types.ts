@@ -13,7 +13,7 @@ export type ChatMessage = {
   attachments?: ChatAttachment[];
   inputCard?: {
     request: InputRequest;
-    status: "pending" | "submitted" | "completed" | "cancelled" | "failed";
+    status: "pending" | "submitted" | "completed" | "cancelled" | "failed" | "replied";
     selectedChoiceIds?: string[];
     responseText?: string;
   };

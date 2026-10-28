@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InputRequest } from "eve/client";
-import { isCancelledResponse, isValidInputResponse, parseSelectionAnswer, selectedResponseIds, selectionResponse } from "./input-selection";
+import { chatInputResponse, isChatInputResponse, isCancelledResponse, isValidInputResponse, parseSelectionAnswer, selectedResponseIds, selectionResponse } from "./input-selection";
 
 const request: InputRequest = {
   requestId: "question", display: "select", prompt: "Which training days?", allowFreeform: false,
@@ -38,6 +38,37 @@ describe("question selections", () => {
     expect(isValidInputResponse(request, { ...good, requestId: "different" })).toBe(false);
     expect(isValidInputResponse(request, { ...good, optionId: "wed" })).toBe(false);
     expect(isValidInputResponse(request, { requestId: request.requestId, text: "arbitrary custom answer" })).toBe(false);
+  });
+  it.each([[], ["mon"], ["mon", "wed"]].map((ids) => ({ ids })))("accepts a typed reply with draft choices $ids without confirming them", ({ ids }) => {
+    const response = chatInputResponse(request, "Also Friday", selectionResponse(request, ids));
+    expect(isChatInputResponse(response)).toBe(true);
+    expect(isCancelledResponse(response)).toBe(false);
+    expect(response.optionId).toBeUndefined();
+    expect(parseSelectionAnswer(response.text)).toEqual({ status: "replied", message: "Also Friday", selections: ids.map((id) => ({ id, label: id === "mon" ? "Monday" : "Wednesday" })) });
+    expect(isValidInputResponse(request, response)).toBe(true);
+  });
+  it("does not interpret approval language or rewritten targets in the client", () => {
+    for (const message of ["Yes, go ahead", "Yes, but use Jane instead", "Looks good", "Something else entirely"]) {
+      const response = chatInputResponse(request, message);
+      expect(parseSelectionAnswer(response.text)).toMatchObject({ status: "replied", message, selections: [] });
+      expect(response.optionId).toBeUndefined();
+      expect(isValidInputResponse(request, response)).toBe(true);
+    }
+  });
+  it("preserves an open text field separately from the written instruction", () => {
+    const response = chatInputResponse({ ...request, display: "text", options: [] }, "Use this as a starting point", { requestId: request.requestId, text: "Draft answer" });
+    expect(parseSelectionAnswer(response.text)).toMatchObject({ message: "Use this as a starting point", draftText: "Draft answer" });
+  });
+  it("rejects blank typed replies and invalid draft choices", () => {
+    expect(isValidInputResponse(request, chatInputResponse(request, "   "))).toBe(false);
+    const response = chatInputResponse(request, "Friday instead");
+    expect(isValidInputResponse(request, { ...response, text: JSON.stringify({ status: "replied", message: "Friday instead", selections: [{ id: "fake", label: "Friday" }] }) })).toBe(false);
+  });
+  it("resolves native approval revisions without executing the old proposed arguments", () => {
+    const response = chatInputResponse({ ...request, display: "confirmation" }, "Use Jane instead");
+    expect(response.optionId).toBe("deny");
+    expect(isChatInputResponse(response)).toBe(true);
+    expect(isCancelledResponse(response)).toBe(false);
   });
   it("handles old plain question answers and malformed JSON safely", () => {
     expect(selectedResponseIds({ requestId: request.requestId, optionId: "mon" })).toEqual(["mon"]);

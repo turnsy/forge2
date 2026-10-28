@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCoachPlanWorkspace } from "@/lib/chat/adapters/plan/use-coach-plan-workspace";
 import { createEmptyWorkoutPlan } from "@/lib/plans/plan-defaults";
-import { CANCEL_INPUT_REQUEST_TEXT, selectionResponse } from "@/lib/chat/input-selection";
+import { CANCEL_INPUT_REQUEST_TEXT, chatInputResponse, parseSelectionAnswer, selectionResponse } from "@/lib/chat/input-selection";
 import type { InputRequest } from "eve/client";
 
 const mockSearchParams = vi.fn(() => new URLSearchParams());
@@ -19,6 +19,7 @@ const {
   listSessionAttachments,
   removeSessionAttachments,
   mockSend,
+  skipPostAcknowledgement,
   uploadContextFile,
   mockReset,
   mockStop,
@@ -34,6 +35,7 @@ const {
   listSessionAttachments: vi.fn(),
   removeSessionAttachments: vi.fn(),
   mockSend: vi.fn(),
+  skipPostAcknowledgement: { current: false },
   uploadContextFile: vi.fn(),
   mockReset: vi.fn(),
   mockStop: vi.fn(),
@@ -140,7 +142,7 @@ vi.mock("eve/react", () => ({
       },
       send: async (input: { message: string }) => {
         const prepared = options?.prepareSend?.(input) ?? input;
-        capturedOnPostResponse.current?.({
+        if (!skipPostAcknowledgement.current) capturedOnPostResponse.current?.({
           sessionId: "eve-session",
           continuationToken: "token",
         });
@@ -233,10 +235,11 @@ describe("useCoachPlanWorkspace", () => {
       await result.current.respondToInput({ requestId: "approval-1", text: "yes" });
       await result.current.respondToInput({ requestId: "approval-1", optionId: "unknown" });
     });
-    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockSend).toHaveBeenCalledExactlyOnceWith({ message: "Hello", inputResponses: [{ requestId: "approval-1", optionId: "deny", text: JSON.stringify({ status: "replied", message: "Hello", selections: [] }) }], clientContext: undefined });
   });
   beforeEach(() => {
     vi.clearAllMocks();
+    skipPostAcknowledgement.current = false;
     capturedEveAgentOptions.current = undefined;
     capturedOnPostResponse.current = undefined;
     agentSessionState.current = {
@@ -265,6 +268,44 @@ describe("useCoachPlanWorkspace", () => {
     generateSessionTitleFromPrompt.mockResolvedValue("Strength block");
     listSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
     removeSessionAttachments.mockResolvedValue({ ok: true, attachments: [] });
+  });
+
+  it("sends a written answer with every pending card's draft and persists all responses on acknowledgement", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const requests: InputRequest[] = ["first", "second"].map((id) => ({
+      requestId: id, prompt: `Choose ${id}`, display: "select", allowFreeform: false,
+      options: [{ id: "a", label: "First" }, { id: "b", label: "Second" }],
+      action: { kind: "tool-call", callId: id, toolName: "ask_question", input: { selectionMode: "multiple" } },
+    }));
+    Object.assign(agentDataState.current, { pendingInputRequests: requests });
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    act(() => { result.current.updateInputDraft(selectionResponse(requests[0], ["a"])); });
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Also the second, but change the plan first" }]); });
+    expect(mockSend).toHaveBeenCalledOnce();
+    const payload = mockSend.mock.calls[0][0];
+    expect(payload.message).toBe("Also the second, but change the plan first");
+    expect(payload.inputResponses).toHaveLength(2);
+    expect(parseSelectionAnswer(payload.inputResponses[0].text)).toMatchObject({ status: "replied", message: payload.message, selections: [{ id: "a", label: "First" }] });
+    expect(parseSelectionAnswer(payload.inputResponses[1].text)).toMatchObject({ status: "replied", selections: [] });
+    expect(saveSessionSnapshot).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ inputCardResponses: payload.inputResponses }));
+  });
+
+  it("releases the send guard after a delivery failure so the reply can be retried", async () => {
+    agentSessionState.current = { sessionId: "eve-session", continuationToken: "token", streamIndex: 2 };
+    const request: InputRequest = { requestId: "question", prompt: "Which day?", display: "select", options: [{ id: "mon", label: "Monday" }], action: { kind: "tool-call", callId: "question", toolName: "ask_question", input: {} } };
+    Object.assign(agentDataState.current, { pendingInputRequests: [request] });
+    generateSessionTitleFromPrompt.mockRejectedValueOnce(new Error("network down"));
+    // The title helper handles generation failure; the message can still send.
+    skipPostAcknowledgement.current = true;
+    mockSend.mockRejectedValueOnce(new Error("Delivery failed"));
+    const { result } = renderHook(() => useCoachPlanWorkspace());
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Friday instead" }]); });
+    expect(result.current.state.errors[0].message).toContain("Delivery failed");
+    expect(saveSessionSnapshot.mock.calls.every(([, snapshot]) => snapshot.inputCardResponses.length === 0)).toBe(true);
+    skipPostAcknowledgement.current = false;
+    await act(async () => { await result.current.sendMessage([{ type: "text", value: "Friday instead" }]); });
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(mockSend.mock.calls[1][0].inputResponses[0]).toEqual(chatInputResponse(request, "Friday instead"));
   });
 
   it("initializes with a draft plan when initialPlan is provided without planId", () => {

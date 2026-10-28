@@ -448,6 +448,7 @@ function CoachWorkspaceInner({
     removeAttachment,
     sendMessage,
     respondToInput,
+    updateInputDraft,
     stopResponse,
     leaveConversation,
     setArtifactTitle,
@@ -608,6 +609,7 @@ function CoachWorkspaceInner({
       onRemoveAttachment={removeAttachment}
       onSend={handleSendMessage}
       onRespondToInput={respondToInput}
+      onInputDraftChange={updateInputDraft}
       onStop={stopResponse}
       onReset={handleReset}
       promptEnabled={promptEnabled}
@@ -805,6 +807,7 @@ function CoachWorkspaceInner({
                   onRemoveAttachment={removeAttachment}
                   onSend={handleSendMessage}
                   onRespondToInput={respondToInput}
+                  onInputDraftChange={updateInputDraft}
                   onStop={stopResponse}
                   onReset={handleReset}
                   promptEnabled={promptEnabled}

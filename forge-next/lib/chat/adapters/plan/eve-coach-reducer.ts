@@ -13,7 +13,7 @@ import {
   toForgeToolDisplayErrors,
 } from "@/lib/chat/adapters/plan/forge-tool-outputs";
 import { isUserAbortError } from "@/lib/chat/stream-completion";
-import { isCancelledResponse, selectedResponseIds } from "@/lib/chat/input-selection";
+import { isChatInputResponse, isCancelledResponse, selectedResponseIds } from "@/lib/chat/input-selection";
 
 type ForgeToolResult = Extract<
   ActionResultStreamEvent["data"]["result"],
@@ -182,7 +182,7 @@ export function createEveCoachReducer(
           for (const request of event.data.requests) {
             if (!messages.some((message) => message.inputCard?.request.requestId === request.requestId)) {
               const response = initial.inputCardResponses?.find((response) => response.requestId === request.requestId);
-              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", responseText: response?.text, selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
+              messages.push({ role: "assistant", content: "", inputCard: { request, status: response ? isChatInputResponse(response) ? "replied" : isCancelledResponse(response) ? "cancelled" : "submitted" : "pending", responseText: response?.text, selectedChoiceIds: response ? selectedResponseIds(response) : undefined } });
             }
           }
           return { ...data, messages, pendingInputRequests: [...event.data.requests] };
@@ -195,7 +195,7 @@ export function createEveCoachReducer(
             if (!message.inputCard) return message;
             const response = event.data.responses.find((response) => response.requestId === message.inputCard?.request.requestId);
             if (!response) return message;
-            return { ...message, inputCard: { ...message.inputCard, status: isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, responseText: response.text, selectedChoiceIds: selectedResponseIds(response) } };
+            return { ...message, inputCard: { ...message.inputCard, status: isChatInputResponse(response) ? "replied" as const : isCancelledResponse(response) ? "cancelled" as const : "submitted" as const, responseText: response.text, selectedChoiceIds: selectedResponseIds(response) } };
           }), phase: "streaming", runStatus: "generating", errors: [] };
 
         case "client.message.submitted": {
@@ -257,7 +257,7 @@ export function createEveCoachReducer(
             messages: data.messages.map((message) => {
               const card = message.inputCard;
               if (!card || card.request.action.callId !== result.callId) return message;
-              const status = event.data.status === "rejected" ? "cancelled" : event.data.status === "failed" || output.ok === false ? "failed" : "completed";
+              const status = card.status === "replied" ? "replied" : event.data.status === "rejected" ? "cancelled" : event.data.status === "failed" || output.ok === false ? "failed" : "completed";
               return { ...message, inputCard: { ...card, status } };
             }),
             pendingInputRequests: (data.pendingInputRequests ?? []).filter(
