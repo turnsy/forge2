@@ -57,7 +57,6 @@ export interface Exercise {
   resolvedExerciseId?: string;
   resolvedBasisExerciseId?: string;
   notes?: string;
-  videoUrl?: string;
   /**
    * @minItems 1
    */

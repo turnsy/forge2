@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/data-client";
 
-export type LibraryExercise = { id: string; name: string };
+export type LibraryExercise = { id: string; name: string; video_url?: string | null };
 export type ExerciseUsage = { templates: number; assignments: number };
 
 export async function listCoachExercises(coachId: string, query = "", page = 1) {
@@ -8,7 +8,7 @@ export async function listCoachExercises(coachId: string, query = "", page = 1) 
   const offset = (page - 1) * 30;
   const { data, error } = await db
     .from("exercises")
-    .select("id,name")
+    .select("id,name,video_url")
     .eq("owner_coach_id", coachId)
     .is("archived_at", null)
     .ilike("name", `%${query.replace(/[%_\\]/g, "")}%`)

@@ -83,9 +83,7 @@ function CoachSupersetRoundTable({
                     <td className="px-3 py-2 font-medium text-surface-foreground">
                       <div className="flex items-center justify-between gap-2">
                         <span>{exercise.name}</span>
-                        {exercise.videoUrl ? (
-                          <ExerciseVideoButton videoUrl={exercise.videoUrl} />
-                        ) : null}
+                        <ExerciseVideoButton exerciseId={exercise.resolvedExerciseId} />
                       </div>
                       <ExerciseBasisLabel exercise={exercise} />
                     </td>
@@ -180,7 +178,7 @@ function AthleteSupersetRoundCard({
               }
               data-exercise-complete={exerciseComplete ? "true" : "false"}
             >
-              <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+              <AthleteExerciseHeader name={exercise.name} exerciseId={exercise.resolvedExerciseId} />
               <AthleteExerciseNotes notes={exercise.notes} />
               <AthleteSetRow
                 set={plannedSet}

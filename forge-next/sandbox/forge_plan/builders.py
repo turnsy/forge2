@@ -22,7 +22,6 @@ class Exercise:
         exercise_id: str | None = None,
         basis_raw: str | None = None,
         notes: str | None = None,
-        video_url: str | None = None,
     ) -> None:
         self._name = name.strip()
         if not self._name:
@@ -32,7 +31,6 @@ class Exercise:
         if self._basis_raw == "":
             self._basis_raw = None
         self._notes = notes
-        self._video_url = video_url
         self._set_specs: list[dict[str, Any]] = []
 
     @property
@@ -220,8 +218,6 @@ def materialize_exercise(exercise: Exercise, day_code: str) -> dict[str, Any]:
     }
     if exercise._notes:
         exercise_dict["notes"] = exercise._notes
-    if exercise._video_url:
-        exercise_dict["videoUrl"] = exercise._video_url
     if (
         exercise._basis_raw
         and exercise._basis_raw.lower() != exercise._name.lower()

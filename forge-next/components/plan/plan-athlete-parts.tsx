@@ -158,21 +158,16 @@ export function AthleteExerciseNotes({ notes }: { notes?: string }) {
 
 export function AthleteExerciseHeader({
   name,
-  videoUrl,
+  exerciseId,
 }: {
   name: string;
-  videoUrl?: string;
+  exerciseId?: string;
 }) {
-  if (!videoUrl) {
-    return (
-      <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
-    );
-  }
 
   return (
     <div className="flex items-center justify-between gap-2">
       <h2 className="text-base font-semibold text-surface-foreground">{name}</h2>
-      <ExerciseVideoButton videoUrl={videoUrl} />
+      <ExerciseVideoButton exerciseId={exerciseId} />
     </div>
   );
 }

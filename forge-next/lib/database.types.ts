@@ -281,6 +281,7 @@ export type Database = {
           normalized_name: string
           owner_coach_id: string | null
           template_exercise_id: string | null
+          video_url: string | null
         }
         ComputedFields: never
         Insert: {
@@ -291,6 +292,7 @@ export type Database = {
           normalized_name: string
           owner_coach_id?: string | null
           template_exercise_id?: string | null
+          video_url?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -300,6 +302,7 @@ export type Database = {
           normalized_name?: string
           owner_coach_id?: string | null
           template_exercise_id?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -684,6 +687,10 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      set_coach_exercise_video: {
+        Args: { p_exercise_id: string; p_video_url: string }
+        Returns: undefined
       }
       unlink_coach_athlete: {
         Args: { p_relationship_id: string }
