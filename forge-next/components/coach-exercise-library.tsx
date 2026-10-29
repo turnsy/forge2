@@ -261,6 +261,7 @@ export function CoachExerciseLibrary() {
                   {editing === exercise.id ? (
                     <>
                       <Button
+                        size="sm"
                         fullWidth={false}
                         disabled={busy || !name.trim()}
                         onClick={() => void rename(exercise.id)}
@@ -268,6 +269,7 @@ export function CoachExerciseLibrary() {
                         Save
                       </Button>
                       <Button
+                        size="sm"
                         fullWidth={false}
                         variant="secondary"
                         disabled={busy}
@@ -279,6 +281,7 @@ export function CoachExerciseLibrary() {
                   ) : (
                     <>
                       <Button
+                        size="sm"
                         fullWidth={false}
                         variant="secondary"
                         disabled={busy}
@@ -290,6 +293,7 @@ export function CoachExerciseLibrary() {
                         Rename
                       </Button>
                       <Button
+                        size="sm"
                         fullWidth={false}
                         variant="secondary"
                         disabled={busy}
