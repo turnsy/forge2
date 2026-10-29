@@ -1,15 +1,20 @@
+"use client";
+
+import { useExerciseVideo } from "@/components/exercises/exercise-videos";
 import { VideoIcon } from "@/components/icons/video-icon";
 import { IconButton } from "@/components/ui";
 
 export function ExerciseVideoButton({
-  videoUrl,
+  exerciseId,
   ariaLabel = "Watch exercise video",
   title,
 }: {
-  videoUrl: string;
+  exerciseId?: string;
   ariaLabel?: string;
   title?: string;
 }) {
+  const videoUrl = useExerciseVideo(exerciseId);
+  if (!videoUrl) return null;
   return (
     <IconButton
       variant="ghost"

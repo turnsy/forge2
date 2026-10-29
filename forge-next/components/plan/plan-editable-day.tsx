@@ -21,7 +21,7 @@ import { useId, useRef, type RefObject } from "react";
 import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
 import { ChevronUpIcon } from "@/components/icons/chevron-up-icon";
 import { PlusIcon } from "@/components/icons/plus-icon";
-import { VideoIcon } from "@/components/icons/video-icon";
+import { ExerciseVideoEditor } from "@/components/exercises/exercise-video-editor";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button, IconButton, Input } from "@/components/ui";
 import { BlockHeader } from "@/components/plan/block-header";
@@ -62,12 +62,6 @@ export type PlanEditableDayProps = {
   onChange: (day: Day) => void;
   isSetEditable?: (set: Set) => boolean;
   isExerciseEditable?: (exercise: Exercise) => boolean;
-  onNeedVideoLink?: (
-    blockPos: number,
-    exercisePosInBlock: number,
-    exerciseName: string,
-    currentVideoUrl?: string,
-  ) => void;
 };
 
 function cloneDayForEditing(day: Day): Day {
@@ -277,7 +271,6 @@ function EditableExerciseBlock({
   onDeleteExercise,
   onMoveUp,
   onMoveDown,
-  onNeedVideoLink,
 }: {
   exercise: Exercise;
   exerciseIndex: number;
@@ -289,7 +282,6 @@ function EditableExerciseBlock({
   onDeleteExercise: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onNeedVideoLink?: () => void;
 }) {
   const autoFocusSetIdRef = useRef<string | null>(null);
   const dndId = useId();
@@ -357,16 +349,8 @@ function EditableExerciseBlock({
           />
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {onNeedVideoLink ? (
-            <IconButton
-              variant={exercise.videoUrl ? "ghost" : "dashed"}
-              size="sm"
-              icon={<VideoIcon className="h-4 w-4" />}
-              aria-label="Add video link"
-              disabled={disabled || !isExerciseEditable}
-              onClick={() => onNeedVideoLink?.()}
-            />
-          ) : null}
+          <ExerciseVideoEditor exerciseId={exercise.resolvedExerciseId} name={exercise.name}
+            disabled={disabled} onResolved={(id) => onExerciseChange({ ...exercise, resolvedExerciseId: id })} />
           <IconButton
             variant="ghost"
             size="sm"
@@ -573,7 +557,6 @@ export function PlanEditableDay({
   onChange,
   isSetEditable = () => true,
   isExerciseEditable: isExerciseEditableFn = () => true,
-  onNeedVideoLink,
 }: PlanEditableDayProps) {
   const editableDay = cloneDayForEditing(day);
 
@@ -684,17 +667,6 @@ export function PlanEditableDay({
               onDeleteExercise={() => deleteExercise(blockPos, exercisePosInBlock)}
               onMoveUp={() => moveExerciseInBlock(blockPos, exercisePosInBlock, -1)}
               onMoveDown={() => moveExerciseInBlock(blockPos, exercisePosInBlock, 1)}
-              onNeedVideoLink={
-                onNeedVideoLink
-                  ? () =>
-                      onNeedVideoLink(
-                        blockPos,
-                        exercisePosInBlock,
-                        exercise.name,
-                        exercise.videoUrl,
-                      )
-                  : undefined
-              }
             />
           ))}
           {isSupersetBlock(block) ? (

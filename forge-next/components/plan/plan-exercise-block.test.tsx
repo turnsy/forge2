@@ -4,13 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import { PlanExerciseBlock } from "@/components/plan/plan-exercise-block";
 import { makeExercise, makeSet } from "@/lib/plans/__tests__/fixtures";
 
+vi.mock("@/components/exercises/exercise-videos", () => ({
+  useExerciseVideo: (id?: string) => id === "with-video" ? "https://youtu.be/demo" : undefined,
+}));
+
 describe("PlanExerciseBlock", () => {
   it("shows a video icon when exercise has a videoUrl", () => {
     render(
       <PlanExerciseBlock
         exercise={makeExercise({
           name: "Back Squat",
-          videoUrl: "https://youtu.be/demo",
+          resolvedExerciseId: "with-video",
         })}
         view="coach"
       />,
@@ -90,7 +94,7 @@ describe("PlanExerciseBlock", () => {
       <PlanExerciseBlock
         exercise={makeExercise({
           name: "Back Squat",
-          videoUrl: "https://youtu.be/demo",
+          resolvedExerciseId: "with-video",
         })}
         view="coach"
       />,

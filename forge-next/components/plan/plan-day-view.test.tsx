@@ -249,7 +249,8 @@ describe("PlanDayView", () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const plan = makePlan();
-    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].resolvedExerciseId = "11111111-1111-4111-8111-111111111111";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ videos: { "11111111-1111-4111-8111-111111111111": "https://youtu.be/demo" } })));
 
     render(
       <PlanDayView
@@ -261,7 +262,7 @@ describe("PlanDayView", () => {
       />,
     );
 
-    const videoButton = screen.getByLabelText("Watch exercise video");
+    const videoButton = await screen.findByLabelText("Watch exercise video");
     expect(videoButton).toBeInTheDocument();
 
     await user.click(videoButton);
@@ -288,9 +289,10 @@ describe("PlanDayView", () => {
     expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();
   });
 
-  it("shows athlete video button in read-only completed day view", () => {
+  it("shows athlete video button in read-only completed day view", async () => {
     const plan = makePlan({ dayComplete: true });
-    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].resolvedExerciseId = "11111111-1111-4111-8111-111111111111";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ videos: { "11111111-1111-4111-8111-111111111111": "https://youtu.be/demo" } })));
 
     render(
       <PlanDayView
@@ -302,20 +304,21 @@ describe("PlanDayView", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Watch exercise video")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Watch exercise video")).toBeInTheDocument();
   });
 
   it("shows video link indicator in coach read-only view when videoUrl is set", async () => {
     const user = userEvent.setup();
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const plan = makePlan();
-    plan.weeks[0].days[0].blocks[0].exercises[0].videoUrl = "https://youtu.be/demo";
+    plan.weeks[0].days[0].blocks[0].exercises[0].resolvedExerciseId = "11111111-1111-4111-8111-111111111111";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ videos: { "11111111-1111-4111-8111-111111111111": "https://youtu.be/demo" } })));
 
     render(
       <PlanDayView plan={plan} weekPos={0} dayPos={0} view="coach" />,
     );
 
-    const videoButton = screen.getByLabelText("Video link attached");
+    const videoButton = await screen.findByLabelText("Video link attached");
     expect(videoButton).toBeInTheDocument();
     expect(screen.queryByLabelText("Add video link")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Watch exercise video")).not.toBeInTheDocument();

@@ -1,5 +1,7 @@
 "use client";
 
+import { ExerciseVideos } from "@/components/exercises/exercise-videos";
+
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AthleteSkipConfirmDialog } from "@/components/athlete-skip-confirm-dialog";
 import { AthleteStandaloneExerciseSection } from "@/components/plan/athlete-standalone-exercise";
@@ -596,7 +598,7 @@ function AthleteEditableDayContent({
   );
 }
 
-export function PlanDayView({
+function PlanDayViewContent({
   plan,
   weekPos,
   dayPos,
@@ -662,4 +664,8 @@ export function PlanDayView({
   }
 
   return <CoachDayContent day={day} dayPos={dayPos} />;
+}
+
+export function PlanDayView(props: PlanDayViewProps) {
+  return <ExerciseVideos plan={props.plan}><PlanDayViewContent {...props} /></ExerciseVideos>;
 }

@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ExerciseVideoEditor } from "@/components/exercises/exercise-video-editor";
+import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import {
+  ActionGroup,
   Button,
   EmptyState,
   Input,
@@ -25,7 +28,8 @@ async function requestJson(url: string, input?: object) {
       : undefined,
   );
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error ?? "Could not update exercises.");
+  if (!response.ok)
+    throw new Error(result.error ?? "Could not update exercises.");
   return result;
 }
 
@@ -80,11 +84,21 @@ function DeleteExercise({
       }}
       footer={
         <div className="flex justify-end gap-2">
-          <Button fullWidth={false} variant="secondary" disabled={busy} onClick={onClose}>
+          <Button
+            fullWidth={false}
+            variant="secondary"
+            disabled={busy}
+            onClick={onClose}
+          >
             Cancel
           </Button>
-          <Button fullWidth={false}
-            disabled={busy || !usage || (used && (!replacement || replacement.id === exercise.id))}
+          <Button
+            fullWidth={false}
+            disabled={
+              busy ||
+              !usage ||
+              (used && (!replacement || replacement.id === exercise.id))
+            }
             onClick={() => void remove()}
           >
             {busy ? "Deleting…" : "Delete exercise"}
@@ -96,12 +110,12 @@ function DeleteExercise({
       {usage ? (
         <div className="space-y-4">
           <p>
-            Used in {usage.templates} plan templates and {usage.assignments} active assignments with
-            unfinished sets.
+            Used in {usage.templates} plan templates and {usage.assignments}{" "}
+            active assignments with unfinished sets.
           </p>
           <p className="text-sm text-surface-muted">
-            Recorded workouts and max history will be kept. Replacements apply to templates and
-            unlogged sets in active assignments.
+            Recorded workouts and max history will be kept. Replacements apply
+            to templates and unlogged sets in active assignments.
           </p>
           {used ? (
             <ExerciseSearchField
@@ -109,7 +123,9 @@ function DeleteExercise({
               value={replacement?.name ?? ""}
               disabled={busy}
               onDraftChange={() => setReplacement(null)}
-              onResolved={({ exerciseId, name }) => setReplacement({ id: exerciseId, name })}
+              onResolved={({ exerciseId, name }) =>
+                setReplacement({ id: exerciseId, name })
+              }
             />
           ) : null}
         </div>
@@ -135,7 +151,9 @@ export function CoachExerciseLibrary() {
     let cancelled = false;
     const timer = setTimeout(() => {
       setLoading(true);
-      requestJson(`/api/coach/exercises?q=${encodeURIComponent(query)}&page=${page}`)
+      requestJson(
+        `/api/coach/exercises?q=${encodeURIComponent(query)}&page=${page}`,
+      )
         .then((value) => {
           if (!cancelled) {
             setItems(value.exercises);
@@ -214,30 +232,57 @@ export function CoachExerciseLibrary() {
                     disabled={busy}
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && name.trim() && !busy) void rename(exercise.id);
+                      if (e.key === "Enter" && name.trim() && !busy)
+                        void rename(exercise.id);
                     }}
                   />
                 ) : (
-                  <h2 className="font-semibold">{exercise.name}</h2>
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="min-w-0 break-words text-base font-semibold text-surface-foreground">{exercise.name}</h2>
+                    <ExerciseVideoEditor
+                      exerciseId={exercise.id}
+                      name={exercise.name}
+                      videoUrl={exercise.video_url ?? null}
+                      onSaved={(url) =>
+                        setItems((items) =>
+                          items.map((item) =>
+                            item.id === exercise.id
+                              ? { ...item, video_url: url }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
                 )
               }
               actions={
-                <div className="flex gap-2">
+                <ActionGroup>
                   {editing === exercise.id ? (
                     <>
-                      <Button fullWidth={false}
+                      <Button
+                        size="sm"
+                        fullWidth={false}
                         disabled={busy || !name.trim()}
                         onClick={() => void rename(exercise.id)}
                       >
                         Save
                       </Button>
-                      <Button fullWidth={false} variant="secondary" disabled={busy} onClick={() => setEditing(null)}>
+                      <Button
+                        size="sm"
+                        fullWidth={false}
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => setEditing(null)}
+                      >
                         Cancel
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button fullWidth={false}
+                      <Button
+                        size="sm"
+                        fullWidth={false}
                         variant="secondary"
                         disabled={busy}
                         onClick={() => {
@@ -247,7 +292,9 @@ export function CoachExerciseLibrary() {
                       >
                         Rename
                       </Button>
-                      <Button fullWidth={false}
+                      <Button
+                        size="sm"
+                        fullWidth={false}
                         variant="secondary"
                         disabled={busy}
                         onClick={() => setDeleting(exercise)}
@@ -256,28 +303,42 @@ export function CoachExerciseLibrary() {
                       </Button>
                     </>
                   )}
-                </div>
+                </ActionGroup>
               }
             />
           ))}
         </List>
       )}
-      {items.length || page > 1 ? (
-        <div className="flex justify-between">
-          <Button fullWidth={false}
-            variant="secondary"
-            disabled={page === 1 || loading}
-            onClick={() => setPage((n) => n - 1)}
-          >
-            Previous
-          </Button>
-          <Button fullWidth={false}
-            variant="secondary"
-            disabled={!hasMore || loading}
-            onClick={() => setPage((n) => n + 1)}
-          >
-            Next
-          </Button>
+      {hasMore || page > 1 ? (
+        <div className="flex items-center justify-between gap-3 pt-4">
+          {page > 1 ? (
+            <Button
+              fullWidth={false}
+              size="sm"
+              variant="secondary"
+              className="gap-1.5"
+              disabled={loading}
+              onClick={() => setPage((n) => n - 1)}
+            >
+              <ArrowRightIcon className="h-4 w-4 rotate-180" /> Previous
+            </Button>
+          ) : (
+            <span />
+          )}
+          {hasMore ? (
+            <Button
+              fullWidth={false}
+              size="sm"
+              variant="secondary"
+              className="gap-1.5"
+              disabled={!hasMore || loading}
+              onClick={() => setPage((n) => n + 1)}
+            >
+              Next <ArrowRightIcon className="h-4 w-4" />
+            </Button>
+          ) : (
+            <span />
+          )}
         </div>
       ) : null}
       {deleting ? (

@@ -22,7 +22,7 @@ export function AthleteStandaloneExerciseSection({
       className={highlightComplete ? athleteExerciseCardClassName(complete) : "space-y-4"}
       data-exercise-complete={highlightComplete ? (complete ? "true" : "false") : undefined}
     >
-      <AthleteExerciseHeader name={exercise.name} videoUrl={exercise.videoUrl} />
+      <AthleteExerciseHeader name={exercise.name} exerciseId={exercise.resolvedExerciseId} />
       <AthleteExerciseNotes notes={exercise.notes} />
       <div className="space-y-3">{children}</div>
     </section>

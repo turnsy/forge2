@@ -202,7 +202,6 @@ class ExerciseRef:
         name: str | None = None,
         basis_raw: str | None = None,
         notes: str | None = None,
-        video_url: str | None = None,
     ) -> ExerciseRef:
         exercise = self._require_exercise()
         if name is not None:
@@ -222,11 +221,6 @@ class ExerciseRef:
                 exercise["notes"] = notes
             else:
                 exercise.pop("notes", None)
-        if video_url is not None:
-            if video_url:
-                exercise["videoUrl"] = video_url
-            else:
-                exercise.pop("videoUrl", None)
         self._plan._sync()
         return self
 
