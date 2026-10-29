@@ -1,3 +1,4 @@
+import { metadataEditorInput } from "./metadata-editor-input";
 import { z } from "zod";
 import type { InputRequest, InputResponse } from "eve/client";
 import { trainingMaxFields, type TrainingMaxAnswer } from "./training-max-inputs";
@@ -136,7 +137,7 @@ export function isValidInputResponse(request: InputRequest, response: InputRespo
       (!response.optionId || (ids.length === 1 && ids[0] === response.optionId)) &&
       new Set(ids).size === ids.length &&
       (allowsMultipleSelections(request) || ids.length <= 1) &&
-      (answer.status === "cancelled" || answer.status === "replied" || ids.length > 0 || fields.length > 0) &&
+      (answer.status === "cancelled" || answer.status === "replied" || ids.length > 0 || fields.length > 0 || Boolean(metadataEditorInput(request))) &&
       answer.selections.every((selection) =>
         request.options?.some(
           (option) => option.id === selection.id && option.label === selection.label,

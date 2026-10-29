@@ -1,4 +1,5 @@
 export type CoachAthleteListItem = {
+  missingMetadataCount?: number;
   id: string;
   name: string;
   email: string;
