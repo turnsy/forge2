@@ -1,5 +1,6 @@
 "use client";
 
+import { AthleteMetadataEditor } from "@/components/metadata/athlete-metadata-editor";
 import { MobileHeaderContent } from "@/components/ui/mobile-app-header";
 import { XIcon } from "@/components/icons/x-icon";
 import { useState } from "react";
@@ -301,6 +302,7 @@ export function CoachAthleteDetailView({
         </TabPanel>
 
         <TabPanel id="info">
+          <AthleteMetadataEditor athleteId={relationship.athleteId} />
           <div className="space-y-6">
             <MetaGroup>
               <MetaItem label="Name" value={relationship.athleteName} />

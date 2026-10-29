@@ -66,3 +66,17 @@ describe("native Eve question continuation", () => {
     expect(parts.some((part: { type: string }) => part.type === "tool-approval-response")).toBe(false);
   });
 });
+
+it("preserves the metadata editor through native question extraction and continuation",async()=>{
+  const {ASK_QUESTION_INPUT_SCHEMA}=await eveModule("runtime/framework-tools/ask-question.js");
+  const {extractQuestionInputRequests}=await eveModule("harness/input-extraction.js");
+  const {setPendingInputBatch,resolvePendingInput}=await eveModule("harness/input-requests.js");
+  const input={prompt:"Fill missing profile answers, then continue acceptance.",metadataEditor:{mode:"athlete",athleteId:"30000000-0000-4000-8000-000000000001"}};
+  expect(new Ajv().compile(ASK_QUESTION_INPUT_SCHEMA)(input)).toBe(true);
+  const [request]=extractQuestionInputRequests({toolCalls:[{toolName:"ask_question",toolCallId:"metadata-1",input}],excludedCallIds:new Set()});
+  expect(request.action.input.metadataEditor).toEqual(input.metadataEditor);
+  const session=setPendingInputBatch({session:{history:[]},requests:[request],responseMessages:[]});
+  const resumed=resolvePendingInput({session,stepInput:{inputResponses:[selectionResponse(request,[])]}});
+  expect(resumed.outcome).toBe("resolved");
+  expect(parseSelectionAnswer(resumed.messages[0].content[0].output.value.text)).toMatchObject({status:"confirmed",selections:[]});
+});

@@ -13,3 +13,7 @@ assert.deepEqual(
   "Eve's max input contract must match its JSON Schema source",
 );
 console.log("Eve question schema matches optional training-max fields.");
+
+const metadataSchema = JSON.parse(readFileSync(new URL("schemas/metadata-editor-input.schema.json", root), "utf8"));
+delete metadataSchema.$schema;
+assert.deepEqual(ASK_QUESTION_INPUT_SCHEMA.properties.metadataEditor, metadataSchema, "Eve metadata editor contract must match its JSON Schema source");
