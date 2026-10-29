@@ -86,4 +86,64 @@ describe("ExerciseVideoEditor", () => {
     fireEvent.click(screen.getByText("Cancel"));
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("removes the saved video directly, ignoring unsaved input changes", async () => {
+    const fetch = vi.fn().mockResolvedValue(Response.json({ videoUrl: null }));
+    vi.stubGlobal("fetch", fetch);
+    const saved = vi.fn();
+    render(
+      <ExerciseVideoEditor
+        exerciseId="squat"
+        name="Squat"
+        videoUrl="https://youtu.be/old"
+        onSaved={saved}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Edit exercise video"));
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Video URL"), {
+      target: { value: "invalid draft" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Remove video" }));
+    await waitFor(() => expect(saved).toHaveBeenCalledWith(null));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/coach/exercises/squat/video",
+      expect.objectContaining({ body: JSON.stringify({ videoUrl: "" }) }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it("only offers removal when a saved video exists", () => {
+    render(<ExerciseVideoEditor exerciseId="squat" name="Squat" />);
+    fireEvent.click(screen.getByLabelText("Edit exercise video"));
+    expect(
+      screen.queryByRole("button", { name: "Remove video" }),
+    ).not.toBeInTheDocument();
+  });
+  it("keeps a failed removal open for retry", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({ error: "Removal failed" }, { status: 500 }),
+        )
+        .mockResolvedValueOnce(Response.json({ videoUrl: null })),
+    );
+    render(
+      <ExerciseVideoEditor
+        exerciseId="squat"
+        name="Squat"
+        videoUrl="https://youtu.be/old"
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Edit exercise video"));
+    fireEvent.click(screen.getByRole("button", { name: "Remove video" }));
+    expect(await screen.findByText("Removal failed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Video URL")).toHaveValue(
+      "https://youtu.be/old",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove video" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
 });

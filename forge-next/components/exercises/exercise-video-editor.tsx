@@ -29,15 +29,18 @@ export function ExerciseVideoEditor({
   const currentUrl = videoUrl === undefined ? libraryUrl : videoUrl;
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"save" | "remove" | null>(
+    null,
+  );
+  const busy = pendingAction !== null;
   const [error, setError] = useState<string | null>(null);
-  async function save() {
-    const parsed = exerciseVideoInput.safeParse({ videoUrl: value });
+  async function save(videoUrl = value, action: "save" | "remove" = "save") {
+    const parsed = exerciseVideoInput.safeParse({ videoUrl });
     if (!parsed.success) {
       setError("Enter a valid http or https video URL.");
       return;
     }
-    setBusy(true);
+    setPendingAction(action);
     setError(null);
     try {
       let id = exerciseId;
@@ -67,7 +70,7 @@ export function ExerciseVideoEditor({
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setBusy(false);
+      setPendingAction(null);
     }
   }
   return (
@@ -105,33 +108,43 @@ export function ExerciseVideoEditor({
             disabled={busy}
             onChange={(e) => setValue(e.target.value)}
           />
-          <p className="text-sm text-surface-muted">
-            Leave blank to remove the video everywhere.
-          </p>
-          {currentUrl ? (
-            <a
-              href={currentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              Watch current video
-            </a>
-          ) : null}
           {error ? <Message tone="error">{error}</Message> : null}
-          <div className="flex justify-end gap-2">
-            <Button
-              fullWidth={false}
-              variant="secondary"
-              disabled={busy}
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button fullWidth={false} disabled={busy} onClick={() => void save()}>
-              {busy ? "Saving…" : "Save video"}
-            </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {currentUrl ? (
+              <Button
+                fullWidth={false}
+                variant="danger"
+                disabled={busy}
+                onClick={() => void save("", "remove")}
+              >
+                {pendingAction === "remove" ? "Removing…" : "Remove video"}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                fullWidth={false}
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                fullWidth={false}
+                disabled={busy}
+                onClick={() => void save()}
+              >
+                {pendingAction === "save" ? "Saving…" : "Save video"}
+              </Button>
+            </div>
           </div>
+          {currentUrl ? (
+            <p className="text-sm text-surface-muted">
+              Removing the video removes it everywhere this exercise is used.
+            </p>
+          ) : null}
         </div>
       </Modal>
     </>
