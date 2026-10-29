@@ -462,6 +462,7 @@ export type Database = {
           normalized_name: string
           owner_coach_id: string | null
           template_exercise_id: string | null
+          video_url: string | null
         }
         SetofOptions: {
           from: "*"
