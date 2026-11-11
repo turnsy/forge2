@@ -193,7 +193,7 @@ function SortableSetRow({
       style={style}
       className={`border-b border-glass-border/60 last:border-b-0 max-md:mb-3 max-md:grid max-md:grid-cols-[auto_1fr_auto] max-md:gap-x-2 max-md:gap-y-2.5 max-md:rounded-lg max-md:border max-md:p-3 max-md:last:mb-0 max-md:last:border-b ${
         isDragging ? "opacity-50" : ""
-      } ${!setEditable ? "bg-zinc-100/60 dark:bg-zinc-800/40" : ""}`}
+      } ${!setEditable ? "bg-glass-nested" : ""}`}
       data-set-editable={setEditable ? "true" : "false"}
     >
       <td className="px-2 py-2 max-md:col-start-1 max-md:row-start-1 max-md:p-0">
@@ -301,7 +301,7 @@ function EditableExerciseBlock({
   if (!isExerciseEditable) {
     return (
       <section
-        className={[accordionNestedClass(), "space-y-3 bg-zinc-100/60 p-4 dark:bg-zinc-800/40"].join(
+        className={[accordionNestedClass(), "space-y-3 bg-glass-nested p-4"].join(
           " ",
         )}
         data-exercise-editable="false"

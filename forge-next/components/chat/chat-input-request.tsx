@@ -124,11 +124,11 @@ export function ChatInputRequest({
           {options.map((option, index) => (
             <label
               key={option.id}
-              className={`flex ${busy ? "cursor-default" : "cursor-pointer"} items-start gap-3 rounded-md border p-3 transition-colors focus-within:ring-2 focus-within:ring-white/20 ${selected.includes(option.id) ? "border-glass-primary-border bg-glass-focus" : "border-glass-border"}`}
+              className={`flex ${busy ? "cursor-default" : "cursor-pointer"} items-start gap-3 rounded-md border p-3 transition-colors focus-within:ring-2 focus-within:ring-glass-control-border ${selected.includes(option.id) ? "border-glass-primary-border bg-glass-focus" : "border-glass-border"}`}
             >
               <input
                 type={multiple ? "checkbox" : "radio"}
-                className="accent-white"
+                className="accent-glass-primary"
                 name={request.requestId}
                 value={option.id}
                 aria-label={option.label}

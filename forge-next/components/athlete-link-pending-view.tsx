@@ -14,7 +14,7 @@ export function AthleteLinkPendingView({ link }: { link: AthleteCoachLink }) {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
       <p className="text-lg font-medium">Waiting for {link.coachName} to accept</p>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-surface-muted">
         Your link request is pending.
       </p>
       {error ? <Message tone="error">{error}</Message> : null}

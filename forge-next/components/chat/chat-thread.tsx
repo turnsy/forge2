@@ -165,11 +165,11 @@ export function ChatThread({
           ))}
           {showErrors ? (
             <ChatBubble role="assistant">
-              <ul className="space-y-1 text-sm text-red-300/95" role="alert">
+              <ul className="space-y-1 text-sm text-danger" role="alert">
                 {errors.map((error, index) => (
                   <li key={`${error.message}-${index}`}>
                     {error.path ? (
-                      <span className="font-mono text-xs text-red-200/80">
+                      <span className="font-mono text-xs text-danger">
                         {error.path}:{" "}
                       </span>
                     ) : null}

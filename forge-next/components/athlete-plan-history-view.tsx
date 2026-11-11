@@ -25,7 +25,7 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
   if (status === "completed") {
     return (
       <span
-        className={`${baseClass} border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300`}
+        className={`${baseClass} border border-success-border bg-success-muted text-success`}
       >
         Completed
       </span>
@@ -34,7 +34,7 @@ function AssignmentStatusBadge({ status }: { status: AssignedPlan["status"] }) {
 
   return (
     <span
-      className={`${baseClass} border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200`}
+      className={`${baseClass} border border-warning-border bg-warning-muted text-warning`}
     >
       Aborted
     </span>

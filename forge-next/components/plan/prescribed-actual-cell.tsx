@@ -1,10 +1,10 @@
 export function actualValueClass(matches: boolean | null): string {
   if (matches === true) {
-    return "font-bold text-emerald-700 dark:text-emerald-300";
+    return "font-bold text-success";
   }
 
   if (matches === false) {
-    return "font-bold text-amber-800 dark:text-amber-200";
+    return "font-bold text-warning";
   }
 
   return "font-bold text-surface-foreground";

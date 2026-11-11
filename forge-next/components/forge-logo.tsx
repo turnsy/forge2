@@ -41,7 +41,7 @@ export function ForgeLogo({
   return (
     <Image
       alt="Forge"
-      className={classes}
+      className={`forge-logo ${classes}`}
       height={dimensions.height}
       priority={size === "hero"}
       src={variant === "stacked" ? "/forge-logo-stacked.svg" : "/forge-logo.svg"}

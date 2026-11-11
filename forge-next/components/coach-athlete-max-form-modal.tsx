@@ -142,7 +142,7 @@ function CoachAthleteMaxFormFields({
           </Select>
         </div>
         {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-danger">{error}</p>
         ) : null}
       </div>
       <div className="mt-6 flex justify-end gap-3">

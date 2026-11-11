@@ -183,7 +183,7 @@ function ArtifactPanel({
         </div>
       </div>
       {saveError ? (
-        <p className="text-sm text-red-400" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {saveError}
         </p>
       ) : null}

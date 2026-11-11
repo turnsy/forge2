@@ -28,7 +28,7 @@ export function AppShell({
 
   return (
     <MobileAppHeaderProvider enabled={isMobile}>
-      <div className="dark fixed inset-0 flex min-h-0 bg-surface text-surface-foreground">
+      <div className="forge-canvas fixed inset-0 flex min-h-0 bg-surface text-surface-foreground">
         <Sidebar role={role} fullName={fullName} email={email} />
         <div
           className={[
