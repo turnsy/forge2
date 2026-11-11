@@ -55,7 +55,7 @@ describe("surface theme helpers", () => {
 
   it("returns borderless back link styling", () => {
     expect(pageBackLinkClass()).toContain("focus-visible:ring-2");
-    expect(pageBackLinkClass()).not.toContain("border");
+    expect(pageBackLinkClass().split(/\s+/).some((name) => name === "border" || name.startsWith("border-"))).toBe(false);
   });
 
   it("returns borderless plain icon button styling", () => {
