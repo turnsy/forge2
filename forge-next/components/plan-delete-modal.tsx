@@ -118,13 +118,13 @@ export function PlanDeleteModal({
       }
     >
       {loadingInfo ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-surface-muted">
           Loading plan details…
         </p>
       ) : loadError ? (
         <Message tone="error">{loadError}</Message>
       ) : (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{deleteMessage}</p>
+        <p className="text-sm text-surface-muted">{deleteMessage}</p>
       )}
 
       {actionError ? <Message tone="error">{actionError}</Message> : null}

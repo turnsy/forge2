@@ -11,7 +11,7 @@ import { profileLabels } from "@/lib/navigation/profile-labels";
 import { roleFocusRingClass, roleMutedBorderClass } from "@/lib/theme/roles";
 
 const menuItemClass =
-  "flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-surface-muted transition hover:bg-glass hover:text-surface-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+  "flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-surface-muted transition hover:bg-glass hover:text-surface-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glass-control-border focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 export function SidebarProfileMenu({
   role,

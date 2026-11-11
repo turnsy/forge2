@@ -38,8 +38,8 @@ describe("PlanSetTable", () => {
     const matchingReps = screen.getByText("(5)");
     const mismatchedLoad = screen.getByText("(102 kg)");
 
-    expect(matchingReps).toHaveClass("text-emerald-700");
-    expect(mismatchedLoad).toHaveClass("text-amber-800");
+    expect(matchingReps).toHaveClass("text-success");
+    expect(mismatchedLoad).toHaveClass("text-warning");
     expect(container.querySelectorAll("tbody tr")).toHaveLength(2);
   });
 
@@ -94,7 +94,7 @@ describe("PlanSetTable", () => {
       />,
     );
 
-    expect(screen.getByText("(102 kg)")).toHaveClass("text-emerald-700");
+    expect(screen.getByText("(102 kg)")).toHaveClass("text-success");
   });
 
   it("renders nothing for athlete view", () => {

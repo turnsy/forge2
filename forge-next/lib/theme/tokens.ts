@@ -6,8 +6,8 @@ export const radius = {
 } as const;
 
 export const typography = {
-  pageTitle: "text-2xl font-semibold text-surface-foreground",
-  panelTitle: "text-lg font-semibold text-surface-foreground",
+  pageTitle: "text-3xl font-medium tracking-tight text-surface-foreground",
+  panelTitle: "text-lg font-medium tracking-tight text-surface-foreground",
   panelDescription: "text-sm text-surface-muted",
   label: "text-sm font-medium text-surface-foreground",
   metaLabel:

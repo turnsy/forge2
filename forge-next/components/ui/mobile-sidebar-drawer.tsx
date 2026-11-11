@@ -118,7 +118,7 @@ export function MobileSidebarDrawer({ children }: { children: ReactNode }) {
         ref={dialogRef}
         id={id}
         aria-label="Main navigation"
-        className="dark fixed inset-y-0 left-0 m-0 h-dvh max-h-none max-w-none overflow-visible border-0 bg-surface p-0 text-surface-foreground backdrop:bg-black/50 open:flex starting:-translate-x-full transition-transform duration-200 ease-out motion-reduce:transition-none"
+        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none max-w-none overflow-visible border-0 bg-surface p-0 text-surface-foreground backdrop:bg-black/50 open:flex starting:-translate-x-full transition-transform duration-200 ease-out motion-reduce:transition-none"
         onClose={() => {
           setOpen(false);
           triggerRef.current?.focus();

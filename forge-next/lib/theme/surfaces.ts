@@ -14,7 +14,7 @@ export const BUTTON_MD_HEIGHT_CLASS = "h-11";
 export const BUTTON_SM_HEIGHT_CLASS = "h-8";
 
 export const focusRingClass =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glass-control-border focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 const plainIconControlClasses = `text-surface-muted transition hover:bg-glass hover:text-surface-foreground ${focusRingClass}`;
 
@@ -46,7 +46,7 @@ export function controlClass(size: "sm" | "md" = "md"): string {
     size === "sm"
       ? "px-3 py-2 text-base"
       : "px-5 py-3.5 text-base";
-  return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-semibold placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
+  return `w-full ${radius.control} font-normal text-surface-foreground outline-none placeholder:font-normal placeholder:text-surface-muted transition glass-surface glass-surface-focus ${sizeClass}`;
 }
 
 export function selectClass(size: "sm" | "md" = "md"): string {
@@ -81,7 +81,7 @@ export function buttonVariantClass(
   const sizeClass = buttonSizeClasses[size].text;
   const focusClass = variant === "plain" ? "" : focusRingClass;
 
-  return `inline-flex ${widthClass} shrink-0 items-center justify-center ${sizeClass} font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${focusClass} ${buttonVariantClasses[variant]}`;
+  return `inline-flex ${widthClass} shrink-0 items-center justify-center ${sizeClass} font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${focusClass} ${buttonVariantClasses[variant]}`;
 }
 
 export function iconButtonVariantClass(
@@ -140,7 +140,7 @@ export function listRowClass(tone: GlassSurfaceTone = "default"): string {
 }
 
 export function authLandingClass(): string {
-  return "auth-hero-background dark fixed inset-0 flex w-full flex-col items-center justify-center pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))]";
+  return "auth-hero-background fixed inset-0 flex w-full flex-col items-center justify-center pt-[max(1rem,env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))]";
 }
 
 export function authHeroTitleClass(): string {
@@ -253,7 +253,7 @@ export function attachmentChipClass(tone: AttachmentChipTone = "default"): strin
 }
 
 export function glassControlBoxClass(): string {
-  return `flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-glass-control-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition peer-focus-visible:ring-2 peer-focus-visible:ring-white/20 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface`;
+  return `flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-glass-control-border bg-glass shadow-[inset_0_1px_0_0_var(--color-glass-highlight)] backdrop-blur-md transition peer-focus-visible:ring-2 peer-focus-visible:ring-glass-control-border peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface`;
 }
 
 export function separatorClass(): string {

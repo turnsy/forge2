@@ -41,7 +41,7 @@ export function AthleteSkipConfirmDialog({
         </div>
       }
     >
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-surface-muted">
         Some sets still need input. These will be marked as skipped.
       </p>
     </Modal>

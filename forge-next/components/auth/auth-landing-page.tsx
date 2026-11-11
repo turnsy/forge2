@@ -1,3 +1,4 @@
+import { AppearanceSelect } from "@/components/ui/appearance-select";
 import { ForgeLogo } from "@/components/forge-logo";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { authLandingClass } from "@/lib/theme";
@@ -12,6 +13,7 @@ export function AuthLandingPage({
 }) {
   return (
     <main className={authLandingClass()}>
+      <div className="absolute right-6 top-6"><AppearanceSelect /></div>
       <div className="flex w-full max-w-sm flex-col items-center gap-10">
         <h1 aria-label="Forge" className="text-surface-foreground">
           <ForgeLogo variant="horizontal" size="sidebar" />

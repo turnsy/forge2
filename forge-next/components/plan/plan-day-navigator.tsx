@@ -57,8 +57,8 @@ function SaveIndicator({
     <span
       className={`text-xs ${
         status === "error"
-          ? "text-red-600 dark:text-red-400"
-          : "text-zinc-500 dark:text-zinc-400"
+          ? "text-danger"
+          : "text-surface-muted"
       }`}
       aria-live="polite"
     >

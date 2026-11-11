@@ -25,7 +25,7 @@ export function ChatAttachment({
       )}
       <span className="max-w-[12rem] truncate">{attachment.displayLabel}</span>
       {attachment.status === "failed" && attachment.errorMessage ? (
-        <span className="text-xs text-red-300/90">— {attachment.errorMessage}</span>
+        <span className="text-xs text-danger">— {attachment.errorMessage}</span>
       ) : null}
       {canRemove ? (
         <button

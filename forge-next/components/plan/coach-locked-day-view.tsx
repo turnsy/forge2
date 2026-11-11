@@ -12,7 +12,7 @@ export function CoachLockedDayView({
 }) {
   return (
     <div
-      className="space-y-6 rounded-lg bg-zinc-100/80 p-4 dark:bg-zinc-800/50"
+      className="space-y-6 rounded-lg bg-glass-nested p-4"
       data-coach-locked-day
       data-testid="coach-locked-day"
     >

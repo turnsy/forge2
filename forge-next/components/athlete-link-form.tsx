@@ -17,7 +17,7 @@ export function AthleteLinkForm() {
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-4">
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-surface-muted">
         Enter your coach&apos;s invite code to request a link.
       </p>
       {state && !state.ok ? <Message tone="error">{state.error}</Message> : null}

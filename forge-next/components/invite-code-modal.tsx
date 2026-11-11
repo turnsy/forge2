@@ -30,12 +30,12 @@ export function InviteCodeModal({
 
   return (
     <Modal open={open} title="Invite athlete" onClose={onClose}>
-      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="mb-4 text-sm text-surface-muted">
         Share this invite code with an athlete so they can link to you.
       </p>
       {inviteCode ? (
         <>
-          <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-5 text-center font-mono text-3xl tracking-[0.2em] dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="mb-4 rounded-xl border border-glass-border bg-glass px-4 py-5 text-center font-mono text-3xl tracking-[0.2em]">
             {inviteCode}
           </div>
           {copyError ? <Message tone="error">{copyError}</Message> : null}

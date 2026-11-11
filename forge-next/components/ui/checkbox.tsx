@@ -22,7 +22,7 @@ export function Checkbox({
       />
       <span
         aria-hidden="true"
-        className={`${glassControlBoxClass()} peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary peer-checked:text-zinc-900`}
+        className={`${glassControlBoxClass()} peer-disabled:cursor-not-allowed peer-disabled:opacity-60 peer-checked:border-transparent peer-checked:glass-button-primary peer-checked:text-glass-primary-foreground`}
       >
         {checked ? (
           <svg

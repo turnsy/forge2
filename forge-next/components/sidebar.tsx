@@ -1,5 +1,6 @@
 "use client";
 
+import { AppearanceSelect } from "@/components/ui/appearance-select";
 import { useState } from "react";
 import { ForgeLogo } from "@/components/forge-logo";
 import { MobileSidebarDrawer } from "@/components/ui/mobile-sidebar-drawer";
@@ -33,7 +34,7 @@ export function Sidebar({
   const content = (
     <aside
       className={[
-        "flex shrink-0 flex-col border-r border-surface-divider bg-surface text-surface-foreground transition-[width] duration-200",
+        "flex shrink-0 flex-col forge-rail border-r border-glass-border text-surface-foreground transition-[width] duration-200",
         isMobile ? "w-[min(20rem,85vw)]" : collapsed ? "w-14" : "w-60",
         isMobile ? "h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" : "",
       ].join(" ")}
@@ -110,6 +111,7 @@ export function Sidebar({
           " ",
         )}
       >
+        <div className="mb-3"><AppearanceSelect compact={collapsed} /></div>
         <SidebarProfileMenu
           role={role}
           fullName={fullName}
