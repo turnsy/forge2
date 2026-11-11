@@ -1,3 +1,4 @@
+import { AthleteMetadataEditor } from "@/components/metadata/athlete-metadata-editor";
 import { AthleteCoachSettings } from "@/components/athlete-coach-settings";
 import { AthleteProfileSettings } from "@/components/athlete-profile-settings";
 import { PageHeader, PageShell } from "@/components/ui";
@@ -19,6 +20,7 @@ export default async function AthleteSettingsPage() {
     >
       <div className="space-y-4">
         <AthleteProfileSettings fullName={user.fullName} email={user.email} />
+        {link ? <AthleteMetadataEditor athleteId={user.id} /> : null}
         {link?.status === "active" ? (
           <AthleteCoachSettings link={link} />
         ) : (

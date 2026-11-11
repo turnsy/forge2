@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   eve@0.18.2:
-    hash: 1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587
+    hash: becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683
     path: patches/eve@0.18.2.patch
 
 importers:
@@ -33,7 +33,7 @@ importers:
         version: 2.106.2
       '@vercel/connect':
         specifier: 0.2.2
-        version: 0.2.2(ai@7.0.4(zod@4.4.3))(eve@0.18.2(patch_hash=1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)))
+        version: 0.2.2(ai@7.0.4(zod@4.4.3))(eve@0.18.2(patch_hash=becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)))
       '@vercel/sandbox':
         specifier: ^2.1.0
         version: 2.1.0
@@ -45,7 +45,7 @@ importers:
         version: 8.20.0
       eve:
         specifier: ^0.18.2
-        version: 0.18.2(patch_hash=1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0))
+        version: 0.18.2(patch_hash=becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0))
       next:
         specifier: 16.2.6
         version: 16.2.6(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -6618,12 +6618,12 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@0.2.2(ai@7.0.4(zod@4.4.3))(eve@0.18.2(patch_hash=1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)))':
+  '@vercel/connect@0.2.2(ai@7.0.4(zod@4.4.3))(eve@0.18.2(patch_hash=becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)))':
     dependencies:
       '@vercel/oidc': 3.6.1
     optionalDependencies:
       ai: 7.0.4(zod@4.4.3)
-      eve: 0.18.2(patch_hash=1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0))
+      eve: 0.18.2(patch_hash=becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0))
 
   '@vercel/oidc@3.2.0': {}
 
@@ -7530,7 +7530,7 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  eve@0.18.2(patch_hash=1a7a42f7b4c73426e84ab53232978552f724edc454500858bb2faa2160c99587)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)):
+  eve@0.18.2(patch_hash=becd1cbf8e6b00c561d1510af4a6df0465f1d9b4bd6615f224861b8784582683)(ai@7.0.4(zod@4.4.3))(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0)):
     dependencies:
       ai: 7.0.4(zod@4.4.3)
       nitro: 3.0.260610-beta(jiti@2.7.0)(lru-cache@11.5.1)(vite@8.2.0(@types/node@20.19.41)(esbuild@0.27.7)(jiti@2.7.0))

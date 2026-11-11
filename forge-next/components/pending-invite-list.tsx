@@ -1,5 +1,6 @@
 "use client";
 
+import { AthleteMetadataEditor } from "@/components/metadata/athlete-metadata-editor";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -12,7 +13,10 @@ import {
   MetaGroup,
   MetaItem,
 } from "@/components/ui";
-import { acceptCoachLinkAction, rejectCoachLinkAction } from "@/lib/links/actions";
+import {
+  acceptCoachLinkAction,
+  rejectCoachLinkAction,
+} from "@/lib/links/actions";
 import { formatDate } from "@/lib/format/date";
 import type { PendingInvite } from "@/lib/links/types";
 
@@ -24,6 +28,7 @@ function PendingInviteRow({
   appearIndex: number;
 }) {
   const router = useRouter();
+  const [reviewProfile, setReviewProfile] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -48,8 +53,19 @@ function PendingInviteRow({
             {invite.athleteName}
           </h2>
           {invite.athleteEmail ? (
-            <p className="truncate text-sm text-surface-muted">{invite.athleteEmail}</p>
+            <p className="truncate text-sm text-surface-muted">
+              {invite.athleteEmail}
+            </p>
           ) : null}
+          <details onToggle={(e) => setReviewProfile(e.currentTarget.open)}>
+            <summary className="cursor-pointer text-sm">
+              Review profile / fill missing fields (or accept and complete
+              later)
+            </summary>
+            {reviewProfile ? (
+              <AthleteMetadataEditor athleteId={invite.athleteId} />
+            ) : null}
+          </details>
           {error ? <Message tone="error">{error}</Message> : null}
         </div>
       }
@@ -64,7 +80,9 @@ function PendingInviteRow({
             type="button"
             size="sm"
             disabled={pending}
-            onClick={() => runAction(() => acceptCoachLinkAction(invite.relationshipId))}
+            onClick={() =>
+              runAction(() => acceptCoachLinkAction(invite.relationshipId))
+            }
           >
             Accept
           </Button>
@@ -73,7 +91,9 @@ function PendingInviteRow({
             variant="danger"
             size="sm"
             disabled={pending}
-            onClick={() => runAction(() => rejectCoachLinkAction(invite.relationshipId))}
+            onClick={() =>
+              runAction(() => rejectCoachLinkAction(invite.relationshipId))
+            }
           >
             Reject
           </Button>
@@ -96,7 +116,11 @@ export function PendingInviteList({ invites }: { invites: PendingInvite[] }) {
   return (
     <List>
       {invites.map((invite, index) => (
-        <PendingInviteRow key={invite.relationshipId} invite={invite} appearIndex={index} />
+        <PendingInviteRow
+          key={invite.relationshipId}
+          invite={invite}
+          appearIndex={index}
+        />
       ))}
     </List>
   );

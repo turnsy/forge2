@@ -35,6 +35,7 @@ export function AthleteListRow({
               <h2 className="truncate text-base font-semibold text-surface-foreground">
                 {athlete.name}
               </h2>
+              {athlete.missingMetadataCount ? <p className="text-sm text-surface-muted">{athlete.missingMetadataCount} required profile fields missing</p> : null}
               {athlete.email ? (
                 <p className="truncate text-sm text-surface-muted">{athlete.email}</p>
               ) : null}

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MetadataFieldDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label", "type", "required", "options", "position", "archived"],
+  "properties": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "type": {
+      "enum": [
+        "text",
+        "number",
+        "single_select",
+        "multi_select",
+        "boolean",
+        "date"
+      ]
+    },
+    "required": {
+      "type": "boolean"
+    },
+    "unit": {
+      "type": "string",
+      "maxLength": 30
+    },
+    "min": {
+      "type": "number"
+    },
+    "max": {
+      "type": "number"
+    },
+    "precision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8
+    },
+    "maxLength": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "semantic": {
+      "enum": ["birth_date"]
+    },
+    "position": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "archived": {
+      "type": "boolean"
+    },
+    "options": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

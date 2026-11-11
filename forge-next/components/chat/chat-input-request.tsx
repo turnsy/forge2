@@ -1,5 +1,8 @@
 "use client";
 
+import { metadataEditorInput } from "@/lib/chat/metadata-editor-input";
+import { MetadataFieldEditor } from "@/components/metadata/metadata-field-editor";
+import { AthleteMetadataEditor } from "@/components/metadata/athlete-metadata-editor";
 import { useEffect, useId, useState } from "react";
 import type { InputRequest, InputResponse } from "eve/client";
 import { Button, Input, Select } from "@/components/ui";
@@ -31,6 +34,7 @@ export function ChatInputRequest({
   onDraftChange?: (response: InputResponse) => void;
 }) {
   const fields = trainingMaxFields(request);
+  const metadataEditor = metadataEditorInput(request);
   const [maxValues, setMaxValues] = useState<Record<string, { value: string; unit: "kg" | "lb" }>>(
     {},
   );
@@ -157,6 +161,22 @@ export function ChatInputRequest({
           ))}
         </div>
       ) : null}
+      {metadataEditor && !settled ? (
+        <fieldset disabled={busy} className="space-y-3">
+          {metadataEditor.mode === "fields" ? (
+            <MetadataFieldEditor />
+          ) : (
+            <AthleteMetadataEditor athleteId={metadataEditor.athleteId} />
+          )}
+          <p className="text-sm text-surface-muted">
+            Save your changes above, then continue. Saved changes are kept if you cancel this request.
+          </p>
+        </fieldset>
+      ) : metadataEditor ? (
+        <p className="text-sm text-surface-muted">
+          Profile editor closed. View the current profile to see the latest values.
+        </p>
+      ) : null}
       {fields.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm text-surface-muted">
@@ -203,7 +223,7 @@ export function ChatInputRequest({
           })}
         </div>
       ) : null}
-      {confirmation || options.length > 0 || fields.length > 0 ? (
+      {confirmation || options.length > 0 || fields.length > 0 || metadataEditor ? (
         <div className="flex items-center gap-2">
           <Button
             type="button"
@@ -219,7 +239,7 @@ export function ChatInputRequest({
               )
             }
           >
-            Confirm
+            {metadataEditor ? "Continue" : "Confirm"}
           </Button>
           <Button
             type="button"

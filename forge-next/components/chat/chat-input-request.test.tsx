@@ -125,3 +125,17 @@ describe("ChatInputRequest", () => {
     await waitFor(() => expect(onRespond).toHaveBeenCalledWith({ requestId: request.requestId, optionId }));
   });
 });
+
+it("opens the shared metadata editor in chat and resumes the request without invented answers",async()=>{
+  const fetchMock=vi.spyOn(globalThis,"fetch").mockResolvedValue(new Response(JSON.stringify({fields:[],values:[],missing:[]}),{status:200}));
+  const profile:InputRequest={...request,options:[],display:"text",action:{...request.action,input:{metadataEditor:{mode:"athlete",athleteId:"30000000-0000-4000-8000-000000000001"}}}};
+  const onRespond=vi.fn().mockResolvedValue(undefined);
+  const {rerender}=render(<ChatInputRequest request={profile} disabled={false} onRespond={onRespond}/>);
+  await screen.findByText("No custom profile fields have been defined.");
+  fireEvent.click(screen.getByRole("button",{name:"Continue"}));
+  await waitFor(()=>expect(onRespond).toHaveBeenCalledExactlyOnceWith(selectionResponse(profile,[])));
+  rerender(<ChatInputRequest request={profile} disabled={false} status="completed" onRespond={onRespond}/>);
+  expect(screen.getByText(/Profile editor closed/)).toBeInTheDocument();
+  expect(screen.queryByRole("button",{name:"Save profile"})).not.toBeInTheDocument();
+  fetchMock.mockRestore();
+});
