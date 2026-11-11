@@ -53,4 +53,4 @@ node scripts/test-athlete-metadata.mjs <local-postgres-container>
 
 The database test creates and removes a disposable database. It tests the real linking RPCs and new migration under authenticated roles, permissive default grants, cross-coach/athlete access, version conflicts, transaction rollback, history, unit conversion, age boundaries, and a roster larger than 100 athletes.
 
-See [QA.md](./QA.md) for authenticated UI and agent checks. The checked-in migration must be applied to the QA database before using the feature; implementation work does not apply migrations to a hosted project.
+See [QA.md](./QA.md) for authenticated UI and agent checks. The preview shares production Supabase. Migration `20261111005806_athlete_metadata.sql` was applied to production `forge2` on November 11, 2026; its filename matches the version recorded by Supabase.

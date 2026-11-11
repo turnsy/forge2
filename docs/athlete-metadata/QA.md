@@ -1,6 +1,6 @@
 # Manual QA: custom athlete profiles
 
-Use a QA Supabase database with `20261029140910_athlete_metadata.sql` applied and a build of this branch. Prepare Coach A, Coach B, three athlete accounts, and a saved training plan. Keep a coach window and an athlete window open in separate browser profiles.
+Use the deployed PR preview, which shares the production Supabase project. Migration `20261111005806_athlete_metadata.sql` was applied to production `forge2` on November 11, 2026. Prepare Coach A, Coach B, three athlete accounts, and a saved training plan. Keep a coach window and an athlete window open in separate browser profiles.
 
 ## Coach field editor
 

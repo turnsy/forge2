@@ -32,7 +32,7 @@ try {
       readFileSync("supabase/tests/metadata-fixture.sql", "utf8") +
         linking +
         readFileSync(
-          "supabase/migrations/20261029140910_athlete_metadata.sql",
+          "supabase/migrations/20261111005806_athlete_metadata.sql",
           "utf8",
         ) +
         readFileSync("supabase/tests/athlete-metadata.sql", "utf8"),
